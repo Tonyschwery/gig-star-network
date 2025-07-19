@@ -1,0 +1,141 @@
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card } from "@/components/ui/card";
+import { Star, MapPin, Search, Calendar } from "lucide-react";
+
+export function HeroSection() {
+  return (
+    <section className="relative min-h-screen flex items-center justify-center pt-24 pb-16">
+      {/* Background Gradient */}
+      <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-brand-primary/5" />
+      
+      <div className="container mx-auto px-4 relative z-10">
+        <div className="grid lg:grid-cols-2 gap-12 items-center">
+          {/* Left Content */}
+          <div className="space-y-8 animate-fadeIn">
+            <div className="space-y-4">
+              <div className="text-brand-accent font-semibold text-lg">
+                1000s of successful bookings
+              </div>
+              
+              <h1 className="text-5xl lg:text-6xl font-bold leading-tight">
+                Find <span className="gradient-text">Amazing Talent</span> for your event
+              </h1>
+              
+              <p className="text-xl text-muted-foreground max-w-lg">
+                GCC Talents is the easiest way to book great artists, musicians, performers and creators for your event. Start by telling us about your event.
+              </p>
+            </div>
+
+            {/* Search Form */}
+            <Card className="p-6 glass-card">
+              <div className="grid md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-muted-foreground">LOCATION</label>
+                  <div className="relative">
+                    <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input 
+                      placeholder="Where is the event?" 
+                      className="pl-10 bg-input border-border"
+                    />
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-muted-foreground">WHEN</label>
+                  <div className="relative">
+                    <Calendar className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input 
+                      placeholder="Event date" 
+                      className="pl-10 bg-input border-border"
+                    />
+                  </div>
+                </div>
+                
+                <div className="flex items-end">
+                  <Button className="w-full hero-button">
+                    <Search className="h-4 w-4 mr-2" />
+                    Find Talent
+                  </Button>
+                </div>
+              </div>
+            </Card>
+
+            {/* Reviews */}
+            <div className="flex items-center space-x-2">
+              <div className="flex">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} className="h-5 w-5 fill-yellow-400 text-yellow-400" />
+                ))}
+              </div>
+              <span className="text-sm text-muted-foreground">
+                Excellent - <strong>4320</strong> five-star reviews by organizers
+              </span>
+            </div>
+          </div>
+
+          {/* Right Content - Featured Talents */}
+          <div className="space-y-6">
+            <FeaturedTalentCard 
+              name="Sarah Johnson"
+              location="New York City"
+              category="Jazz Singer"
+              image="/placeholder.svg"
+              isPro={true}
+            />
+            <FeaturedTalentCard 
+              name="Mike Rodriguez"
+              location="Los Angeles"
+              category="DJ & Producer"
+              image="/placeholder.svg"
+              isPro={false}
+            />
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+interface FeaturedTalentCardProps {
+  name: string;
+  location: string;
+  category: string;
+  image: string;
+  isPro: boolean;
+}
+
+function FeaturedTalentCard({ name, location, category, image, isPro }: FeaturedTalentCardProps) {
+  return (
+    <Card className="p-4 glass-card hover:shadow-elevated transition-all duration-300 hover:scale-105">
+      <div className="flex items-center space-x-4">
+        <div className="relative">
+          <img 
+            src={image} 
+            alt={name}
+            className="w-16 h-16 rounded-xl object-cover"
+          />
+          {isPro && (
+            <div className="absolute -top-1 -right-1 pro-badge text-xs">
+              PRO
+            </div>
+          )}
+        </div>
+        
+        <div className="flex-1">
+          <h3 className="font-semibold text-lg">{name}</h3>
+          <p className="text-muted-foreground text-sm">{category}</p>
+          <div className="flex items-center space-x-1 mt-1">
+            <MapPin className="h-3 w-3 text-muted-foreground" />
+            <span className="text-xs text-muted-foreground">{location}</span>
+          </div>
+        </div>
+        
+        <div className="flex items-center space-x-1">
+          <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+          <span className="text-sm font-medium">4.9</span>
+        </div>
+      </div>
+    </Card>
+  );
+}
