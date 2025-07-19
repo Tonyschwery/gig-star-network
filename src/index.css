@@ -143,8 +143,8 @@ All colors MUST be HSL.
   /* Pro Badge */
   .pro-badge {
     @apply inline-flex items-center px-2 py-1 rounded-full text-xs font-bold text-black;
-    background: var(--pro-badge);
-    box-shadow: var(--pro-glow);
+    background: linear-gradient(135deg, hsl(45 100% 60%), hsl(35 100% 55%));
+    box-shadow: 0 0 20px hsl(45 100% 60% / 0.5);
   }
   
   /* Glass Card Effect */
@@ -154,7 +154,7 @@ All colors MUST be HSL.
   
   /* Gradient Text */
   .gradient-text {
-    background: var(--gradient-primary);
+    background: linear-gradient(135deg, hsl(217 91% 60%), hsl(191 91% 55%));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
