@@ -53,7 +53,10 @@ export function HeroSection() {
                 </div>
                 
                 <div className="flex items-end">
-                  <Button className="w-full hero-button">
+                  <Button 
+                    className="w-full hero-button"
+                    onClick={() => console.log('Find Talent clicked')}
+                  >
                     <Search className="h-4 w-4 mr-2" />
                     Find Talent
                   </Button>
@@ -107,7 +110,10 @@ interface FeaturedTalentCardProps {
 
 function FeaturedTalentCard({ name, location, category, image, isPro }: FeaturedTalentCardProps) {
   return (
-    <Card className="p-4 glass-card hover:shadow-elevated transition-all duration-300 hover:scale-105">
+    <Card 
+      className="p-4 glass-card hover:shadow-elevated transition-all duration-300 hover:scale-105 cursor-pointer"
+      onClick={() => console.log(`${name} card clicked`)}
+    >
       <div className="flex items-center space-x-4">
         <div className="relative">
           <img 

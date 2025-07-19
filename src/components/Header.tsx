@@ -31,20 +31,37 @@ export function Header() {
 
           {/* Right Side Actions */}
           <div className="flex items-center space-x-4">
-            <Button variant="ghost" size="sm" className="hidden sm:flex">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="hidden sm:flex"
+              onClick={() => console.log('Search clicked')}
+            >
               <Search className="h-4 w-4" />
             </Button>
             
-            <Button variant="outline" size="sm">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => console.log('Login clicked')}
+            >
               Login
             </Button>
             
-            <Button className="hero-button">
+            <Button 
+              className="hero-button"
+              onClick={() => console.log('Join as Talent clicked')}
+            >
               Join as Talent
             </Button>
 
             {/* Mobile Menu */}
-            <Button variant="ghost" size="sm" className="md:hidden">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="md:hidden"
+              onClick={() => console.log('Mobile menu clicked')}
+            >
               <Menu className="h-4 w-4" />
             </Button>
           </div>
