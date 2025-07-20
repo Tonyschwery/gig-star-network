@@ -10,7 +10,7 @@ export function Footer() {
           {/* Brand */}
           <div className="space-y-4">
             <div className="text-2xl font-bold gradient-text">
-              GCC Talents
+              NAGHM
             </div>
             <p className="text-muted-foreground">
               The easiest way to book amazing talent for your events. Connect with verified performers and creators worldwide.
@@ -92,7 +92,7 @@ export function Footer() {
         <div className="border-t border-card-border mt-12 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
             <div className="text-muted-foreground text-sm">
-              © 2024 GCC Talents. All rights reserved.
+              © 2024 NAGHM. All rights reserved.
             </div>
             <nav className="flex space-x-6 text-sm">
               <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">

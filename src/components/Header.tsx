@@ -55,10 +55,10 @@ export function Header() {
           {/* Logo */}
           <div className="flex items-center space-x-2 cursor-pointer" onClick={() => navigate('/')}>
             <div className="text-2xl font-bold gradient-text hover:opacity-80 transition-opacity">
-              GCC Talents
+              NAGHM
             </div>
             <span className="text-sm text-muted-foreground hidden sm:block">
-              Booking Services
+              Book the Vibe
             </span>
           </div>
 

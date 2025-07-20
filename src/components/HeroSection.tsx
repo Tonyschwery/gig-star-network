@@ -74,7 +74,7 @@ export function HeroSection() {
               </h1>
               
                <p className="text-xl text-muted-foreground max-w-lg">
-                 GCC Talents is the easiest way to book great artists, musicians, performers and creators for your event. Start by telling us about your event.
+                 NAGHM is the easiest way to book great artists, musicians, performers and creators for your event. Start by telling us about your event.
                </p>
             </div>
 
