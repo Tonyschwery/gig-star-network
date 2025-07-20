@@ -183,12 +183,15 @@ function TalentCard({ talent }: TalentCardProps) {
   };
 
   return (
-    <Card className="overflow-hidden glass-card hover:shadow-elevated transition-all duration-300 hover:scale-105 group">
+    <Card 
+      className="overflow-hidden glass-card hover:shadow-elevated transition-all duration-300 hover:scale-105 group cursor-pointer"
+      onClick={() => window.location.href = `/talent/${talent.id}`}
+    >
       <div className="relative">
         <img 
           src={talent.picture_url || "/placeholder.svg"} 
           alt={talent.artist_name}
-          className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-500"
+          className="w-full h-48 object-cover object-center group-hover:scale-110 transition-transform duration-500"
         />
         <div className="absolute top-3 left-3 flex items-center space-x-1 bg-black/50 backdrop-blur-sm rounded-lg px-2 py-1">
           {getActIcon(talent.act)}
@@ -242,7 +245,10 @@ function TalentCard({ talent }: TalentCardProps) {
         <Button 
           variant="outline" 
           className="w-full"
-          onClick={() => window.location.href = `/talent/${talent.id}`}
+          onClick={(e) => {
+            e.stopPropagation();
+            window.location.href = `/talent/${talent.id}`;
+          }}
         >
           View Profile
         </Button>

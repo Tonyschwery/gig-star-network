@@ -98,7 +98,19 @@ const Auth = () => {
           title: "Welcome back!",
           description: "You have successfully logged in.",
         });
-        navigate("/");
+        
+        // Check if user has a talent profile and redirect accordingly
+        const { data: profile } = await supabase
+          .from('talent_profiles')
+          .select('id')
+          .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
+          .maybeSingle();
+        
+        if (profile) {
+          navigate("/talent-dashboard");
+        } else {
+          navigate("/");
+        }
       }
     } catch (error) {
       toast({
