@@ -77,6 +77,14 @@ export function Header() {
             >
               Find Talent
             </button>
+            {user && (
+              <button 
+                onClick={() => navigate('/gigs')}
+                className="text-foreground hover:text-brand-primary transition-colors"
+              >
+                Gigs
+              </button>
+            )}
             <a href="#how-it-works" className="text-foreground hover:text-brand-primary transition-colors">
               How it works
             </a>

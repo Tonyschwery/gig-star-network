@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { YouTubePlayer } from "@/components/YouTubePlayer";
+import { BookingForm } from "@/components/BookingForm";
 import { 
   MapPin, 
   Music, 
@@ -48,6 +49,7 @@ export default function TalentProfile() {
   const { toast } = useToast();
   const [talent, setTalent] = useState<TalentProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showBookingForm, setShowBookingForm] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -133,10 +135,7 @@ export default function TalentProfile() {
   };
 
   const handleBookNow = () => {
-    toast({
-      title: "Booking Request",
-      description: "Booking functionality will be implemented soon!",
-    });
+    setShowBookingForm(true);
   };
 
   const handleChatWithTalent = () => {
@@ -388,6 +387,21 @@ export default function TalentProfile() {
         </div>
       </main>
       <Footer />
+
+      {/* Booking Form Modal */}
+      {showBookingForm && talent && (
+        <BookingForm
+          talentId={talent.id}
+          talentName={talent.artist_name}
+          onClose={() => setShowBookingForm(false)}
+          onSuccess={() => {
+            toast({
+              title: "Success!",
+              description: "Your booking request has been sent successfully.",
+            });
+          }}
+        />
+      )}
     </div>
   );
 }

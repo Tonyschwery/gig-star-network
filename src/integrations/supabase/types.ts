@@ -14,6 +14,59 @@ export type Database = {
   }
   public: {
     Tables: {
+      bookings: {
+        Row: {
+          created_at: string
+          description: string | null
+          event_address: string
+          event_date: string
+          event_duration: number
+          event_location: string
+          event_type: string
+          id: string
+          status: string
+          talent_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          event_address: string
+          event_date: string
+          event_duration: number
+          event_location: string
+          event_type: string
+          id?: string
+          status?: string
+          talent_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          event_address?: string
+          event_date?: string
+          event_duration?: number
+          event_location?: string
+          event_type?: string
+          id?: string
+          status?: string
+          talent_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookings_talent_id_fkey"
+            columns: ["talent_id"]
+            isOneToOne: false
+            referencedRelation: "talent_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       talent_profiles: {
         Row: {
           act: Database["public"]["Enums"]["talent_act"]
