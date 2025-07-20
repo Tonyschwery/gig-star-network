@@ -31,10 +31,20 @@ export function Header() {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-6">
-            <a href="#" className="text-foreground hover:text-brand-primary transition-colors">
+            <button 
+              onClick={() => {
+                const talentsSection = document.getElementById('talents');
+                if (talentsSection) {
+                  talentsSection.scrollIntoView({ behavior: 'smooth' });
+                } else {
+                  navigate('/#talents');
+                }
+              }}
+              className="text-foreground hover:text-brand-primary transition-colors"
+            >
               Find Talent
-            </a>
-            <a href="#" className="text-foreground hover:text-brand-primary transition-colors">
+            </button>
+            <a href="#how-it-works" className="text-foreground hover:text-brand-primary transition-colors">
               How it works
             </a>
             <a href="#" className="text-foreground hover:text-brand-primary transition-colors">

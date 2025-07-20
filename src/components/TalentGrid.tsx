@@ -239,7 +239,11 @@ function TalentCard({ talent }: TalentCardProps) {
           </div>
         </div>
 
-        <Button variant="outline" className="w-full">
+        <Button 
+          variant="outline" 
+          className="w-full"
+          onClick={() => window.location.href = `/talent/${talent.id}`}
+        >
           View Profile
         </Button>
       </div>
