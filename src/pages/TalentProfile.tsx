@@ -7,7 +7,6 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { YouTubePlayer } from "@/components/YouTubePlayer";
-import { AudioWaveform } from "@/components/AudioWaveform";
 import { 
   MapPin, 
   Music, 
@@ -35,6 +34,7 @@ interface TalentProfile {
   music_genres: string[];
   custom_genre?: string;
   picture_url?: string;
+  gallery_images?: string[];
   soundcloud_link?: string;
   youtube_link?: string;
   biography: string;
@@ -238,51 +238,67 @@ export default function TalentProfile() {
                 </p>
               </Card>
 
-              {/* Enhanced Media Section */}
+              {/* Photo Gallery */}
               <Card className="p-6">
-                <h2 className="text-xl font-semibold mb-6">Media & Content</h2>
-                <div className="space-y-6">
-                  {talent.youtube_link && (
-                    <div>
-                      <h3 className="font-medium mb-3 flex items-center">
-                        <div className="w-5 h-5 bg-red-500 rounded mr-2"></div>
-                        YouTube Video
-                      </h3>
-                      <YouTubePlayer 
-                        url={talent.youtube_link}
-                        onThumbnailClick={() => {
-                          // Optional: Track video play analytics
-                        }}
+                <h2 className="text-xl font-semibold mb-6">Photo Gallery</h2>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {talent.picture_url && (
+                    <div className="relative aspect-square rounded-lg overflow-hidden bg-muted">
+                      <img 
+                        src={talent.picture_url} 
+                        alt={`${talent.artist_name} - Main photo`}
+                        className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                       />
+                      <div className="absolute top-2 left-2 bg-brand-primary text-white text-xs px-2 py-1 rounded">
+                        Main
+                      </div>
                     </div>
                   )}
                   
-                  {talent.soundcloud_link && (
-                    <div>
-                      <h3 className="font-medium mb-3 flex items-center">
-                        <div className="w-5 h-5 bg-orange-500 rounded mr-2"></div>
-                        Audio Track
-                      </h3>
-                      <AudioWaveform 
-                        url={talent.soundcloud_link}
-                        title={`${talent.artist_name} - Audio Sample`}
-                      />
-                    </div>
-                  )}
-
-                  {!talent.soundcloud_link && !talent.youtube_link && (
-                    <div className="text-center py-12">
-                      <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
-                        <Music className="h-8 w-8 text-muted-foreground" />
+                  {talent.gallery_images && talent.gallery_images.length > 0 && 
+                    talent.gallery_images.map((imageUrl, index) => (
+                      <div key={index} className="relative aspect-square rounded-lg overflow-hidden bg-muted">
+                        <img 
+                          src={imageUrl} 
+                          alt={`${talent.artist_name} - Photo ${index + 1}`}
+                          className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                        />
                       </div>
-                      <h3 className="font-medium mb-2">No Media Available</h3>
+                    ))
+                  }
+                  
+                  {(!talent.picture_url && (!talent.gallery_images || talent.gallery_images.length === 0)) && (
+                    <div className="col-span-full text-center py-12">
+                      <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+                        <User className="h-8 w-8 text-muted-foreground" />
+                      </div>
+                      <h3 className="font-medium mb-2">No Photos Available</h3>
                       <p className="text-sm text-muted-foreground">
-                        This talent hasn't uploaded any audio or video content yet.
+                        This talent hasn't uploaded any photos yet.
                       </p>
                     </div>
                   )}
                 </div>
               </Card>
+
+              {/* Enhanced Media Section - YouTube Only */}
+              {talent.youtube_link && (
+                <Card className="p-6">
+                  <h2 className="text-xl font-semibold mb-6">Video Content</h2>
+                  <div>
+                    <h3 className="font-medium mb-3 flex items-center">
+                      <div className="w-5 h-5 bg-red-500 rounded mr-2"></div>
+                      YouTube Video
+                    </h3>
+                    <YouTubePlayer 
+                      url={talent.youtube_link}
+                      onThumbnailClick={() => {
+                        // Optional: Track video play analytics
+                      }}
+                    />
+                  </div>
+                </Card>
+              )}
             </div>
 
             {/* Sidebar */}
