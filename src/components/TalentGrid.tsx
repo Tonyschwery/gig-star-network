@@ -11,8 +11,8 @@ interface TalentProfile {
   act: string;
   gender: string;
   age: number;
-  location: string;
-  rate_per_hour: number;
+  location?: string;
+  rate_per_hour?: number;
   currency: string;
   music_genres: string[];
   custom_genre?: string;
@@ -201,12 +201,12 @@ function TalentCard({ talent }: TalentCardProps) {
           <h3 className="font-semibold text-lg">{talent.artist_name}</h3>
           <div className="flex items-center space-x-1 text-sm text-muted-foreground">
             <MapPin className="h-3 w-3" />
-            <span>{talent.location}</span>
+            <span>{talent.location || 'Location not specified'}</span>
           </div>
         </div>
 
         <div className="flex flex-wrap gap-1">
-          {talent.music_genres.map((genre) => (
+          {talent.music_genres && talent.music_genres.length > 0 && talent.music_genres.map((genre) => (
             <Badge key={genre} variant="secondary" className="text-xs">
               {genre}
             </Badge>
@@ -224,10 +224,18 @@ function TalentCard({ talent }: TalentCardProps) {
             <span className="text-sm font-medium">New</span>
           </div>
           <div className="text-right">
-            <div className="text-lg font-bold text-brand-primary">
-              {getCurrencySymbol(talent.currency)}{talent.rate_per_hour}
-            </div>
-            <div className="text-xs text-muted-foreground">per hour</div>
+            {talent.rate_per_hour ? (
+              <>
+                <div className="text-lg font-bold text-brand-primary">
+                  {getCurrencySymbol(talent.currency)}{talent.rate_per_hour}
+                </div>
+                <div className="text-xs text-muted-foreground">per hour</div>
+              </>
+            ) : (
+              <div className="text-sm text-muted-foreground">
+                Rate not set
+              </div>
+            )}
           </div>
         </div>
 
