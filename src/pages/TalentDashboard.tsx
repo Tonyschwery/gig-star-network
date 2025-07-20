@@ -346,7 +346,11 @@ const TalentDashboard = () => {
 
         {/* Booking Management Section */}
         <div className="mb-8">
-          <BookingManagement talentId={profile.id} />
+          <BookingManagement 
+            talentId={profile.id} 
+            isProSubscriber={profile.is_pro_subscriber}
+            onUpgrade={() => setShowProDialog(true)}
+          />
         </div>
 
         <div className="grid md:grid-cols-3 gap-6">

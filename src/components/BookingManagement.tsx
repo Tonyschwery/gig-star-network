@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Check, X, Calendar, Clock, MapPin, Mail, User } from "lucide-react";
+import { Check, X, Calendar, Clock, MapPin, Mail, User, Crown, Lock } from "lucide-react";
 import { format } from "date-fns";
 
 interface Booking {
@@ -23,9 +23,11 @@ interface Booking {
 
 interface BookingManagementProps {
   talentId: string;
+  isProSubscriber?: boolean;
+  onUpgrade?: () => void;
 }
 
-export function BookingManagement({ talentId }: BookingManagementProps) {
+export function BookingManagement({ talentId, isProSubscriber = false, onUpgrade }: BookingManagementProps) {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [updatingBooking, setUpdatingBooking] = useState<string | null>(null);
@@ -164,10 +166,32 @@ export function BookingManagement({ talentId }: BookingManagementProps) {
                     </div>
                     
                     <div className="bg-muted/30 p-3 rounded-lg">
-                      <div className="font-medium text-foreground mb-2 flex items-center gap-2">
-                        <User className="h-4 w-4" />
-                        Booker: {booking.booker_name}
-                      </div>
+                      {isProSubscriber ? (
+                        <div className="font-medium text-foreground mb-2 flex items-center gap-2">
+                          <User className="h-4 w-4" />
+                          Booker: {booking.booker_name}
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <Lock className="h-4 w-4" />
+                            <span className="font-medium">Booker Details (Pro Only)</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              onClick={onUpgrade}
+                              size="sm"
+                              className="hero-button h-8"
+                            >
+                              <Crown className="h-3 w-3 mr-1" />
+                              Upgrade to Pro
+                            </Button>
+                            <span className="text-xs text-muted-foreground">
+                              See booker name and contact details
+                            </span>
+                          </div>
+                        </div>
+                      )}
                     </div>
                     
                     <div className="grid md:grid-cols-2 gap-3 text-sm">
@@ -190,14 +214,28 @@ export function BookingManagement({ talentId }: BookingManagementProps) {
                     </div>
 
                     <div className="space-y-2">
-                      <div className="text-sm">
-                        <span className="font-medium text-foreground">Full Address:</span>
-                        <p className="text-muted-foreground mt-1">{booking.event_address}</p>
-                      </div>
-                      {booking.description && (
-                        <div className="text-sm">
-                          <span className="font-medium text-foreground">Event Description:</span>
-                          <p className="text-muted-foreground mt-1">{booking.description}</p>
+                      {isProSubscriber ? (
+                        <>
+                          <div className="text-sm">
+                            <span className="font-medium text-foreground">Full Address:</span>
+                            <p className="text-muted-foreground mt-1">{booking.event_address}</p>
+                          </div>
+                          {booking.description && (
+                            <div className="text-sm">
+                              <span className="font-medium text-foreground">Event Description:</span>
+                              <p className="text-muted-foreground mt-1">{booking.description}</p>
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <div className="text-sm border rounded-lg p-3 bg-muted/10">
+                          <div className="flex items-center gap-2 text-muted-foreground mb-2">
+                            <Lock className="h-4 w-4" />
+                            <span className="font-medium">Event Details (Pro Only)</span>
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            Upgrade to Pro to see full address, event description, and contact the booker directly.
+                          </p>
                         </div>
                       )}
                     </div>
@@ -266,10 +304,27 @@ export function BookingManagement({ talentId }: BookingManagementProps) {
                       </div>
                       
                       <div className="bg-muted/30 p-3 rounded-lg">
-                        <div className="font-medium text-foreground flex items-center gap-2">
-                          <User className="h-4 w-4" />
-                          Booker: {booking.booker_name}
-                        </div>
+                        {isProSubscriber ? (
+                          <div className="font-medium text-foreground flex items-center gap-2">
+                            <User className="h-4 w-4" />
+                            Booker: {booking.booker_name}
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2 text-muted-foreground">
+                              <Lock className="h-4 w-4" />
+                              <span className="font-medium">Booker Details (Pro Only)</span>
+                            </div>
+                            <Button
+                              onClick={onUpgrade}
+                              size="sm"
+                              className="hero-button h-7 text-xs"
+                            >
+                              <Crown className="h-3 w-3 mr-1" />
+                              Upgrade
+                            </Button>
+                          </div>
+                        )}
                       </div>
                       
                       <div className="grid md:grid-cols-3 gap-3 text-sm">
@@ -288,14 +343,28 @@ export function BookingManagement({ talentId }: BookingManagementProps) {
                       </div>
 
                       <div className="space-y-2">
-                        <div className="text-sm">
-                          <span className="font-medium text-foreground">Full Address:</span>
-                          <p className="text-muted-foreground mt-1">{booking.event_address}</p>
-                        </div>
-                        {booking.description && (
-                          <div className="text-sm">
-                            <span className="font-medium text-foreground">Event Description:</span>
-                            <p className="text-muted-foreground mt-1">{booking.description}</p>
+                        {isProSubscriber ? (
+                          <>
+                            <div className="text-sm">
+                              <span className="font-medium text-foreground">Full Address:</span>
+                              <p className="text-muted-foreground mt-1">{booking.event_address}</p>
+                            </div>
+                            {booking.description && (
+                              <div className="text-sm">
+                                <span className="font-medium text-foreground">Event Description:</span>
+                                <p className="text-muted-foreground mt-1">{booking.description}</p>
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          <div className="text-sm border rounded-lg p-3 bg-muted/10">
+                            <div className="flex items-center gap-2 text-muted-foreground mb-2">
+                              <Lock className="h-4 w-4" />
+                              <span className="font-medium">Event Details (Pro Only)</span>
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              Full address and event details available with Pro subscription.
+                            </p>
                           </div>
                         )}
                       </div>
