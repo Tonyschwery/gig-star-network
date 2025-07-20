@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Star, MapPin, Search, Calendar, Music } from "lucide-react";
+import { countries } from "@/lib/countries";
 
 const talentTypes = [
   { value: 'all', label: 'All Talent Types' },
@@ -31,20 +32,31 @@ export function HeroSection() {
   const handleSearch = () => {
     // Create URL parameters for search
     const params = new URLSearchParams();
-    if (searchFilters.location) params.set('location', searchFilters.location);
-    if (searchFilters.eventDate) params.set('date', searchFilters.eventDate);
+    if (searchFilters.location && searchFilters.location !== 'all') {
+      params.set('location', searchFilters.location);
+    }
+    if (searchFilters.eventDate) {
+      params.set('date', searchFilters.eventDate);
+    }
     if (searchFilters.talentType && searchFilters.talentType !== 'all') {
       params.set('type', searchFilters.talentType);
     }
 
-    // Navigate to search results or scroll to talents section
-    if (params.toString()) {
-      navigate(`/?${params.toString()}#talents`);
-    } else {
+    // Build the URL with search parameters
+    const newUrl = params.toString() ? `/?${params.toString()}#talents` : '/#talents';
+    
+    console.log('Search filters:', searchFilters);
+    console.log('Generated URL:', newUrl);
+    
+    // Navigate to the new URL and scroll to talents section
+    window.location.href = newUrl;
+    
+    // Ensure scroll to talents section after navigation
+    setTimeout(() => {
       document.getElementById('talents')?.scrollIntoView({ 
         behavior: 'smooth' 
       });
-    }
+    }, 100);
   };
 
   return (
@@ -76,13 +88,23 @@ export function HeroSection() {
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-muted-foreground">LOCATION</label>
                   <div className="relative">
-                    <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input 
-                      placeholder="Where is the event?" 
-                      className="pl-10 bg-input border-border"
-                      value={searchFilters.location}
-                      onChange={(e) => setSearchFilters(prev => ({ ...prev, location: e.target.value }))}
-                    />
+                    <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground z-10" />
+                    <Select 
+                      value={searchFilters.location} 
+                      onValueChange={(value) => setSearchFilters(prev => ({ ...prev, location: value }))}
+                    >
+                      <SelectTrigger className="pl-10 bg-input border-border">
+                        <SelectValue placeholder="Select country" />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-60">
+                        <SelectItem value="all">All Countries</SelectItem>
+                        {countries.map((country) => (
+                          <SelectItem key={country.code} value={country.name}>
+                            {country.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
                 

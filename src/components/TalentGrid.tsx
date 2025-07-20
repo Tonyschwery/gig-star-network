@@ -93,24 +93,32 @@ export function TalentGrid() {
   const applyFilters = () => {
     let filtered = [...talents];
 
-    // Filter by location
-    if (activeFilters.location) {
+    // Filter by location (country)
+    if (activeFilters.location && activeFilters.location !== 'all') {
       const locationQuery = activeFilters.location.toLowerCase();
-      filtered = filtered.filter(talent => 
-        talent.location?.toLowerCase().includes(locationQuery) ||
-        talent.nationality?.toLowerCase().includes(locationQuery)
-      );
+      filtered = filtered.filter(talent => {
+        const talentLocation = talent.location?.toLowerCase() || '';
+        const talentNationality = talent.nationality?.toLowerCase() || '';
+        return talentLocation.includes(locationQuery) || 
+               talentNationality.includes(locationQuery) ||
+               talentLocation === locationQuery ||
+               talentNationality === locationQuery;
+      });
     }
 
     // Filter by talent type
-    if (activeFilters.type) {
+    if (activeFilters.type && activeFilters.type !== 'all') {
       filtered = filtered.filter(talent => 
         talent.act.toLowerCase() === activeFilters.type.toLowerCase()
       );
     }
 
-    // Note: Date filtering would require additional booking system integration
-    // For now, we'll show all talents regardless of date
+    // Date filtering placeholder - can be enhanced with booking system
+    if (activeFilters.date) {
+      // For now, we show all talents regardless of date
+      // This can be enhanced when booking system is implemented
+      console.log('Filtering by date:', activeFilters.date);
+    }
 
     setFilteredTalents(filtered);
   };
@@ -120,7 +128,9 @@ export function TalentGrid() {
     setActiveFilters({ location: '', date: '', type: '' });
   };
 
-  const hasActiveFilters = activeFilters.location || activeFilters.date || activeFilters.type;
+  const hasActiveFilters = (activeFilters.location && activeFilters.location !== 'all') || 
+                          activeFilters.date || 
+                          (activeFilters.type && activeFilters.type !== 'all');
   const talentsToShow = hasActiveFilters ? filteredTalents : talents;
 
   if (loading) {
@@ -164,7 +174,7 @@ export function TalentGrid() {
                 <span>Active filters:</span>
               </div>
               
-              {activeFilters.location && (
+              {activeFilters.location && activeFilters.location !== 'all' && (
                 <Badge variant="secondary" className="gap-1">
                   Location: {activeFilters.location}
                 </Badge>
@@ -176,7 +186,7 @@ export function TalentGrid() {
                 </Badge>
               )}
               
-              {activeFilters.type && (
+              {activeFilters.type && activeFilters.type !== 'all' && (
                 <Badge variant="secondary" className="gap-1">
                   Type: {activeFilters.type.charAt(0).toUpperCase() + activeFilters.type.slice(1)}
                 </Badge>
