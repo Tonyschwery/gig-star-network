@@ -12,6 +12,7 @@ import { format } from "date-fns";
 
 interface Booking {
   id: string;
+  booker_name: string;
   event_date: string;
   event_duration: number;
   event_location: string;
@@ -158,11 +159,14 @@ export default function Gigs() {
                         <CardTitle className="text-xl mb-1">
                           {booking.talent_profiles.artist_name}
                         </CardTitle>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 mb-2">
                           <span className="text-2xl">{getEventTypeIcon(booking.event_type)}</span>
-                          <span className="capitalize text-muted-foreground">
-                            {booking.event_type}
+                          <span className="capitalize font-medium text-foreground">
+                            {booking.event_type} Event
                           </span>
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          Booked by: <span className="font-medium text-foreground">{booking.booker_name}</span>
                         </div>
                       </div>
                     </div>
@@ -184,7 +188,7 @@ export default function Gigs() {
                     </div>
                     <div className="flex items-center gap-2 text-sm">
                       <MapPin className="h-4 w-4 text-muted-foreground" />
-                      <span>{booking.event_location}</span>
+                      <span className="font-medium">{booking.event_location}</span>
                     </div>
                     {booking.talent_profiles.rate_per_hour && (
                       <div className="flex items-center gap-2 text-sm">
@@ -196,8 +200,11 @@ export default function Gigs() {
                     )}
                   </div>
 
-                  <div className="text-sm text-muted-foreground">
-                    <strong>Address:</strong> {booking.event_address}
+                  <div className="space-y-2">
+                    <div className="text-sm">
+                      <span className="font-medium text-foreground">Full Address:</span>
+                      <p className="text-muted-foreground mt-1">{booking.event_address}</p>
+                    </div>
                   </div>
 
                   {booking.description && (

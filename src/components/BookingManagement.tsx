@@ -9,6 +9,7 @@ import { format } from "date-fns";
 
 interface Booking {
   id: string;
+  booker_name: string;
   event_date: string;
   event_duration: number;
   event_location: string;
@@ -151,7 +152,7 @@ export function BookingManagement({ talentId }: BookingManagementProps) {
             {pendingBookings.map((booking) => (
               <div key={booking.id} className="border rounded-lg p-4 bg-card space-y-3">
                 <div className="flex items-start justify-between">
-                  <div className="space-y-2 flex-1">
+                  <div className="space-y-3 flex-1">
                     <div className="flex items-center gap-2">
                       <span className="text-lg">{getEventTypeIcon(booking.event_type)}</span>
                       <h3 className="font-semibold capitalize">
@@ -160,6 +161,13 @@ export function BookingManagement({ talentId }: BookingManagementProps) {
                       <Badge className={getStatusColor(booking.status)}>
                         {booking.status}
                       </Badge>
+                    </div>
+                    
+                    <div className="bg-muted/30 p-3 rounded-lg">
+                      <div className="font-medium text-foreground mb-2 flex items-center gap-2">
+                        <User className="h-4 w-4" />
+                        Booker: {booking.booker_name}
+                      </div>
                     </div>
                     
                     <div className="grid md:grid-cols-2 gap-3 text-sm">
@@ -173,18 +181,24 @@ export function BookingManagement({ talentId }: BookingManagementProps) {
                       </div>
                       <div className="flex items-center gap-2">
                         <MapPin className="h-4 w-4" />
-                        <span>{booking.event_location}</span>
+                        <span className="font-medium">{booking.event_location}</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <User className="h-4 w-4" />
+                        <Mail className="h-4 w-4" />
                         <span>Requested {format(new Date(booking.created_at), 'MMM d, yyyy')}</span>
                       </div>
                     </div>
 
-                    <div className="text-sm">
-                      <p><strong>Address:</strong> {booking.event_address}</p>
+                    <div className="space-y-2">
+                      <div className="text-sm">
+                        <span className="font-medium text-foreground">Full Address:</span>
+                        <p className="text-muted-foreground mt-1">{booking.event_address}</p>
+                      </div>
                       {booking.description && (
-                        <p><strong>Description:</strong> {booking.description}</p>
+                        <div className="text-sm">
+                          <span className="font-medium text-foreground">Event Description:</span>
+                          <p className="text-muted-foreground mt-1">{booking.description}</p>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -240,7 +254,7 @@ export function BookingManagement({ talentId }: BookingManagementProps) {
               {bookings.map((booking) => (
                 <div key={booking.id} className="border rounded-lg p-4 bg-card">
                   <div className="flex items-start justify-between">
-                    <div className="space-y-2 flex-1">
+                    <div className="space-y-3 flex-1">
                       <div className="flex items-center gap-2">
                         <span className="text-lg">{getEventTypeIcon(booking.event_type)}</span>
                         <h3 className="font-semibold capitalize">
@@ -249,6 +263,13 @@ export function BookingManagement({ talentId }: BookingManagementProps) {
                         <Badge className={getStatusColor(booking.status)}>
                           {booking.status}
                         </Badge>
+                      </div>
+                      
+                      <div className="bg-muted/30 p-3 rounded-lg">
+                        <div className="font-medium text-foreground flex items-center gap-2">
+                          <User className="h-4 w-4" />
+                          Booker: {booking.booker_name}
+                        </div>
                       </div>
                       
                       <div className="grid md:grid-cols-3 gap-3 text-sm">
@@ -262,14 +283,20 @@ export function BookingManagement({ talentId }: BookingManagementProps) {
                         </div>
                         <div className="flex items-center gap-2">
                           <MapPin className="h-4 w-4" />
-                          <span>{booking.event_location}</span>
+                          <span className="font-medium">{booking.event_location}</span>
                         </div>
                       </div>
 
-                      <div className="text-sm">
-                        <p><strong>Address:</strong> {booking.event_address}</p>
+                      <div className="space-y-2">
+                        <div className="text-sm">
+                          <span className="font-medium text-foreground">Full Address:</span>
+                          <p className="text-muted-foreground mt-1">{booking.event_address}</p>
+                        </div>
                         {booking.description && (
-                          <p><strong>Description:</strong> {booking.description}</p>
+                          <div className="text-sm">
+                            <span className="font-medium text-foreground">Event Description:</span>
+                            <p className="text-muted-foreground mt-1">{booking.description}</p>
+                          </div>
                         )}
                       </div>
                     </div>
