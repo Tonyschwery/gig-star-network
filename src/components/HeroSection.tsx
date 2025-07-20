@@ -193,7 +193,7 @@ export function HeroSection() {
               <p className="text-sm text-muted-foreground">Premium talents ready to elevate your event</p>
             </div>
             
-            <div className="space-y-4 max-h-96 overflow-y-auto scrollbar-hide">
+            <div className="space-y-4">
               {featuredTalents.length > 0 ? (
                 featuredTalents.map((talent, index) => (
                   <div
@@ -263,12 +263,12 @@ function FeaturedTalentCard({ id, name, location, category, image, isPro }: Feat
             />
           </div>
           
-          {/* Pro Badge - Positioned outside the image */}
+          {/* Pro Badge - Smaller and positioned outside the image */}
           {isPro && (
-            <div className="absolute -top-2 -right-2 z-10">
-              <div className="pro-badge text-xs px-2 py-1 rounded-full shadow-lg flex items-center gap-1 animate-scale-in">
-                <Crown className="h-3 w-3" />
-                <span className="font-semibold">PRO</span>
+            <div className="absolute -top-1 -right-1 z-10">
+              <div className="pro-badge text-[10px] px-1.5 py-0.5 rounded-full shadow-md flex items-center gap-0.5 animate-scale-in">
+                <Crown className="h-2.5 w-2.5" />
+                <span className="font-bold">PRO</span>
               </div>
             </div>
           )}
