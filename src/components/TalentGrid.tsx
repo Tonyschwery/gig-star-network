@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -242,6 +242,8 @@ interface TalentCardProps {
 }
 
 function TalentCard({ talent }: TalentCardProps) {
+  const navigate = useNavigate();
+  
   const getActIcon = (act: string) => {
     switch (act.toLowerCase()) {
       case 'dj':
@@ -285,7 +287,7 @@ function TalentCard({ talent }: TalentCardProps) {
   return (
     <Card 
       className="overflow-hidden glass-card hover:shadow-elevated transition-all duration-300 hover:scale-105 group cursor-pointer"
-      onClick={() => window.location.href = `/talent/${talent.id}`}
+      onClick={() => navigate(`/talent/${talent.id}`)}
     >
       <div className="relative">
         <img 
@@ -347,7 +349,7 @@ function TalentCard({ talent }: TalentCardProps) {
           className="w-full"
           onClick={(e) => {
             e.stopPropagation();
-            window.location.href = `/talent/${talent.id}`;
+            navigate(`/talent/${talent.id}`);
           }}
         >
           View Profile
