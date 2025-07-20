@@ -20,7 +20,7 @@ interface TalentProfile {
   soundcloud_link?: string;
   youtube_link?: string;
   biography: string;
-  country_of_residence: string;
+  nationality: string;
   created_at: string;
 }
 

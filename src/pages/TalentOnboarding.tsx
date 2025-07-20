@@ -176,7 +176,7 @@ export default function TalentOnboarding() {
           youtube_link: formData.youtubeLink || null,
           biography: formData.biography,
           age: parseInt(formData.age),
-          country_of_residence: formData.countryOfResidence,
+          nationality: formData.countryOfResidence,
           rate_per_hour: parseFloat(formData.ratePerHour),
           currency: formData.currency,
           location: formData.location

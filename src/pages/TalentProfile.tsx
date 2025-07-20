@@ -36,7 +36,7 @@ interface TalentProfile {
   soundcloud_link?: string;
   youtube_link?: string;
   biography: string;
-  country_of_residence: string;
+  nationality: string;
   created_at: string;
 }
 
@@ -345,8 +345,8 @@ export default function TalentProfile() {
                     <span>{talent.gender}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Country:</span>
-                    <span>{talent.country_of_residence}</span>
+                    <span className="text-muted-foreground">Nationality:</span>
+                    <span>{talent.nationality}</span>
                   </div>
                   <Separator />
                   <div className="flex items-center space-x-1">

@@ -20,7 +20,6 @@ export type Database = {
           age: number
           artist_name: string
           biography: string
-          country_of_residence: string
           created_at: string
           currency: string | null
           custom_genre: string | null
@@ -28,6 +27,7 @@ export type Database = {
           id: string
           location: string | null
           music_genres: string[]
+          nationality: string
           picture_url: string | null
           rate_per_hour: number | null
           soundcloud_link: string | null
@@ -40,7 +40,6 @@ export type Database = {
           age: number
           artist_name: string
           biography: string
-          country_of_residence: string
           created_at?: string
           currency?: string | null
           custom_genre?: string | null
@@ -48,6 +47,7 @@ export type Database = {
           id?: string
           location?: string | null
           music_genres?: string[]
+          nationality: string
           picture_url?: string | null
           rate_per_hour?: number | null
           soundcloud_link?: string | null
@@ -60,7 +60,6 @@ export type Database = {
           age?: number
           artist_name?: string
           biography?: string
-          country_of_residence?: string
           created_at?: string
           currency?: string | null
           custom_genre?: string | null
@@ -68,6 +67,7 @@ export type Database = {
           id?: string
           location?: string | null
           music_genres?: string[]
+          nationality?: string
           picture_url?: string | null
           rate_per_hour?: number | null
           soundcloud_link?: string | null

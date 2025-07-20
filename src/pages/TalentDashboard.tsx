@@ -5,9 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { countries, musicGenres, actTypes } from "@/lib/countries";
 import { 
   User, 
   Edit3, 
@@ -17,7 +21,9 @@ import {
   Music, 
   ExternalLink,
   LogOut,
-  Camera
+  Camera,
+  X,
+  Plus
 } from "lucide-react";
 
 interface TalentProfile {
@@ -35,7 +41,7 @@ interface TalentProfile {
   soundcloud_link?: string;
   youtube_link?: string;
   biography: string;
-  country_of_residence: string;
+  nationality: string;
   created_at: string;
 }
 
@@ -47,6 +53,16 @@ const TalentDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
+  const [customGenre, setCustomGenre] = useState('');
+
+  // Initialize selected genres when profile loads
+  useEffect(() => {
+    if (profile) {
+      setSelectedGenres(profile.music_genres || []);
+      setCustomGenre(profile.custom_genre || '');
+    }
+  }, [profile]);
 
   useEffect(() => {
     if (!user) {
@@ -137,13 +153,32 @@ const TalentDashboard = () => {
     }
   };
 
+  const handleGenreToggle = (genre: string) => {
+    setSelectedGenres(prev => 
+      prev.includes(genre) 
+        ? prev.filter(g => g !== genre)
+        : [...prev, genre]
+    );
+  };
+
   const handleSaveProfile = async () => {
     if (!profile || !user) return;
 
     try {
+      // Prepare music genres array
+      const allGenres = [...selectedGenres];
+      if (customGenre.trim()) {
+        allGenres.push(customGenre.trim());
+      }
+
       const { error } = await supabase
         .from('talent_profiles')
         .update({
+          act: profile.act as any,
+          location: profile.location,
+          nationality: profile.nationality,
+          music_genres: allGenres,
+          custom_genre: customGenre.trim() || null,
           soundcloud_link: profile.soundcloud_link,
           youtube_link: profile.youtube_link,
           biography: profile.biography,
@@ -154,6 +189,13 @@ const TalentDashboard = () => {
       if (error) {
         throw error;
       }
+
+      // Update local profile state
+      setProfile({
+        ...profile,
+        music_genres: allGenres,
+        custom_genre: customGenre.trim() || undefined
+      });
 
       setIsEditing(false);
       toast({
@@ -272,25 +314,74 @@ const TalentDashboard = () => {
                 </Button>
               </div>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-6">
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-medium">Artist Name</label>
+                  <Label className="text-sm font-medium">Artist Name</Label>
                   <div className="p-2 bg-muted rounded">{profile.artist_name}</div>
                 </div>
                 <div>
-                  <label className="text-sm font-medium">Act Type</label>
-                  <div className="p-2 bg-muted rounded">{profile.act}</div>
+                  <Label className="text-sm font-medium">Act Type</Label>
+                  {isEditing ? (
+                    <Select value={profile.act} onValueChange={(value) => setProfile({ ...profile, act: value })}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {actTypes.map((act) => (
+                          <SelectItem key={act} value={act.toLowerCase()}>
+                            {act}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <div className="p-2 bg-muted rounded capitalize">{profile.act}</div>
+                  )}
                 </div>
                 <div>
-                  <label className="text-sm font-medium">Location</label>
-                  <div className="p-2 bg-muted rounded flex items-center">
-                    <MapPin className="h-4 w-4 mr-1" />
-                    {profile.location || 'Not specified'}
-                  </div>
+                  <Label className="text-sm font-medium">Location (Where you're available)</Label>
+                  {isEditing ? (
+                    <Select value={profile.location || ''} onValueChange={(value) => setProfile({ ...profile, location: value })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select location" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {countries.map((country) => (
+                          <SelectItem key={country.code} value={country.name}>
+                            {country.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <div className="p-2 bg-muted rounded flex items-center">
+                      <MapPin className="h-4 w-4 mr-1" />
+                      {profile.location || 'Not specified'}
+                    </div>
+                  )}
                 </div>
                 <div>
-                  <label className="text-sm font-medium">Rate per Hour</label>
+                  <Label className="text-sm font-medium">Nationality</Label>
+                  {isEditing ? (
+                    <Select value={profile.nationality || ''} onValueChange={(value) => setProfile({ ...profile, nationality: value })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select nationality" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {countries.map((country) => (
+                          <SelectItem key={country.code} value={country.name}>
+                            {country.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <div className="p-2 bg-muted rounded">{profile.nationality}</div>
+                  )}
+                </div>
+                <div className="md:col-span-2">
+                  <Label className="text-sm font-medium">Rate per Hour</Label>
                   {isEditing ? (
                     <Input
                       type="number"
@@ -311,21 +402,47 @@ const TalentDashboard = () => {
               </div>
 
               <div>
-                <label className="text-sm font-medium">Music Genres</label>
-                <div className="flex flex-wrap gap-1 mt-1">
-                  {profile.music_genres.map((genre) => (
-                    <Badge key={genre} variant="secondary">
-                      {genre}
-                    </Badge>
-                  ))}
-                  {profile.custom_genre && (
-                    <Badge variant="secondary">{profile.custom_genre}</Badge>
-                  )}
-                </div>
+                <Label className="text-sm font-medium">Music Genres</Label>
+                {isEditing ? (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                      {musicGenres.map((genre) => (
+                        <div key={genre} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={genre}
+                            checked={selectedGenres.includes(genre)}
+                            onCheckedChange={() => handleGenreToggle(genre)}
+                          />
+                          <Label htmlFor={genre} className="text-sm">{genre}</Label>
+                        </div>
+                      ))}
+                    </div>
+                    <div>
+                      <Label htmlFor="customGenre" className="text-sm font-medium">Custom Genre</Label>
+                      <Input
+                        id="customGenre"
+                        value={customGenre}
+                        onChange={(e) => setCustomGenre(e.target.value)}
+                        placeholder="Add your own genre"
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {profile.music_genres.map((genre) => (
+                      <Badge key={genre} variant="secondary">
+                        {genre}
+                      </Badge>
+                    ))}
+                    {profile.custom_genre && (
+                      <Badge variant="secondary">{profile.custom_genre}</Badge>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div>
-                <label className="text-sm font-medium">Biography</label>
+                <Label className="text-sm font-medium">Biography</Label>
                 {isEditing ? (
                   <Textarea
                     value={profile.biography}
@@ -339,7 +456,7 @@ const TalentDashboard = () => {
 
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-medium">SoundCloud Link</label>
+                  <Label className="text-sm font-medium">SoundCloud Link</Label>
                   {isEditing ? (
                     <Input
                       value={profile.soundcloud_link || ''}
@@ -359,7 +476,7 @@ const TalentDashboard = () => {
                   )}
                 </div>
                 <div>
-                  <label className="text-sm font-medium">YouTube Link</label>
+                  <Label className="text-sm font-medium">YouTube Link</Label>
                   {isEditing ? (
                     <Input
                       value={profile.youtube_link || ''}
