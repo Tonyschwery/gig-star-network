@@ -2,16 +2,49 @@ import { Button } from "@/components/ui/button";
 import { Search, User, Menu, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 export function Header() {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
+  const [talentName, setTalentName] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (user) {
+      fetchTalentProfile();
+    } else {
+      setTalentName(null);
+    }
+  }, [user]);
+
+  const fetchTalentProfile = async () => {
+    if (!user) return;
+
+    try {
+      const { data } = await supabase
+        .from('talent_profiles')
+        .select('artist_name')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      setTalentName(data?.artist_name || null);
+    } catch (error) {
+      console.error('Error fetching talent profile:', error);
+    }
+  };
 
   const handleAuthAction = () => {
     if (user) {
       signOut();
     } else {
       navigate("/auth");
+    }
+  };
+
+  const handleWelcomeClick = () => {
+    if (talentName) {
+      navigate("/talent-dashboard");
     }
   };
 
@@ -65,8 +98,11 @@ export function Header() {
             
             {user ? (
               <div className="flex items-center space-x-2">
-                <span className="text-sm text-muted-foreground hidden sm:block">
-                  Welcome, {user.user_metadata?.name || user.email}
+                <span 
+                  className={`text-sm text-muted-foreground hidden sm:block ${talentName ? 'cursor-pointer hover:text-primary transition-colors' : ''}`}
+                  onClick={handleWelcomeClick}
+                >
+                  Welcome, {talentName || user.user_metadata?.name || user.email}
                 </span>
                 <Button 
                   variant="outline" 
