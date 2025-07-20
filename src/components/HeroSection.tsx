@@ -55,7 +55,11 @@ export function HeroSection() {
                 <div className="flex items-end">
                   <Button 
                     className="w-full hero-button"
-                    onClick={() => console.log('Find Talent clicked')}
+                    onClick={() => {
+                      document.getElementById('talents')?.scrollIntoView({ 
+                        behavior: 'smooth' 
+                      });
+                    }}
                   >
                     <Search className="h-4 w-4 mr-2" />
                     Find Talent

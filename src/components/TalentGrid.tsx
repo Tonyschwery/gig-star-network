@@ -1,66 +1,112 @@
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Star, MapPin, Music, Mic, Camera, Brush } from "lucide-react";
+import { Star, MapPin, Music, Mic, Camera, Brush, User } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+
+interface TalentProfile {
+  id: string;
+  artist_name: string;
+  act: string;
+  gender: string;
+  age: number;
+  location: string;
+  rate_per_hour: number;
+  currency: string;
+  music_genres: string[];
+  custom_genre?: string;
+  picture_url?: string;
+  soundcloud_link?: string;
+  youtube_link?: string;
+  biography: string;
+  country_of_residence: string;
+  created_at: string;
+}
 
 export function TalentGrid() {
-  const talents = [
-    {
-      id: 1,
-      name: "Emma Wilson",
-      category: "Wedding Singer",
-      location: "Chicago, IL",
-      rating: 4.9,
-      reviews: 127,
-      startingPrice: 450,
-      image: "/placeholder.svg",
-      isPro: true,
-      tags: ["Jazz", "Pop", "Classical"],
-      icon: <Mic className="h-4 w-4" />
-    },
-    {
-      id: 2,
-      name: "DJ Marcus",
-      category: "Electronic DJ",
-      location: "Miami, FL",
-      rating: 4.8,
-      reviews: 89,
-      startingPrice: 350,
-      image: "/placeholder.svg",
-      isPro: false,
-      tags: ["House", "Techno", "EDM"],
-      icon: <Music className="h-4 w-4" />
-    },
-    {
-      id: 3,
-      name: "Lisa Chen",
-      category: "Event Photographer",
-      location: "San Francisco, CA",
-      rating: 5.0,
-      reviews: 203,
-      startingPrice: 800,
-      image: "/placeholder.svg",
-      isPro: true,
-      tags: ["Wedding", "Corporate", "Portrait"],
-      icon: <Camera className="h-4 w-4" />
-    },
-    {
-      id: 4,
-      name: "Alex Rivera",
-      category: "Live Painter",
-      location: "Austin, TX",
-      rating: 4.7,
-      reviews: 45,
-      startingPrice: 600,
-      image: "/placeholder.svg",
-      isPro: false,
-      tags: ["Live Art", "Portraits", "Abstract"],
-      icon: <Brush className="h-4 w-4" />
+  const [talents, setTalents] = useState<TalentProfile[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchTalents();
+    
+    // Set up real-time subscription for new talents
+    const subscription = supabase
+      .channel('talent_profiles_changes')
+      .on('postgres_changes', { 
+        event: 'INSERT', 
+        schema: 'public', 
+        table: 'talent_profiles' 
+      }, () => {
+        fetchTalents(); // Refresh the list when new talent is added
+      })
+      .subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  const fetchTalents = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('talent_profiles')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching talents:', error);
+        return;
+      }
+
+      setTalents(data || []);
+    } catch (error) {
+      console.error('Error:', error);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
+
+  const getActIcon = (act: string) => {
+    switch (act.toLowerCase()) {
+      case 'dj':
+        return <Music className="h-4 w-4" />;
+      case 'singer':
+        return <Mic className="h-4 w-4" />;
+      case 'band':
+        return <Music className="h-4 w-4" />;
+      case 'saxophonist':
+      case 'keyboardist':
+      case 'drummer':
+      case 'percussionist':
+        return <Music className="h-4 w-4" />;
+      default:
+        return <User className="h-4 w-4" />;
+    }
+  };
+
+  const formatAct = (act: string) => {
+    return act.charAt(0).toUpperCase() + act.slice(1);
+  };
+
+  if (loading) {
+    return (
+      <section className="py-24">
+        <div className="container mx-auto px-4">
+          <div className="text-center">
+            <div className="animate-pulse">
+              <div className="h-8 bg-muted rounded w-1/3 mx-auto mb-4"></div>
+              <div className="h-4 bg-muted rounded w-1/2 mx-auto"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
-    <section className="py-24">
+    <section className="py-24" id="talents">
       <div className="container mx-auto px-4">
         <div className="text-center mb-16">
           <h2 className="text-4xl font-bold mb-4">Featured Talents</h2>
@@ -69,11 +115,17 @@ export function TalentGrid() {
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {talents.map((talent) => (
-            <TalentCard key={talent.id} talent={talent} />
-          ))}
-        </div>
+        {talents.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">No talents available yet. Be the first to join our community!</p>
+          </div>
+        ) : (
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {talents.map((talent) => (
+              <TalentCard key={talent.id} talent={talent} />
+            ))}
+          </div>
+        )}
 
         <div className="text-center mt-12">
           <Button className="hero-button">
@@ -86,44 +138,67 @@ export function TalentGrid() {
 }
 
 interface TalentCardProps {
-  talent: {
-    id: number;
-    name: string;
-    category: string;
-    location: string;
-    rating: number;
-    reviews: number;
-    startingPrice: number;
-    image: string;
-    isPro: boolean;
-    tags: string[];
-    icon: React.ReactNode;
-  };
+  talent: TalentProfile;
 }
 
 function TalentCard({ talent }: TalentCardProps) {
+  const getActIcon = (act: string) => {
+    switch (act.toLowerCase()) {
+      case 'dj':
+        return <Music className="h-4 w-4" />;
+      case 'singer':
+        return <Mic className="h-4 w-4" />;
+      case 'band':
+        return <Music className="h-4 w-4" />;
+      case 'saxophonist':
+      case 'keyboardist':
+      case 'drummer':
+      case 'percussionist':
+        return <Music className="h-4 w-4" />;
+      default:
+        return <User className="h-4 w-4" />;
+    }
+  };
+
+  const formatAct = (act: string) => {
+    return act.charAt(0).toUpperCase() + act.slice(1);
+  };
+
+  const getCurrencySymbol = (currency: string) => {
+    const symbols: Record<string, string> = {
+      'USD': '$',
+      'EUR': '€',
+      'GBP': '£',
+      'AED': 'د.إ',
+      'SAR': 'ر.س',
+      'QAR': 'ر.ق',
+      'KWD': 'د.ك',
+      'BHD': '.د.ب',
+      'OMR': 'ر.ع.',
+      'JOD': 'د.ا',
+      'LBP': 'ل.ل',
+      'EGP': 'ج.م'
+    };
+    return symbols[currency] || currency;
+  };
+
   return (
     <Card className="overflow-hidden glass-card hover:shadow-elevated transition-all duration-300 hover:scale-105 group">
       <div className="relative">
         <img 
-          src={talent.image} 
-          alt={talent.name}
+          src={talent.picture_url || "/placeholder.svg"} 
+          alt={talent.artist_name}
           className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-500"
         />
-        {talent.isPro && (
-          <div className="absolute top-3 right-3 pro-badge">
-            PRO
-          </div>
-        )}
         <div className="absolute top-3 left-3 flex items-center space-x-1 bg-black/50 backdrop-blur-sm rounded-lg px-2 py-1">
-          {talent.icon}
-          <span className="text-xs text-white">{talent.category}</span>
+          {getActIcon(talent.act)}
+          <span className="text-xs text-white">{formatAct(talent.act)}</span>
         </div>
       </div>
       
       <div className="p-4 space-y-3">
         <div>
-          <h3 className="font-semibold text-lg">{talent.name}</h3>
+          <h3 className="font-semibold text-lg">{talent.artist_name}</h3>
           <div className="flex items-center space-x-1 text-sm text-muted-foreground">
             <MapPin className="h-3 w-3" />
             <span>{talent.location}</span>
@@ -131,26 +206,28 @@ function TalentCard({ talent }: TalentCardProps) {
         </div>
 
         <div className="flex flex-wrap gap-1">
-          {talent.tags.map((tag) => (
-            <Badge key={tag} variant="secondary" className="text-xs">
-              {tag}
+          {talent.music_genres.map((genre) => (
+            <Badge key={genre} variant="secondary" className="text-xs">
+              {genre}
             </Badge>
           ))}
+          {talent.custom_genre && (
+            <Badge variant="secondary" className="text-xs">
+              {talent.custom_genre}
+            </Badge>
+          )}
         </div>
 
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-1">
             <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-            <span className="text-sm font-medium">{talent.rating}</span>
-            <span className="text-xs text-muted-foreground">
-              ({talent.reviews})
-            </span>
+            <span className="text-sm font-medium">New</span>
           </div>
           <div className="text-right">
             <div className="text-lg font-bold text-brand-primary">
-              ${talent.startingPrice}
+              {getCurrencySymbol(talent.currency)}{talent.rate_per_hour}
             </div>
-            <div className="text-xs text-muted-foreground">starting from</div>
+            <div className="text-xs text-muted-foreground">per hour</div>
           </div>
         </div>
 
