@@ -29,6 +29,7 @@ import {
   Crown
 } from "lucide-react";
 import { ProSubscriptionDialog } from "@/components/ProSubscriptionDialog";
+import { BookingManagement } from "@/components/BookingManagement";
 
 interface TalentProfile {
   id: string;
@@ -341,6 +342,11 @@ const TalentDashboard = () => {
               Sign Out
             </Button>
           </div>
+        </div>
+
+        {/* Booking Management Section */}
+        <div className="mb-8">
+          <BookingManagement talentId={profile.id} />
         </div>
 
         <div className="grid md:grid-cols-3 gap-6">
