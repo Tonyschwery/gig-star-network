@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./hooks/useAuth";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
+import BookerAuth from "./pages/BookerAuth";
 import TalentOnboarding from "./pages/TalentOnboarding";
 import TalentProfile from "./pages/TalentProfile";
 import TalentDashboard from "./pages/TalentDashboard";
@@ -24,6 +25,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/booker-auth" element={<BookerAuth />} />
             <Route path="/talent-onboarding" element={<TalentOnboarding />} />
             <Route path="/talent/:id" element={<TalentProfile />} />
             <Route path="/talent-dashboard" element={<TalentDashboard />} />

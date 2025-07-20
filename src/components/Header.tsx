@@ -38,7 +38,7 @@ export function Header() {
     if (user) {
       signOut();
     } else {
-      navigate("/auth");
+      navigate("/booker-auth");
     }
   };
 
