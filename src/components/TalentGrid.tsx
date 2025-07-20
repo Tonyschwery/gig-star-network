@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Star, MapPin, Music, Mic, Camera, Brush, User } from "lucide-react";
+import { Star, MapPin, Music, Mic, Camera, Brush, User, Filter, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface TalentProfile {
@@ -25,8 +26,15 @@ interface TalentProfile {
 }
 
 export function TalentGrid() {
+  const [searchParams] = useSearchParams();
   const [talents, setTalents] = useState<TalentProfile[]>([]);
+  const [filteredTalents, setFilteredTalents] = useState<TalentProfile[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeFilters, setActiveFilters] = useState({
+    location: searchParams.get('location') || '',
+    date: searchParams.get('date') || '',
+    type: searchParams.get('type') || ''
+  });
 
   useEffect(() => {
     fetchTalents();
@@ -48,6 +56,20 @@ export function TalentGrid() {
     };
   }, []);
 
+  // Update filters when URL parameters change
+  useEffect(() => {
+    setActiveFilters({
+      location: searchParams.get('location') || '',
+      date: searchParams.get('date') || '',
+      type: searchParams.get('type') || ''
+    });
+  }, [searchParams]);
+
+  // Apply filters whenever talents or filters change
+  useEffect(() => {
+    applyFilters();
+  }, [talents, activeFilters]);
+
   const fetchTalents = async () => {
     try {
       const { data, error } = await supabase
@@ -68,37 +90,52 @@ export function TalentGrid() {
     }
   };
 
-  const getActIcon = (act: string) => {
-    switch (act.toLowerCase()) {
-      case 'dj':
-        return <Music className="h-4 w-4" />;
-      case 'singer':
-        return <Mic className="h-4 w-4" />;
-      case 'band':
-        return <Music className="h-4 w-4" />;
-      case 'saxophonist':
-      case 'keyboardist':
-      case 'drummer':
-      case 'percussionist':
-        return <Music className="h-4 w-4" />;
-      default:
-        return <User className="h-4 w-4" />;
+  const applyFilters = () => {
+    let filtered = [...talents];
+
+    // Filter by location
+    if (activeFilters.location) {
+      const locationQuery = activeFilters.location.toLowerCase();
+      filtered = filtered.filter(talent => 
+        talent.location?.toLowerCase().includes(locationQuery) ||
+        talent.nationality?.toLowerCase().includes(locationQuery)
+      );
     }
+
+    // Filter by talent type
+    if (activeFilters.type) {
+      filtered = filtered.filter(talent => 
+        talent.act.toLowerCase() === activeFilters.type.toLowerCase()
+      );
+    }
+
+    // Note: Date filtering would require additional booking system integration
+    // For now, we'll show all talents regardless of date
+
+    setFilteredTalents(filtered);
   };
 
-  const formatAct = (act: string) => {
-    return act.charAt(0).toUpperCase() + act.slice(1);
+  const clearFilters = () => {
+    window.history.pushState({}, '', window.location.pathname);
+    setActiveFilters({ location: '', date: '', type: '' });
   };
+
+  const hasActiveFilters = activeFilters.location || activeFilters.date || activeFilters.type;
+  const talentsToShow = hasActiveFilters ? filteredTalents : talents;
 
   if (loading) {
     return (
-      <section className="py-24">
+      <section id="talents" className="py-16 bg-muted/30">
         <div className="container mx-auto px-4">
-          <div className="text-center">
-            <div className="animate-pulse">
-              <div className="h-8 bg-muted rounded w-1/3 mx-auto mb-4"></div>
-              <div className="h-4 bg-muted rounded w-1/2 mx-auto"></div>
-            </div>
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold mb-4">Loading Amazing Talent...</h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="animate-pulse">
+                <div className="bg-muted rounded-lg h-64"></div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -106,32 +143,85 @@ export function TalentGrid() {
   }
 
   return (
-    <section className="py-24" id="talents">
+    <section id="talents" className="py-16 bg-muted/30">
       <div className="container mx-auto px-4">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold mb-4">Featured Talents</h2>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Discover amazing performers and creators ready to make your event unforgettable
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-bold mb-4">
+            {hasActiveFilters ? 'Search Results' : 'Amazing Talent Ready to Perform'}
+          </h2>
+          <p className="text-muted-foreground max-w-2xl mx-auto">
+            {hasActiveFilters 
+              ? `Found ${talentsToShow.length} talent${talentsToShow.length !== 1 ? 's' : ''} matching your criteria`
+              : 'Browse through our curated selection of professional performers'
+            }
           </p>
+          
+          {/* Active Filters Display */}
+          {hasActiveFilters && (
+            <div className="flex flex-wrap items-center justify-center gap-2 mt-4">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Filter className="h-4 w-4" />
+                <span>Active filters:</span>
+              </div>
+              
+              {activeFilters.location && (
+                <Badge variant="secondary" className="gap-1">
+                  Location: {activeFilters.location}
+                </Badge>
+              )}
+              
+              {activeFilters.date && (
+                <Badge variant="secondary" className="gap-1">
+                  Date: {new Date(activeFilters.date).toLocaleDateString()}
+                </Badge>
+              )}
+              
+              {activeFilters.type && (
+                <Badge variant="secondary" className="gap-1">
+                  Type: {activeFilters.type.charAt(0).toUpperCase() + activeFilters.type.slice(1)}
+                </Badge>
+              )}
+              
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearFilters}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-3 w-3 mr-1" />
+                Clear all
+              </Button>
+            </div>
+          )}
         </div>
 
-        {talents.length === 0 ? (
+        {talentsToShow.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-muted-foreground">No talents available yet. Be the first to join our community!</p>
+            <div className="w-24 h-24 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+              <Music className="h-12 w-12 text-muted-foreground" />
+            </div>
+            <h3 className="text-xl font-semibold mb-2">
+              {hasActiveFilters ? 'No talents found' : 'No talents available yet'}
+            </h3>
+            <p className="text-muted-foreground mb-4">
+              {hasActiveFilters 
+                ? 'Try adjusting your search criteria to find more talents'
+                : 'Check back soon for amazing performers!'
+              }
+            </p>
+            {hasActiveFilters && (
+              <Button onClick={clearFilters} variant="outline">
+                View All Talents
+              </Button>
+            )}
           </div>
         ) : (
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {talents.map((talent) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {talentsToShow.map((talent) => (
               <TalentCard key={talent.id} talent={talent} />
             ))}
           </div>
         )}
-
-        <div className="text-center mt-12">
-          <Button className="hero-button">
-            View All Talents
-          </Button>
-        </div>
       </div>
     </section>
   );

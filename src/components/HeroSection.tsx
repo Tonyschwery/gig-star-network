@@ -1,9 +1,52 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { Star, MapPin, Search, Calendar } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Star, MapPin, Search, Calendar, Music } from "lucide-react";
+
+const talentTypes = [
+  { value: 'all', label: 'All Talent Types' },
+  { value: 'dj', label: 'DJ' },
+  { value: 'singer', label: 'Singer' },
+  { value: 'band', label: 'Band' },
+  { value: 'saxophonist', label: 'Saxophonist' },
+  { value: 'keyboardist', label: 'Keyboardist' },
+  { value: 'drummer', label: 'Drummer' },
+  { value: 'percussionist', label: 'Percussionist' },
+  { value: 'guitarist', label: 'Guitarist' },
+  { value: 'violinist', label: 'Violinist' },
+  { value: 'other', label: 'Other' }
+];
 
 export function HeroSection() {
+  const navigate = useNavigate();
+  const [searchFilters, setSearchFilters] = useState({
+    location: '',
+    eventDate: '',
+    talentType: 'all'
+  });
+
+  const handleSearch = () => {
+    // Create URL parameters for search
+    const params = new URLSearchParams();
+    if (searchFilters.location) params.set('location', searchFilters.location);
+    if (searchFilters.eventDate) params.set('date', searchFilters.eventDate);
+    if (searchFilters.talentType && searchFilters.talentType !== 'all') {
+      params.set('type', searchFilters.talentType);
+    }
+
+    // Navigate to search results or scroll to talents section
+    if (params.toString()) {
+      navigate(`/?${params.toString()}#talents`);
+    } else {
+      document.getElementById('talents')?.scrollIntoView({ 
+        behavior: 'smooth' 
+      });
+    }
+  };
+
   return (
     <section className="relative min-h-screen flex items-center justify-center pt-24 pb-16">
       {/* Background Gradient */}
@@ -29,7 +72,7 @@ export function HeroSection() {
 
             {/* Search Form */}
             <Card className="p-6 glass-card">
-              <div className="grid md:grid-cols-3 gap-4">
+              <div className="grid md:grid-cols-4 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-muted-foreground">LOCATION</label>
                   <div className="relative">
@@ -37,6 +80,8 @@ export function HeroSection() {
                     <Input 
                       placeholder="Where is the event?" 
                       className="pl-10 bg-input border-border"
+                      value={searchFilters.location}
+                      onChange={(e) => setSearchFilters(prev => ({ ...prev, location: e.target.value }))}
                     />
                   </div>
                 </div>
@@ -46,20 +91,41 @@ export function HeroSection() {
                   <div className="relative">
                     <Calendar className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input 
+                      type="date"
                       placeholder="Event date" 
                       className="pl-10 bg-input border-border"
+                      value={searchFilters.eventDate}
+                      onChange={(e) => setSearchFilters(prev => ({ ...prev, eventDate: e.target.value }))}
                     />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-muted-foreground">TALENT TYPE</label>
+                  <div className="relative">
+                    <Music className="absolute left-3 top-3 h-4 w-4 text-muted-foreground z-10" />
+                    <Select 
+                      value={searchFilters.talentType} 
+                      onValueChange={(value) => setSearchFilters(prev => ({ ...prev, talentType: value }))}
+                    >
+                      <SelectTrigger className="pl-10 bg-input border-border">
+                        <SelectValue placeholder="Select talent type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {talentTypes.map((type) => (
+                          <SelectItem key={type.value} value={type.value}>
+                            {type.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
                 
                 <div className="flex items-end">
                   <Button 
                     className="w-full hero-button"
-                    onClick={() => {
-                      document.getElementById('talents')?.scrollIntoView({ 
-                        behavior: 'smooth' 
-                      });
-                    }}
+                    onClick={handleSearch}
                   >
                     <Search className="h-4 w-4 mr-2" />
                     Find Talent
