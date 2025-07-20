@@ -38,6 +38,21 @@ const ACTS = [
   { value: 'drummer', label: 'Drummer' }
 ];
 
+const CURRENCIES = [
+  { value: 'USD', label: 'USD ($)' },
+  { value: 'EUR', label: 'EUR (€)' },
+  { value: 'GBP', label: 'GBP (£)' },
+  { value: 'AED', label: 'AED (د.إ)' },
+  { value: 'SAR', label: 'SAR (ر.س)' },
+  { value: 'QAR', label: 'QAR (ر.ق)' },
+  { value: 'KWD', label: 'KWD (د.ك)' },
+  { value: 'BHD', label: 'BHD (.د.ب)' },
+  { value: 'OMR', label: 'OMR (ر.ع.)' },
+  { value: 'JOD', label: 'JOD (د.ا)' },
+  { value: 'LBP', label: 'LBP (ل.ل)' },
+  { value: 'EGP', label: 'EGP (ج.م)' }
+];
+
 export default function TalentOnboarding() {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -53,7 +68,10 @@ export default function TalentOnboarding() {
     youtubeLink: '',
     biography: '',
     age: '',
-    countryOfResidence: ''
+    countryOfResidence: '',
+    ratePerHour: '',
+    currency: 'USD',
+    location: ''
   });
 
   const handleGenreChange = (genre: string, checked: boolean) => {
@@ -158,7 +176,10 @@ export default function TalentOnboarding() {
           youtube_link: formData.youtubeLink || null,
           biography: formData.biography,
           age: parseInt(formData.age),
-          country_of_residence: formData.countryOfResidence
+          country_of_residence: formData.countryOfResidence,
+          rate_per_hour: parseFloat(formData.ratePerHour),
+          currency: formData.currency,
+          location: formData.location
         });
 
       if (error) {
@@ -353,10 +374,54 @@ export default function TalentOnboarding() {
               </div>
             </div>
 
+            {/* Rate and Currency */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="rate">Rate per Hour *</Label>
+                <Input
+                  id="rate"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="100.00"
+                  value={formData.ratePerHour}
+                  onChange={(e) => setFormData(prev => ({ ...prev, ratePerHour: e.target.value }))}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Currency *</Label>
+                <Select value={formData.currency} onValueChange={(value) => setFormData(prev => ({ ...prev, currency: value }))}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select currency" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CURRENCIES.map((currency) => (
+                      <SelectItem key={currency.value} value={currency.value}>
+                        {currency.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Location */}
+            <div className="space-y-2">
+              <Label htmlFor="location">Location *</Label>
+              <Input
+                id="location"
+                placeholder="City, Country (e.g., Dubai, UAE)"
+                value={formData.location}
+                onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
+                required
+              />
+            </div>
+
             <Button 
               type="submit" 
               className="w-full" 
-              disabled={loading || !formData.artistName || !formData.act || !formData.gender || formData.musicGenres.length === 0 || !formData.biography || !formData.age || !formData.countryOfResidence || !pictureFile}
+              disabled={loading || !formData.artistName || !formData.act || !formData.gender || formData.musicGenres.length === 0 || !formData.biography || !formData.age || !formData.countryOfResidence || !formData.ratePerHour || !formData.location || !pictureFile}
             >
               {loading ? "Creating Profile..." : "Complete Profile"}
             </Button>

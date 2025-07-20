@@ -22,11 +22,14 @@ export type Database = {
           biography: string
           country_of_residence: string
           created_at: string
+          currency: string | null
           custom_genre: string | null
           gender: Database["public"]["Enums"]["talent_gender"]
           id: string
+          location: string | null
           music_genres: string[]
           picture_url: string | null
+          rate_per_hour: number | null
           soundcloud_link: string | null
           updated_at: string
           user_id: string
@@ -39,11 +42,14 @@ export type Database = {
           biography: string
           country_of_residence: string
           created_at?: string
+          currency?: string | null
           custom_genre?: string | null
           gender: Database["public"]["Enums"]["talent_gender"]
           id?: string
+          location?: string | null
           music_genres?: string[]
           picture_url?: string | null
+          rate_per_hour?: number | null
           soundcloud_link?: string | null
           updated_at?: string
           user_id: string
@@ -56,11 +62,14 @@ export type Database = {
           biography?: string
           country_of_residence?: string
           created_at?: string
+          currency?: string | null
           custom_genre?: string | null
           gender?: Database["public"]["Enums"]["talent_gender"]
           id?: string
+          location?: string | null
           music_genres?: string[]
           picture_url?: string | null
+          rate_per_hour?: number | null
           soundcloud_link?: string | null
           updated_at?: string
           user_id?: string
