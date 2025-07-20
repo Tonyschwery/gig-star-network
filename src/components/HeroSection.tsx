@@ -73,9 +73,9 @@ export function HeroSection() {
                 Find <span className="gradient-text">Amazing Talent</span> for your event
               </h1>
               
-              <p className="text-xl text-muted-foreground max-w-lg">
-                GCC Talents is the easiest way to book great artists, musicians, performers and creators for your event. Start by telling us about your event.
-              </p>
+               <p className="text-xl text-muted-foreground max-w-lg">
+                 GCC Talents is the easiest way to book great artists, musicians, performers and creators for your event. Start by telling us about your event.
+               </p>
             </div>
 
             {/* Search Form */}
