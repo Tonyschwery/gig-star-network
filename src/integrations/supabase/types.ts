@@ -14,7 +14,60 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      talent_profiles: {
+        Row: {
+          act: Database["public"]["Enums"]["talent_act"]
+          age: number
+          artist_name: string
+          biography: string
+          country_of_residence: string
+          created_at: string
+          custom_genre: string | null
+          gender: Database["public"]["Enums"]["talent_gender"]
+          id: string
+          music_genres: string[]
+          picture_url: string | null
+          soundcloud_link: string | null
+          updated_at: string
+          user_id: string
+          youtube_link: string | null
+        }
+        Insert: {
+          act: Database["public"]["Enums"]["talent_act"]
+          age: number
+          artist_name: string
+          biography: string
+          country_of_residence: string
+          created_at?: string
+          custom_genre?: string | null
+          gender: Database["public"]["Enums"]["talent_gender"]
+          id?: string
+          music_genres?: string[]
+          picture_url?: string | null
+          soundcloud_link?: string | null
+          updated_at?: string
+          user_id: string
+          youtube_link?: string | null
+        }
+        Update: {
+          act?: Database["public"]["Enums"]["talent_act"]
+          age?: number
+          artist_name?: string
+          biography?: string
+          country_of_residence?: string
+          created_at?: string
+          custom_genre?: string | null
+          gender?: Database["public"]["Enums"]["talent_gender"]
+          id?: string
+          music_genres?: string[]
+          picture_url?: string | null
+          soundcloud_link?: string | null
+          updated_at?: string
+          user_id?: string
+          youtube_link?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +76,15 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      talent_act:
+        | "dj"
+        | "band"
+        | "saxophonist"
+        | "percussionist"
+        | "singer"
+        | "keyboardist"
+        | "drummer"
+      talent_gender: "male" | "female"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +211,17 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      talent_act: [
+        "dj",
+        "band",
+        "saxophonist",
+        "percussionist",
+        "singer",
+        "keyboardist",
+        "drummer",
+      ],
+      talent_gender: ["male", "female"],
+    },
   },
 } as const

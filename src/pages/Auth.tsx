@@ -61,9 +61,10 @@ const Auth = () => {
         }
       } else {
         toast({
-          title: "Success!",
-          description: "Please check your email to confirm your account.",
+          title: "Account created successfully!",
+          description: "Please complete your talent profile.",
         });
+        navigate('/talent-onboarding');
       }
     } catch (error) {
       toast({
