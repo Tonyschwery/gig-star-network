@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Star, MapPin, Search, Calendar, Music } from "lucide-react";
+import { Star, MapPin, Search, Music } from "lucide-react";
 import { countries } from "@/lib/countries";
 
 const talentTypes = [
@@ -25,7 +25,6 @@ export function HeroSection() {
   const navigate = useNavigate();
   const [searchFilters, setSearchFilters] = useState({
     location: '',
-    eventDate: '',
     talentType: 'all'
   });
 
@@ -34,9 +33,6 @@ export function HeroSection() {
     const params = new URLSearchParams();
     if (searchFilters.location && searchFilters.location !== 'all') {
       params.set('location', searchFilters.location);
-    }
-    if (searchFilters.eventDate) {
-      params.set('date', searchFilters.eventDate);
     }
     if (searchFilters.talentType && searchFilters.talentType !== 'all') {
       params.set('type', searchFilters.talentType);
@@ -84,7 +80,7 @@ export function HeroSection() {
 
             {/* Search Form */}
             <Card className="p-6 glass-card">
-              <div className="grid md:grid-cols-4 gap-4">
+              <div className="grid md:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-muted-foreground">LOCATION</label>
                   <div className="relative">
@@ -105,20 +101,6 @@ export function HeroSection() {
                         ))}
                       </SelectContent>
                     </Select>
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-muted-foreground">WHEN</label>
-                  <div className="relative">
-                    <Calendar className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input 
-                      type="date"
-                      placeholder="Event date" 
-                      className="pl-10 bg-input border-border"
-                      value={searchFilters.eventDate}
-                      onChange={(e) => setSearchFilters(prev => ({ ...prev, eventDate: e.target.value }))}
-                    />
                   </div>
                 </div>
 
