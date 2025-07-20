@@ -58,11 +58,11 @@ const TalentDashboard = () => {
 
   // Initialize selected genres when profile loads
   useEffect(() => {
-    if (profile) {
+    if (profile && !isEditing) {
       setSelectedGenres(profile.music_genres || []);
       setCustomGenre(profile.custom_genre || '');
     }
-  }, [profile]);
+  }, [profile, isEditing]);
 
   useEffect(() => {
     if (!user) {
