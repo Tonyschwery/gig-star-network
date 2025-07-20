@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -10,6 +11,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Upload, Music } from 'lucide-react';
+import { countries } from '@/lib/countries';
 
 const MUSIC_GENRES = [
   'afro-house',
@@ -349,7 +351,7 @@ export default function TalentOnboarding() {
               />
             </div>
 
-            {/* Age and Country */}
+            {/* Age and Nationality */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="age">Age *</Label>
@@ -364,13 +366,19 @@ export default function TalentOnboarding() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="country">Nationality *</Label>
-                <Input
-                  id="country"
-                  value={formData.countryOfResidence}
-                  onChange={(e) => setFormData(prev => ({ ...prev, countryOfResidence: e.target.value }))}
-                  required
-                />
+                <Label>Nationality *</Label>
+                <Select value={formData.countryOfResidence} onValueChange={(value) => setFormData(prev => ({ ...prev, countryOfResidence: value }))}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select your nationality" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-60">
+                    {countries.map((country) => (
+                      <SelectItem key={country.code} value={country.name}>
+                        {country.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
@@ -406,16 +414,21 @@ export default function TalentOnboarding() {
               </div>
             </div>
 
-            {/* Location */}
+            {/* Talent Location */}
             <div className="space-y-2">
-              <Label htmlFor="location">Talent Location *</Label>
-              <Input
-                id="location"
-                placeholder="City, Country (e.g., Dubai, UAE)"
-                value={formData.location}
-                onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
-                required
-              />
+              <Label>Talent Location *</Label>
+              <Select value={formData.location} onValueChange={(value) => setFormData(prev => ({ ...prev, location: value }))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select your talent location" />
+                </SelectTrigger>
+                <SelectContent className="max-h-60">
+                  {countries.map((country) => (
+                    <SelectItem key={country.code} value={country.name}>
+                      {country.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <Button 
