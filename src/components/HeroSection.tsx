@@ -1,11 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Star, MapPin, Search, Music } from "lucide-react";
+import { Star, MapPin, Search, Music, Crown } from "lucide-react";
 import { countries } from "@/lib/countries";
+import { supabase } from "@/integrations/supabase/client";
 
 const talentTypes = [
   { value: 'all', label: 'All Talent Types' },
@@ -21,12 +22,46 @@ const talentTypes = [
   { value: 'other', label: 'Other' }
 ];
 
+interface TalentProfile {
+  id: string;
+  artist_name: string;
+  act: string;
+  location?: string;
+  picture_url?: string;
+  is_pro_subscriber?: boolean;
+}
+
 export function HeroSection() {
   const navigate = useNavigate();
   const [searchFilters, setSearchFilters] = useState({
     location: '',
     talentType: 'all'
   });
+  const [featuredTalents, setFeaturedTalents] = useState<TalentProfile[]>([]);
+
+  useEffect(() => {
+    fetchFeaturedTalents();
+  }, []);
+
+  const fetchFeaturedTalents = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('talent_profiles')
+        .select('id, artist_name, act, location, picture_url, is_pro_subscriber')
+        .eq('is_pro_subscriber', true)
+        .limit(2)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching featured talents:', error);
+        return;
+      }
+
+      setFeaturedTalents(data || []);
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  };
 
   const handleSearch = () => {
     // Create URL parameters for search
@@ -153,20 +188,29 @@ export function HeroSection() {
 
           {/* Right Content - Featured Talents */}
           <div className="space-y-6">
-            <FeaturedTalentCard 
-              name="Sarah Johnson"
-              location="New York City"
-              category="Jazz Singer"
-              image="/placeholder.svg"
-              isPro={true}
-            />
-            <FeaturedTalentCard 
-              name="Mike Rodriguez"
-              location="Los Angeles"
-              category="DJ & Producer"
-              image="/placeholder.svg"
-              isPro={false}
-            />
+            {featuredTalents.length > 0 ? (
+              featuredTalents.map((talent) => (
+                <FeaturedTalentCard 
+                  key={talent.id}
+                  id={talent.id}
+                  name={talent.artist_name}
+                  location={talent.location || 'Location not specified'}
+                  category={talent.act.charAt(0).toUpperCase() + talent.act.slice(1)}
+                  image={talent.picture_url || "/placeholder.svg"}
+                  isPro={talent.is_pro_subscriber || false}
+                />
+              ))
+            ) : (
+              // Fallback to show loading or default content
+              <>
+                <div className="animate-pulse">
+                  <Card className="p-4 glass-card h-24 bg-muted"></Card>
+                </div>
+                <div className="animate-pulse">
+                  <Card className="p-4 glass-card h-24 bg-muted"></Card>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -175,6 +219,7 @@ export function HeroSection() {
 }
 
 interface FeaturedTalentCardProps {
+  id?: string;
   name: string;
   location: string;
   category: string;
@@ -182,11 +227,19 @@ interface FeaturedTalentCardProps {
   isPro: boolean;
 }
 
-function FeaturedTalentCard({ name, location, category, image, isPro }: FeaturedTalentCardProps) {
+function FeaturedTalentCard({ id, name, location, category, image, isPro }: FeaturedTalentCardProps) {
+  const navigate = useNavigate();
+  
+  const handleClick = () => {
+    if (id) {
+      navigate(`/talent/${id}`);
+    }
+  };
+
   return (
     <Card 
       className="p-4 glass-card hover:shadow-elevated transition-all duration-300 hover:scale-105 cursor-pointer"
-      onClick={() => console.log(`${name} card clicked`)}
+      onClick={handleClick}
     >
       <div className="flex items-center space-x-4">
         <div className="relative">
@@ -196,7 +249,8 @@ function FeaturedTalentCard({ name, location, category, image, isPro }: Featured
             className="w-16 h-16 rounded-xl object-cover"
           />
           {isPro && (
-            <div className="absolute -top-1 -right-1 pro-badge text-xs">
+            <div className="absolute -top-1 -right-1 pro-badge text-xs flex items-center gap-1">
+              <Crown className="h-3 w-3" />
               PRO
             </div>
           )}
