@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Star, MapPin, Music, Mic, Camera, Brush, User, Filter, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 interface TalentProfile {
   id: string;
@@ -243,6 +244,15 @@ interface TalentCardProps {
 
 function TalentCard({ talent }: TalentCardProps) {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  
+  const handleProfileClick = () => {
+    if (!user) {
+      navigate('/auth');
+      return;
+    }
+    navigate(`/talent/${talent.id}`);
+  };
   
   const getActIcon = (act: string) => {
     switch (act.toLowerCase()) {
@@ -287,7 +297,7 @@ function TalentCard({ talent }: TalentCardProps) {
   return (
     <Card 
       className="overflow-hidden glass-card hover:shadow-elevated transition-all duration-300 hover:scale-105 group cursor-pointer"
-      onClick={() => navigate(`/talent/${talent.id}`)}
+      onClick={handleProfileClick}
     >
       <div className="relative">
         <img 
@@ -349,7 +359,7 @@ function TalentCard({ talent }: TalentCardProps) {
           className="w-full"
           onClick={(e) => {
             e.stopPropagation();
-            navigate(`/talent/${talent.id}`);
+            handleProfileClick();
           }}
         >
           View Profile
