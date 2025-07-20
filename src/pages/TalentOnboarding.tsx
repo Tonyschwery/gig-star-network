@@ -364,7 +364,7 @@ export default function TalentOnboarding() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="country">Country of Residence *</Label>
+                <Label htmlFor="country">Nationality *</Label>
                 <Input
                   id="country"
                   value={formData.countryOfResidence}
@@ -408,7 +408,7 @@ export default function TalentOnboarding() {
 
             {/* Location */}
             <div className="space-y-2">
-              <Label htmlFor="location">Location *</Label>
+              <Label htmlFor="location">Talent Location *</Label>
               <Input
                 id="location"
                 placeholder="City, Country (e.g., Dubai, UAE)"

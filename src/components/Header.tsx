@@ -53,8 +53,8 @@ export function Header() {
       <div className="container mx-auto px-4 py-4">
         <nav className="flex items-center justify-between">
           {/* Logo */}
-          <div className="flex items-center space-x-2">
-            <div className="text-2xl font-bold gradient-text">
+          <div className="flex items-center space-x-2 cursor-pointer" onClick={() => navigate('/')}>
+            <div className="text-2xl font-bold gradient-text hover:opacity-80 transition-opacity">
               GCC Talents
             </div>
             <span className="text-sm text-muted-foreground hidden sm:block">

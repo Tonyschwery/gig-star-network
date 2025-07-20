@@ -340,7 +340,7 @@ const TalentDashboard = () => {
                   )}
                 </div>
                 <div>
-                  <Label className="text-sm font-medium">Location (Where you're available)</Label>
+                  <Label className="text-sm font-medium">Talent Location (Where you're available)</Label>
                   {isEditing ? (
                     <Select value={profile.location || ''} onValueChange={(value) => setProfile({ ...profile, location: value })}>
                       <SelectTrigger>
