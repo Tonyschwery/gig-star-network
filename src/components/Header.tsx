@@ -45,6 +45,8 @@ export function Header() {
   const handleWelcomeClick = () => {
     if (talentName) {
       navigate("/talent-dashboard");
+    } else if (user) {
+      navigate("/booker-dashboard");
     }
   };
 
@@ -107,10 +109,10 @@ export function Header() {
             {user ? (
               <div className="flex items-center space-x-2">
                 <span 
-                  className={`text-sm text-muted-foreground hidden sm:block ${talentName ? 'cursor-pointer hover:text-primary transition-colors' : ''}`}
+                  className="text-sm text-muted-foreground hidden sm:block cursor-pointer hover:text-primary transition-colors"
                   onClick={handleWelcomeClick}
                 >
-                  Welcome, {talentName || user.user_metadata?.name || user.email}
+                  Welcome, {talentName || user.user_metadata?.name || user.email?.split('@')[0] || 'User'}
                 </span>
                 <Button 
                   variant="outline" 
