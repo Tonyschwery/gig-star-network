@@ -12,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Upload, Music } from 'lucide-react';
 import { countries } from '@/lib/countries';
+import { PhotoGalleryUpload } from '@/components/PhotoGalleryUpload';
 
 const MUSIC_GENRES = [
   'afro-house',
@@ -60,6 +61,7 @@ export default function TalentOnboarding() {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [pictureFile, setPictureFile] = useState<File | null>(null);
+  const [galleryImages, setGalleryImages] = useState<string[]>([]);
   const [formData, setFormData] = useState({
     artistName: '',
     act: '',
@@ -174,6 +176,7 @@ export default function TalentOnboarding() {
           music_genres: allGenres,
           custom_genre: formData.customGenre || null,
           picture_url: pictureUrl,
+          gallery_images: galleryImages,
           soundcloud_link: formData.soundcloudLink || null,
           youtube_link: formData.youtubeLink || null,
           biography: formData.biography,
@@ -312,6 +315,17 @@ export default function TalentOnboarding() {
                   Selected: {pictureFile.name}
                 </p>
               )}
+            </div>
+
+            {/* Gallery Photos */}
+            <div className="space-y-2">
+              <Label>Additional Photos (Optional)</Label>
+              <PhotoGalleryUpload
+                currentImages={galleryImages}
+                onImagesChange={setGalleryImages}
+                maxImages={5}
+                maxSizeKB={400}
+              />
             </div>
 
             {/* Links */}

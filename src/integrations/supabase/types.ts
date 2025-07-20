@@ -23,6 +23,7 @@ export type Database = {
           created_at: string
           currency: string | null
           custom_genre: string | null
+          gallery_images: string[] | null
           gender: Database["public"]["Enums"]["talent_gender"]
           id: string
           location: string | null
@@ -43,6 +44,7 @@ export type Database = {
           created_at?: string
           currency?: string | null
           custom_genre?: string | null
+          gallery_images?: string[] | null
           gender: Database["public"]["Enums"]["talent_gender"]
           id?: string
           location?: string | null
@@ -63,6 +65,7 @@ export type Database = {
           created_at?: string
           currency?: string | null
           custom_genre?: string | null
+          gallery_images?: string[] | null
           gender?: Database["public"]["Enums"]["talent_gender"]
           id?: string
           location?: string | null

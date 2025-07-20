@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { countries, musicGenres, actTypes } from "@/lib/countries";
+import { PhotoGalleryUpload } from "@/components/PhotoGalleryUpload";
 import { 
   User, 
   Edit3, 
@@ -38,6 +39,7 @@ interface TalentProfile {
   music_genres: string[];
   custom_genre?: string;
   picture_url?: string;
+  gallery_images?: string[];
   soundcloud_link?: string;
   youtube_link?: string;
   biography: string;
@@ -55,12 +57,14 @@ const TalentDashboard = () => {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
   const [customGenre, setCustomGenre] = useState('');
+  const [galleryImages, setGalleryImages] = useState<string[]>([]);
 
-  // Initialize selected genres when profile loads
+  // Initialize selected genres and gallery when profile loads
   useEffect(() => {
     if (profile && !isEditing) {
       setSelectedGenres(profile.music_genres || []);
       setCustomGenre(profile.custom_genre || '');
+      setGalleryImages(profile.gallery_images || []);
     }
   }, [profile, isEditing]);
 
@@ -179,6 +183,7 @@ const TalentDashboard = () => {
           nationality: profile.nationality,
           music_genres: allGenres,
           custom_genre: customGenre.trim() || null,
+          gallery_images: galleryImages,
           soundcloud_link: profile.soundcloud_link,
           youtube_link: profile.youtube_link,
           biography: profile.biography,
@@ -194,7 +199,8 @@ const TalentDashboard = () => {
       setProfile({
         ...profile,
         music_genres: allGenres,
-        custom_genre: customGenre.trim() || undefined
+        custom_genre: customGenre.trim() || undefined,
+        gallery_images: galleryImages
       });
 
       setIsEditing(false);
@@ -297,6 +303,52 @@ const TalentDashboard = () => {
             </CardContent>
           </Card>
 
+          {/* Photo Gallery Card */}
+          <Card className="glass-card md:col-span-3">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Camera className="h-5 w-5 mr-2" />
+                Photo Gallery
+              </CardTitle>
+              <CardDescription>
+                Upload up to 5 additional photos to showcase your talent
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isEditing ? (
+                <PhotoGalleryUpload
+                  currentImages={galleryImages}
+                  onImagesChange={setGalleryImages}
+                  maxImages={5}
+                  maxSizeKB={400}
+                />
+              ) : (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {profile.gallery_images && profile.gallery_images.length > 0 ? 
+                    profile.gallery_images.map((imageUrl, index) => (
+                      <div key={index} className="relative aspect-square rounded-lg overflow-hidden bg-muted">
+                        <img 
+                          src={imageUrl} 
+                          alt={`Gallery image ${index + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    )) : (
+                    <div className="col-span-full text-center py-12">
+                      <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Camera className="h-8 w-8 text-muted-foreground" />
+                      </div>
+                      <h3 className="font-medium mb-2">No Gallery Photos</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Click Edit to add photos to your gallery
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
           {/* Profile Info Card */}
           <Card className="glass-card md:col-span-2">
             <CardHeader>
@@ -309,9 +361,10 @@ const TalentDashboard = () => {
                   variant="outline"
                   onClick={() => {
                     if (!isEditing) {
-                      // Initialize genres when starting to edit
+                      // Initialize genres and gallery when starting to edit
                       setSelectedGenres(profile.music_genres || []);
                       setCustomGenre(profile.custom_genre || '');
+                      setGalleryImages(profile.gallery_images || []);
                     }
                     setIsEditing(!isEditing);
                   }}
