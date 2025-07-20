@@ -186,31 +186,42 @@ export function HeroSection() {
             </div>
           </div>
 
-          {/* Right Content - Featured Talents */}
-          <div className="space-y-6">
-            {featuredTalents.length > 0 ? (
-              featuredTalents.map((talent) => (
-                <FeaturedTalentCard 
-                  key={talent.id}
-                  id={talent.id}
-                  name={talent.artist_name}
-                  location={talent.location || 'Location not specified'}
-                  category={talent.act.charAt(0).toUpperCase() + talent.act.slice(1)}
-                  image={talent.picture_url || "/placeholder.svg"}
-                  isPro={talent.is_pro_subscriber || false}
-                />
-              ))
-            ) : (
-              // Fallback to show loading or default content
-              <>
-                <div className="animate-pulse">
-                  <Card className="p-4 glass-card h-24 bg-muted"></Card>
+          {/* Right Content - Featured Talents Carousel */}
+          <div className="space-y-4">
+            <div className="text-center space-y-2">
+              <h3 className="text-lg font-semibold text-foreground">Featured Pro Artists</h3>
+              <p className="text-sm text-muted-foreground">Premium talents ready to elevate your event</p>
+            </div>
+            
+            <div className="space-y-4 max-h-96 overflow-y-auto scrollbar-hide">
+              {featuredTalents.length > 0 ? (
+                featuredTalents.map((talent, index) => (
+                  <div
+                    key={talent.id}
+                    className="animate-fade-in"
+                    style={{ animationDelay: `${index * 0.2}s` }}
+                  >
+                    <FeaturedTalentCard 
+                      id={talent.id}
+                      name={talent.artist_name}
+                      location={talent.location || 'Location not specified'}
+                      category={talent.act.charAt(0).toUpperCase() + talent.act.slice(1)}
+                      image={talent.picture_url || "/placeholder.svg"}
+                      isPro={talent.is_pro_subscriber || false}
+                    />
+                  </div>
+                ))
+              ) : (
+                // Fallback loading state
+                <div className="space-y-4">
+                  {[...Array(2)].map((_, i) => (
+                    <div key={i} className="animate-pulse">
+                      <Card className="p-4 glass-card h-24 bg-muted/50"></Card>
+                    </div>
+                  ))}
                 </div>
-                <div className="animate-pulse">
-                  <Card className="p-4 glass-card h-24 bg-muted"></Card>
-                </div>
-              </>
-            )}
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -238,38 +249,63 @@ function FeaturedTalentCard({ id, name, location, category, image, isPro }: Feat
 
   return (
     <Card 
-      className="p-4 glass-card hover:shadow-elevated transition-all duration-300 hover:scale-105 cursor-pointer"
+      className="group p-4 glass-card hover:shadow-elevated transition-all duration-500 hover:scale-[1.02] cursor-pointer overflow-hidden border border-border/50 hover:border-primary/30 relative"
       onClick={handleClick}
     >
       <div className="flex items-center space-x-4">
+        {/* Profile Picture with Pro Badge */}
         <div className="relative">
-          <img 
-            src={image} 
-            alt={name}
-            className="w-16 h-16 rounded-xl object-cover"
-          />
+          <div className="w-20 h-20 rounded-2xl overflow-hidden ring-2 ring-primary/20 group-hover:ring-primary/40 transition-all duration-300">
+            <img 
+              src={image} 
+              alt={name}
+              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+            />
+          </div>
+          
+          {/* Pro Badge - Positioned outside the image */}
           {isPro && (
-            <div className="absolute -top-1 -right-1 pro-badge text-xs flex items-center gap-1">
-              <Crown className="h-3 w-3" />
-              PRO
+            <div className="absolute -top-2 -right-2 z-10">
+              <div className="pro-badge text-xs px-2 py-1 rounded-full shadow-lg flex items-center gap-1 animate-scale-in">
+                <Crown className="h-3 w-3" />
+                <span className="font-semibold">PRO</span>
+              </div>
             </div>
           )}
         </div>
         
-        <div className="flex-1">
-          <h3 className="font-semibold text-lg">{name}</h3>
-          <p className="text-muted-foreground text-sm">{category}</p>
-          <div className="flex items-center space-x-1 mt-1">
-            <MapPin className="h-3 w-3 text-muted-foreground" />
-            <span className="text-xs text-muted-foreground">{location}</span>
+        {/* Artist Info */}
+        <div className="flex-1 min-w-0">
+          <div className="space-y-1">
+            <h3 className="font-bold text-lg text-foreground group-hover:text-primary transition-colors duration-300 truncate">
+              {name}
+            </h3>
+            <p className="text-muted-foreground text-sm font-medium">
+              {category}
+            </p>
+            <div className="flex items-center space-x-1">
+              <MapPin className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+              <span className="text-xs text-muted-foreground truncate">{location}</span>
+            </div>
           </div>
         </div>
         
-        <div className="flex items-center space-x-1">
-          <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-          <span className="text-sm font-medium">4.9</span>
+        {/* Rating & Status */}
+        <div className="flex flex-col items-end space-y-2">
+          <div className="flex items-center space-x-1 bg-yellow-50 dark:bg-yellow-900/20 px-2 py-1 rounded-full">
+            <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+            <span className="text-xs font-semibold text-yellow-600 dark:text-yellow-400">4.9</span>
+          </div>
+          
+          <div className="text-xs text-center">
+            <div className="w-2 h-2 bg-green-500 rounded-full mx-auto mb-1 animate-pulse"></div>
+            <span className="text-muted-foreground">Available</span>
+          </div>
         </div>
       </div>
+      
+      {/* Hover Effect Overlay */}
+      <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-primary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
     </Card>
   );
 }
