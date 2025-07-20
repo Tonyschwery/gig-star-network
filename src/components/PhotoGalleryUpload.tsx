@@ -3,6 +3,7 @@ import { Upload, X, ImageIcon, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { ImageCropper } from './ImageCropper';
 
 interface PhotoGalleryUploadProps {
   currentImages: string[];
@@ -19,63 +20,16 @@ export function PhotoGalleryUpload({
 }: PhotoGalleryUploadProps) {
   const [uploading, setUploading] = useState<boolean[]>([]);
   const [dragOver, setDragOver] = useState(false);
+  const [cropperState, setCropperState] = useState<{
+    isOpen: boolean;
+    imageSrc: string;
+    originalFile: File;
+    index: number;
+  } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
-  const compressImage = (file: File, maxSizeKB: number): Promise<File> => {
-    return new Promise((resolve) => {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d')!;
-      const img = new Image();
-      
-      img.onload = () => {
-        // Calculate new dimensions maintaining aspect ratio
-        const maxDimension = 800; // Max width/height
-        let { width, height } = img;
-        
-        if (width > height) {
-          if (width > maxDimension) {
-            height = (height * maxDimension) / width;
-            width = maxDimension;
-          }
-        } else {
-          if (height > maxDimension) {
-            width = (width * maxDimension) / height;
-            height = maxDimension;
-          }
-        }
-        
-        canvas.width = width;
-        canvas.height = height;
-        
-        // Draw and compress
-        ctx.drawImage(img, 0, 0, width, height);
-        
-        const tryCompress = (quality: number) => {
-          canvas.toBlob((blob) => {
-            if (blob && blob.size <= maxSizeKB * 1024) {
-              const compressedFile = new File([blob], file.name, {
-                type: 'image/jpeg',
-                lastModified: Date.now(),
-              });
-              resolve(compressedFile);
-            } else if (quality > 0.1) {
-              tryCompress(quality - 0.1);
-            } else {
-              // If we can't compress enough, return the original
-              resolve(file);
-            }
-          }, 'image/jpeg', quality);
-        };
-        
-        tryCompress(0.8);
-      };
-      
-      img.src = URL.createObjectURL(file);
-    });
-  };
-
-  const uploadImage = async (file: File, index: number): Promise<string | null> => {
+  const uploadImage = async (processedFile: File, index: number): Promise<string | null> => {
     try {
       // Get current user ID for proper file organization
       const { data: { user } } = await supabase.auth.getUser();
@@ -83,16 +37,13 @@ export function PhotoGalleryUpload({
         throw new Error('User not authenticated');
       }
 
-      // Compress the image first
-      const compressedFile = await compressImage(file, maxSizeKB);
-      
-      const fileExt = compressedFile.name.split('.').pop();
+      const fileExt = 'jpg'; // Always use jpg for consistency
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
       const filePath = `${user.id}/gallery/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
         .from('talent-pictures')
-        .upload(filePath, compressedFile);
+        .upload(filePath, processedFile);
 
       if (uploadError) {
         throw uploadError;
@@ -111,6 +62,56 @@ export function PhotoGalleryUpload({
         variant: "destructive",
       });
       return null;
+    }
+  };
+
+  const handleCropComplete = async (croppedImageBlob: Blob) => {
+    if (!cropperState) return;
+
+    try {
+      // Convert blob to file
+      const croppedFile = new File([croppedImageBlob], `cropped-${cropperState.originalFile.name}`, {
+        type: 'image/jpeg',
+        lastModified: Date.now(),
+      });
+
+      // Set uploading state
+      setUploading([true]);
+
+      // Upload the cropped image
+      const uploadedUrl = await uploadImage(croppedFile, 0);
+      
+      if (uploadedUrl) {
+        const newImages = [...currentImages, uploadedUrl];
+        onImagesChange(newImages);
+        
+        toast({
+          title: "Upload Successful",
+          description: "Image cropped and uploaded successfully",
+        });
+      }
+
+      // Reset states
+      setUploading([]);
+      setCropperState(null);
+      
+      // Clean up object URL
+      URL.revokeObjectURL(cropperState.imageSrc);
+    } catch (error) {
+      console.error('Error processing cropped image:', error);
+      setUploading([]);
+      toast({
+        title: "Upload Failed",
+        description: "Failed to process and upload the cropped image",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleCropCancel = () => {
+    if (cropperState) {
+      URL.revokeObjectURL(cropperState.imageSrc);
+      setCropperState(null);
     }
   };
 
@@ -137,7 +138,7 @@ export function PhotoGalleryUpload({
         return false;
       }
       
-      if (file.size > 5 * 1024 * 1024) { // 5MB original file limit
+      if (file.size > 10 * 1024 * 1024) { // 10MB original file limit
         toast({
           title: "File Too Large",
           description: `${file.name} is too large. Please choose a smaller image.`,
@@ -151,25 +152,15 @@ export function PhotoGalleryUpload({
 
     if (validFiles.length === 0) return;
 
-    // Initialize uploading states
-    setUploading(prev => [...prev, ...new Array(validFiles.length).fill(true)]);
-
-    // Upload files
-    const uploadPromises = validFiles.map((file, index) => uploadImage(file, index));
-    const uploadedUrls = await Promise.all(uploadPromises);
-    
-    // Filter out failed uploads and update images
-    const successfulUploads = uploadedUrls.filter((url): url is string => url !== null);
-    const newImages = [...currentImages, ...successfulUploads];
-    onImagesChange(newImages);
-
-    // Reset uploading states
-    setUploading([]);
-
-    if (successfulUploads.length > 0) {
-      toast({
-        title: "Upload Successful",
-        description: `${successfulUploads.length} image(s) uploaded successfully`,
+    // Process first file for cropping
+    if (validFiles.length > 0) {
+      const file = validFiles[0];
+      const imageSrc = URL.createObjectURL(file);
+      setCropperState({
+        isOpen: true,
+        imageSrc,
+        originalFile: file,
+        index: 0
       });
     }
   };
@@ -212,7 +203,6 @@ export function PhotoGalleryUpload({
           <input
             ref={fileInputRef}
             type="file"
-            multiple
             accept="image/*"
             className="hidden"
             onChange={(e) => e.target.files && handleFiles(e.target.files)}
@@ -223,7 +213,7 @@ export function PhotoGalleryUpload({
               <Upload className="h-6 w-6 text-muted-foreground" />
             </div>
             <div>
-              <p className="font-medium">Upload Photos</p>
+              <p className="font-medium">Upload & Crop Photos</p>
               <p className="text-sm text-muted-foreground">
                 Drag & drop or{' '}
                 <button
@@ -235,7 +225,7 @@ export function PhotoGalleryUpload({
                 </button>
               </p>
               <p className="text-xs text-muted-foreground mt-1">
-                Max {maxImages} photos • Up to {maxSizeKB}KB each • JPG, PNG
+                Max {maxImages} photos • Auto-cropped to perfect squares • JPG, PNG
               </p>
             </div>
           </div>
@@ -280,6 +270,16 @@ export function PhotoGalleryUpload({
           <span className="ml-2 text-brand-primary">• Gallery full</span>
         )}
       </div>
+
+      {/* Image Cropper Dialog */}
+      {cropperState && (
+        <ImageCropper
+          src={cropperState.imageSrc}
+          isOpen={cropperState.isOpen}
+          onCropComplete={handleCropComplete}
+          onCancel={handleCropCancel}
+        />
+      )}
     </div>
   );
 }
