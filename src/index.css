@@ -53,7 +53,7 @@ All colors MUST be HSL.
     --destructive-foreground: 210 40% 98%;
 
     --border: 220 15% 15%;
-    --input: 220 15% 12%;
+    --input: 220 15% 18%;
     --ring: 217 91% 60%;
 
     --radius: 0.75rem;
@@ -106,7 +106,7 @@ All colors MUST be HSL.
     --destructive-foreground: 210 40% 98%;
 
     --border: 220 15% 15%;
-    --input: 220 15% 12%;
+    --input: 220 15% 18%;
     --ring: 217 91% 60%;
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
