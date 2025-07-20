@@ -307,7 +307,14 @@ const TalentDashboard = () => {
                 </CardTitle>
                 <Button
                   variant="outline"
-                  onClick={() => setIsEditing(!isEditing)}
+                  onClick={() => {
+                    if (!isEditing) {
+                      // Initialize genres when starting to edit
+                      setSelectedGenres(profile.music_genres || []);
+                      setCustomGenre(profile.custom_genre || '');
+                    }
+                    setIsEditing(!isEditing);
+                  }}
                 >
                   <Edit3 className="h-4 w-4 mr-2" />
                   {isEditing ? "Cancel" : "Edit"}
