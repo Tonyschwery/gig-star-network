@@ -3,7 +3,7 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Star, MapPin, Music, Mic, Camera, Brush, User, Filter, X } from "lucide-react";
+import { Star, MapPin, Music, Mic, Camera, Brush, User, Filter, X, Crown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -24,6 +24,8 @@ interface TalentProfile {
   biography: string;
   nationality: string;
   created_at: string;
+  is_pro_subscriber?: boolean;
+  subscription_started_at?: string;
 }
 
 export function TalentGrid() {
@@ -76,6 +78,7 @@ export function TalentGrid() {
       const { data, error } = await supabase
         .from('talent_profiles')
         .select('*')
+        .order('is_pro_subscriber', { ascending: false }) // Pro users first
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -309,11 +312,27 @@ function TalentCard({ talent }: TalentCardProps) {
           {getActIcon(talent.act)}
           <span className="text-xs text-white">{formatAct(talent.act)}</span>
         </div>
+        {talent.is_pro_subscriber && (
+          <div className="absolute top-3 right-3">
+            <Badge className="pro-badge">
+              <Crown className="h-3 w-3 mr-1" />
+              PRO
+            </Badge>
+          </div>
+        )}
       </div>
       
       <div className="p-4 space-y-3">
         <div>
-          <h3 className="font-semibold text-lg">{talent.artist_name}</h3>
+          <div className="flex items-center gap-2 mb-1">
+            <h3 className="font-semibold text-lg">{talent.artist_name}</h3>
+            {talent.is_pro_subscriber && (
+              <Badge className="pro-badge text-xs">
+                <Crown className="h-3 w-3 mr-1" />
+                PRO
+              </Badge>
+            )}
+          </div>
           <div className="flex items-center space-x-1 text-sm text-muted-foreground">
             <MapPin className="h-3 w-3" />
             <span>{talent.location || 'Location not specified'}</span>

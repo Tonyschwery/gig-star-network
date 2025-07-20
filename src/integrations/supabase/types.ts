@@ -79,12 +79,14 @@ export type Database = {
           gallery_images: string[] | null
           gender: Database["public"]["Enums"]["talent_gender"]
           id: string
+          is_pro_subscriber: boolean
           location: string | null
           music_genres: string[]
           nationality: string
           picture_url: string | null
           rate_per_hour: number | null
           soundcloud_link: string | null
+          subscription_started_at: string | null
           updated_at: string
           user_id: string
           youtube_link: string | null
@@ -100,12 +102,14 @@ export type Database = {
           gallery_images?: string[] | null
           gender: Database["public"]["Enums"]["talent_gender"]
           id?: string
+          is_pro_subscriber?: boolean
           location?: string | null
           music_genres?: string[]
           nationality: string
           picture_url?: string | null
           rate_per_hour?: number | null
           soundcloud_link?: string | null
+          subscription_started_at?: string | null
           updated_at?: string
           user_id: string
           youtube_link?: string | null
@@ -121,12 +125,14 @@ export type Database = {
           gallery_images?: string[] | null
           gender?: Database["public"]["Enums"]["talent_gender"]
           id?: string
+          is_pro_subscriber?: boolean
           location?: string | null
           music_genres?: string[]
           nationality?: string
           picture_url?: string | null
           rate_per_hour?: number | null
           soundcloud_link?: string | null
+          subscription_started_at?: string | null
           updated_at?: string
           user_id?: string
           youtube_link?: string | null

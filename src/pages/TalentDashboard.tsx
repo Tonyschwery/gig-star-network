@@ -25,8 +25,10 @@ import {
   LogOut,
   Camera,
   X,
-  Plus
+  Plus,
+  Crown
 } from "lucide-react";
+import { ProSubscriptionDialog } from "@/components/ProSubscriptionDialog";
 
 interface TalentProfile {
   id: string;
@@ -46,6 +48,8 @@ interface TalentProfile {
   biography: string;
   nationality: string;
   created_at: string;
+  is_pro_subscriber?: boolean;
+  subscription_started_at?: string;
 }
 
 const TalentDashboard = () => {
@@ -64,6 +68,7 @@ const TalentDashboard = () => {
     imageSrc: string;
     originalFile: File;
   } | null>(null);
+  const [showProDialog, setShowProDialog] = useState(false);
 
   // Initialize selected genres and gallery when profile loads
   useEffect(() => {
@@ -301,12 +306,29 @@ const TalentDashboard = () => {
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold gradient-text">
-              Welcome, {profile.artist_name}!
-            </h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-3xl font-bold gradient-text">
+                Welcome, {profile.artist_name}!
+              </h1>
+              {profile.is_pro_subscriber && (
+                <Badge className="pro-badge">
+                  <Crown className="h-3 w-3 mr-1" />
+                  PRO
+                </Badge>
+              )}
+            </div>
             <p className="text-muted-foreground">Manage your talent profile</p>
           </div>
           <div className="flex gap-2">
+            {!profile.is_pro_subscriber && (
+              <Button 
+                onClick={() => setShowProDialog(true)}
+                className="hero-button"
+              >
+                <Crown className="h-4 w-4 mr-2" />
+                Subscribe to Pro
+              </Button>
+            )}
             <Button 
               variant="outline" 
               onClick={() => navigate(`/talent/${profile.id}`)}
@@ -636,6 +658,17 @@ const TalentDashboard = () => {
             onCancel={handleProfileCropCancel}
           />
         )}
+
+        {/* Pro Subscription Dialog */}
+        <ProSubscriptionDialog
+          open={showProDialog}
+          onOpenChange={setShowProDialog}
+          onSubscribe={() => {
+            // Refresh profile to show pro status
+            fetchTalentProfile();
+          }}
+          profileId={profile.id}
+        />
       </div>
     </div>
   );
