@@ -82,7 +82,7 @@ export function HeroSection() {
             <Card className="p-6 glass-card">
               <div className="grid md:grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-muted-foreground">LOCATION</label>
+                  <label className="text-sm font-medium text-muted-foreground">TALENT LOCATION</label>
                   <div className="relative">
                     <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground z-10" />
                     <Select 
