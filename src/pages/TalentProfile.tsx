@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { YouTubePlayer } from "@/components/YouTubePlayer";
+import { AudioWaveform } from "@/components/AudioWaveform";
 import { 
   MapPin, 
   Music, 
@@ -236,58 +238,48 @@ export default function TalentProfile() {
                 </p>
               </Card>
 
-              {/* Media Section */}
+              {/* Enhanced Media Section */}
               <Card className="p-6">
-                <h2 className="text-xl font-semibold mb-4">Media & Links</h2>
-                <div className="space-y-4">
-                  {talent.soundcloud_link && (
-                    <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-orange-500 rounded-lg flex items-center justify-center">
-                          <Play className="h-5 w-5 text-white" />
-                        </div>
-                        <div>
-                          <h3 className="font-medium">SoundCloud</h3>
-                          <p className="text-sm text-muted-foreground">Listen to tracks</p>
-                        </div>
-                      </div>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => window.open(talent.soundcloud_link, '_blank')}
-                      >
-                        <ExternalLink className="h-4 w-4 mr-2" />
-                        Listen
-                      </Button>
+                <h2 className="text-xl font-semibold mb-6">Media & Content</h2>
+                <div className="space-y-6">
+                  {talent.youtube_link && (
+                    <div>
+                      <h3 className="font-medium mb-3 flex items-center">
+                        <div className="w-5 h-5 bg-red-500 rounded mr-2"></div>
+                        YouTube Video
+                      </h3>
+                      <YouTubePlayer 
+                        url={talent.youtube_link}
+                        onThumbnailClick={() => {
+                          // Optional: Track video play analytics
+                        }}
+                      />
                     </div>
                   )}
                   
-                  {talent.youtube_link && (
-                    <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-red-500 rounded-lg flex items-center justify-center">
-                          <Play className="h-5 w-5 text-white" />
-                        </div>
-                        <div>
-                          <h3 className="font-medium">YouTube</h3>
-                          <p className="text-sm text-muted-foreground">Watch videos</p>
-                        </div>
-                      </div>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => window.open(talent.youtube_link, '_blank')}
-                      >
-                        <ExternalLink className="h-4 w-4 mr-2" />
-                        Watch
-                      </Button>
+                  {talent.soundcloud_link && (
+                    <div>
+                      <h3 className="font-medium mb-3 flex items-center">
+                        <div className="w-5 h-5 bg-orange-500 rounded mr-2"></div>
+                        Audio Track
+                      </h3>
+                      <AudioWaveform 
+                        url={talent.soundcloud_link}
+                        title={`${talent.artist_name} - Audio Sample`}
+                      />
                     </div>
                   )}
 
                   {!talent.soundcloud_link && !talent.youtube_link && (
-                    <p className="text-muted-foreground text-center py-8">
-                      No media links available yet
-                    </p>
+                    <div className="text-center py-12">
+                      <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Music className="h-8 w-8 text-muted-foreground" />
+                      </div>
+                      <h3 className="font-medium mb-2">No Media Available</h3>
+                      <p className="text-sm text-muted-foreground">
+                        This talent hasn't uploaded any audio or video content yet.
+                      </p>
+                    </div>
                   )}
                 </div>
               </Card>
