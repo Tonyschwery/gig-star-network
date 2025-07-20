@@ -7,12 +7,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, Clock, MapPin, X } from "lucide-react";
+import { CalendarIcon, Clock, MapPin, X, User } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { countries } from "@/lib/countries";
 
 interface BookingFormProps {
   talentId: string;
@@ -26,6 +27,7 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
   const { toast } = useToast();
   
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [bookerName, setBookerName] = useState("");
   const [eventDate, setEventDate] = useState<Date>();
   const [eventDuration, setEventDuration] = useState("");
   const [eventLocation, setEventLocation] = useState("");
@@ -55,7 +57,7 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
       return;
     }
 
-    if (!eventDate || !eventDuration || !eventLocation || !eventAddress || !eventType) {
+    if (!bookerName || !eventDate || !eventDuration || !eventLocation || !eventAddress || !eventType) {
       toast({
         title: "Missing Information",
         description: "Please fill in all required fields.",
@@ -117,6 +119,21 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
               Booking request for: <span className="font-medium text-primary">{talentName}</span>
             </div>
 
+            {/* Booker Name */}
+            <div className="space-y-2">
+              <Label htmlFor="booker-name">Your Name *</Label>
+              <div className="relative">
+                <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="booker-name"
+                  placeholder="Enter your full name"
+                  value={bookerName}
+                  onChange={(e) => setBookerName(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+
             {/* Date & Duration */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -168,17 +185,19 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
             {/* Location & Address */}
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="location">Event Location *</Label>
-                <div className="relative">
-                  <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="location"
-                    placeholder="e.g., The Grand Hotel"
-                    value={eventLocation}
-                    onChange={(e) => setEventLocation(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
+                <Label htmlFor="location">Event Country *</Label>
+                <Select onValueChange={setEventLocation}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select country" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-[200px]">
+                    {countries.map((country) => (
+                      <SelectItem key={country.code} value={country.name}>
+                        {country.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-2">
