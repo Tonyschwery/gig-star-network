@@ -74,6 +74,7 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
         .insert({
           user_id: user.id,
           talent_id: talentId,
+          booker_name: bookerName,
           event_date: format(eventDate, 'yyyy-MM-dd'),
           event_duration: parseInt(eventDuration),
           event_location: eventLocation,
