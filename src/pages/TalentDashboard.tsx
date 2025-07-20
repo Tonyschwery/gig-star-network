@@ -54,7 +54,7 @@ interface TalentProfile {
 }
 
 const TalentDashboard = () => {
-  const { user, signOut } = useAuth();
+  const { user, session, signOut } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [profile, setProfile] = useState<TalentProfile | null>(null);
@@ -280,6 +280,35 @@ const TalentDashboard = () => {
     }
   };
 
+  const handleCancelSubscription = async () => {
+    if (!user || !session) return;
+
+    try {
+      const { data, error } = await supabase.functions.invoke('cancel-subscription', {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Subscription Cancelled",
+        description: data?.message || "Your Pro subscription has been cancelled successfully.",
+      });
+
+      // Refresh profile to update subscription status
+      fetchTalentProfile();
+    } catch (error) {
+      console.error('Error cancelling subscription:', error);
+      toast({
+        title: "Error",
+        description: "Failed to cancel subscription. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -321,13 +350,21 @@ const TalentDashboard = () => {
             <p className="text-muted-foreground">Manage your talent profile</p>
           </div>
           <div className="flex gap-2">
-            {!profile.is_pro_subscriber && (
+            {!profile.is_pro_subscriber ? (
               <Button 
                 onClick={() => setShowProDialog(true)}
                 className="hero-button"
               >
                 <Crown className="h-4 w-4 mr-2" />
                 Subscribe to Pro
+              </Button>
+            ) : (
+              <Button 
+                onClick={handleCancelSubscription}
+                variant="outline"
+                className="border-red-200 text-red-600 hover:bg-red-50"
+              >
+                Cancel Pro
               </Button>
             )}
             <Button 
