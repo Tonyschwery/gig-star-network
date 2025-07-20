@@ -77,12 +77,18 @@ export function PhotoGalleryUpload({
 
   const uploadImage = async (file: File, index: number): Promise<string | null> => {
     try {
+      // Get current user ID for proper file organization
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
       // Compress the image first
       const compressedFile = await compressImage(file, maxSizeKB);
       
       const fileExt = compressedFile.name.split('.').pop();
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-      const filePath = `gallery/${fileName}`;
+      const filePath = `${user.id}/gallery/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
         .from('talent-pictures')
