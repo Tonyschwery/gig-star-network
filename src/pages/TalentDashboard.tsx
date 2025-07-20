@@ -13,6 +13,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { countries, musicGenres, actTypes } from "@/lib/countries";
 import { PhotoGalleryUpload } from "@/components/PhotoGalleryUpload";
+import { ImageCropper } from "@/components/ImageCropper";
 import { 
   User, 
   Edit3, 
@@ -58,6 +59,11 @@ const TalentDashboard = () => {
   const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
   const [customGenre, setCustomGenre] = useState('');
   const [galleryImages, setGalleryImages] = useState<string[]>([]);
+  const [profileCropperState, setProfileCropperState] = useState<{
+    isOpen: boolean;
+    imageSrc: string;
+    originalFile: File;
+  } | null>(null);
 
   // Initialize selected genres and gallery when profile loads
   useEffect(() => {
@@ -113,15 +119,54 @@ const TalentDashboard = () => {
     const file = event.target.files?.[0];
     if (!file || !user || !profile) return;
 
+    // Validate file
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Invalid File Type",
+        description: "Please select an image file",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) { // 10MB limit
+      toast({
+        title: "File Too Large",
+        description: "Please choose a smaller image (max 10MB)",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Open cropper
+    const imageSrc = URL.createObjectURL(file);
+    setProfileCropperState({
+      isOpen: true,
+      imageSrc,
+      originalFile: file
+    });
+
+    // Reset the input
+    event.target.value = '';
+  };
+
+  const handleProfileCropComplete = async (croppedImageBlob: Blob) => {
+    if (!profileCropperState || !user || !profile) return;
+
     setUploadingImage(true);
 
     try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}/${user.id}-${Date.now()}.${fileExt}`;
+      // Convert blob to file
+      const croppedFile = new File([croppedImageBlob], `profile-${profileCropperState.originalFile.name}`, {
+        type: 'image/jpeg',
+        lastModified: Date.now(),
+      });
+
+      const fileName = `${user.id}/${user.id}-profile-${Date.now()}.jpg`;
       
       const { error: uploadError } = await supabase.storage
         .from('talent-pictures')
-        .upload(fileName, file);
+        .upload(fileName, croppedFile);
 
       if (uploadError) {
         throw uploadError;
@@ -145,6 +190,10 @@ const TalentDashboard = () => {
         title: "Success",
         description: "Profile picture updated successfully!"
       });
+
+      // Clean up
+      setProfileCropperState(null);
+      URL.revokeObjectURL(profileCropperState.imageSrc);
     } catch (error) {
       console.error('Error uploading image:', error);
       toast({
@@ -154,6 +203,13 @@ const TalentDashboard = () => {
       });
     } finally {
       setUploadingImage(false);
+    }
+  };
+
+  const handleProfileCropCancel = () => {
+    if (profileCropperState) {
+      URL.revokeObjectURL(profileCropperState.imageSrc);
+      setProfileCropperState(null);
     }
   };
 
@@ -297,7 +353,7 @@ const TalentDashboard = () => {
                   className="w-full"
                 >
                   <Upload className="h-4 w-4 mr-2" />
-                  {uploadingImage ? "Uploading..." : "Change Picture"}
+                  {uploadingImage ? "Uploading..." : "Change & Crop Picture"}
                 </Button>
               </div>
             </CardContent>
@@ -570,6 +626,16 @@ const TalentDashboard = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Profile Picture Cropper Dialog */}
+        {profileCropperState && (
+          <ImageCropper
+            src={profileCropperState.imageSrc}
+            isOpen={profileCropperState.isOpen}
+            onCropComplete={handleProfileCropComplete}
+            onCancel={handleProfileCropCancel}
+          />
+        )}
       </div>
     </div>
   );

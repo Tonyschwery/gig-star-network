@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Upload, Music } from 'lucide-react';
 import { countries } from '@/lib/countries';
 import { PhotoGalleryUpload } from '@/components/PhotoGalleryUpload';
+import { ImageCropper } from '@/components/ImageCropper';
 
 const MUSIC_GENRES = [
   'afro-house',
@@ -62,6 +63,11 @@ export default function TalentOnboarding() {
   const [loading, setLoading] = useState(false);
   const [pictureFile, setPictureFile] = useState<File | null>(null);
   const [galleryImages, setGalleryImages] = useState<string[]>([]);
+  const [profileCropperState, setProfileCropperState] = useState<{
+    isOpen: boolean;
+    imageSrc: string;
+    originalFile: File;
+  } | null>(null);
   const [formData, setFormData] = useState({
     artistName: '',
     act: '',
@@ -92,18 +98,65 @@ export default function TalentOnboarding() {
     }
   };
 
-  const handlePictureUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
+  const handlePictureUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) {
+      if (file.size > 10 * 1024 * 1024) { // 10MB limit
         toast({
           title: "File too large",
-          description: "Please select an image under 5MB",
+          description: "Please select an image under 10MB",
           variant: "destructive",
         });
         return;
       }
-      setPictureFile(file);
+
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Invalid file type",
+          description: "Please select an image file",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Open cropper
+      const imageSrc = URL.createObjectURL(file);
+      setProfileCropperState({
+        isOpen: true,
+        imageSrc,
+        originalFile: file
+      });
+
+      // Reset the input
+      e.target.value = '';
+    }
+  };
+
+  const handleProfileCropComplete = (croppedImageBlob: Blob) => {
+    // Convert blob to file
+    const croppedFile = new File([croppedImageBlob], `profile-${profileCropperState?.originalFile.name}`, {
+      type: 'image/jpeg',
+      lastModified: Date.now(),
+    });
+
+    setPictureFile(croppedFile);
+    
+    // Clean up
+    if (profileCropperState) {
+      URL.revokeObjectURL(profileCropperState.imageSrc);
+      setProfileCropperState(null);
+    }
+
+    toast({
+      title: "Image Ready",
+      description: "Profile picture cropped and ready for upload",
+    });
+  };
+
+  const handleProfileCropCancel = () => {
+    if (profileCropperState) {
+      URL.revokeObjectURL(profileCropperState.imageSrc);
+      setProfileCropperState(null);
     }
   };
 
@@ -311,8 +364,8 @@ export default function TalentOnboarding() {
                 <Upload className="h-5 w-5 text-muted-foreground" />
               </div>
               {pictureFile && (
-                <p className="text-sm text-muted-foreground">
-                  Selected: {pictureFile.name}
+                <p className="text-sm text-green-600">
+                  ✓ Cropped image ready: {pictureFile.name}
                 </p>
               )}
             </div>
@@ -453,6 +506,16 @@ export default function TalentOnboarding() {
               {loading ? "Creating Profile..." : "Complete Profile"}
             </Button>
           </form>
+
+          {/* Profile Picture Cropper Dialog */}
+          {profileCropperState && (
+            <ImageCropper
+              src={profileCropperState.imageSrc}
+              isOpen={profileCropperState.isOpen}
+              onCropComplete={handleProfileCropComplete}
+              onCancel={handleProfileCropCancel}
+            />
+          )}
         </CardContent>
       </Card>
     </div>
