@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { filterSensitiveContent } from "@/lib/messageFilter";
 import { PaymentModal } from "./PaymentModal";
+import { ManualInvoiceModal } from "./ManualInvoiceModal";
 
 interface ChatModalProps {
   isOpen: boolean;
@@ -49,6 +50,7 @@ export function ChatModal({ isOpen, onClose, bookerName, bookerEmail, eventType,
   const [booking, setBooking] = useState<Booking | null>(null);
   const [updatingBooking, setUpdatingBooking] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showManualInvoiceModal, setShowManualInvoiceModal] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -293,7 +295,13 @@ export function ChatModal({ isOpen, onClose, bookerName, bookerEmail, eventType,
               <div className="flex gap-2">
                 <Button
                   onClick={() => {
-                    setShowPaymentModal(true);
+                    // Check if talent has a rate, if not use manual invoice
+                    const hasRate = booking?.talent_profiles?.rate_per_hour && booking?.talent_profiles?.rate_per_hour > 0;
+                    if (hasRate) {
+                      setShowPaymentModal(true);
+                    } else {
+                      setShowManualInvoiceModal(true);
+                    }
                   }}
                   disabled={updatingBooking}
                   size="sm"
@@ -375,6 +383,19 @@ export function ChatModal({ isOpen, onClose, bookerName, bookerEmail, eventType,
           setShowPaymentModal(false);
         }}
         userType="talent"
+      />
+    )}
+
+    {/* Manual Invoice Modal */}
+    {booking && (
+      <ManualInvoiceModal
+        isOpen={showManualInvoiceModal}
+        onClose={() => setShowManualInvoiceModal(false)}
+        booking={booking}
+        onInvoiceSuccess={() => {
+          updateBookingStatus('approved');
+          setShowManualInvoiceModal(false);
+        }}
       />
     )}
     </>
