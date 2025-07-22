@@ -36,6 +36,9 @@ interface Booking {
   event_date: string;
   event_duration: number;
   event_location: string;
+  talent_id?: string | null;
+  is_public_request?: boolean;
+  is_gig_opportunity?: boolean;
   talent_profiles?: {
     artist_name: string;
     rate_per_hour: number;
@@ -294,7 +297,40 @@ export function ChatModal({ isOpen, onClose, bookerName, bookerEmail, eventType,
             <div className="border-b pb-4">
               <div className="flex gap-2">
                 <Button
-                  onClick={() => setShowManualInvoiceModal(true)}
+                  onClick={async () => {
+                    // For gig opportunities, make sure the talent is assigned to the booking first
+                    if (booking?.is_public_request && booking?.is_gig_opportunity && !booking?.talent_id) {
+                      try {
+                        // Get current user's talent profile
+                        const { data: talentProfile } = await supabase
+                          .from('talent_profiles')
+                          .select('id')
+                          .eq('user_id', user?.id)
+                          .single();
+
+                        if (talentProfile) {
+                          // Assign this talent to the booking
+                          await supabase
+                            .from('bookings')
+                            .update({ talent_id: talentProfile.id })
+                            .eq('id', bookingId);
+                          
+                          // Refresh booking details
+                          await loadBookingDetails();
+                        }
+                      } catch (error) {
+                        console.error('Error assigning talent to booking:', error);
+                        toast({
+                          title: "Error",
+                          description: "Failed to assign talent to booking",
+                          variant: "destructive",
+                        });
+                        return;
+                      }
+                    }
+                    
+                    setShowManualInvoiceModal(true);
+                  }}
                   disabled={updatingBooking}
                   size="sm"
                   className="bg-green-600 hover:bg-green-700 text-white h-8 px-3 text-xs flex-1"

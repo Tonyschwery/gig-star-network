@@ -21,11 +21,13 @@ serve(async (req) => {
     
     const { bookingId, agreedPrice, currency, platformCommissionRate } = await req.json();
     
+    logStep('Request data received', { bookingId, agreedPrice, currency, platformCommissionRate });
+    
     if (!bookingId || !agreedPrice || agreedPrice <= 0) {
-      throw new Error('Missing required fields: bookingId and agreedPrice');
+      const errorMsg = 'Missing required fields: bookingId and agreedPrice must be provided and agreedPrice must be > 0';
+      logStep('Validation error', { bookingId, agreedPrice });
+      throw new Error(errorMsg);
     }
-
-    logStep('Request data', { bookingId, agreedPrice, currency, platformCommissionRate });
 
     // Initialize Supabase client with service role key for admin operations
     const supabaseAdmin = createClient(
@@ -58,8 +60,13 @@ serve(async (req) => {
     }
 
     if (!booking.talent_id) {
-      logStep('No talent assigned to booking', { booking });
-      throw new Error('No talent assigned to this booking yet');
+      logStep('No talent assigned to booking - this might be a gig opportunity that needs to be claimed first', { 
+        bookingId,
+        talentId: booking.talent_id,
+        isPublicRequest: booking.is_public_request,
+        isGigOpportunity: booking.is_gig_opportunity 
+      });
+      throw new Error('No talent assigned to this booking yet. For gig opportunities, please claim the gig first by starting a chat.');
     }
 
     // Get talent profile separately
