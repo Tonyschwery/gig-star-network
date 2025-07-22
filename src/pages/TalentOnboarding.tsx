@@ -14,6 +14,7 @@ import { Upload, Music } from 'lucide-react';
 import { countries } from '@/lib/countries';
 import { SimpleGalleryUpload } from '@/components/SimpleGalleryUpload';
 import { SimpleAvatarUpload } from '@/components/SimpleAvatarUpload';
+import { ProFeatureWrapper } from '@/components/ProFeatureWrapper';
 
 const MUSIC_GENRES = [
   'afro-house',
@@ -305,36 +306,42 @@ export default function TalentOnboarding() {
             {/* Gallery Photos */}
             <div className="space-y-2">
               <Label>Additional Photos (Optional)</Label>
-              <SimpleGalleryUpload
-                currentImages={galleryImages}
-                onImagesChange={setGalleryImages}
-                maxImages={5}
-                disabled={loading}
-              />
+              <ProFeatureWrapper isProFeature={true}>
+                <SimpleGalleryUpload
+                  currentImages={galleryImages}
+                  onImagesChange={setGalleryImages}
+                  maxImages={5}
+                  disabled={loading}
+                />
+              </ProFeatureWrapper>
             </div>
 
             {/* Links */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="soundcloud">SoundCloud Link</Label>
-                <Input
-                  id="soundcloud"
-                  type="url"
-                  placeholder="https://soundcloud.com/your-profile"
-                  value={formData.soundcloudLink}
-                  onChange={(e) => setFormData(prev => ({ ...prev, soundcloudLink: e.target.value }))}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="youtube">YouTube Link</Label>
-                <Input
-                  id="youtube"
-                  type="url"
-                  placeholder="https://youtube.com/your-channel"
-                  value={formData.youtubeLink}
-                  onChange={(e) => setFormData(prev => ({ ...prev, youtubeLink: e.target.value }))}
-                />
-              </div>
+              <ProFeatureWrapper isProFeature={true}>
+                <div className="space-y-2">
+                  <Label htmlFor="soundcloud">SoundCloud Link</Label>
+                  <Input
+                    id="soundcloud"
+                    type="url"
+                    placeholder="https://soundcloud.com/your-profile"
+                    value={formData.soundcloudLink}
+                    onChange={(e) => setFormData(prev => ({ ...prev, soundcloudLink: e.target.value }))}
+                  />
+                </div>
+              </ProFeatureWrapper>
+              <ProFeatureWrapper isProFeature={true}>
+                <div className="space-y-2">
+                  <Label htmlFor="youtube">YouTube Link</Label>
+                  <Input
+                    id="youtube"
+                    type="url"
+                    placeholder="https://youtube.com/your-channel"
+                    value={formData.youtubeLink}
+                    onChange={(e) => setFormData(prev => ({ ...prev, youtubeLink: e.target.value }))}
+                  />
+                </div>
+              </ProFeatureWrapper>
             </div>
 
             {/* Biography */}
