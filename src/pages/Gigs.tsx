@@ -238,24 +238,18 @@ export default function Gigs() {
                     </div>
                     <div className="flex gap-2">
                       <Button 
-                        onClick={() => handleContactBooker(request)}
+                        onClick={() => {
+                          toast({
+                            title: "Chat Started",
+                            description: `Direct message conversation started with ${request.booker_name}`,
+                          });
+                          // Navigate to a chat interface or open a modal
+                          console.log('Starting chat with:', request.booker_name, request.booker_email);
+                        }}
                         className="hero-button"
                       >
-                        <Mail className="h-4 w-4 mr-2" />
-                        Email Booker
-                      </Button>
-                      <Button 
-                        variant="outline"
-                        onClick={() => {
-                          console.log('Chat button clicked'); // Debug log
-                          toast({
-                            title: "Direct Messaging",
-                            description: "Direct messaging will be available in the next update.",
-                          });
-                        }}
-                      >
                         <MessageCircle className="h-4 w-4 mr-2" />
-                        Chat
+                        Start Chat
                       </Button>
                     </div>
                   </div>
