@@ -6,7 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Check, X, Calendar, Clock, MapPin, Mail, User, Crown, Lock, MessageCircle, Settings } from "lucide-react";
 import { BookingChat } from "./BookingChat";
-import { PaymentModal } from "./PaymentModal";
+import { ManualInvoiceModal } from "./ManualInvoiceModal";
 import { format } from "date-fns";
 
 interface Booking {
@@ -42,7 +42,7 @@ export function BookingManagement({ talentId, isProSubscriber = false, onUpgrade
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [updatingBooking, setUpdatingBooking] = useState<string | null>(null);
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showManualInvoiceModal, setShowManualInvoiceModal] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const { toast } = useToast();
 
@@ -224,14 +224,14 @@ export function BookingManagement({ talentId, isProSubscriber = false, onUpgrade
                       <Button
                         onClick={() => {
                           setSelectedBooking(booking);
-                          setShowPaymentModal(true);
+                          setShowManualInvoiceModal(true);
                         }}
                         disabled={updatingBooking === booking.id}
                         size="sm"
                         className="bg-green-600 hover:bg-green-700 text-white h-8 px-3 text-xs"
                       >
                         <Check className="h-3 w-3 mr-1" />
-                        Approve & Request Payment
+                        Approve & Send Invoice
                       </Button>
                       <Button
                         onClick={() => updateBookingStatus(booking.id, 'declined')}
@@ -478,22 +478,21 @@ export function BookingManagement({ talentId, isProSubscriber = false, onUpgrade
         </Card>
       )}
 
-      {/* Payment Modal */}
+      {/* Manual Invoice Modal */}
       {selectedBooking && (
-        <PaymentModal
-          isOpen={showPaymentModal}
+        <ManualInvoiceModal
+          isOpen={showManualInvoiceModal}
           onClose={() => {
-            setShowPaymentModal(false);
+            setShowManualInvoiceModal(false);
             setSelectedBooking(null);
           }}
           booking={selectedBooking}
-          onPaymentSuccess={() => {
+          onInvoiceSuccess={() => {
             // Refresh bookings to show updated status
             fetchBookings();
-            setShowPaymentModal(false);
+            setShowManualInvoiceModal(false);
             setSelectedBooking(null);
           }}
-          userType="talent"
         />
       )}
     </div>

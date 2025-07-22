@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { filterSensitiveContent } from "@/lib/messageFilter";
-import { PaymentModal } from "./PaymentModal";
+
 import { ManualInvoiceModal } from "./ManualInvoiceModal";
 
 interface ChatModalProps {
@@ -49,7 +49,7 @@ export function ChatModal({ isOpen, onClose, bookerName, bookerEmail, eventType,
   const [loading, setLoading] = useState(false);
   const [booking, setBooking] = useState<Booking | null>(null);
   const [updatingBooking, setUpdatingBooking] = useState(false);
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  
   const [showManualInvoiceModal, setShowManualInvoiceModal] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
@@ -294,15 +294,7 @@ export function ChatModal({ isOpen, onClose, bookerName, bookerEmail, eventType,
             <div className="border-b pb-4">
               <div className="flex gap-2">
                 <Button
-                  onClick={() => {
-                    // Check if talent has a rate, if not use manual invoice
-                    const hasRate = booking?.talent_profiles?.rate_per_hour && booking?.talent_profiles?.rate_per_hour > 0;
-                    if (hasRate) {
-                      setShowPaymentModal(true);
-                    } else {
-                      setShowManualInvoiceModal(true);
-                    }
-                  }}
+                  onClick={() => setShowManualInvoiceModal(true)}
                   disabled={updatingBooking}
                   size="sm"
                   className="bg-green-600 hover:bg-green-700 text-white h-8 px-3 text-xs flex-1"
@@ -372,19 +364,6 @@ export function ChatModal({ isOpen, onClose, bookerName, bookerEmail, eventType,
       </DialogContent>
     </Dialog>
 
-    {/* Payment Modal */}
-    {booking && (
-      <PaymentModal
-        isOpen={showPaymentModal}
-        onClose={() => setShowPaymentModal(false)}
-        booking={booking}
-        onPaymentSuccess={() => {
-          updateBookingStatus('approved');
-          setShowPaymentModal(false);
-        }}
-        userType="talent"
-      />
-    )}
 
     {/* Manual Invoice Modal */}
     {booking && (

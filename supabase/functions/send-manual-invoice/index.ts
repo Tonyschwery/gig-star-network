@@ -53,14 +53,20 @@ serve(async (req) => {
         )
       `)
       .eq('id', bookingId)
-      .single();
+      .maybeSingle();
 
     if (bookingError) {
       logStep('Error fetching booking', bookingError);
       throw new Error(`Failed to fetch booking: ${bookingError.message}`);
     }
 
+    if (!booking) {
+      logStep('Booking not found', { bookingId });
+      throw new Error('Booking not found');
+    }
+
     if (!booking.talent_profiles) {
+      logStep('No talent profile found', { booking });
       throw new Error('No talent profile found for this booking');
     }
 

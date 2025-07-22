@@ -23,7 +23,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { BookerChat } from "@/components/BookerChat";
-import { PaymentModal } from "@/components/PaymentModal";
+import { BookerPaymentModal } from "@/components/BookerPaymentModal";
 import { NotificationCenter } from "@/components/NotificationCenter";
 
 interface Booking {
@@ -294,7 +294,7 @@ const BookerDashboard = () => {
                       className="bg-green-600 hover:bg-green-700 text-white flex-1"
                     >
                       <CreditCard className="h-4 w-4 mr-2" />
-                      Pay Now & Confirm Booking
+                      View Invoice & Pay
                     </Button>
                     <Button
                       onClick={() => navigate(`/talent/${booking.talent_id}`)}
@@ -563,7 +563,7 @@ const BookerDashboard = () => {
 
         {/* Payment Modal */}
         {selectedBooking && (
-          <PaymentModal
+          <BookerPaymentModal
             isOpen={showPaymentModal}
             onClose={() => {
               setShowPaymentModal(false);
@@ -576,7 +576,6 @@ const BookerDashboard = () => {
               setShowPaymentModal(false);
               setSelectedBooking(null);
             }}
-            userType="booker"
           />
         )}
       </div>

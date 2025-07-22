@@ -12,158 +12,218 @@ const logStep = (step: string, details?: any) => {
 };
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    logStep("Payment processing started");
-
-    const { bookingId } = await req.json();
-    if (!bookingId) {
-      throw new Error("Booking ID is required");
+    logStep('Starting payment processing');
+    
+    const { paymentId, bookingId } = await req.json();
+    
+    if (!paymentId && !bookingId) {
+      throw new Error('Either paymentId or bookingId is required');
     }
-    logStep("Received booking ID", { bookingId });
 
-    // Use service role to bypass RLS for payment processing
-    const supabaseClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-      { auth: { persistSession: false } }
+    logStep('Request data', { paymentId, bookingId });
+
+    // Initialize Supabase client with service role key for admin operations
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
+        }
+      }
     );
 
-    // Get booking details with talent profile
-    const { data: booking, error: bookingError } = await supabaseClient
-      .from("bookings")
+    let payment;
+    
+    if (paymentId) {
+      // Get payment details by payment ID
+      logStep('Fetching payment by ID');
+      const { data: paymentData, error: paymentError } = await supabaseAdmin
+        .from('payments')
+        .select('*')
+        .eq('id', paymentId)
+        .single();
+
+      if (paymentError) {
+        logStep('Error fetching payment', paymentError);
+        throw new Error(`Failed to fetch payment: ${paymentError.message}`);
+      }
+      
+      payment = paymentData;
+    } else {
+      // Get payment details by booking ID
+      logStep('Fetching payment by booking ID');
+      const { data: paymentData, error: paymentError } = await supabaseAdmin
+        .from('payments')
+        .select('*')
+        .eq('booking_id', bookingId)
+        .eq('payment_status', 'pending')
+        .single();
+
+      if (paymentError) {
+        logStep('Error fetching payment', paymentError);
+        throw new Error(`Failed to fetch payment: ${paymentError.message}`);
+      }
+      
+      payment = paymentData;
+    }
+
+    if (!payment) {
+      throw new Error('Payment record not found');
+    }
+
+    logStep('Payment details retrieved', {
+      paymentId: payment.id,
+      bookingId: payment.booking_id,
+      amount: payment.total_amount,
+      status: payment.payment_status
+    });
+
+    // Check if payment is already completed
+    if (payment.payment_status === 'completed') {
+      logStep('Payment already completed');
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: 'Payment was already completed',
+          payment: {
+            id: payment.id,
+            status: 'completed',
+            amount: payment.total_amount
+          }
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200,
+        }
+      );
+    }
+
+    // Simulate payment processing (in real app, this would integrate with Stripe, PayPal, etc.)
+    logStep('Processing mock payment');
+    
+    // Update payment status to completed
+    const { error: updateError } = await supabaseAdmin
+      .from('payments')
+      .update({
+        payment_status: 'completed',
+        processed_at: new Date().toISOString()
+      })
+      .eq('id', payment.id);
+
+    if (updateError) {
+      logStep('Error updating payment status', updateError);
+      throw new Error(`Failed to update payment status: ${updateError.message}`);
+    }
+
+    logStep('Payment status updated to completed');
+
+    // Update booking status to confirmed
+    const { error: bookingUpdateError } = await supabaseAdmin
+      .from('bookings')
+      .update({
+        status: 'confirmed'
+      })
+      .eq('id', payment.booking_id);
+
+    if (bookingUpdateError) {
+      logStep('Error updating booking status', bookingUpdateError);
+      // Don't throw error here, payment was successful
+    }
+
+    // Get booking and talent details for notifications
+    const { data: booking, error: bookingError } = await supabaseAdmin
+      .from('bookings')
       .select(`
         *,
         talent_profiles (
-          rate_per_hour,
-          is_pro_subscriber,
           artist_name,
           user_id
         )
       `)
-      .eq("id", bookingId)
+      .eq('id', payment.booking_id)
       .single();
 
-    if (bookingError || !booking) {
-      throw new Error(`Failed to fetch booking: ${bookingError?.message}`);
-    }
-    logStep("Fetched booking details", { 
-      bookingId: booking.id, 
-      isPro: booking.talent_profiles?.is_pro_subscriber,
-      rate: booking.talent_profiles?.rate_per_hour 
-    });
+    if (bookingError) {
+      logStep('Error fetching booking details', bookingError);
+      // Don't throw error here, payment was successful
+    } else {
+      // Create notifications for both booker and talent
+      logStep('Creating notifications');
+      
+      // Notification for booker
+      const { error: bookerNotificationError } = await supabaseAdmin
+        .from('notifications')
+        .insert({
+          user_id: payment.booker_id,
+          type: 'payment_completed',
+          title: 'Payment Successful',
+          message: `Your payment of ${payment.currency} ${payment.total_amount.toFixed(2)} for the ${booking.event_type} event has been processed successfully. Your booking is now confirmed!`,
+          booking_id: payment.booking_id
+        });
 
-    const talentProfile = booking.talent_profiles;
-    if (!talentProfile || !talentProfile.rate_per_hour) {
-      throw new Error("Talent profile or hourly rate not found");
-    }
-
-    // Calculate payment amounts
-    const hourlyRate = parseFloat(talentProfile.rate_per_hour.toString());
-    const hoursBooked = booking.event_duration;
-    const totalAmount = hourlyRate * hoursBooked;
-    
-    // Commission logic: 0% for pro talents, 10% for non-pro talents
-    const commissionRate = talentProfile.is_pro_subscriber ? 0 : 10;
-    const platformCommission = (totalAmount * commissionRate) / 100;
-    const talentEarnings = totalAmount - platformCommission;
-
-    logStep("Calculated payment amounts", {
-      hourlyRate,
-      hoursBooked,
-      totalAmount,
-      commissionRate,
-      platformCommission,
-      talentEarnings
-    });
-
-    // Create payment record
-    const paymentReference = `MOCK_PAY_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
-    const { data: payment, error: paymentError } = await supabaseClient
-      .from("payments")
-      .insert({
-        booking_id: bookingId,
-        booker_id: booking.user_id,
-        talent_id: booking.talent_id,
-        total_amount: totalAmount,
-        platform_commission: platformCommission,
-        talent_earnings: talentEarnings,
-        commission_rate: commissionRate,
-        hourly_rate: hourlyRate,
-        hours_booked: hoursBooked,
-        payment_status: 'completed', // Mock payment always succeeds
-        payment_method: 'mock',
-        payment_reference: paymentReference,
-        processed_at: new Date().toISOString()
-      })
-      .select()
-      .single();
-
-    if (paymentError) {
-      throw new Error(`Failed to create payment record: ${paymentError.message}`);
-    }
-    logStep("Created payment record", { paymentId: payment.id });
-
-    // Update booking with payment_id and status to 'confirmed' (mock payment always succeeds)
-    const { error: updateError } = await supabaseClient
-      .from("bookings")
-      .update({ 
-        payment_id: payment.id,
-        status: 'confirmed' // Mock payment confirms the booking
-      })
-      .eq("id", bookingId);
-
-    if (updateError) {
-      throw new Error(`Failed to update booking: ${updateError.message}`);
-    }
-    logStep("Updated booking status to confirmed");
-
-    // Create notification for talent about payment received
-    const { error: notificationError } = await supabaseClient
-      .from("notifications")
-      .insert({
-        user_id: talentProfile.user_id,
-        type: 'payment_received',
-        title: 'Payment Received',
-        message: `You've received $${talentEarnings.toFixed(2)} for your ${booking.event_type} gig${commissionRate > 0 ? ` (${commissionRate}% platform fee deducted)` : ' (no fees - pro member!)'}`,
-        booking_id: bookingId
-      });
-
-    if (notificationError) {
-      logStep("Failed to create notification", { error: notificationError.message });
-    }
-
-    logStep("Payment processing completed successfully");
-
-    return new Response(JSON.stringify({
-      success: true,
-      payment: {
-        id: payment.id,
-        total_amount: totalAmount,
-        platform_commission: platformCommission,
-        talent_earnings: talentEarnings,
-        commission_rate: commissionRate,
-        payment_reference: paymentReference
+      if (bookerNotificationError) {
+        logStep('Error creating booker notification', bookerNotificationError);
       }
-    }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 200,
-    });
+
+      // Notification for talent
+      if (booking.talent_profiles?.user_id) {
+        const { error: talentNotificationError } = await supabaseAdmin
+          .from('notifications')
+          .insert({
+            user_id: booking.talent_profiles.user_id,
+            type: 'payment_received',
+            title: 'Payment Received',
+            message: `Payment of ${payment.currency} ${payment.total_amount.toFixed(2)} has been received for your ${booking.event_type} event. Your earnings: ${payment.currency} ${payment.talent_earnings.toFixed(2)}.`,
+            booking_id: payment.booking_id
+          });
+
+        if (talentNotificationError) {
+          logStep('Error creating talent notification', talentNotificationError);
+        }
+      }
+    }
+
+    logStep('Payment processing completed successfully');
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        message: 'Payment processed successfully',
+        payment: {
+          id: payment.id,
+          status: 'completed',
+          amount: payment.total_amount,
+          currency: payment.currency,
+          processed_at: new Date().toISOString(),
+          booking_id: payment.booking_id
+        }
+      }),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
+      }
+    );
 
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    logStep("ERROR in payment processing", { message: errorMessage });
+    logStep('Error in payment processing', error);
     
-    return new Response(JSON.stringify({ 
-      success: false, 
-      error: errorMessage 
-    }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
-    });
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error occurred'
+      }),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 400,
+      }
+    );
   }
 });
