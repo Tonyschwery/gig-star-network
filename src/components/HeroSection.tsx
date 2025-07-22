@@ -7,7 +7,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Star, MapPin, Search, Music, Crown, HelpCircle } from "lucide-react";
 import { countries } from "@/lib/countries";
 import { supabase } from "@/integrations/supabase/client";
-import { ProFeatureWrapper } from "@/components/ProFeatureWrapper";
 import { BookingForm } from "@/components/BookingForm";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 
@@ -243,22 +242,16 @@ export function HeroSection() {
             </p>
           </div>
           
-          <ProFeatureWrapper 
-            isProFeature={true}
-            className="inline-block"
-            showProIcon={false}
+          <Button 
+            size="lg"
+            className="hero-button px-8 py-6 text-lg"
+            onClick={() => setShowBookingDialog(true)}
           >
-            <Button 
-              size="lg"
-              className="hero-button px-8 py-6 text-lg"
-              onClick={() => setShowBookingDialog(true)}
-            >
-              Get Personal Assistance
-            </Button>
-          </ProFeatureWrapper>
+            Get Personal Assistance
+          </Button>
           
           <div className="text-sm text-muted-foreground">
-            ✨ Exclusive for Pro subscribers
+            📝 Submit your request and our pro talents will reach out to you
           </div>
         </div>
       </div>
