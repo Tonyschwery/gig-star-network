@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Check, X, Calendar, Clock, MapPin, Mail, User, Crown, Lock } from "lucide-react";
+import { Check, X, Calendar, Clock, MapPin, Mail, User, Crown, Lock, MessageCircle } from "lucide-react";
+import { BookingChat } from "./BookingChat";
 import { format } from "date-fns";
 
 interface Booking {
@@ -242,7 +243,17 @@ export function BookingManagement({ talentId, isProSubscriber = false, onUpgrade
                   </div>
                 </div>
 
-                <div className="flex gap-2 pt-2">
+                {/* Chat Section for Pending Bookings */}
+                <div className="mt-4 pt-4 border-t">
+                  <BookingChat
+                    bookingId={booking.id}
+                    bookerName={booking.booker_name}
+                    isProSubscriber={isProSubscriber}
+                    onUpgrade={onUpgrade}
+                  />
+                </div>
+
+                <div className="flex gap-2 pt-4">
                   <Button
                     onClick={() => updateBookingStatus(booking.id, 'approved')}
                     disabled={updatingBooking === booking.id}
