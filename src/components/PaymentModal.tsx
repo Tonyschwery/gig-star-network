@@ -78,6 +78,12 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
           title: successTitle,
           description: successDescription,
         });
+        
+        // For talent sending invoice, log the payment details
+        if (isTalent && data.payment) {
+          console.log('Invoice sent with payment details:', data.payment);
+        }
+        
         onPaymentSuccess();
         onClose();
       } else {
