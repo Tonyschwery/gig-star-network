@@ -247,7 +247,7 @@ export function HeroSection() {
             className="hero-button px-8 py-6 text-lg"
             onClick={() => setShowBookingDialog(true)}
           >
-            Get Personal Assistance
+            Tell us about your event
           </Button>
           
           <div className="text-sm text-muted-foreground">
@@ -258,7 +258,8 @@ export function HeroSection() {
 
       {/* Booking Dialog */}
       <Dialog open={showBookingDialog} onOpenChange={setShowBookingDialog}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl w-[95vw] max-h-[95vh] overflow-hidden p-0">
+          <div className="max-h-[95vh] overflow-y-auto p-6">
           <BookingForm
             talentId="public-request"
             talentName="Personal Assistance Request"
@@ -267,6 +268,7 @@ export function HeroSection() {
               setShowBookingDialog(false);
             }}
           />
+            </div>
         </DialogContent>
       </Dialog>
     </section>
