@@ -176,7 +176,7 @@ export default function TalentOnboarding() {
           soundcloud_link: formData.soundcloudLink || null,
           youtube_link: formData.youtubeLink || null,
           biography: formData.biography,
-          age: parseInt(formData.age),
+          age: formData.age, // Now stores age range as string
           nationality: formData.countryOfResidence,
           rate_per_hour: parseFloat(formData.ratePerHour),
           currency: formData.currency,
@@ -360,16 +360,18 @@ export default function TalentOnboarding() {
             {/* Age and Nationality */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="age">Age *</Label>
-                <Input
-                  id="age"
-                  type="number"
-                  min="16"
-                  max="100"
-                  value={formData.age}
-                  onChange={(e) => setFormData(prev => ({ ...prev, age: e.target.value }))}
-                  required
-                />
+                <Label>Age Range *</Label>
+                <Select value={formData.age} onValueChange={(value) => setFormData(prev => ({ ...prev, age: value }))}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select your age range" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="20-30">20-30</SelectItem>
+                    <SelectItem value="30-40">30-40</SelectItem>
+                    <SelectItem value="40-50">40-50</SelectItem>
+                    <SelectItem value="50-60">50-60</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <Label>Nationality *</Label>
