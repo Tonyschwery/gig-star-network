@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Send, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 interface ChatModalProps {
   isOpen: boolean;
@@ -12,55 +14,104 @@ interface ChatModalProps {
   bookerName: string;
   bookerEmail: string;
   eventType: string;
+  bookingId: string;
 }
 
 interface Message {
   id: string;
-  text: string;
-  sender: 'me' | 'booker';
-  timestamp: Date;
+  message: string;
+  sender_type: string;
+  sender_id: string;
+  created_at: string;
 }
 
-export function ChatModal({ isOpen, onClose, bookerName, bookerEmail, eventType }: ChatModalProps) {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      text: `Hi! I'm interested in your ${eventType} event. I'd love to discuss the details with you.`,
-      sender: 'me',
-      timestamp: new Date(),
-    }
-  ]);
+export function ChatModal({ isOpen, onClose, bookerName, bookerEmail, eventType, bookingId }: ChatModalProps) {
+  const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
+  const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
 
-  const handleSendMessage = () => {
-    if (!newMessage.trim()) return;
+  // Load existing messages when modal opens
+  useEffect(() => {
+    if (isOpen && bookingId) {
+      loadMessages();
+      
+      // Set up real-time subscription for new messages
+      const channel = supabase
+        .channel('booking-messages')
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'booking_messages',
+            filter: `booking_id=eq.${bookingId}`
+          },
+          (payload) => {
+            const newMessage = payload.new as Message;
+            setMessages(prev => [...prev, newMessage]);
+          }
+        )
+        .subscribe();
 
-    const message: Message = {
-      id: Date.now().toString(),
-      text: newMessage,
-      sender: 'me',
-      timestamp: new Date(),
-    };
-
-    setMessages(prev => [...prev, message]);
-    setNewMessage("");
-    
-    toast({
-      title: "Message Sent",
-      description: "Your message has been sent to the booker.",
-    });
-
-    // Simulate a response after 2 seconds
-    setTimeout(() => {
-      const response: Message = {
-        id: (Date.now() + 1).toString(),
-        text: "Thanks for your interest! I'll get back to you soon with more details.",
-        sender: 'booker',
-        timestamp: new Date(),
+      return () => {
+        supabase.removeChannel(channel);
       };
-      setMessages(prev => [...prev, response]);
-    }, 2000);
+    }
+  }, [isOpen, bookingId]);
+
+  const loadMessages = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('booking_messages')
+        .select('*')
+        .eq('booking_id', bookingId)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+      setMessages(data || []);
+    } catch (error) {
+      console.error('Error loading messages:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load chat messages.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSendMessage = async () => {
+    if (!newMessage.trim() || !user || loading) return;
+
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from('booking_messages')
+        .insert({
+          booking_id: bookingId,
+          sender_id: user.id,
+          sender_type: 'talent', // Since this is from gigs page, sender is always talent
+          message: newMessage.trim()
+        });
+
+      if (error) throw error;
+
+      setNewMessage("");
+      toast({
+        title: "Message Sent",
+        description: `Your message has been sent to ${bookerName}.`,
+      });
+    } catch (error) {
+      console.error('Error sending message:', error);
+      toast({
+        title: "Error",
+        description: "Failed to send message. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -68,6 +119,10 @@ export function ChatModal({ isOpen, onClose, bookerName, bookerEmail, eventType 
       e.preventDefault();
       handleSendMessage();
     }
+  };
+
+  const isMyMessage = (message: Message) => {
+    return user && message.sender_id === user.id;
   };
 
   return (
@@ -82,22 +137,22 @@ export function ChatModal({ isOpen, onClose, bookerName, bookerEmail, eventType 
         </DialogHeader>
 
         <ScrollArea className="flex-1 px-4">
-          <div className="space-y-4">
+          <div className="space-y-4">{}
             {messages.map((message) => (
               <div
                 key={message.id}
-                className={`flex ${message.sender === 'me' ? 'justify-end' : 'justify-start'}`}
+                className={`flex ${isMyMessage(message) ? 'justify-end' : 'justify-start'}`}
               >
                 <div
                   className={`max-w-[80%] rounded-lg px-3 py-2 text-sm ${
-                    message.sender === 'me'
+                    isMyMessage(message)
                       ? 'bg-primary text-primary-foreground'
                       : 'bg-muted text-foreground'
                   }`}
                 >
-                  <p>{message.text}</p>
+                  <p>{message.message}</p>
                   <p className="text-xs opacity-70 mt-1">
-                    {message.timestamp.toLocaleTimeString([], { 
+                    {new Date(message.created_at).toLocaleTimeString([], { 
                       hour: '2-digit', 
                       minute: '2-digit' 
                     })}
@@ -118,7 +173,7 @@ export function ChatModal({ isOpen, onClose, bookerName, bookerEmail, eventType 
           />
           <Button 
             onClick={handleSendMessage}
-            disabled={!newMessage.trim()}
+            disabled={!newMessage.trim() || loading}
             size="icon"
             className="h-[60px] w-12"
           >

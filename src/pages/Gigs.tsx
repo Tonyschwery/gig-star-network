@@ -303,6 +303,7 @@ export default function Gigs() {
           bookerName={selectedBooker.booker_name}
           bookerEmail={selectedBooker.booker_email}
           eventType={selectedBooker.event_type}
+          bookingId={selectedBooker.id}
         />
       )}
     </div>
