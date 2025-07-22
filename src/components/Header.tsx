@@ -12,6 +12,7 @@ export function Header() {
   const { user, signOut } = useAuth();
   const [talentName, setTalentName] = useState<string | null>(null);
   const [talentId, setTalentId] = useState<string | null>(null);
+  const [isProTalent, setIsProTalent] = useState<boolean>(false);
 
   useEffect(() => {
     if (user) {
@@ -28,12 +29,13 @@ export function Header() {
     try {
       const { data } = await supabase
         .from('talent_profiles')
-        .select('id, artist_name')
+        .select('id, artist_name, is_pro_subscriber')
         .eq('user_id', user.id)
         .maybeSingle();
 
       setTalentName(data?.artist_name || null);
       setTalentId(data?.id || null);
+      setIsProTalent(data?.is_pro_subscriber || false);
     } catch (error) {
       console.error('Error fetching talent profile:', error);
     }
@@ -84,7 +86,7 @@ export function Header() {
             >
               Find Talent
             </button>
-            {user && (
+            {user && isProTalent && (
               <button 
                 onClick={() => navigate('/gigs')}
                 className="text-foreground hover:text-brand-primary transition-colors"

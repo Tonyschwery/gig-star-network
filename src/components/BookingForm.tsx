@@ -186,11 +186,13 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
     setIsSubmitting(true);
 
     try {
+      const isPublicRequest = talentId === "public-request";
+      
       const { error } = await supabase
         .from('bookings')
         .insert({
           user_id: user.id,
-          talent_id: talentId,
+          talent_id: isPublicRequest ? null : talentId,
           booker_name: bookerName,
           event_date: format(eventDate, 'yyyy-MM-dd'),
           event_duration: parseInt(eventDuration),
@@ -201,13 +203,17 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
           needs_equipment: needsEquipment,
           equipment_types: needsEquipment ? allEquipmentTypes : [],
           custom_equipment: needsEquipment && customEquipment.trim() ? customEquipment.trim() : null,
+          is_public_request: isPublicRequest,
+          is_gig_opportunity: isPublicRequest,
         });
 
       if (error) throw error;
 
       toast({
-        title: "Booking Request Sent!",
-        description: `Your booking request for ${talentName} has been submitted successfully.`,
+        title: isPublicRequest ? "Request Submitted!" : "Booking Request Sent!",
+        description: isPublicRequest 
+          ? "Your request has been submitted and will be visible to our pro talents who can help you."
+          : `Your booking request for ${talentName} has been submitted successfully.`,
       });
 
       onSuccess();

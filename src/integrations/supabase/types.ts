@@ -65,6 +65,8 @@ export type Database = {
           event_location: string
           event_type: string
           id: string
+          is_gig_opportunity: boolean | null
+          is_public_request: boolean | null
           needs_equipment: boolean | null
           status: string
           talent_id: string
@@ -83,6 +85,8 @@ export type Database = {
           event_location: string
           event_type: string
           id?: string
+          is_gig_opportunity?: boolean | null
+          is_public_request?: boolean | null
           needs_equipment?: boolean | null
           status?: string
           talent_id: string
@@ -101,6 +105,8 @@ export type Database = {
           event_location?: string
           event_type?: string
           id?: string
+          is_gig_opportunity?: boolean | null
+          is_public_request?: boolean | null
           needs_equipment?: boolean | null
           status?: string
           talent_id?: string

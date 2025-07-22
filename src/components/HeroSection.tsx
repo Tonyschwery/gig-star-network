@@ -4,9 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Star, MapPin, Search, Music, Crown } from "lucide-react";
+import { Star, MapPin, Search, Music, Crown, HelpCircle } from "lucide-react";
 import { countries } from "@/lib/countries";
 import { supabase } from "@/integrations/supabase/client";
+import { ProFeatureWrapper } from "@/components/ProFeatureWrapper";
+import { BookingForm } from "@/components/BookingForm";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 const talentTypes = [
   { value: 'all', label: 'All Talent Types' },
@@ -38,6 +41,7 @@ export function HeroSection() {
     talentType: 'all'
   });
   const [featuredTalents, setFeaturedTalents] = useState<TalentProfile[]>([]);
+  const [showBookingDialog, setShowBookingDialog] = useState(false);
 
   useEffect(() => {
     fetchFeaturedTalents();
@@ -224,7 +228,54 @@ export function HeroSection() {
             </div>
           </div>
         </div>
+        
+        {/* Booker Help Section */}
+        <div className="mt-16 text-center space-y-6">
+          <div className="space-y-3">
+            <div className="flex items-center justify-center">
+              <HelpCircle className="h-8 w-8 text-brand-primary mr-3" />
+              <h2 className="text-2xl lg:text-3xl font-bold text-foreground">
+                Can't find what you're looking for?
+              </h2>
+            </div>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Let us help you find the perfect talent for your event. Our team will personally match you with artists that fit your specific needs and budget.
+            </p>
+          </div>
+          
+          <ProFeatureWrapper 
+            isProFeature={true}
+            className="inline-block"
+            showProIcon={false}
+          >
+            <Button 
+              size="lg"
+              className="hero-button px-8 py-6 text-lg"
+              onClick={() => setShowBookingDialog(true)}
+            >
+              Get Personal Assistance
+            </Button>
+          </ProFeatureWrapper>
+          
+          <div className="text-sm text-muted-foreground">
+            ✨ Exclusive for Pro subscribers
+          </div>
+        </div>
       </div>
+
+      {/* Booking Dialog */}
+      <Dialog open={showBookingDialog} onOpenChange={setShowBookingDialog}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <BookingForm
+            talentId="public-request"
+            talentName="Personal Assistance Request"
+            onClose={() => setShowBookingDialog(false)}
+            onSuccess={() => {
+              setShowBookingDialog(false);
+            }}
+          />
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }

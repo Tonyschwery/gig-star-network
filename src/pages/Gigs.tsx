@@ -3,14 +3,14 @@ import { Header } from "@/components/Header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, Clock, MapPin, User, DollarSign } from "lucide-react";
+import { Calendar, Clock, MapPin, User, Briefcase, Crown } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 
-interface Booking {
+interface PublicBooking {
   id: string;
   booker_name: string;
   event_date: string;
@@ -19,71 +19,71 @@ interface Booking {
   event_address: string;
   event_type: string;
   description: string | null;
-  status: string;
   created_at: string;
-  talent_profiles: {
-    artist_name: string;
-    picture_url: string | null;
-    rate_per_hour: number | null;
-    currency: string | null;
-  };
+  equipment_types: string[];
+  needs_equipment: boolean;
+  custom_equipment: string | null;
 }
 
 export default function Gigs() {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
-  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [publicRequests, setPublicRequests] = useState<PublicBooking[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isProTalent, setIsProTalent] = useState(false);
 
   useEffect(() => {
     if (!user) {
       navigate("/auth");
       return;
     }
-    fetchBookings();
+    checkProStatus();
   }, [user, navigate]);
 
-  const fetchBookings = async () => {
+  const checkProStatus = async () => {
     if (!user) return;
 
     try {
-      const { data, error } = await supabase
-        .from('bookings')
-        .select(`
-          *,
-          talent_profiles (
-            artist_name,
-            picture_url,
-            rate_per_hour,
-            currency
-          )
-        `)
+      const { data } = await supabase
+        .from('talent_profiles')
+        .select('is_pro_subscriber')
         .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+        .maybeSingle();
 
-      if (error) throw error;
-      setBookings(data || []);
+      if (data?.is_pro_subscriber) {
+        setIsProTalent(true);
+        fetchPublicRequests();
+      } else {
+        setIsProTalent(false);
+        setLoading(false);
+      }
     } catch (error) {
-      console.error('Error fetching bookings:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load your bookings.",
-        variant: "destructive",
-      });
-    } finally {
+      console.error('Error checking pro status:', error);
       setLoading(false);
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'confirmed':
-        return 'bg-green-500/10 text-green-700 dark:text-green-300';
-      case 'cancelled':
-        return 'bg-red-500/10 text-red-700 dark:text-red-300';
-      default:
-        return 'bg-yellow-500/10 text-yellow-700 dark:text-yellow-300';
+  const fetchPublicRequests = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('bookings')
+        .select('*')
+        .eq('is_public_request', true)
+        .eq('is_gig_opportunity', true)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setPublicRequests(data || []);
+    } catch (error) {
+      console.error('Error fetching public requests:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load gig opportunities.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -100,12 +100,65 @@ export default function Gigs() {
     return iconMap[type] || "🎪";
   };
 
+  const handleContactBooker = (request: PublicBooking) => {
+    toast({
+      title: "Contact Feature",
+      description: "Direct contact feature will be available soon. For now, please use the general contact form.",
+    });
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
         <Header />
         <div className="pt-24 container mx-auto px-4">
-          <div className="text-center">Loading your gigs...</div>
+          <div className="text-center">Loading gig opportunities...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isProTalent) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        
+        <div className="pt-24 container mx-auto px-4 pb-12">
+          <div className="max-w-2xl mx-auto text-center space-y-6">
+            <div className="space-y-4">
+              <Crown className="h-16 w-16 text-brand-primary mx-auto" />
+              <h1 className="text-4xl font-bold gradient-text">Pro Feature</h1>
+              <p className="text-xl text-muted-foreground">
+                Access to exclusive gig opportunities is available for Pro subscribers only.
+              </p>
+            </div>
+            
+            <Card className="p-8">
+              <CardContent className="space-y-4">
+                <h3 className="text-2xl font-semibold">Upgrade to Pro to:</h3>
+                <ul className="space-y-2 text-left">
+                  <li className="flex items-center gap-2">
+                    <Briefcase className="h-4 w-4 text-brand-primary" />
+                    <span>Access exclusive gig opportunities from bookers</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <User className="h-4 w-4 text-brand-primary" />
+                    <span>Direct contact with event organizers</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Crown className="h-4 w-4 text-brand-primary" />
+                    <span>Pro badge on your profile</span>
+                  </li>
+                </ul>
+                <Button 
+                  className="hero-button w-full mt-6"
+                  onClick={() => navigate('/talent-dashboard')}
+                >
+                  Upgrade to Pro
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     );
@@ -117,62 +170,62 @@ export default function Gigs() {
       
       <div className="pt-24 container mx-auto px-4 pb-12">
         <div className="mb-8">
-          <h1 className="text-4xl font-bold gradient-text mb-2">My Gigs</h1>
-          <p className="text-muted-foreground">Manage your event bookings and requests</p>
+          <div className="flex items-center gap-3 mb-2">
+            <Briefcase className="h-8 w-8 text-brand-primary" />
+            <h1 className="text-4xl font-bold gradient-text">Gig Opportunities</h1>
+            <Crown className="h-8 w-8 text-brand-primary" />
+          </div>
+          <p className="text-muted-foreground">
+            Exclusive opportunities from bookers looking for talented performers like you
+          </p>
         </div>
 
-        {bookings.length === 0 ? (
+        {publicRequests.length === 0 ? (
           <Card className="text-center py-12">
             <CardContent>
-              <div className="text-6xl mb-4">🎪</div>
-              <h3 className="text-xl font-semibold mb-2">No Gigs Yet</h3>
+              <div className="text-6xl mb-4">🎭</div>
+              <h3 className="text-xl font-semibold mb-2">No Gig Opportunities Yet</h3>
               <p className="text-muted-foreground mb-6">
-                You haven't booked any talent yet. Start by exploring our amazing artists!
+                New opportunities from bookers will appear here. Check back soon!
               </p>
               <Button 
                 onClick={() => navigate('/')}
                 className="hero-button"
               >
-                Find Talent
+                Back to Home
               </Button>
             </CardContent>
           </Card>
         ) : (
           <div className="grid gap-6">
-            {bookings.map((booking) => (
-              <Card key={booking.id} className="overflow-hidden">
+            {publicRequests.map((request) => (
+              <Card key={request.id} className="overflow-hidden hover:shadow-lg transition-shadow">
                 <CardHeader className="pb-4">
                   <div className="flex justify-between items-start">
                     <div className="flex items-center gap-4">
                       <div className="w-16 h-16 rounded-full bg-gradient-to-br from-brand-primary to-brand-secondary flex items-center justify-center text-2xl">
-                        {booking.talent_profiles.picture_url ? (
-                          <img 
-                            src={booking.talent_profiles.picture_url} 
-                            alt={booking.talent_profiles.artist_name}
-                            className="w-full h-full object-cover rounded-full"
-                          />
-                        ) : (
-                          <User className="h-8 w-8 text-white" />
-                        )}
+                        {getEventTypeIcon(request.event_type)}
                       </div>
                       <div>
                         <CardTitle className="text-xl mb-1">
-                          {booking.talent_profiles.artist_name}
+                          {request.event_type.charAt(0).toUpperCase() + request.event_type.slice(1)} Event
                         </CardTitle>
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="text-2xl">{getEventTypeIcon(booking.event_type)}</span>
-                          <span className="capitalize font-medium text-foreground">
-                            {booking.event_type} Event
-                          </span>
-                        </div>
                         <div className="text-sm text-muted-foreground">
-                          Booked by: <span className="font-medium text-foreground">{booking.booker_name}</span>
+                          Requested by: <span className="font-medium text-foreground">{request.booker_name}</span>
                         </div>
+                        <Badge variant="outline" className="mt-2">
+                          New Opportunity
+                        </Badge>
                       </div>
                     </div>
-                    <Badge className={getStatusColor(booking.status)}>
-                      {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
-                    </Badge>
+                    <div className="text-right">
+                      <Button 
+                        onClick={() => handleContactBooker(request)}
+                        className="hero-button"
+                      >
+                        Contact Booker
+                      </Button>
+                    </div>
                   </div>
                 </CardHeader>
 
@@ -180,42 +233,54 @@ export default function Gigs() {
                   <div className="grid md:grid-cols-2 gap-4">
                     <div className="flex items-center gap-2 text-sm">
                       <Calendar className="h-4 w-4 text-muted-foreground" />
-                      <span>{format(new Date(booking.event_date), 'PPP')}</span>
+                      <span>{format(new Date(request.event_date), 'PPP')}</span>
                     </div>
                     <div className="flex items-center gap-2 text-sm">
                       <Clock className="h-4 w-4 text-muted-foreground" />
-                      <span>{booking.event_duration} hours</span>
+                      <span>{request.event_duration} hours</span>
                     </div>
                     <div className="flex items-center gap-2 text-sm">
                       <MapPin className="h-4 w-4 text-muted-foreground" />
-                      <span className="font-medium">{booking.event_location}</span>
+                      <span className="font-medium">{request.event_location}</span>
                     </div>
-                    {booking.talent_profiles.rate_per_hour && (
-                      <div className="flex items-center gap-2 text-sm">
-                        <DollarSign className="h-4 w-4 text-muted-foreground" />
-                        <span>
-                          Estimated: {booking.talent_profiles.currency || 'USD'} {booking.talent_profiles.rate_per_hour * booking.event_duration}
-                        </span>
-                      </div>
-                    )}
                   </div>
 
                   <div className="space-y-2">
                     <div className="text-sm">
                       <span className="font-medium text-foreground">Full Address:</span>
-                      <p className="text-muted-foreground mt-1">{booking.event_address}</p>
+                      <p className="text-muted-foreground mt-1">{request.event_address}</p>
                     </div>
                   </div>
 
-                  {booking.description && (
+                  {request.needs_equipment && (
+                    <div className="space-y-2">
+                      <div className="text-sm">
+                        <span className="font-medium text-foreground">Equipment Needed:</span>
+                        <div className="flex flex-wrap gap-2 mt-1">
+                          {request.equipment_types.map((equipment, index) => (
+                            <Badge key={index} variant="secondary">
+                              {equipment}
+                            </Badge>
+                          ))}
+                          {request.custom_equipment && (
+                            <Badge variant="secondary">
+                              {request.custom_equipment}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {request.description && (
                     <div className="text-sm">
-                      <strong className="text-foreground">Description:</strong>
-                      <p className="text-muted-foreground mt-1">{booking.description}</p>
+                      <strong className="text-foreground">Event Details:</strong>
+                      <p className="text-muted-foreground mt-1">{request.description}</p>
                     </div>
                   )}
 
                   <div className="text-xs text-muted-foreground pt-2 border-t">
-                    Requested on {format(new Date(booking.created_at), 'PPP')}
+                    Posted on {format(new Date(request.created_at), 'PPP')}
                   </div>
                 </CardContent>
               </Card>
