@@ -11,6 +11,7 @@ import BookerDashboard from "./pages/BookerDashboard";
 import TalentOnboarding from "./pages/TalentOnboarding";
 import TalentProfile from "./pages/TalentProfile";
 import TalentDashboard from "./pages/TalentDashboard";
+import YourEvent from "./pages/YourEvent";
 import Gigs from "./pages/Gigs";
 import NotFound from "./pages/NotFound";
 
@@ -31,6 +32,7 @@ const App = () => (
             <Route path="/talent-onboarding" element={<TalentOnboarding />} />
             <Route path="/talent/:id" element={<TalentProfile />} />
             <Route path="/talent-dashboard" element={<TalentDashboard />} />
+            <Route path="/your-event" element={<YourEvent />} />
             <Route path="/gigs" element={<Gigs />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

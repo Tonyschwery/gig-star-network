@@ -7,8 +7,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Star, MapPin, Search, Music, Crown, HelpCircle } from "lucide-react";
 import { countries } from "@/lib/countries";
 import { supabase } from "@/integrations/supabase/client";
-import { BookingForm } from "@/components/BookingForm";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 const talentTypes = [
   { value: 'all', label: 'All Talent Types' },
@@ -40,7 +38,6 @@ export function HeroSection() {
     talentType: 'all'
   });
   const [featuredTalents, setFeaturedTalents] = useState<TalentProfile[]>([]);
-  const [showBookingDialog, setShowBookingDialog] = useState(false);
 
   useEffect(() => {
     fetchFeaturedTalents();
@@ -245,7 +242,7 @@ export function HeroSection() {
           <Button 
             size="lg"
             className="hero-button px-8 py-6 text-lg"
-            onClick={() => setShowBookingDialog(true)}
+            onClick={() => navigate('/your-event')}
           >
             Tell us about your event
           </Button>
@@ -255,28 +252,6 @@ export function HeroSection() {
           </div>
         </div>
       </div>
-
-      {/* Booking Dialog */}
-      <Dialog open={showBookingDialog} onOpenChange={setShowBookingDialog}>
-        <DialogContent className="max-w-4xl w-[95vw] max-h-[95vh] overflow-hidden p-0">
-          <DialogHeader className="px-6 pt-6">
-            <DialogTitle>Tell us about your event</DialogTitle>
-            <DialogDescription>
-              Fill out the details below and our pro talents will get in touch with you to discuss your event requirements.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="max-h-[80vh] overflow-y-auto px-6 pb-6">
-            <BookingForm
-              talentId="public-request"
-              talentName="Personal Assistance Request"
-              onClose={() => setShowBookingDialog(false)}
-              onSuccess={() => {
-                setShowBookingDialog(false);
-              }}
-            />
-          </div>
-        </DialogContent>
-      </Dialog>
     </section>
   );
 }
