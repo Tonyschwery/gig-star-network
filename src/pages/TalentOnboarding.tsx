@@ -12,8 +12,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Upload, Music } from 'lucide-react';
 import { countries } from '@/lib/countries';
-import { PhotoGalleryUpload } from '@/components/PhotoGalleryUpload';
-import { ImageCropper } from '@/components/ImageCropper';
+import { SimpleGalleryUpload } from '@/components/SimpleGalleryUpload';
+import { SimpleAvatarUpload } from '@/components/SimpleAvatarUpload';
 
 const MUSIC_GENRES = [
   'afro-house',
@@ -62,12 +62,8 @@ export default function TalentOnboarding() {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [pictureFile, setPictureFile] = useState<File | null>(null);
+  const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
   const [galleryImages, setGalleryImages] = useState<string[]>([]);
-  const [profileCropperState, setProfileCropperState] = useState<{
-    isOpen: boolean;
-    imageSrc: string;
-    originalFile: File;
-  } | null>(null);
   const [formData, setFormData] = useState({
     artistName: '',
     act: '',
@@ -98,66 +94,12 @@ export default function TalentOnboarding() {
     }
   };
 
-  const handlePictureUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 10 * 1024 * 1024) { // 10MB limit
-        toast({
-          title: "File too large",
-          description: "Please select an image under 10MB",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      if (!file.type.startsWith('image/')) {
-        toast({
-          title: "Invalid file type",
-          description: "Please select an image file",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Open cropper
-      const imageSrc = URL.createObjectURL(file);
-      setProfileCropperState({
-        isOpen: true,
-        imageSrc,
-        originalFile: file
-      });
-
-      // Reset the input
-      e.target.value = '';
-    }
+  const handleAvatarImageChange = (imageUrl: string | null) => {
+    setProfileImageUrl(imageUrl);
   };
 
-  const handleProfileCropComplete = (croppedImageBlob: Blob) => {
-    // Convert blob to file
-    const croppedFile = new File([croppedImageBlob], `profile-${profileCropperState?.originalFile.name}`, {
-      type: 'image/jpeg',
-      lastModified: Date.now(),
-    });
-
-    setPictureFile(croppedFile);
-    
-    // Clean up
-    if (profileCropperState) {
-      URL.revokeObjectURL(profileCropperState.imageSrc);
-      setProfileCropperState(null);
-    }
-
-    toast({
-      title: "Image Ready",
-      description: "Profile picture cropped and ready for upload",
-    });
-  };
-
-  const handleProfileCropCancel = () => {
-    if (profileCropperState) {
-      URL.revokeObjectURL(profileCropperState.imageSrc);
-      setProfileCropperState(null);
-    }
+  const handleAvatarFileChange = (file: File | null) => {
+    setPictureFile(file);
   };
 
   const uploadPicture = async (userId: string): Promise<string | null> => {
@@ -351,33 +293,23 @@ export default function TalentOnboarding() {
 
             {/* Picture Upload */}
             <div className="space-y-2">
-              <Label htmlFor="picture">Profile Picture *</Label>
-              <div className="flex items-center gap-4">
-                <Input
-                  id="picture"
-                  type="file"
-                  accept="image/*"
-                  onChange={handlePictureUpload}
-                  required
-                  className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/80"
-                />
-                <Upload className="h-5 w-5 text-muted-foreground" />
-              </div>
-              {pictureFile && (
-                <p className="text-sm text-green-600">
-                  ✓ Cropped image ready: {pictureFile.name}
-                </p>
-              )}
+              <Label>Profile Picture *</Label>
+              <SimpleAvatarUpload
+                currentImage={profileImageUrl}
+                onImageChange={handleAvatarImageChange}
+                onFileChange={handleAvatarFileChange}
+                disabled={loading}
+              />
             </div>
 
             {/* Gallery Photos */}
             <div className="space-y-2">
               <Label>Additional Photos (Optional)</Label>
-              <PhotoGalleryUpload
+              <SimpleGalleryUpload
                 currentImages={galleryImages}
                 onImagesChange={setGalleryImages}
                 maxImages={5}
-                maxSizeKB={400}
+                disabled={loading}
               />
             </div>
 
@@ -507,15 +439,6 @@ export default function TalentOnboarding() {
             </Button>
           </form>
 
-          {/* Profile Picture Cropper Dialog */}
-          {profileCropperState && (
-            <ImageCropper
-              src={profileCropperState.imageSrc}
-              isOpen={profileCropperState.isOpen}
-              onCropComplete={handleProfileCropComplete}
-              onCancel={handleProfileCropCancel}
-            />
-          )}
         </CardContent>
       </Card>
     </div>
