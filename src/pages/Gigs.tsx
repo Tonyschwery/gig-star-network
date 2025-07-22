@@ -379,6 +379,8 @@ export default function Gigs() {
           bookerEmail={selectedBooker.booker_email}
           eventType={selectedBooker.event_type}
           bookingId={selectedBooker.id}
+          isGigOpportunity={true}
+          isPublicRequest={true}
         />
       )}
     </div>

@@ -19,6 +19,8 @@ interface ChatModalProps {
   bookerEmail: string;
   eventType: string;
   bookingId: string;
+  isGigOpportunity?: boolean;
+  isPublicRequest?: boolean;
 }
 
 interface Message {
@@ -46,7 +48,7 @@ interface Booking {
   };
 }
 
-export function ChatModal({ isOpen, onClose, bookerName, bookerEmail, eventType, bookingId }: ChatModalProps) {
+export function ChatModal({ isOpen, onClose, bookerName, bookerEmail, eventType, bookingId, isGigOpportunity, isPublicRequest }: ChatModalProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(false);
@@ -299,7 +301,7 @@ export function ChatModal({ isOpen, onClose, bookerName, bookerEmail, eventType,
                 <Button
                   onClick={async () => {
                     // For gig opportunities, make sure the talent is assigned to the booking first
-                    if (booking?.is_public_request && booking?.is_gig_opportunity && !booking?.talent_id) {
+                    if ((isPublicRequest && isGigOpportunity) || (booking?.is_public_request && booking?.is_gig_opportunity && !booking?.talent_id)) {
                       try {
                         // Get current user's talent profile
                         const { data: talentProfile } = await supabase
