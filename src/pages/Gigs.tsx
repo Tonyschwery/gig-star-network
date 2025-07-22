@@ -227,9 +227,10 @@ export default function Gigs() {
                     <div className="flex gap-2">
                       <Button 
                         onClick={() => handleStartChat(request)}
-                        className="hero-button"
+                        size="sm"
+                        className="hero-button h-8 px-3 text-xs"
                       >
-                        <MessageCircle className="h-4 w-4 mr-2" />
+                        <MessageCircle className="h-3 w-3 mr-1" />
                         Start Chat
                       </Button>
                     </div>
