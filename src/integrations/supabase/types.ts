@@ -69,6 +69,7 @@ export type Database = {
           is_gig_opportunity: boolean | null
           is_public_request: boolean | null
           needs_equipment: boolean | null
+          payment_id: string | null
           status: string
           talent_id: string | null
           updated_at: string
@@ -90,6 +91,7 @@ export type Database = {
           is_gig_opportunity?: boolean | null
           is_public_request?: boolean | null
           needs_equipment?: boolean | null
+          payment_id?: string | null
           status?: string
           talent_id?: string | null
           updated_at?: string
@@ -111,12 +113,20 @@ export type Database = {
           is_gig_opportunity?: boolean | null
           is_public_request?: boolean | null
           needs_equipment?: boolean | null
+          payment_id?: string | null
           status?: string
           talent_id?: string | null
           updated_at?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "bookings_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "bookings_talent_id_fkey"
             columns: ["talent_id"]
@@ -176,6 +186,81 @@ export type Database = {
             columns: ["message_id"]
             isOneToOne: false
             referencedRelation: "booking_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payments: {
+        Row: {
+          booker_id: string
+          booking_id: string
+          commission_rate: number
+          created_at: string
+          currency: string
+          hourly_rate: number
+          hours_booked: number
+          id: string
+          payment_method: string | null
+          payment_reference: string | null
+          payment_status: string
+          platform_commission: number
+          processed_at: string | null
+          talent_earnings: number
+          talent_id: string
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          booker_id: string
+          booking_id: string
+          commission_rate?: number
+          created_at?: string
+          currency?: string
+          hourly_rate: number
+          hours_booked: number
+          id?: string
+          payment_method?: string | null
+          payment_reference?: string | null
+          payment_status?: string
+          platform_commission?: number
+          processed_at?: string | null
+          talent_earnings: number
+          talent_id: string
+          total_amount: number
+          updated_at?: string
+        }
+        Update: {
+          booker_id?: string
+          booking_id?: string
+          commission_rate?: number
+          created_at?: string
+          currency?: string
+          hourly_rate?: number
+          hours_booked?: number
+          id?: string
+          payment_method?: string | null
+          payment_reference?: string | null
+          payment_status?: string
+          platform_commission?: number
+          processed_at?: string | null
+          talent_earnings?: number
+          talent_id?: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_talent_id_fkey"
+            columns: ["talent_id"]
+            isOneToOne: false
+            referencedRelation: "talent_profiles"
             referencedColumns: ["id"]
           },
         ]

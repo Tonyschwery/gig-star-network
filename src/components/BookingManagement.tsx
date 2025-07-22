@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Check, X, Calendar, Clock, MapPin, Mail, User, Crown, Lock, MessageCircle, Settings } from "lucide-react";
 import { BookingChat } from "./BookingChat";
+import { PaymentModal } from "./PaymentModal";
 import { format } from "date-fns";
 
 interface Booking {
@@ -23,6 +24,11 @@ interface Booking {
   needs_equipment?: boolean;
   equipment_types?: string[];
   custom_equipment?: string;
+  talent_profiles?: {
+    artist_name: string;
+    rate_per_hour: number;
+    is_pro_subscriber: boolean;
+  };
 }
 
 interface BookingManagementProps {
@@ -35,6 +41,8 @@ export function BookingManagement({ talentId, isProSubscriber = false, onUpgrade
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [updatingBooking, setUpdatingBooking] = useState<string | null>(null);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -45,7 +53,14 @@ export function BookingManagement({ talentId, isProSubscriber = false, onUpgrade
     try {
       const { data, error } = await supabase
         .from('bookings')
-        .select('*')
+        .select(`
+          *,
+          talent_profiles!inner (
+            artist_name,
+            rate_per_hour,
+            is_pro_subscriber
+          )
+        `)
         .eq('talent_id', talentId)
         .order('created_at', { ascending: false });
 
@@ -284,12 +299,15 @@ export function BookingManagement({ talentId, isProSubscriber = false, onUpgrade
 
                 <div className="flex gap-2 pt-4">
                   <Button
-                    onClick={() => updateBookingStatus(booking.id, 'approved')}
+                    onClick={() => {
+                      setSelectedBooking(booking);
+                      setShowPaymentModal(true);
+                    }}
                     disabled={updatingBooking === booking.id}
                     className="flex-1 bg-green-600 hover:bg-green-700 text-white"
                   >
                     <Check className="h-4 w-4 mr-2" />
-                    Approve
+                    Approve & Request Payment
                   </Button>
                   <Button
                     onClick={() => updateBookingStatus(booking.id, 'declined')}
@@ -446,6 +464,24 @@ export function BookingManagement({ talentId, isProSubscriber = false, onUpgrade
             </p>
           </CardContent>
         </Card>
+      )}
+
+      {/* Payment Modal */}
+      {selectedBooking && (
+        <PaymentModal
+          isOpen={showPaymentModal}
+          onClose={() => {
+            setShowPaymentModal(false);
+            setSelectedBooking(null);
+          }}
+          booking={selectedBooking}
+          onPaymentSuccess={() => {
+            // Refresh bookings to show updated status
+            fetchBookings();
+            setShowPaymentModal(false);
+            setSelectedBooking(null);
+          }}
+        />
       )}
     </div>
   );
