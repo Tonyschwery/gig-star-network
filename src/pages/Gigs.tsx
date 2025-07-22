@@ -159,10 +159,6 @@ export default function Gigs() {
           return;
         }
 
-        toast({
-          title: "Success",
-          description: "You've successfully claimed this gig opportunity!",
-        });
       }
 
       // Update the local request to include talent_id for the chat
