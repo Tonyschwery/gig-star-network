@@ -187,8 +187,8 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
               {/* Mock Payment Notice */}
               <div className="p-3 bg-blue-50 dark:bg-blue-950 rounded-md">
                 <p className="text-sm text-blue-700 dark:text-blue-300">
-                  🏗️ <strong>Demo Mode:</strong> This is a mock payment for demonstration. 
-                  No real charges will be made.
+                  🎭 <strong>Demo Mode:</strong> This is a mock payment for demonstration. 
+                  No real charges will be made. Click "{buttonText}" to simulate {isTalent ? 'sending an invoice' : 'a successful payment'}.
                 </p>
               </div>
             </div>
