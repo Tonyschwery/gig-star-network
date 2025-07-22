@@ -76,6 +76,7 @@ export default function Gigs() {
         .select('*')
         .eq('is_public_request', true)
         .eq('is_gig_opportunity', true)
+        .neq('status', 'completed') // Exclude completed gigs
         .order('created_at', { ascending: false });
 
       if (error) throw error;

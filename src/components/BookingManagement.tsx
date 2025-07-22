@@ -147,7 +147,7 @@ export function BookingManagement({ talentId, isProSubscriber = false, onUpgrade
   };
 
   const pendingBookings = bookings.filter(booking => booking.status === 'pending');
-  const otherBookings = bookings.filter(booking => booking.status !== 'pending');
+  const otherBookings = bookings.filter(booking => booking.status !== 'pending' && booking.status !== 'completed');
 
   if (loading) {
     return (

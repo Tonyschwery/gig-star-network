@@ -125,11 +125,11 @@ serve(async (req) => {
 
     logStep('Payment status updated to completed');
 
-    // Update booking status to confirmed
+    // Update booking status to completed (removes from all dashboards)
     const { error: bookingUpdateError } = await supabaseAdmin
       .from('bookings')
       .update({
-        status: 'confirmed'
+        status: 'completed'
       })
       .eq('id', payment.booking_id);
 

@@ -94,8 +94,8 @@ export const BookerPaymentModal: React.FC<BookerPaymentModalProps> = ({
 
       if (data.success) {
         toast({
-          title: "Payment Successful!",
-          description: `Mock payment of ${payment.currency} ${payment.total_amount.toFixed(2)} processed successfully. Your booking is confirmed!`,
+          title: "Booking approved successfully!",
+          description: `Payment of ${payment.currency} ${payment.total_amount.toFixed(2)} processed successfully. Your booking is confirmed!`,
         });
         
         onPaymentSuccess();

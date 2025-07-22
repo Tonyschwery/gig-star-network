@@ -164,6 +164,7 @@ const BookerDashboard = () => {
   const pendingBookings = bookings.filter(booking => booking.status === 'pending');
   const approvedBookings = bookings.filter(booking => booking.status === 'approved');
   const declinedBookings = bookings.filter(booking => booking.status === 'declined');
+  // Note: 'completed' bookings are filtered out - they don't appear in any dashboard
 
   if (loading) {
     return (
