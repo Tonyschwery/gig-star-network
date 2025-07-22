@@ -19,6 +19,7 @@ import {
   Clock3
 } from "lucide-react";
 import { format } from "date-fns";
+import { BookerChat } from "@/components/BookerChat";
 
 interface Booking {
   id: string;
@@ -51,6 +52,28 @@ const BookerDashboard = () => {
       return;
     }
     fetchBookings();
+    
+    // Set up real-time subscription for booking updates
+    const channel = supabase
+      .channel('booker-booking-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'bookings',
+          filter: `user_id=eq.${user.id}`
+        },
+        () => {
+          // Refresh bookings when status changes
+          fetchBookings();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user, navigate]);
 
   const fetchBookings = async () => {
@@ -284,6 +307,15 @@ const BookerDashboard = () => {
                     </div>
                   </div>
 
+                  {/* Chat Section */}
+                  <div className="mt-4 pt-4 border-t">
+                    <BookerChat
+                      bookingId={booking.id}
+                      talentName={booking.talent_profiles?.artist_name || 'Talent'}
+                      bookingStatus={booking.status}
+                    />
+                  </div>
+
                   <div className="flex gap-2 pt-2">
                     <Button
                       onClick={() => navigate(`/talent/${booking.talent_id}`)}
@@ -292,14 +324,6 @@ const BookerDashboard = () => {
                     >
                       <User className="h-4 w-4 mr-2" />
                       View Talent Profile
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="flex-1"
-                      disabled
-                    >
-                      <MessageCircle className="h-4 w-4 mr-2" />
-                      Message (Coming Soon)
                     </Button>
                   </div>
                 </div>
@@ -383,6 +407,17 @@ const BookerDashboard = () => {
                           )}
                         </div>
 
+                        {/* Chat Section for All Bookings */}
+                        {booking.status === 'approved' && (
+                          <div className="mt-4 pt-4 border-t">
+                            <BookerChat
+                              bookingId={booking.id}
+                              talentName={booking.talent_profiles?.artist_name || 'Talent'}
+                              bookingStatus={booking.status}
+                            />
+                          </div>
+                        )}
+
                         <div className="flex gap-2 pt-2">
                           <Button
                             onClick={() => navigate(`/talent/${booking.talent_id}`)}
@@ -391,14 +426,6 @@ const BookerDashboard = () => {
                           >
                             <User className="h-4 w-4 mr-2" />
                             View Talent
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            disabled
-                          >
-                            <MessageCircle className="h-4 w-4 mr-2" />
-                            Message
                           </Button>
                         </div>
                       </div>
