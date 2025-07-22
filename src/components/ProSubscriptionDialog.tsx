@@ -64,7 +64,21 @@ export function ProSubscriptionDialog({
   const handleSubscribe = async () => {
     setLoading(true);
     try {
-      // Activate pro subscription immediately for testing
+      // Check if we have a valid profile ID
+      if (!profileId || profileId === 'temp-id') {
+        // During onboarding - just show success message
+        onSubscribe();
+        onOpenChange(false);
+        
+        toast({
+          title: "Pro Features Activated! 🎉",
+          description: "Your pro subscription will be activated when you complete your profile.",
+          duration: 5000,
+        });
+        return;
+      }
+
+      // Activate pro subscription for existing profile
       const { error } = await supabase
         .from('talent_profiles')
         .update({ 
