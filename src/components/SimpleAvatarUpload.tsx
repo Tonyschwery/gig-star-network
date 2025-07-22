@@ -1,9 +1,10 @@
 import { useState, useRef } from 'react';
-import { Upload, X, User, Loader2 } from 'lucide-react';
+import { Upload, X, User, Loader2, Move } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { ImagePositioner } from './ImagePositioner';
 
 interface SimpleAvatarUploadProps {
   currentImage?: string;
@@ -21,70 +22,13 @@ export function SimpleAvatarUpload({
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(currentImage || null);
+  const [positionerState, setPositionerState] = useState<{
+    isOpen: boolean;
+    imageSrc: string;
+    originalFile: File;
+  } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const { toast } = useToast();
-
-  const processImageToCircle = (file: File): Promise<File> => {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      const canvas = canvasRef.current;
-      
-      if (!canvas) {
-        reject(new Error('Canvas not available'));
-        return;
-      }
-
-      img.onload = () => {
-        const ctx = canvas.getContext('2d');
-        if (!ctx) {
-          reject(new Error('Canvas context not available'));
-          return;
-        }
-
-        // Set output size - square for profile pictures
-        const size = 400;
-        canvas.width = size;
-        canvas.height = size;
-
-        // Calculate crop dimensions to center the image
-        const sourceSize = Math.min(img.width, img.height);
-        const sourceX = (img.width - sourceSize) / 2;
-        const sourceY = (img.height - sourceSize) / 2;
-
-        // Clear canvas
-        ctx.clearRect(0, 0, size, size);
-        
-        // Create clipping path for circle
-        ctx.beginPath();
-        ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
-        ctx.clip();
-
-        // Draw image centered and scaled
-        ctx.drawImage(img, sourceX, sourceY, sourceSize, sourceSize, 0, 0, size, size);
-
-        // Convert to blob and then to file
-        canvas.toBlob(
-          (blob) => {
-            if (blob) {
-              const processedFile = new File([blob], `avatar-${Date.now()}.jpg`, {
-                type: 'image/jpeg',
-                lastModified: Date.now(),
-              });
-              resolve(processedFile);
-            } else {
-              reject(new Error('Failed to process image'));
-            }
-          },
-          'image/jpeg',
-          0.9
-        );
-      };
-
-      img.onerror = () => reject(new Error('Failed to load image'));
-      img.src = URL.createObjectURL(file);
-    });
-  };
 
   const handleFile = async (file: File) => {
     if (!file.type.startsWith('image/')) {
@@ -105,32 +49,56 @@ export function SimpleAvatarUpload({
       return;
     }
 
-    setUploading(true);
+    // Open the image positioner instead of auto-processing
+    const imageSrc = URL.createObjectURL(file);
+    setPositionerState({
+      isOpen: true,
+      imageSrc,
+      originalFile: file
+    });
+  };
 
-    try {
-      // Process image to circular format
-      const processedFile = await processImageToCircle(file);
-      
-      // Create preview URL
-      const preview = URL.createObjectURL(processedFile);
-      setPreviewUrl(preview);
-      
-      // Update parent component
-      onFileChange(processedFile);
-      
-      toast({
-        title: "Image Ready",
-        description: "Profile picture processed and ready for upload",
+  const handlePositionComplete = (croppedImageBlob: Blob) => {
+    // Convert blob to file
+    const croppedFile = new File([croppedImageBlob], `avatar-${Date.now()}.jpg`, {
+      type: 'image/jpeg',
+      lastModified: Date.now(),
+    });
+
+    // Create preview URL
+    const preview = URL.createObjectURL(croppedFile);
+    setPreviewUrl(preview);
+    
+    // Update parent component
+    onFileChange(croppedFile);
+    
+    // Clean up
+    if (positionerState) {
+      URL.revokeObjectURL(positionerState.imageSrc);
+      setPositionerState(null);
+    }
+
+    toast({
+      title: "Image Ready",
+      description: "Profile picture positioned and ready for upload",
+    });
+  };
+
+  const handlePositionCancel = () => {
+    if (positionerState) {
+      URL.revokeObjectURL(positionerState.imageSrc);
+      setPositionerState(null);
+    }
+  };
+
+  const handleEditPosition = () => {
+    if (previewUrl && previewUrl !== currentImage) {
+      // Reopen the positioner with the current preview
+      setPositionerState({
+        isOpen: true,
+        imageSrc: previewUrl,
+        originalFile: new File([], 'current-image.jpg') // Placeholder
       });
-    } catch (error) {
-      console.error('Error processing image:', error);
-      toast({
-        title: "Processing Failed",
-        description: "Failed to process the image. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setUploading(false);
     }
   };
 
@@ -171,12 +139,9 @@ export function SimpleAvatarUpload({
 
   return (
     <div className="space-y-4">
-      {/* Hidden canvas for image processing */}
-      <canvas ref={canvasRef} className="hidden" />
-      
       {/* Current/Preview Image */}
       {previewUrl && (
-        <div className="flex items-center justify-center">
+        <div className="flex flex-col items-center space-y-3">
           <div className="relative">
             <Avatar className="w-32 h-32">
               <AvatarImage src={previewUrl} alt="Profile preview" />
@@ -195,6 +160,19 @@ export function SimpleAvatarUpload({
               </button>
             )}
           </div>
+          
+          {/* Edit position button */}
+          {!disabled && previewUrl !== currentImage && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleEditPosition}
+              className="text-xs"
+            >
+              <Move className="h-3 w-3 mr-1" />
+              Adjust Position
+            </Button>
+          )}
         </div>
       )}
 
@@ -221,40 +199,31 @@ export function SimpleAvatarUpload({
           />
           
           <div className="flex flex-col items-center space-y-4">
-            {uploading ? (
-              <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-              </div>
-            ) : (
-              <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center">
-                <Upload className="h-8 w-8 text-muted-foreground" />
-              </div>
-            )}
+            <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center">
+              <Upload className="h-8 w-8 text-muted-foreground" />
+            </div>
             
             <div>
-              <p className="font-medium text-lg">
-                {uploading ? 'Processing...' : 'Upload Profile Picture'}
-              </p>
+              <p className="font-medium text-lg">Upload Profile Picture</p>
               <p className="text-sm text-muted-foreground">
-                {uploading 
-                  ? 'Creating your perfect profile picture...'
-                  : 'Drag & drop or click to browse'
-                }
+                Drag & drop or click to browse
               </p>
               <p className="text-xs text-muted-foreground mt-2">
-                Auto-cropped to circle • JPG, PNG • Max 10MB
+                Position your face perfectly • JPG, PNG • Max 10MB
               </p>
             </div>
           </div>
         </div>
       )}
 
-      {uploading && (
-        <div className="text-center">
-          <p className="text-sm text-muted-foreground">
-            Processing your image for the perfect profile picture...
-          </p>
-        </div>
+      {/* Image Positioner Dialog */}
+      {positionerState && (
+        <ImagePositioner
+          src={positionerState.imageSrc}
+          isOpen={positionerState.isOpen}
+          onPositionComplete={handlePositionComplete}
+          onCancel={handlePositionCancel}
+        />
       )}
     </div>
   );
