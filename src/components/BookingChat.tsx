@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback, memo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,7 +28,7 @@ interface BookingChatProps {
   isDirectBooking?: boolean; // New prop to indicate if this is a direct booking from a booker
 }
 
-export function BookingChat({ bookingId, bookerName, isProSubscriber = false, onUpgrade, isDirectBooking = false }: BookingChatProps) {
+const BookingChatComponent = ({ bookingId, bookerName, isProSubscriber = false, onUpgrade, isDirectBooking = false }: BookingChatProps) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(true);
@@ -96,7 +96,7 @@ export function BookingChat({ bookingId, bookerName, isProSubscriber = false, on
     }
   };
 
-  const sendMessage = async () => {
+  const sendMessage = useCallback(async () => {
     if (!newMessage.trim() || !user) return;
 
     // Filter sensitive content from the message
@@ -143,14 +143,14 @@ export function BookingChat({ bookingId, bookerName, isProSubscriber = false, on
     } finally {
       setSending(false);
     }
-  };
+  }, [newMessage, user, bookingId, toast]);
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       sendMessage();
     }
-  };
+  }, [sendMessage]);
 
   const ChatContent = () => (
     <Card className="glass-card">
@@ -265,3 +265,5 @@ export function BookingChat({ bookingId, bookerName, isProSubscriber = false, on
 
   return <ChatContent />;
 }
+
+export const BookingChat = memo(BookingChatComponent);
