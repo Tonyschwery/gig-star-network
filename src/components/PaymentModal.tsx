@@ -63,7 +63,9 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   const handlePayment = async () => {
     setIsProcessing(true);
     try {
-      const { data, error } = await supabase.functions.invoke('process-payment', {
+      // Use different functions based on user type
+      const functionName = isTalent ? 'send-invoice' : 'process-payment';
+      const { data, error } = await supabase.functions.invoke(functionName, {
         body: { bookingId: booking.id }
       });
 
