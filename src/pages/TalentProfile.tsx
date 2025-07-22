@@ -280,21 +280,57 @@ export default function TalentProfile() {
                 </div>
               </Card>
 
-              {/* Enhanced Media Section - YouTube Only */}
-              {talent.youtube_link && (
+              {/* Enhanced Media Section */}
+              {(talent.youtube_link || talent.soundcloud_link) && (
                 <Card className="p-6">
-                  <h2 className="text-xl font-semibold mb-6">Video Content</h2>
-                  <div>
-                    <h3 className="font-medium mb-3 flex items-center">
-                      <div className="w-5 h-5 bg-red-500 rounded mr-2"></div>
-                      YouTube Video
-                    </h3>
-                    <YouTubePlayer 
-                      url={talent.youtube_link}
-                      onThumbnailClick={() => {
-                        // Optional: Track video play analytics
-                      }}
-                    />
+                  <h2 className="text-xl font-semibold mb-6">Media Content</h2>
+                  <div className="space-y-6">
+                    {talent.youtube_link && (
+                      <div>
+                        <h3 className="font-medium mb-3 flex items-center">
+                          <div className="w-5 h-5 bg-red-500 rounded mr-2"></div>
+                          YouTube Video
+                        </h3>
+                        <YouTubePlayer 
+                          url={talent.youtube_link}
+                          onThumbnailClick={() => {
+                            // Optional: Track video play analytics
+                          }}
+                        />
+                      </div>
+                    )}
+
+                    {talent.soundcloud_link && (
+                      <div>
+                        <h3 className="font-medium mb-3 flex items-center">
+                          <div className="w-5 h-5 bg-orange-500 rounded mr-2"></div>
+                          SoundCloud Audio
+                        </h3>
+                        <div className="relative">
+                          <iframe
+                            width="100%"
+                            height="166"
+                            scrolling="no"
+                            frameBorder="no"
+                            allow="autoplay"
+                            src={talent.soundcloud_link.includes('api.soundcloud.com') 
+                              ? talent.soundcloud_link 
+                              : `https://w.soundcloud.com/player/?url=${encodeURIComponent(talent.soundcloud_link)}&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true`
+                            }
+                            className="rounded-lg"
+                          ></iframe>
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="mt-3"
+                          onClick={() => window.open(talent.soundcloud_link, '_blank')}
+                        >
+                          <ExternalLink className="h-4 w-4 mr-2" />
+                          Open in SoundCloud
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 </Card>
               )}
