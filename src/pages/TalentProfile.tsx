@@ -204,12 +204,12 @@ export default function TalentProfile() {
             <div className="lg:col-span-2 space-y-6">
               {/* Hero Section */}
               <Card className="overflow-hidden">
-                <div className="relative h-64 bg-gradient-to-br from-brand-primary/20 to-brand-accent/20">
+                <div className="relative aspect-[16/9] bg-gradient-to-br from-brand-primary/20 to-brand-accent/20">
                   {talent.picture_url && (
                     <img 
                       src={talent.picture_url} 
                       alt={talent.artist_name}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover object-center"
                     />
                   )}
                   <div className="absolute inset-0 bg-black/30"></div>
