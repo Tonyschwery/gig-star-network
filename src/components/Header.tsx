@@ -4,17 +4,20 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { BookingNotifications } from "@/components/BookingNotifications";
 
 export function Header() {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const [talentName, setTalentName] = useState<string | null>(null);
+  const [talentId, setTalentId] = useState<string | null>(null);
 
   useEffect(() => {
     if (user) {
       fetchTalentProfile();
     } else {
       setTalentName(null);
+      setTalentId(null);
     }
   }, [user]);
 
@@ -24,11 +27,12 @@ export function Header() {
     try {
       const { data } = await supabase
         .from('talent_profiles')
-        .select('artist_name')
+        .select('id, artist_name')
         .eq('user_id', user.id)
         .maybeSingle();
 
       setTalentName(data?.artist_name || null);
+      setTalentId(data?.id || null);
     } catch (error) {
       console.error('Error fetching talent profile:', error);
     }
@@ -108,12 +112,15 @@ export function Header() {
             
             {user ? (
               <div className="flex items-center space-x-2">
-                <span 
-                  className="text-sm text-muted-foreground hidden sm:block cursor-pointer hover:text-primary transition-colors"
-                  onClick={handleWelcomeClick}
-                >
-                  Welcome, {talentName || user.user_metadata?.name || user.email?.split('@')[0] || 'User'}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span 
+                    className="text-sm text-muted-foreground hidden sm:block cursor-pointer hover:text-primary transition-colors"
+                    onClick={handleWelcomeClick}
+                  >
+                    Welcome, {talentName || user.user_metadata?.name || user.email?.split('@')[0] || 'User'}
+                  </span>
+                  {talentId && <BookingNotifications talentId={talentId} />}
+                </div>
                 <Button 
                   variant="outline" 
                   size="sm"

@@ -307,29 +307,21 @@ export function BookingManagement({ talentId, isProSubscriber = false, onUpgrade
         </Card>
       )}
 
-      {/* All Bookings */}
-      <Card className="glass-card">
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <Calendar className="h-5 w-5 mr-2" />
-            All Booking Requests ({bookings.length})
-          </CardTitle>
-          <CardDescription>
-            View all your booking requests and their status
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {bookings.length === 0 ? (
-            <div className="text-center py-8">
-              <Mail className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <h3 className="font-medium mb-2">No Booking Requests</h3>
-              <p className="text-sm text-muted-foreground">
-                When clients book you, their requests will appear here
-              </p>
-            </div>
-          ) : (
+      {/* Previous Bookings (Approved/Declined) */}
+      {otherBookings.length > 0 && (
+        <Card className="glass-card">
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Calendar className="h-5 w-5 mr-2" />
+              Previous Booking Requests ({otherBookings.length})
+            </CardTitle>
+            <CardDescription>
+              View your approved and declined booking requests
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
             <div className="space-y-3">
-              {bookings.map((booking) => (
+              {otherBookings.map((booking) => (
                 <div key={booking.id} className="border rounded-lg p-4 bg-card">
                   <div className="flex items-start justify-between">
                     <div className="space-y-3 flex-1">
@@ -439,9 +431,22 @@ export function BookingManagement({ talentId, isProSubscriber = false, onUpgrade
                 </div>
               ))}
             </div>
-          )}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* No bookings message */}
+      {bookings.length === 0 && (
+        <Card className="glass-card">
+          <CardContent className="text-center py-8">
+            <Mail className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+            <h3 className="font-medium mb-2">No Booking Requests</h3>
+            <p className="text-sm text-muted-foreground">
+              When clients book you, their requests will appear here
+            </p>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
