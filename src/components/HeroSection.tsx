@@ -8,7 +8,7 @@ import { Star, MapPin, Search, Music, Crown, HelpCircle } from "lucide-react";
 import { countries } from "@/lib/countries";
 import { supabase } from "@/integrations/supabase/client";
 import { BookingForm } from "@/components/BookingForm";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 const talentTypes = [
   { value: 'all', label: 'All Talent Types' },
@@ -259,16 +259,22 @@ export function HeroSection() {
       {/* Booking Dialog */}
       <Dialog open={showBookingDialog} onOpenChange={setShowBookingDialog}>
         <DialogContent className="max-w-4xl w-[95vw] max-h-[95vh] overflow-hidden p-0">
-          <div className="max-h-[95vh] overflow-y-auto p-6">
-          <BookingForm
-            talentId="public-request"
-            talentName="Personal Assistance Request"
-            onClose={() => setShowBookingDialog(false)}
-            onSuccess={() => {
-              setShowBookingDialog(false);
-            }}
-          />
-            </div>
+          <DialogHeader className="px-6 pt-6">
+            <DialogTitle>Tell us about your event</DialogTitle>
+            <DialogDescription>
+              Fill out the details below and our pro talents will get in touch with you to discuss your event requirements.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="max-h-[80vh] overflow-y-auto px-6 pb-6">
+            <BookingForm
+              talentId="public-request"
+              talentName="Personal Assistance Request"
+              onClose={() => setShowBookingDialog(false)}
+              onSuccess={() => {
+                setShowBookingDialog(false);
+              }}
+            />
+          </div>
         </DialogContent>
       </Dialog>
     </section>
