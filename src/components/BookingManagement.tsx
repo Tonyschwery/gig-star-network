@@ -187,35 +187,9 @@ export function BookingManagement({ talentId, isProSubscriber = false, onUpgrade
                     
                     <div className="bg-muted/30 p-3 rounded-lg">
                       {isProSubscriber ? (
-                        <div className="flex items-center justify-between">
-                          <div className="font-medium text-foreground flex items-center gap-2">
-                            <User className="h-4 w-4" />
-                            Booker: {booking.booker_name}
-                          </div>
-                          <div className="flex gap-2">
-                            <Button
-                              onClick={() => {
-                                setSelectedBooking(booking);
-                                setShowPaymentModal(true);
-                              }}
-                              disabled={updatingBooking === booking.id}
-                              size="sm"
-                              className="bg-green-600 hover:bg-green-700 text-white h-7 px-2 text-xs"
-                            >
-                              <Check className="h-3 w-3 mr-1" />
-                              Approve
-                            </Button>
-                            <Button
-                              onClick={() => updateBookingStatus(booking.id, 'declined')}
-                              disabled={updatingBooking === booking.id}
-                              variant="destructive"
-                              size="sm"
-                              className="h-7 px-2 text-xs"
-                            >
-                              <X className="h-3 w-3 mr-1" />
-                              Decline
-                            </Button>
-                          </div>
+                        <div className="font-medium text-foreground mb-2 flex items-center gap-2">
+                          <User className="h-4 w-4" />
+                          Booker: {booking.booker_name}
                         </div>
                       ) : (
                         <div className="space-y-2">
@@ -238,6 +212,32 @@ export function BookingManagement({ talentId, isProSubscriber = false, onUpgrade
                           </div>
                         </div>
                       )}
+                    </div>
+
+                    {/* Action Buttons - Always visible */}
+                    <div className="flex justify-end gap-2 mt-3">
+                      <Button
+                        onClick={() => {
+                          setSelectedBooking(booking);
+                          setShowPaymentModal(true);
+                        }}
+                        disabled={updatingBooking === booking.id}
+                        size="sm"
+                        className="bg-green-600 hover:bg-green-700 text-white h-8 px-3 text-xs"
+                      >
+                        <Check className="h-3 w-3 mr-1" />
+                        Approve & Request Payment
+                      </Button>
+                      <Button
+                        onClick={() => updateBookingStatus(booking.id, 'declined')}
+                        disabled={updatingBooking === booking.id}
+                        variant="destructive"
+                        size="sm"
+                        className="h-8 px-3 text-xs"
+                      >
+                        <X className="h-3 w-3 mr-1" />
+                        Decline
+                      </Button>
                     </div>
                     
                     <div className="grid md:grid-cols-2 gap-3 text-sm">
