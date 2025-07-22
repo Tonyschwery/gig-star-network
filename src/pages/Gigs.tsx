@@ -110,13 +110,13 @@ export default function Gigs() {
     
     try {
       // Get the current user's talent profile
-      const { data: talentProfile } = await supabase
+      const { data: talentProfile, error: profileError } = await supabase
         .from('talent_profiles')
         .select('id')
         .eq('user_id', user.id)
         .single();
 
-      if (!talentProfile) {
+      if (profileError || !talentProfile) {
         toast({
           title: "Error",
           description: "Talent profile not found. Please complete your profile first.",
@@ -125,31 +125,49 @@ export default function Gigs() {
         return;
       }
 
-      // Assign this talent to the gig opportunity
-      const { error } = await supabase
+      // Check if this gig is already assigned to someone
+      const { data: currentBooking } = await supabase
         .from('bookings')
-        .update({ talent_id: talentProfile.id })
+        .select('talent_id')
         .eq('id', request.id)
-        .is('talent_id', null); // Only update if not already assigned
+        .single();
 
-      if (error) {
-        console.error('Error assigning talent to gig:', error);
+      if (currentBooking?.talent_id && currentBooking.talent_id !== talentProfile.id) {
         toast({
-          title: "Error", 
-          description: "Failed to join this gig opportunity.",
+          title: "Gig Unavailable",
+          description: "This gig opportunity has already been claimed by another talent.",
           variant: "destructive",
         });
         return;
       }
 
+      // If not already assigned to this talent, assign it now
+      if (!currentBooking?.talent_id) {
+        const { error: assignError } = await supabase
+          .from('bookings')
+          .update({ talent_id: talentProfile.id })
+          .eq('id', request.id)
+          .is('talent_id', null); // Only update if still unassigned
+
+        if (assignError) {
+          console.error('Error assigning talent to gig:', assignError);
+          toast({
+            title: "Error", 
+            description: "Failed to claim this gig opportunity. It may have been taken by another talent.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        toast({
+          title: "Success",
+          description: "You've successfully claimed this gig opportunity!",
+        });
+      }
+
       // Update the local request to include talent_id for the chat
       setSelectedBooker({ ...request, talent_id: talentProfile.id });
       setChatOpen(true);
-      
-      toast({
-        title: "Success",
-        description: "You've joined this gig opportunity! You can now chat with the booker.",
-      });
       
     } catch (error) {
       console.error('Error starting chat:', error);
