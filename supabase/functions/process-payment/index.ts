@@ -108,19 +108,19 @@ serve(async (req) => {
     }
     logStep("Created payment record", { paymentId: payment.id });
 
-    // Update booking with payment_id and status
+    // Update booking with payment_id and status to 'confirmed' (mock payment always succeeds)
     const { error: updateError } = await supabaseClient
       .from("bookings")
       .update({ 
         payment_id: payment.id,
-        status: 'confirmed' // Booking is confirmed after payment
+        status: 'confirmed' // Mock payment confirms the booking
       })
       .eq("id", bookingId);
 
     if (updateError) {
       throw new Error(`Failed to update booking: ${updateError.message}`);
     }
-    logStep("Updated booking status");
+    logStep("Updated booking status to confirmed");
 
     // Create notification for talent about payment received
     const { error: notificationError } = await supabaseClient
