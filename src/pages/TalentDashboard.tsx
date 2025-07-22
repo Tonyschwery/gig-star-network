@@ -12,8 +12,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { countries, musicGenres, actTypes } from "@/lib/countries";
-import { PhotoGalleryUpload } from "@/components/PhotoGalleryUpload";
-import { ImageCropper } from "@/components/ImageCropper";
+import { SimpleGalleryUpload } from "@/components/SimpleGalleryUpload";
+import { SimpleAvatarUpload } from "@/components/SimpleAvatarUpload";
 import { 
   User, 
   Edit3, 
@@ -64,11 +64,6 @@ const TalentDashboard = () => {
   const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
   const [customGenre, setCustomGenre] = useState('');
   const [galleryImages, setGalleryImages] = useState<string[]>([]);
-  const [profileCropperState, setProfileCropperState] = useState<{
-    isOpen: boolean;
-    imageSrc: string;
-    originalFile: File;
-  } | null>(null);
   const [showProDialog, setShowProDialog] = useState(false);
 
   // Initialize selected genres and gallery when profile loads
@@ -121,58 +116,21 @@ const TalentDashboard = () => {
     navigate('/');
   };
 
-  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file || !user || !profile) return;
-
-    // Validate file
-    if (!file.type.startsWith('image/')) {
-      toast({
-        title: "Invalid File Type",
-        description: "Please select an image file",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (file.size > 10 * 1024 * 1024) { // 10MB limit
-      toast({
-        title: "File Too Large",
-        description: "Please choose a smaller image (max 10MB)",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Open cropper
-    const imageSrc = URL.createObjectURL(file);
-    setProfileCropperState({
-      isOpen: true,
-      imageSrc,
-      originalFile: file
-    });
-
-    // Reset the input
-    event.target.value = '';
+  const handleAvatarImageChange = (imageUrl: string | null) => {
+    // This will be handled by direct upload in SimpleAvatarUpload
   };
 
-  const handleProfileCropComplete = async (croppedImageBlob: Blob) => {
-    if (!profileCropperState || !user || !profile) return;
+  const handleAvatarFileChange = async (file: File | null) => {
+    if (!file || !user || !profile) return;
 
     setUploadingImage(true);
 
     try {
-      // Convert blob to file
-      const croppedFile = new File([croppedImageBlob], `profile-${profileCropperState.originalFile.name}`, {
-        type: 'image/jpeg',
-        lastModified: Date.now(),
-      });
-
-      const fileName = `${user.id}/${user.id}-profile-${Date.now()}.jpg`;
+      const fileName = `${user.id}/profile.jpg`;
       
       const { error: uploadError } = await supabase.storage
         .from('talent-pictures')
-        .upload(fileName, croppedFile);
+        .upload(fileName, file, { upsert: true });
 
       if (uploadError) {
         throw uploadError;
@@ -196,10 +154,6 @@ const TalentDashboard = () => {
         title: "Success",
         description: "Profile picture updated successfully!"
       });
-
-      // Clean up
-      setProfileCropperState(null);
-      URL.revokeObjectURL(profileCropperState.imageSrc);
     } catch (error) {
       console.error('Error uploading image:', error);
       toast({
@@ -209,13 +163,6 @@ const TalentDashboard = () => {
       });
     } finally {
       setUploadingImage(false);
-    }
-  };
-
-  const handleProfileCropCancel = () => {
-    if (profileCropperState) {
-      URL.revokeObjectURL(profileCropperState.imageSrc);
-      setProfileCropperState(null);
     }
   };
 
@@ -399,32 +346,13 @@ const TalentDashboard = () => {
                 Profile Picture
               </CardTitle>
             </CardHeader>
-            <CardContent className="text-center space-y-4">
-              <div className="relative inline-block">
-                <img
-                  src={profile.picture_url || "/placeholder.svg"}
-                  alt={profile.artist_name}
-                  className="w-32 h-32 rounded-full object-cover mx-auto border-4 border-primary/20"
-                />
-              </div>
-              <div className="space-y-2">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  className="hidden"
-                  id="picture-upload"
-                />
-                <Button
-                  variant="outline"
-                  onClick={() => document.getElementById('picture-upload')?.click()}
-                  disabled={uploadingImage}
-                  className="w-full"
-                >
-                  <Upload className="h-4 w-4 mr-2" />
-                  {uploadingImage ? "Uploading..." : "Change & Crop Picture"}
-                </Button>
-              </div>
+            <CardContent>
+              <SimpleAvatarUpload
+                currentImage={profile.picture_url}
+                onImageChange={handleAvatarImageChange}
+                onFileChange={handleAvatarFileChange}
+                disabled={uploadingImage}
+              />
             </CardContent>
           </Card>
 
@@ -441,11 +369,11 @@ const TalentDashboard = () => {
             </CardHeader>
             <CardContent>
               {isEditing ? (
-                <PhotoGalleryUpload
+                <SimpleGalleryUpload
                   currentImages={galleryImages}
                   onImagesChange={setGalleryImages}
                   maxImages={5}
-                  maxSizeKB={400}
+                  disabled={false}
                 />
               ) : (
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -696,15 +624,6 @@ const TalentDashboard = () => {
           </Card>
         </div>
 
-        {/* Profile Picture Cropper Dialog */}
-        {profileCropperState && (
-          <ImageCropper
-            src={profileCropperState.imageSrc}
-            isOpen={profileCropperState.isOpen}
-            onCropComplete={handleProfileCropComplete}
-            onCancel={handleProfileCropCancel}
-          />
-        )}
 
         {/* Pro Subscription Dialog */}
         <ProSubscriptionDialog
