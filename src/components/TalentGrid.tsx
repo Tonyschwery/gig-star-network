@@ -303,11 +303,13 @@ function TalentCard({ talent }: TalentCardProps) {
       onClick={handleProfileClick}
     >
       <div className="relative">
-        <img 
-          src={talent.picture_url || "/placeholder.svg"} 
-          alt={talent.artist_name}
-          className="w-full h-48 object-cover object-center group-hover:scale-110 transition-transform duration-500"
-        />
+        <div className="aspect-square overflow-hidden">
+          <img 
+            src={talent.picture_url || "/placeholder.svg"} 
+            alt={talent.artist_name}
+            className="w-full h-full object-cover object-center group-hover:scale-110 transition-transform duration-500"
+          />
+        </div>
         <div className="absolute top-3 left-3 flex items-center space-x-1 bg-black/50 backdrop-blur-sm rounded-lg px-2 py-1">
           {getActIcon(talent.act)}
           <span className="text-xs text-white">{formatAct(talent.act)}</span>
