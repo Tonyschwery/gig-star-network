@@ -288,18 +288,7 @@ export function BookingManagement({ talentId, isProSubscriber = false, onUpgrade
                   </div>
                 </div>
 
-                {/* Chat Section for Pending Bookings */}
-                <div className="mt-4 pt-4 border-t">
-                  <BookingChat
-                    key={`booking-chat-${booking.id}`}
-                    bookingId={booking.id}
-                    bookerName={booking.booker_name}
-                    isProSubscriber={isProSubscriber}
-                    onUpgrade={onUpgrade}
-                    isDirectBooking={!!booking.talent_id && !!booking.user_id} // Direct booking if both talent and user are specified
-                  />
-                </div>
-
+                {/* Action Buttons */}
                 <div className="flex gap-2 pt-4">
                   <Button
                     onClick={() => {
@@ -321,6 +310,18 @@ export function BookingManagement({ talentId, isProSubscriber = false, onUpgrade
                     <X className="h-4 w-4 mr-2" />
                     Decline
                   </Button>
+                </div>
+
+                {/* Chat Section for Pending Bookings */}
+                <div className="mt-4 pt-4 border-t">
+                  <BookingChat
+                    key={`booking-chat-${booking.id}`}
+                    bookingId={booking.id}
+                    bookerName={booking.booker_name}
+                    isProSubscriber={isProSubscriber}
+                    onUpgrade={onUpgrade}
+                    isDirectBooking={!!booking.talent_id && !!booking.user_id} // Direct booking if both talent and user are specified
+                  />
                 </div>
               </div>
             ))}
