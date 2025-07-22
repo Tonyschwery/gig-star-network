@@ -73,7 +73,7 @@ export type Database = {
       talent_profiles: {
         Row: {
           act: Database["public"]["Enums"]["talent_act"]
-          age: number
+          age: string
           artist_name: string
           biography: string
           created_at: string
@@ -96,7 +96,7 @@ export type Database = {
         }
         Insert: {
           act: Database["public"]["Enums"]["talent_act"]
-          age: number
+          age: string
           artist_name: string
           biography: string
           created_at?: string
@@ -119,7 +119,7 @@ export type Database = {
         }
         Update: {
           act?: Database["public"]["Enums"]["talent_act"]
-          age?: number
+          age?: string
           artist_name?: string
           biography?: string
           created_at?: string
