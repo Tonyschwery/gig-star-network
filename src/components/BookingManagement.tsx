@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -45,6 +45,11 @@ export function BookingManagement({ talentId, isProSubscriber = false, onUpgrade
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const { toast } = useToast();
+
+  // Memoize the onUpgrade callback to prevent unnecessary re-renders
+  const stableOnUpgrade = useCallback(() => {
+    onUpgrade?.();
+  }, [onUpgrade]);
 
   useEffect(() => {
     fetchBookings();
@@ -322,8 +327,8 @@ export function BookingManagement({ talentId, isProSubscriber = false, onUpgrade
                     bookingId={booking.id}
                     bookerName={booking.booker_name}
                     isProSubscriber={isProSubscriber}
-                    onUpgrade={onUpgrade}
-                    isDirectBooking={!!booking.talent_id && !!booking.user_id} // Direct booking if both talent and user are specified
+                    onUpgrade={stableOnUpgrade}
+                    isDirectBooking={Boolean(booking.talent_id && booking.user_id)}
                   />
                 </div>
               </div>
