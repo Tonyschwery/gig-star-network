@@ -130,7 +130,7 @@ export default function Gigs() {
         .from('bookings')
         .update({ talent_id: talentProfile.id })
         .eq('id', request.id)
-        .eq('talent_id', null); // Only update if not already assigned
+        .is('talent_id', null); // Only update if not already assigned
 
       if (error) {
         console.error('Error assigning talent to gig:', error);
