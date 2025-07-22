@@ -41,33 +41,60 @@ serve(async (req) => {
       }
     );
 
-    // Get booking details first
-    logStep('Fetching booking details');
-    const { data: booking, error: bookingError } = await supabaseAdmin
-      .from('bookings')
-      .select('*')
-      .eq('id', bookingId)
-      .maybeSingle();
+    // Helper function to fetch booking with retry
+    const fetchBookingWithRetry = async (retries = 3, delay = 500) => {
+      for (let i = 0; i < retries; i++) {
+        logStep(`Fetching booking details (attempt ${i + 1})`);
+        const { data: booking, error: bookingError } = await supabaseAdmin
+          .from('bookings')
+          .select('*')
+          .eq('id', bookingId)
+          .maybeSingle();
 
-    if (bookingError) {
-      logStep('Error fetching booking', bookingError);
-      throw new Error(`Failed to fetch booking: ${bookingError.message}`);
-    }
+        if (bookingError) {
+          logStep('Error fetching booking', bookingError);
+          throw new Error(`Failed to fetch booking: ${bookingError.message}`);
+        }
 
-    if (!booking) {
-      logStep('Booking not found', { bookingId });
-      throw new Error('Booking not found');
-    }
+        if (!booking) {
+          logStep('Booking not found', { bookingId });
+          throw new Error('Booking not found');
+        }
 
-    if (!booking.talent_id) {
-      logStep('No talent assigned to booking - this might be a gig opportunity that needs to be claimed first', { 
-        bookingId,
-        talentId: booking.talent_id,
-        isPublicRequest: booking.is_public_request,
-        isGigOpportunity: booking.is_gig_opportunity 
-      });
-      throw new Error('No talent assigned to this booking yet. For gig opportunities, please claim the gig first by starting a chat.');
-    }
+        // If talent_id is assigned, return the booking
+        if (booking.talent_id) {
+          logStep('Booking found with talent assigned', { 
+            bookingId,
+            talentId: booking.talent_id 
+          });
+          return booking;
+        }
+
+        // If this is a gig opportunity and we have retries left, wait and try again
+        if (booking.is_public_request && booking.is_gig_opportunity && i < retries - 1) {
+          logStep(`No talent assigned yet, waiting ${delay}ms before retry ${i + 2}`, {
+            bookingId,
+            talentId: booking.talent_id,
+            isPublicRequest: booking.is_public_request,
+            isGigOpportunity: booking.is_gig_opportunity 
+          });
+          await new Promise(resolve => setTimeout(resolve, delay));
+          continue;
+        }
+
+        // Final attempt failed
+        logStep('No talent assigned to booking - this might be a gig opportunity that needs to be claimed first', { 
+          bookingId,
+          talentId: booking.talent_id,
+          isPublicRequest: booking.is_public_request,
+          isGigOpportunity: booking.is_gig_opportunity 
+        });
+        throw new Error('No talent assigned to this booking yet. For gig opportunities, please claim the gig first by starting a chat.');
+      }
+    };
+
+    // Get booking details with retry logic
+    const booking = await fetchBookingWithRetry();
 
     // Get talent profile separately
     logStep('Fetching talent profile');
