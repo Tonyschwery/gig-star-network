@@ -377,8 +377,7 @@ export function ChatModal({ isOpen, onClose, bookerName, bookerEmail, eventType,
         onClose={() => setShowManualInvoiceModal(false)}
         booking={booking}
         onInvoiceSuccess={() => {
-          updateBookingStatus('approved');
-          setShowManualInvoiceModal(false);
+          loadBookingDetails(); // Just refresh the booking details
         }}
       />
     )}
