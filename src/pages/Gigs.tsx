@@ -3,7 +3,7 @@ import { Header } from "@/components/Header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, Clock, MapPin, User, Briefcase, Crown, MessageCircle, Mail } from "lucide-react";
+import { Calendar, Clock, MapPin, User, Briefcase, Crown, MessageCircle } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -216,7 +216,7 @@ export default function Gigs() {
                           Requested by: <span className="font-medium text-foreground">{request.booker_name}</span>
                         </div>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
-                          <Mail className="h-3 w-3" />
+                          <User className="h-3 w-3" />
                           <span className="font-medium text-foreground">{request.booker_email}</span>
                         </div>
                         <Badge variant="outline" className="mt-2">
