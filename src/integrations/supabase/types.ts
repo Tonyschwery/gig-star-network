@@ -70,7 +70,7 @@ export type Database = {
           is_public_request: boolean | null
           needs_equipment: boolean | null
           status: string
-          talent_id: string
+          talent_id: string | null
           updated_at: string
           user_id: string
         }
@@ -91,7 +91,7 @@ export type Database = {
           is_public_request?: boolean | null
           needs_equipment?: boolean | null
           status?: string
-          talent_id: string
+          talent_id?: string | null
           updated_at?: string
           user_id: string
         }
@@ -112,7 +112,7 @@ export type Database = {
           is_public_request?: boolean | null
           needs_equipment?: boolean | null
           status?: string
-          talent_id?: string
+          talent_id?: string | null
           updated_at?: string
           user_id?: string
         }
