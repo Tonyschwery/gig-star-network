@@ -7,6 +7,7 @@ import { Send, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { filterSensitiveContent } from "@/lib/messageFilter";
 
 interface ChatModalProps {
   isOpen: boolean;
@@ -84,6 +85,18 @@ export function ChatModal({ isOpen, onClose, bookerName, bookerEmail, eventType,
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !user || loading) return;
 
+    // Filter sensitive content from the message
+    const filteredMessage = filterSensitiveContent(newMessage.trim());
+    
+    if (!filteredMessage) {
+      toast({
+        title: "Message blocked",
+        description: "Your message contained sensitive information and was not sent.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
     try {
       const { error } = await supabase
@@ -92,16 +105,26 @@ export function ChatModal({ isOpen, onClose, bookerName, bookerEmail, eventType,
           booking_id: bookingId,
           sender_id: user.id,
           sender_type: 'talent', // Since this is from gigs page, sender is always talent
-          message: newMessage.trim()
+          message: filteredMessage
         });
 
       if (error) throw error;
 
       setNewMessage("");
+      
+      // Show success message
       toast({
         title: "Message Sent",
         description: `Your message has been sent to ${bookerName}.`,
       });
+      
+      // Show filter message if content was filtered
+      if (filteredMessage !== newMessage.trim()) {
+        toast({
+          title: "Message filtered",
+          description: "Some sensitive information was removed from your message for security.",
+        });
+      }
     } catch (error) {
       console.error('Error sending message:', error);
       toast({

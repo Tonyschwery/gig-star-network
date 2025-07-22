@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { MessageCircle, Send } from "lucide-react";
 import { format } from "date-fns";
 import { useAuth } from "@/hooks/useAuth";
+import { filterSensitiveContent } from "@/lib/messageFilter";
 
 interface Message {
   id: string;
@@ -92,6 +93,18 @@ export function BookerChat({ bookingId, talentName, bookingStatus }: BookerChatP
   const sendMessage = async () => {
     if (!newMessage.trim() || !user) return;
 
+    // Filter sensitive content from the message
+    const filteredMessage = filterSensitiveContent(newMessage.trim());
+    
+    if (!filteredMessage) {
+      toast({
+        title: "Message blocked",
+        description: "Your message contained sensitive information and was not sent.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setSending(true);
     try {
       const { error } = await supabase
@@ -100,12 +113,20 @@ export function BookerChat({ bookingId, talentName, bookingStatus }: BookerChatP
           booking_id: bookingId,
           sender_id: user.id,
           sender_type: 'booker',
-          message: newMessage.trim()
+          message: filteredMessage
         });
 
       if (error) throw error;
 
       setNewMessage("");
+      
+      // Show a toast if the message was filtered
+      if (filteredMessage !== newMessage.trim()) {
+        toast({
+          title: "Message filtered",
+          description: "Some sensitive information was removed from your message for security.",
+        });
+      }
     } catch (error) {
       console.error('Error sending message:', error);
       toast({

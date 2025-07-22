@@ -21,6 +21,7 @@ interface Booking {
   status: string;
   created_at: string;
   user_id: string;
+  talent_id?: string; // Add talent_id to determine if it's a direct booking
   needs_equipment?: boolean;
   equipment_types?: string[];
   custom_equipment?: string;
@@ -294,6 +295,7 @@ export function BookingManagement({ talentId, isProSubscriber = false, onUpgrade
                     bookerName={booking.booker_name}
                     isProSubscriber={isProSubscriber}
                     onUpgrade={onUpgrade}
+                    isDirectBooking={!!booking.talent_id && !!booking.user_id} // Direct booking if both talent and user are specified
                   />
                 </div>
 

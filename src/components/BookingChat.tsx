@@ -10,6 +10,7 @@ import { MessageCircle, Send, Crown, Lock } from "lucide-react";
 import { format } from "date-fns";
 import { ProFeatureWrapper } from "./ProFeatureWrapper";
 import { useAuth } from "@/hooks/useAuth";
+import { filterSensitiveContent } from "@/lib/messageFilter";
 
 interface Message {
   id: string;
@@ -24,9 +25,10 @@ interface BookingChatProps {
   bookerName: string;
   isProSubscriber?: boolean;
   onUpgrade?: () => void;
+  isDirectBooking?: boolean; // New prop to indicate if this is a direct booking from a booker
 }
 
-export function BookingChat({ bookingId, bookerName, isProSubscriber = false, onUpgrade }: BookingChatProps) {
+export function BookingChat({ bookingId, bookerName, isProSubscriber = false, onUpgrade, isDirectBooking = false }: BookingChatProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(true);
@@ -40,7 +42,8 @@ export function BookingChat({ bookingId, bookerName, isProSubscriber = false, on
   };
 
   useEffect(() => {
-    if (isProSubscriber) {
+    // Allow chat for pro subscribers OR direct bookings from bookers
+    if (isProSubscriber || isDirectBooking) {
       fetchMessages();
       
       // Set up real-time subscription for new messages
@@ -65,7 +68,7 @@ export function BookingChat({ bookingId, bookerName, isProSubscriber = false, on
         supabase.removeChannel(channel);
       };
     }
-  }, [bookingId, isProSubscriber]);
+  }, [bookingId, isProSubscriber, isDirectBooking]);
 
   useEffect(() => {
     scrollToBottom();
@@ -96,6 +99,18 @@ export function BookingChat({ bookingId, bookerName, isProSubscriber = false, on
   const sendMessage = async () => {
     if (!newMessage.trim() || !user) return;
 
+    // Filter sensitive content from the message
+    const filteredMessage = filterSensitiveContent(newMessage.trim());
+    
+    if (!filteredMessage) {
+      toast({
+        title: "Message blocked",
+        description: "Your message contained sensitive information and was not sent.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setSending(true);
     try {
       const { error } = await supabase
@@ -104,12 +119,20 @@ export function BookingChat({ bookingId, bookerName, isProSubscriber = false, on
           booking_id: bookingId,
           sender_id: user.id,
           sender_type: 'talent', // Assuming this component is used by talent
-          message: newMessage.trim()
+          message: filteredMessage
         });
 
       if (error) throw error;
 
       setNewMessage("");
+      
+      // Show a toast if the message was filtered
+      if (filteredMessage !== newMessage.trim()) {
+        toast({
+          title: "Message filtered",
+          description: "Some sensitive information was removed from your message for security.",
+        });
+      }
     } catch (error) {
       console.error('Error sending message:', error);
       toast({
@@ -204,8 +227,8 @@ export function BookingChat({ bookingId, bookerName, isProSubscriber = false, on
     </Card>
   );
 
-  // For non-pro subscribers, show a restricted version
-  if (!isProSubscriber) {
+  // For non-pro subscribers who don't have a direct booking, show a restricted version
+  if (!isProSubscriber && !isDirectBooking) {
     return (
       <div className="relative">
         <ProFeatureWrapper isProFeature={true} showProIcon={false}>
