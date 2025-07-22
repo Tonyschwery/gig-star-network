@@ -194,6 +194,7 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
           user_id: user.id,
           talent_id: isPublicRequest ? null : talentId,
           booker_name: bookerName,
+          booker_email: user.email, // Add booker email
           event_date: format(eventDate, 'yyyy-MM-dd'),
           event_duration: parseInt(eventDuration),
           event_location: eventLocation,

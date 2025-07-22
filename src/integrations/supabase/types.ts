@@ -54,6 +54,7 @@ export type Database = {
       }
       bookings: {
         Row: {
+          booker_email: string | null
           booker_name: string
           created_at: string
           custom_equipment: string | null
@@ -74,6 +75,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          booker_email?: string | null
           booker_name?: string
           created_at?: string
           custom_equipment?: string | null
@@ -94,6 +96,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          booker_email?: string | null
           booker_name?: string
           created_at?: string
           custom_equipment?: string | null

@@ -3,7 +3,7 @@ import { Header } from "@/components/Header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, Clock, MapPin, User, Briefcase, Crown } from "lucide-react";
+import { Calendar, Clock, MapPin, User, Briefcase, Crown, Mail, MessageCircle } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -13,6 +13,7 @@ import { format } from "date-fns";
 interface PublicBooking {
   id: string;
   booker_name: string;
+  booker_email: string;
   event_date: string;
   event_duration: number;
   event_location: string;
@@ -101,10 +102,10 @@ export default function Gigs() {
   };
 
   const handleContactBooker = (request: PublicBooking) => {
-    toast({
-      title: "Contact Feature",
-      description: "Direct contact feature will be available soon. For now, please use the general contact form.",
-    });
+    const subject = `Event Inquiry: ${request.event_type} on ${format(new Date(request.event_date), 'PPP')}`;
+    const body = `Hi ${request.booker_name},\n\nI saw your event request on NAGHM and I'm interested in performing at your ${request.event_type} event.\n\nEvent Details:\n- Date: ${format(new Date(request.event_date), 'PPP')}\n- Duration: ${request.event_duration} hours\n- Location: ${request.event_location}\n\nI'd love to discuss this opportunity with you. Please let me know if you'd like to schedule a call.\n\nBest regards`;
+    
+    window.location.href = `mailto:${request.booker_email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   };
 
   if (loading) {
@@ -213,17 +214,34 @@ export default function Gigs() {
                         <div className="text-sm text-muted-foreground">
                           Requested by: <span className="font-medium text-foreground">{request.booker_name}</span>
                         </div>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+                          <Mail className="h-3 w-3" />
+                          <span className="font-medium text-foreground">{request.booker_email}</span>
+                        </div>
                         <Badge variant="outline" className="mt-2">
                           New Opportunity
                         </Badge>
                       </div>
                     </div>
-                    <div className="text-right">
+                    <div className="flex gap-2">
                       <Button 
                         onClick={() => handleContactBooker(request)}
                         className="hero-button"
                       >
-                        Contact Booker
+                        <Mail className="h-4 w-4 mr-2" />
+                        Email Booker
+                      </Button>
+                      <Button 
+                        variant="outline"
+                        onClick={() => {
+                          toast({
+                            title: "Chat Feature Coming Soon",
+                            description: "Direct messaging will be available in the next update.",
+                          });
+                        }}
+                      >
+                        <MessageCircle className="h-4 w-4 mr-2" />
+                        Chat
                       </Button>
                     </div>
                   </div>
