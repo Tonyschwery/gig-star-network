@@ -1,10 +1,12 @@
 import { useState, useRef } from 'react';
-import { Upload, X, User, Loader2, Move } from 'lucide-react';
+import { Upload, X, User, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { ImagePositioner } from './ImagePositioner';
+import ReactCrop, { Crop, PixelCrop } from 'react-image-crop';
+import 'react-image-crop/dist/ReactCrop.css';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface SimpleAvatarUploadProps {
   currentImage?: string;
@@ -22,11 +24,17 @@ export function SimpleAvatarUpload({
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(currentImage || null);
-  const [positionerState, setPositionerState] = useState<{
-    isOpen: boolean;
-    imageSrc: string;
-    originalFile: File;
-  } | null>(null);
+  const [cropDialogOpen, setCropDialogOpen] = useState(false);
+  const [imageToCrop, setImageToCrop] = useState<string>('');
+  const [crop, setCrop] = useState<Crop>({
+    unit: '%',
+    width: 90,
+    height: 90,
+    x: 5,
+    y: 5,
+  });
+  const [completedCrop, setCompletedCrop] = useState<PixelCrop>();
+  const imgRef = useRef<HTMLImageElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -49,56 +57,113 @@ export function SimpleAvatarUpload({
       return;
     }
 
-    // Open the image positioner instead of auto-processing
+    // Open the crop dialog
     const imageSrc = URL.createObjectURL(file);
-    setPositionerState({
-      isOpen: true,
-      imageSrc,
-      originalFile: file
+    setImageToCrop(imageSrc);
+    setCropDialogOpen(true);
+  };
+
+  const getCroppedImg = (image: HTMLImageElement, crop: PixelCrop): Promise<Blob> => {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+
+    if (!ctx) {
+      throw new Error('No 2d context');
+    }
+
+    const scaleX = image.naturalWidth / image.width;
+    const scaleY = image.naturalHeight / image.height;
+
+    // Set canvas size to 400x400 for consistent avatar size
+    canvas.width = 400;
+    canvas.height = 400;
+
+    ctx.imageSmoothingQuality = 'high';
+
+    // Calculate the source coordinates
+    const sourceX = crop.x * scaleX;
+    const sourceY = crop.y * scaleY;
+    const sourceWidth = crop.width * scaleX;
+    const sourceHeight = crop.height * scaleY;
+
+    // Draw the cropped image, scaling it to fill the 400x400 canvas
+    ctx.drawImage(
+      image,
+      sourceX,
+      sourceY,
+      sourceWidth,
+      sourceHeight,
+      0,
+      0,
+      400,
+      400
+    );
+
+    return new Promise((resolve, reject) => {
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) {
+            reject(new Error('Canvas is empty'));
+            return;
+          }
+          resolve(blob);
+        },
+        'image/jpeg',
+        0.9
+      );
     });
   };
 
-  const handlePositionComplete = (croppedImageBlob: Blob) => {
-    // Convert blob to file
-    const croppedFile = new File([croppedImageBlob], `avatar-${Date.now()}.jpg`, {
-      type: 'image/jpeg',
-      lastModified: Date.now(),
-    });
+  const handleCropComplete = async () => {
+    if (!imgRef.current || !completedCrop || !imageToCrop) return;
 
-    // Create preview URL
-    const preview = URL.createObjectURL(croppedFile);
-    setPreviewUrl(preview);
-    
-    // Update parent component
-    onFileChange(croppedFile);
-    
-    // Clean up
-    if (positionerState) {
-      URL.revokeObjectURL(positionerState.imageSrc);
-      setPositionerState(null);
+    try {
+      const croppedBlob = await getCroppedImg(imgRef.current, completedCrop);
+      
+      // Convert blob to file
+      const croppedFile = new File([croppedBlob], `avatar-${Date.now()}.jpg`, {
+        type: 'image/jpeg',
+        lastModified: Date.now(),
+      });
+
+      // Create preview URL
+      const preview = URL.createObjectURL(croppedFile);
+      setPreviewUrl(preview);
+      
+      // Update parent component
+      onFileChange(croppedFile);
+      
+      // Clean up
+      URL.revokeObjectURL(imageToCrop);
+      setCropDialogOpen(false);
+      setImageToCrop('');
+
+      toast({
+        title: "Image Ready",
+        description: "Profile picture cropped and ready for upload",
+      });
+    } catch (error) {
+      console.error('Error cropping image:', error);
+      toast({
+        title: "Error",
+        description: "Failed to crop image. Please try again.",
+        variant: "destructive",
+      });
     }
-
-    toast({
-      title: "Image Ready",
-      description: "Profile picture positioned and ready for upload",
-    });
   };
 
-  const handlePositionCancel = () => {
-    if (positionerState) {
-      URL.revokeObjectURL(positionerState.imageSrc);
-      setPositionerState(null);
+  const handleCropCancel = () => {
+    if (imageToCrop) {
+      URL.revokeObjectURL(imageToCrop);
     }
+    setCropDialogOpen(false);
+    setImageToCrop('');
   };
 
   const handleEditPosition = () => {
     if (previewUrl && previewUrl !== currentImage) {
-      // Reopen the positioner with the current preview
-      setPositionerState({
-        isOpen: true,
-        imageSrc: previewUrl,
-        originalFile: new File([], 'current-image.jpg') // Placeholder
-      });
+      setImageToCrop(previewUrl);
+      setCropDialogOpen(true);
     }
   };
 
@@ -169,8 +234,7 @@ export function SimpleAvatarUpload({
               onClick={handleEditPosition}
               className="text-xs"
             >
-              <Move className="h-3 w-3 mr-1" />
-              Adjust Position
+              Adjust Crop
             </Button>
           )}
         </div>
@@ -209,22 +273,56 @@ export function SimpleAvatarUpload({
                 Drag & drop or click to browse
               </p>
               <p className="text-xs text-muted-foreground mt-2">
-                Position your face perfectly • JPG, PNG • Max 10MB
+                Crop your image perfectly • JPG, PNG • Max 10MB
               </p>
             </div>
           </div>
         </div>
       )}
 
-      {/* Image Positioner Dialog */}
-      {positionerState && (
-        <ImagePositioner
-          src={positionerState.imageSrc}
-          isOpen={positionerState.isOpen}
-          onPositionComplete={handlePositionComplete}
-          onCancel={handlePositionCancel}
-        />
-      )}
+      {/* Crop Dialog */}
+      <Dialog open={cropDialogOpen} onOpenChange={handleCropCancel}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Crop Your Profile Picture</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Drag the corners to adjust the crop area. The image will be cropped to a square.
+            </p>
+            
+            {imageToCrop && (
+              <div className="flex justify-center">
+                <ReactCrop
+                  crop={crop}
+                  onChange={(c) => setCrop(c)}
+                  onComplete={(c) => setCompletedCrop(c)}
+                  aspect={1}
+                  circularCrop
+                >
+                  <img
+                    ref={imgRef}
+                    src={imageToCrop}
+                    alt="Crop preview"
+                    style={{ maxHeight: '400px', maxWidth: '100%' }}
+                  />
+                </ReactCrop>
+              </div>
+            )}
+
+            <div className="flex space-x-2 pt-4">
+              <Button variant="outline" onClick={handleCropCancel} className="flex-1">
+                <X className="h-4 w-4 mr-2" />
+                Cancel
+              </Button>
+              <Button onClick={handleCropComplete} className="flex-1">
+                Apply Crop
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
