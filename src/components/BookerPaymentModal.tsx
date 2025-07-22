@@ -81,10 +81,10 @@ export const BookerPaymentModal: React.FC<BookerPaymentModalProps> = ({
 
     setIsProcessing(true);
     try {
+      // Mock payment processing - always succeeds
       const { data, error } = await supabase.functions.invoke('process-payment', {
         body: { 
-          paymentId: payment.id,
-          bookingId: booking.id 
+          paymentId: payment.id
         }
       });
 
@@ -95,7 +95,7 @@ export const BookerPaymentModal: React.FC<BookerPaymentModalProps> = ({
       if (data.success) {
         toast({
           title: "Payment Successful!",
-          description: `Payment of ${payment.currency} ${payment.total_amount.toFixed(2)} processed successfully.`,
+          description: `Mock payment of ${payment.currency} ${payment.total_amount.toFixed(2)} processed successfully. Your booking is confirmed!`,
         });
         
         onPaymentSuccess();
@@ -253,7 +253,7 @@ export const BookerPaymentModal: React.FC<BookerPaymentModalProps> = ({
                 <div className="p-3 bg-blue-50 dark:bg-blue-950 rounded-md">
                   <p className="text-sm text-blue-700 dark:text-blue-300">
                     🎭 <strong>Demo Mode:</strong> This is a mock payment for demonstration. 
-                    No real charges will be made.
+                    No real charges will be made. The payment will be instantly processed.
                   </p>
                 </div>
               )}
