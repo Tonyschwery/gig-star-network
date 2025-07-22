@@ -68,7 +68,7 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({
 
       if (data.success) {
         toast({
-          title: "Invoice Sent!",
+          title: "Invoice sent successfully!",
           description: `Invoice for ${currency} ${price.toFixed(2)} has been sent to the booker.`,
         });
         
