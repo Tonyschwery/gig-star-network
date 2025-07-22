@@ -25,6 +25,7 @@ interface PublicBooking {
   equipment_types: string[];
   needs_equipment: boolean;
   custom_equipment: string | null;
+  talent_id?: string | null;
 }
 
 export default function Gigs() {
@@ -104,9 +105,60 @@ export default function Gigs() {
     return iconMap[type] || "🎪";
   };
 
-  const handleStartChat = (request: PublicBooking) => {
-    setSelectedBooker(request);
-    setChatOpen(true);
+  const handleStartChat = async (request: PublicBooking) => {
+    if (!user) return;
+    
+    try {
+      // Get the current user's talent profile
+      const { data: talentProfile } = await supabase
+        .from('talent_profiles')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (!talentProfile) {
+        toast({
+          title: "Error",
+          description: "Talent profile not found. Please complete your profile first.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Assign this talent to the gig opportunity
+      const { error } = await supabase
+        .from('bookings')
+        .update({ talent_id: talentProfile.id })
+        .eq('id', request.id)
+        .eq('talent_id', null); // Only update if not already assigned
+
+      if (error) {
+        console.error('Error assigning talent to gig:', error);
+        toast({
+          title: "Error", 
+          description: "Failed to join this gig opportunity.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Update the local request to include talent_id for the chat
+      setSelectedBooker({ ...request, talent_id: talentProfile.id });
+      setChatOpen(true);
+      
+      toast({
+        title: "Success",
+        description: "You've joined this gig opportunity! You can now chat with the booker.",
+      });
+      
+    } catch (error) {
+      console.error('Error starting chat:', error);
+      toast({
+        title: "Error",
+        description: "Failed to start chat. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   if (loading) {
