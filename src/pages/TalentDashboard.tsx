@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 import { ProSubscriptionDialog } from "@/components/ProSubscriptionDialog";
 import { BookingManagement } from "@/components/BookingManagement";
+import { BookingNotifications } from "@/components/BookingNotifications";
 
 interface TalentProfile {
   id: string;
@@ -293,6 +294,7 @@ const TalentDashboard = () => {
                   PRO
                 </Badge>
               )}
+              <BookingNotifications talentId={profile.id} />
             </div>
             <p className="text-muted-foreground">Manage your talent profile</p>
           </div>

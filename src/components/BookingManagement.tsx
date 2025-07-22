@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Check, X, Calendar, Clock, MapPin, Mail, User, Crown, Lock, MessageCircle } from "lucide-react";
+import { Check, X, Calendar, Clock, MapPin, Mail, User, Crown, Lock, MessageCircle, Settings } from "lucide-react";
 import { BookingChat } from "./BookingChat";
 import { format } from "date-fns";
 
@@ -20,6 +20,9 @@ interface Booking {
   status: string;
   created_at: string;
   user_id: string;
+  needs_equipment?: boolean;
+  equipment_types?: string[];
+  custom_equipment?: string;
 }
 
 interface BookingManagementProps {
@@ -214,7 +217,7 @@ export function BookingManagement({ talentId, isProSubscriber = false, onUpgrade
                       </div>
                     </div>
 
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       {isProSubscriber ? (
                         <>
                           <div className="text-sm">
@@ -227,6 +230,32 @@ export function BookingManagement({ talentId, isProSubscriber = false, onUpgrade
                               <p className="text-muted-foreground mt-1">{booking.description}</p>
                             </div>
                           )}
+                          {booking.needs_equipment && (
+                            <div className="text-sm">
+                              <div className="flex items-center gap-2 font-medium text-foreground mb-2">
+                                <Settings className="h-4 w-4" />
+                                Equipment Needed:
+                              </div>
+                              <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3">
+                                {booking.equipment_types && booking.equipment_types.length > 0 && (
+                                  <div className="space-y-1">
+                                    <p className="text-xs font-medium text-amber-800 dark:text-amber-200">Selected Equipment:</p>
+                                    <ul className="text-xs text-amber-700 dark:text-amber-300 list-disc list-inside">
+                                      {booking.equipment_types.map((equipment, index) => (
+                                        <li key={index} className="capitalize">{equipment}</li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
+                                {booking.custom_equipment && (
+                                  <div className="mt-2">
+                                    <p className="text-xs font-medium text-amber-800 dark:text-amber-200">Custom Equipment:</p>
+                                    <p className="text-xs text-amber-700 dark:text-amber-300">{booking.custom_equipment}</p>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
                         </>
                       ) : (
                         <div className="text-sm border rounded-lg p-3 bg-muted/10">
@@ -235,7 +264,7 @@ export function BookingManagement({ talentId, isProSubscriber = false, onUpgrade
                             <span className="font-medium">Event Details (Pro Only)</span>
                           </div>
                           <p className="text-xs text-muted-foreground">
-                            Upgrade to Pro to see full address, event description, and contact the booker directly.
+                            Upgrade to Pro to see full address, event description, equipment requirements, and contact the booker directly.
                           </p>
                         </div>
                       )}
@@ -353,7 +382,7 @@ export function BookingManagement({ talentId, isProSubscriber = false, onUpgrade
                         </div>
                       </div>
 
-                      <div className="space-y-2">
+                       <div className="space-y-2">
                         {isProSubscriber ? (
                           <>
                             <div className="text-sm">
@@ -366,6 +395,32 @@ export function BookingManagement({ talentId, isProSubscriber = false, onUpgrade
                                 <p className="text-muted-foreground mt-1">{booking.description}</p>
                               </div>
                             )}
+                            {booking.needs_equipment && (
+                              <div className="text-sm">
+                                <div className="flex items-center gap-2 font-medium text-foreground mb-2">
+                                  <Settings className="h-4 w-4" />
+                                  Equipment Needed:
+                                </div>
+                                <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3">
+                                  {booking.equipment_types && booking.equipment_types.length > 0 && (
+                                    <div className="space-y-1">
+                                      <p className="text-xs font-medium text-amber-800 dark:text-amber-200">Selected Equipment:</p>
+                                      <ul className="text-xs text-amber-700 dark:text-amber-300 list-disc list-inside">
+                                        {booking.equipment_types.map((equipment, index) => (
+                                          <li key={index} className="capitalize">{equipment}</li>
+                                        ))}
+                                      </ul>
+                                    </div>
+                                  )}
+                                  {booking.custom_equipment && (
+                                    <div className="mt-2">
+                                      <p className="text-xs font-medium text-amber-800 dark:text-amber-200">Custom Equipment:</p>
+                                      <p className="text-xs text-amber-700 dark:text-amber-300">{booking.custom_equipment}</p>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            )}
                           </>
                         ) : (
                           <div className="text-sm border rounded-lg p-3 bg-muted/10">
@@ -374,7 +429,7 @@ export function BookingManagement({ talentId, isProSubscriber = false, onUpgrade
                               <span className="font-medium">Event Details (Pro Only)</span>
                             </div>
                             <p className="text-xs text-muted-foreground">
-                              Full address and event details available with Pro subscription.
+                              Full address, event details, and equipment requirements available with Pro subscription.
                             </p>
                           </div>
                         )}

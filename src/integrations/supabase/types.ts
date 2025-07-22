@@ -56,13 +56,16 @@ export type Database = {
         Row: {
           booker_name: string
           created_at: string
+          custom_equipment: string | null
           description: string | null
+          equipment_types: string[] | null
           event_address: string
           event_date: string
           event_duration: number
           event_location: string
           event_type: string
           id: string
+          needs_equipment: boolean | null
           status: string
           talent_id: string
           updated_at: string
@@ -71,13 +74,16 @@ export type Database = {
         Insert: {
           booker_name?: string
           created_at?: string
+          custom_equipment?: string | null
           description?: string | null
+          equipment_types?: string[] | null
           event_address: string
           event_date: string
           event_duration: number
           event_location: string
           event_type: string
           id?: string
+          needs_equipment?: boolean | null
           status?: string
           talent_id: string
           updated_at?: string
@@ -86,13 +92,16 @@ export type Database = {
         Update: {
           booker_name?: string
           created_at?: string
+          custom_equipment?: string | null
           description?: string | null
+          equipment_types?: string[] | null
           event_address?: string
           event_date?: string
           event_duration?: number
           event_location?: string
           event_type?: string
           id?: string
+          needs_equipment?: boolean | null
           status?: string
           talent_id?: string
           updated_at?: string

@@ -8,7 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CalendarIcon, Clock, MapPin, X, User, Mail, Lock } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { CalendarIcon, Clock, MapPin, X, User, Mail, Lock, Settings } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
@@ -36,6 +37,11 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
   const [eventType, setEventType] = useState("");
   const [description, setDescription] = useState("");
   
+  // Equipment fields
+  const [needsEquipment, setNeedsEquipment] = useState(false);
+  const [equipmentTypes, setEquipmentTypes] = useState<string[]>([]);
+  const [customEquipment, setCustomEquipment] = useState("");
+  
   // Auth fields for non-authenticated users
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -50,6 +56,20 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
     "school",
     "festival"
   ];
+
+  const equipmentOptions = [
+    "DJ set",
+    "speakers", 
+    "monitor"
+  ];
+
+  const handleEquipmentToggle = (equipment: string) => {
+    setEquipmentTypes(prev => 
+      prev.includes(equipment) 
+        ? prev.filter(e => e !== equipment)
+        : [...prev, equipment]
+    );
+  };
 
   const handleSignUp = async () => {
     if (!email || !password) {
@@ -157,6 +177,12 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
       return;
     }
 
+    // Prepare equipment data
+    const allEquipmentTypes = [...equipmentTypes];
+    if (customEquipment.trim()) {
+      allEquipmentTypes.push(customEquipment.trim());
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -172,6 +198,9 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
           event_address: eventAddress,
           event_type: eventType,
           description: description || null,
+          needs_equipment: needsEquipment,
+          equipment_types: needsEquipment ? allEquipmentTypes : [],
+          custom_equipment: needsEquipment && customEquipment.trim() ? customEquipment.trim() : null,
         });
 
       if (error) throw error;
@@ -414,6 +443,53 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            {/* Equipment Question */}
+            <div className="space-y-4 p-4 border rounded-lg">
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="needs-equipment" 
+                  checked={needsEquipment}
+                  onCheckedChange={(checked) => setNeedsEquipment(checked as boolean)}
+                />
+                <Label htmlFor="needs-equipment" className="text-base font-medium flex items-center">
+                  <Settings className="h-4 w-4 mr-2" />
+                  Do you need equipment?
+                </Label>
+              </div>
+              
+              {needsEquipment && (
+                <div className="space-y-3 ml-6">
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Select equipment:</Label>
+                    <div className="grid grid-cols-1 gap-2">
+                      {equipmentOptions.map((equipment) => (
+                        <div key={equipment} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={equipment}
+                            checked={equipmentTypes.includes(equipment)}
+                            onCheckedChange={() => handleEquipmentToggle(equipment)}
+                          />
+                          <Label htmlFor={equipment} className="text-sm">
+                            {equipment.charAt(0).toUpperCase() + equipment.slice(1)}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="custom-equipment" className="text-sm font-medium">Other equipment needed:</Label>
+                    <Input
+                      id="custom-equipment"
+                      placeholder="e.g., microphones, lighting, etc."
+                      value={customEquipment}
+                      onChange={(e) => setCustomEquipment(e.target.value)}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Description */}
