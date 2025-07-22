@@ -317,8 +317,14 @@ export function ChatModal({ isOpen, onClose, bookerName, bookerEmail, eventType,
                             .update({ talent_id: talentProfile.id })
                             .eq('id', bookingId);
                           
-                          // Refresh booking details
+                          // Wait a moment for the database to update
+                          await new Promise(resolve => setTimeout(resolve, 500));
+                          
+                          // Refresh booking details to ensure we have the latest data
                           await loadBookingDetails();
+                          
+                          // Wait another moment to ensure the update is complete
+                          await new Promise(resolve => setTimeout(resolve, 300));
                         }
                       } catch (error) {
                         console.error('Error assigning talent to booking:', error);
