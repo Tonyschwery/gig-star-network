@@ -24,25 +24,40 @@ export function ImagePositioner({ src, isOpen, onPositionComplete, onCancel }: I
   useEffect(() => {
     if (isOpen && imageRef.current) {
       const img = imageRef.current;
+      console.log('ImagePositioner: Setting up image', { src, naturalWidth: img.naturalWidth, naturalHeight: img.naturalHeight });
+      
       const onLoad = () => {
+        console.log('ImagePositioner: Image loaded', { naturalWidth: img.naturalWidth, naturalHeight: img.naturalHeight });
+        
         // Calculate the scale to fit the image in the container
         const scale = Math.max(containerSize / img.naturalWidth, containerSize / img.naturalHeight);
         const scaledWidth = img.naturalWidth * scale;
         const scaledHeight = img.naturalHeight * scale;
+        
+        console.log('ImagePositioner: Calculated dimensions', { scale, scaledWidth, scaledHeight, containerSize });
         
         setImageSize({ width: scaledWidth, height: scaledHeight });
         
         // Center the image initially
         const centerX = (containerSize - scaledWidth) / 2;
         const centerY = (containerSize - scaledHeight) / 2;
+        console.log('ImagePositioner: Setting position', { centerX, centerY });
         setPosition({ x: centerX, y: centerY });
       };
 
-      if (img.complete) {
+      if (img.complete && img.naturalWidth > 0) {
+        console.log('ImagePositioner: Image already loaded');
         onLoad();
       } else {
+        console.log('ImagePositioner: Waiting for image to load');
         img.addEventListener('load', onLoad);
-        return () => img.removeEventListener('load', onLoad);
+        img.addEventListener('error', (e) => {
+          console.error('ImagePositioner: Image failed to load', e);
+        });
+        return () => {
+          img.removeEventListener('load', onLoad);
+          img.removeEventListener('error', () => {});
+        };
       }
     }
   }, [isOpen, src]);
