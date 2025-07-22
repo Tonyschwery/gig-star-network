@@ -88,19 +88,47 @@ export function ChatModal({ isOpen, onClose, bookerName, bookerEmail, eventType,
         .from('bookings')
         .select(`
           *,
-          talent_profiles!inner (
+          talent_profiles (
             artist_name,
             rate_per_hour,
             is_pro_subscriber
           )
         `)
         .eq('id', bookingId)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       setBooking(data);
     } catch (error) {
       console.error('Error loading booking details:', error);
+      // For gig opportunities, try loading without talent_profiles join
+      try {
+        const { data: basicData, error: basicError } = await supabase
+          .from('bookings')
+          .select('*')
+          .eq('id', bookingId)
+          .single();
+
+        if (basicError) throw basicError;
+        
+        // If there's a talent_id, try to get the talent profile separately
+        if (basicData.talent_id) {
+          const { data: talentData } = await supabase
+            .from('talent_profiles')
+            .select('artist_name, rate_per_hour, is_pro_subscriber')
+            .eq('id', basicData.talent_id)
+            .single();
+          
+          setBooking({
+            ...basicData,
+            talent_profiles: talentData
+          });
+        } else {
+          setBooking(basicData);
+        }
+      } catch (fallbackError) {
+        console.error('Error loading basic booking details:', fallbackError);
+      }
     }
   };
 
