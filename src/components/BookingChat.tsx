@@ -37,6 +37,15 @@ const BookingChatComponent = ({ bookingId, bookerName, isProSubscriber = false, 
   const { user } = useAuth();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // Debug: Track component re-renders
+  console.log('🔄 BookingChat component rendered:', {
+    bookingId,
+    bookerName,
+    isProSubscriber,
+    newMessage,
+    timestamp: new Date().toISOString()
+  });
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
