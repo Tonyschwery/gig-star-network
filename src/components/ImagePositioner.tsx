@@ -183,11 +183,10 @@ export function ImagePositioner({ src, isOpen, onPositionComplete, onCancel }: I
           <div className="flex justify-center">
             <div
               ref={containerRef}
-              className="relative overflow-hidden rounded-full border-4 border-primary/20 cursor-move"
+              className="relative overflow-hidden rounded-full border-4 border-primary/20 cursor-move bg-muted/20"
               style={{ 
                 width: containerSize, 
-                height: containerSize,
-                background: 'linear-gradient(135deg, hsl(var(--muted)) 0%, hsl(var(--muted)/0.5) 100%)'
+                height: containerSize
               }}
               onMouseDown={handleMouseDown}
               onMouseMove={handleMouseMove}
@@ -200,14 +199,18 @@ export function ImagePositioner({ src, isOpen, onPositionComplete, onCancel }: I
                 alt="Position preview"
                 className="absolute select-none pointer-events-none"
                 style={{
-                  width: imageSize.width,
-                  height: imageSize.height,
+                  width: imageSize.width || 'auto',
+                  height: imageSize.height || 'auto',
                   left: position.x,
                   top: position.y,
                   transform: isDragging ? 'scale(1.02)' : 'scale(1)',
-                  transition: isDragging ? 'none' : 'transform 0.2s ease'
+                  transition: isDragging ? 'none' : 'transform 0.2s ease',
+                  objectFit: 'cover',
+                  display: imageSize.width > 0 ? 'block' : 'none'
                 }}
                 draggable={false}
+                onLoad={() => console.log('Image element loaded successfully')}
+                onError={(e) => console.error('Image element failed to load:', e)}
               />
               
               {/* Center guide */}
