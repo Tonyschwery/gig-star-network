@@ -493,6 +493,7 @@ export function BookingManagement({ talentId, isProSubscriber = false, onUpgrade
             setShowPaymentModal(false);
             setSelectedBooking(null);
           }}
+          userType="talent"
         />
       )}
     </div>

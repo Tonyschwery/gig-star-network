@@ -24,13 +24,15 @@ interface PaymentModalProps {
     };
   };
   onPaymentSuccess: () => void;
+  userType?: 'talent' | 'booker'; // New prop to distinguish user type
 }
 
 export const PaymentModal: React.FC<PaymentModalProps> = ({
   isOpen,
   onClose,
   booking,
-  onPaymentSuccess
+  onPaymentSuccess,
+  userType = 'booker'
 }) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
@@ -48,6 +50,16 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   const processingFee = 2.99; // Mock processing fee
   const finalAmount = totalAmount + processingFee;
 
+  // Different messaging based on user type
+  const isTalent = userType === 'talent';
+  const modalTitle = isTalent ? 'Send Invoice' : 'Complete Payment';
+  const buttonText = isTalent ? 'Send Invoice' : `Pay $${finalAmount.toFixed(2)}`;
+  const processingText = isTalent ? 'Sending...' : 'Processing...';
+  const successTitle = isTalent ? 'Invoice Sent!' : 'Payment Successful!';
+  const successDescription = isTalent 
+    ? `Invoice for $${finalAmount.toFixed(2)} has been sent to the booker.`
+    : `Payment of $${finalAmount.toFixed(2)} processed successfully.`;
+
   const handlePayment = async () => {
     setIsProcessing(true);
     try {
@@ -61,19 +73,19 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 
       if (data.success) {
         toast({
-          title: "Payment Successful!",
-          description: `Payment of $${finalAmount.toFixed(2)} processed successfully.`,
+          title: successTitle,
+          description: successDescription,
         });
         onPaymentSuccess();
         onClose();
       } else {
-        throw new Error(data.error || 'Payment failed');
+        throw new Error(data.error || (isTalent ? 'Failed to send invoice' : 'Payment failed'));
       }
     } catch (error) {
       console.error('Payment error:', error);
       toast({
-        title: "Payment Failed",
-        description: error instanceof Error ? error.message : "Failed to process payment. Please try again.",
+        title: isTalent ? "Failed to Send Invoice" : "Payment Failed",
+        description: error instanceof Error ? error.message : `Failed to ${isTalent ? 'send invoice' : 'process payment'}. Please try again.`,
         variant: "destructive",
       });
     } finally {
@@ -87,7 +99,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <CreditCard className="h-5 w-5" />
-            Complete Payment
+            {modalTitle}
           </DialogTitle>
         </DialogHeader>
 
@@ -193,12 +205,12 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
             {isProcessing ? (
               <>
                 <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2" />
-                Processing...
+                {processingText}
               </>
             ) : (
               <>
                 <CreditCard className="h-4 w-4 mr-2" />
-                Pay ${finalAmount.toFixed(2)}
+                {buttonText}
               </>
             )}
           </Button>
