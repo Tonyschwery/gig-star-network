@@ -41,84 +41,129 @@ serve(async (req) => {
       }
     );
 
-    // Helper function to fetch booking with retry
-    const fetchBookingWithRetry = async (retries = 3, delay = 500) => {
-      for (let i = 0; i < retries; i++) {
-        logStep(`Fetching booking details (attempt ${i + 1})`);
-        const { data: booking, error: bookingError } = await supabaseAdmin
-          .from('bookings')
-          .select('*')
-          .eq('id', bookingId)
-          .maybeSingle();
+    // Get booking details first
+    logStep('Fetching booking details');
+    const { data: booking, error: bookingError } = await supabaseAdmin
+      .from('bookings')
+      .select('*')
+      .eq('id', bookingId)
+      .maybeSingle();
 
-        if (bookingError) {
-          logStep('Error fetching booking', bookingError);
-          throw new Error(`Failed to fetch booking: ${bookingError.message}`);
-        }
-
-        if (!booking) {
-          logStep('Booking not found', { bookingId });
-          throw new Error('Booking not found');
-        }
-
-        // If talent_id is assigned, return the booking
-        if (booking.talent_id) {
-          logStep('Booking found with talent assigned', { 
-            bookingId,
-            talentId: booking.talent_id 
-          });
-          return booking;
-        }
-
-        // If this is a gig opportunity and we have retries left, wait and try again
-        if (booking.is_public_request && booking.is_gig_opportunity && i < retries - 1) {
-          logStep(`No talent assigned yet, waiting ${delay}ms before retry ${i + 2}`, {
-            bookingId,
-            talentId: booking.talent_id,
-            isPublicRequest: booking.is_public_request,
-            isGigOpportunity: booking.is_gig_opportunity 
-          });
-          await new Promise(resolve => setTimeout(resolve, delay));
-          continue;
-        }
-
-        // Final attempt failed
-        logStep('No talent assigned to booking - this might be a gig opportunity that needs to be claimed first', { 
-          bookingId,
-          talentId: booking.talent_id,
-          isPublicRequest: booking.is_public_request,
-          isGigOpportunity: booking.is_gig_opportunity 
-        });
-        throw new Error('No talent assigned to this booking yet. For gig opportunities, please claim the gig first by starting a chat.');
-      }
-    };
-
-    // Get booking details with retry logic
-    const booking = await fetchBookingWithRetry();
-
-    // Get talent profile separately
-    logStep('Fetching talent profile');
-    const { data: talentProfile, error: talentError } = await supabaseAdmin
-      .from('talent_profiles')
-      .select('id, artist_name, user_id, is_pro_subscriber')
-      .eq('id', booking.talent_id)
-      .single();
-
-    if (talentError) {
-      logStep('Error fetching talent profile', talentError);
-      throw new Error(`Failed to fetch talent profile: ${talentError.message}`);
+    if (bookingError) {
+      logStep('Error fetching booking', bookingError);
+      throw new Error(`Failed to fetch booking: ${bookingError.message}`);
     }
 
-    if (!talentProfile) {
-      logStep('Talent profile not found', { talentId: booking.talent_id });
-      throw new Error('Talent profile not found');
+    if (!booking) {
+      logStep('Booking not found', { bookingId });
+      throw new Error('Booking not found');
+    }
+
+    let finalTalentId = booking.talent_id;
+
+    // If this is a gig opportunity without an assigned talent, we need to assign the current user as the talent
+    if (!booking.talent_id && booking.is_public_request && booking.is_gig_opportunity) {
+      logStep('Gig opportunity without talent - attempting to assign talent from request context');
+      
+      // Get the current user from the JWT token
+      const authHeader = req.headers.get('authorization');
+      if (!authHeader) {
+        throw new Error('No authorization header found');
+      }
+
+      const token = authHeader.replace('Bearer ', '');
+      
+      // Decode the JWT to get the user ID (simple decode, not verification since we're in a secure context)
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const userId = payload.sub;
+      
+      if (!userId) {
+        throw new Error('No user ID found in token');
+      }
+
+      logStep('Found user ID from token', { userId });
+
+      // Get the talent profile for this user
+      const { data: talentProfile, error: talentError } = await supabaseAdmin
+        .from('talent_profiles')
+        .select('id, artist_name, user_id, is_pro_subscriber')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (talentError) {
+        logStep('Error fetching talent profile', talentError);
+        throw new Error(`Failed to fetch talent profile: ${talentError.message}`);
+      }
+
+      if (!talentProfile) {
+        logStep('No talent profile found for user', { userId });
+        throw new Error('Talent profile not found for the current user');
+      }
+
+      logStep('Found talent profile', { talentId: talentProfile.id, artistName: talentProfile.artist_name });
+
+      // Assign this talent to the booking in a transaction
+      const { data: updatedBooking, error: updateError } = await supabaseAdmin
+        .from('bookings')
+        .update({ talent_id: talentProfile.id })
+        .eq('id', bookingId)
+        .is('talent_id', null) // Only update if still unassigned
+        .select()
+        .single();
+
+      if (updateError) {
+        logStep('Error assigning talent to booking', updateError);
+        throw new Error(`Failed to assign talent to booking: ${updateError.message}`);
+      }
+
+      if (!updatedBooking) {
+        logStep('Booking assignment failed - likely already claimed by another talent');
+        throw new Error('This gig opportunity has already been claimed by another talent');
+      }
+
+      finalTalentId = talentProfile.id;
+      logStep('Successfully assigned talent to booking', { 
+        bookingId, 
+        talentId: finalTalentId,
+        artistName: talentProfile.artist_name 
+      });
+
+      // Use the talent profile we already have
+      var assignedTalentProfile = talentProfile;
+    } else if (booking.talent_id) {
+      // Get talent profile for existing assignment
+      logStep('Fetching talent profile for existing assignment');
+      const { data: existingTalentProfile, error: existingTalentError } = await supabaseAdmin
+        .from('talent_profiles')
+        .select('id, artist_name, user_id, is_pro_subscriber')
+        .eq('id', booking.talent_id)
+        .single();
+
+      if (existingTalentError) {
+        logStep('Error fetching existing talent profile', existingTalentError);
+        throw new Error(`Failed to fetch talent profile: ${existingTalentError.message}`);
+      }
+
+      var assignedTalentProfile = existingTalentProfile;
+      logStep('Found existing talent assignment', { 
+        talentId: assignedTalentProfile.id,
+        artistName: assignedTalentProfile.artist_name 
+      });
+    } else {
+      logStep('No talent assigned and not a gig opportunity', { 
+        bookingId,
+        talentId: booking.talent_id,
+        isPublicRequest: booking.is_public_request,
+        isGigOpportunity: booking.is_gig_opportunity 
+      });
+      throw new Error('No talent assigned to this booking');
     }
 
     logStep('Booking and talent details retrieved', {
       bookingId: booking.id,
-      talentId: talentProfile.id,
+      talentId: assignedTalentProfile.id,
       booker: booking.user_id,
-      artistName: talentProfile.artist_name
+      artistName: assignedTalentProfile.artist_name
     });
 
     // Calculate amounts
@@ -141,7 +186,7 @@ serve(async (req) => {
       .insert({
         booking_id: bookingId,
         booker_id: booking.user_id,
-        talent_id: talentProfile.id,
+        talent_id: assignedTalentProfile.id,
         total_amount: totalAmount,
         platform_commission: platformCommission,
         talent_earnings: talentEarnings,
@@ -186,7 +231,7 @@ serve(async (req) => {
         user_id: booking.user_id,
         type: 'invoice_received',
         title: 'Invoice Received',
-        message: `${talentProfile.artist_name} has sent you an invoice for ${currency || 'USD'} ${totalAmount.toFixed(2)} for your ${booking.event_type} event.`,
+        message: `${assignedTalentProfile.artist_name} has sent you an invoice for ${currency || 'USD'} ${totalAmount.toFixed(2)} for your ${booking.event_type} event.`,
         booking_id: bookingId
       });
 

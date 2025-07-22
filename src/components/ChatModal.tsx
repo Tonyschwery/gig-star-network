@@ -297,48 +297,9 @@ export function ChatModal({ isOpen, onClose, bookerName, bookerEmail, eventType,
           {/* Booking Action Buttons - Only show for pending bookings */}
           {booking && booking.status === 'pending' && (
             <div className="border-b pb-4">
-              <div className="flex gap-2">
+               <div className="flex gap-2">
                 <Button
-                  onClick={async () => {
-                    // For gig opportunities, make sure the talent is assigned to the booking first
-                    if ((isPublicRequest && isGigOpportunity) || (booking?.is_public_request && booking?.is_gig_opportunity && !booking?.talent_id)) {
-                      try {
-                        // Get current user's talent profile
-                        const { data: talentProfile } = await supabase
-                          .from('talent_profiles')
-                          .select('id')
-                          .eq('user_id', user?.id)
-                          .single();
-
-                        if (talentProfile) {
-                          // Assign this talent to the booking
-                          await supabase
-                            .from('bookings')
-                            .update({ talent_id: talentProfile.id })
-                            .eq('id', bookingId);
-                          
-                          // Wait a moment for the database to update
-                          await new Promise(resolve => setTimeout(resolve, 500));
-                          
-                          // Refresh booking details to ensure we have the latest data
-                          await loadBookingDetails();
-                          
-                          // Wait another moment to ensure the update is complete
-                          await new Promise(resolve => setTimeout(resolve, 300));
-                        }
-                      } catch (error) {
-                        console.error('Error assigning talent to booking:', error);
-                        toast({
-                          title: "Error",
-                          description: "Failed to assign talent to booking",
-                          variant: "destructive",
-                        });
-                        return;
-                      }
-                    }
-                    
-                    setShowManualInvoiceModal(true);
-                  }}
+                  onClick={() => setShowManualInvoiceModal(true)}
                   disabled={updatingBooking}
                   size="sm"
                   className="bg-green-600 hover:bg-green-700 text-white h-8 px-3 text-xs flex-1"
