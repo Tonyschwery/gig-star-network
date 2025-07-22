@@ -291,6 +291,7 @@ export function BookingManagement({ talentId, isProSubscriber = false, onUpgrade
                 {/* Chat Section for Pending Bookings */}
                 <div className="mt-4 pt-4 border-t">
                   <BookingChat
+                    key={`booking-chat-${booking.id}`}
                     bookingId={booking.id}
                     bookerName={booking.booker_name}
                     isProSubscriber={isProSubscriber}
