@@ -102,10 +102,23 @@ export default function Gigs() {
   };
 
   const handleContactBooker = (request: PublicBooking) => {
+    console.log('Contact booker clicked:', request); // Debug log
+    
+    if (!request.booker_email) {
+      toast({
+        title: "Error",
+        description: "Booker email not available for this request.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     const subject = `Event Inquiry: ${request.event_type} on ${format(new Date(request.event_date), 'PPP')}`;
     const body = `Hi ${request.booker_name},\n\nI saw your event request on NAGHM and I'm interested in performing at your ${request.event_type} event.\n\nEvent Details:\n- Date: ${format(new Date(request.event_date), 'PPP')}\n- Duration: ${request.event_duration} hours\n- Location: ${request.event_location}\n\nI'd love to discuss this opportunity with you. Please let me know if you'd like to schedule a call.\n\nBest regards`;
     
-    window.location.href = `mailto:${request.booker_email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    const mailtoUrl = `mailto:${request.booker_email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    console.log('Opening email:', mailtoUrl); // Debug log
+    window.location.href = mailtoUrl;
   };
 
   if (loading) {
@@ -234,6 +247,7 @@ export default function Gigs() {
                       <Button 
                         variant="outline"
                         onClick={() => {
+                          console.log('Chat button clicked'); // Debug log
                           toast({
                             title: "Direct Messaging",
                             description: "Direct messaging will be available in the next update.",
