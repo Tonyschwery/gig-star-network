@@ -235,7 +235,7 @@ export default function Gigs() {
                         variant="outline"
                         onClick={() => {
                           toast({
-                            title: "Chat Feature Coming Soon",
+                            title: "Direct Messaging",
                             description: "Direct messaging will be available in the next update.",
                           });
                         }}
