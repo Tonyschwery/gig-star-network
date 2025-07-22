@@ -7,7 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, Clock, MapPin, X, User } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { CalendarIcon, Clock, MapPin, X, User, Mail, Lock } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
@@ -34,6 +35,11 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
   const [eventAddress, setEventAddress] = useState("");
   const [eventType, setEventType] = useState("");
   const [description, setDescription] = useState("");
+  
+  // Auth fields for non-authenticated users
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isSigningUp, setIsSigningUp] = useState(false);
 
   const eventTypes = [
     "wedding",
@@ -45,13 +51,98 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
     "festival"
   ];
 
+  const handleSignUp = async () => {
+    if (!email || !password) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill in email and password.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSigningUp(true);
+
+    try {
+      const redirectUrl = `${window.location.origin}/`;
+      
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: redirectUrl
+        }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Account Created!",
+        description: "Please check your email to verify your account, then try booking again.",
+      });
+
+      // Don't close the form, just clear auth fields so user can try again after verification
+      setEmail("");
+      setPassword("");
+    } catch (error: any) {
+      console.error('Error signing up:', error);
+      toast({
+        title: "Sign Up Failed",
+        description: error.message || "There was an error creating your account. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSigningUp(false);
+    }
+  };
+
+  const handleSignIn = async () => {
+    if (!email || !password) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill in email and password.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSigningUp(true);
+
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Signed In!",
+        description: "You can now proceed with your booking.",
+      });
+
+      // Clear auth fields
+      setEmail("");
+      setPassword("");
+    } catch (error: any) {
+      console.error('Error signing in:', error);
+      toast({
+        title: "Sign In Failed",
+        description: error.message || "There was an error signing in. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSigningUp(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!user) {
       toast({
         title: "Authentication Required",
-        description: "Please log in to book a talent.",
+        description: "Please sign up or sign in first to book this talent.",
         variant: "destructive",
       });
       return;
@@ -115,25 +206,121 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
         </CardHeader>
         
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="text-sm text-muted-foreground mb-4">
-              Booking request for: <span className="font-medium text-primary">{talentName}</span>
-            </div>
+          <div className="text-sm text-muted-foreground mb-4">
+            Booking request for: <span className="font-medium text-primary">{talentName}</span>
+          </div>
 
-            {/* Booker Name */}
-            <div className="space-y-2">
-              <Label htmlFor="booker-name">Your Name *</Label>
-              <div className="relative">
-                <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="booker-name"
-                  placeholder="Enter your full name"
-                  value={bookerName}
-                  onChange={(e) => setBookerName(e.target.value)}
-                  className="pl-10"
-                />
+          {!user ? (
+            <Tabs defaultValue="signin" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="signin">Sign In</TabsTrigger>
+                <TabsTrigger value="signup">Sign Up</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="signin" className="space-y-4">
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="signin-email">Email</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="signin-email"
+                        type="email"
+                        placeholder="Enter your email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="signin-password">Password</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="signin-password"
+                        type="password"
+                        placeholder="Enter your password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
+                  </div>
+                  
+                  <Button 
+                    onClick={handleSignIn}
+                    disabled={isSigningUp}
+                    className="w-full hero-button"
+                  >
+                    {isSigningUp ? "Signing In..." : "Sign In"}
+                  </Button>
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="signup" className="space-y-4">
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-email">Email</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="signup-email"
+                        type="email"
+                        placeholder="Enter your email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-password">Password</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="signup-password"
+                        type="password"
+                        placeholder="Create a password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
+                  </div>
+                  
+                  <Button 
+                    onClick={handleSignUp}
+                    disabled={isSigningUp}
+                    className="w-full hero-button"
+                  >
+                    {isSigningUp ? "Creating Account..." : "Create Account"}
+                  </Button>
+                  
+                  <p className="text-xs text-muted-foreground text-center">
+                    By creating an account, you agree to our terms and can book talented performers.
+                  </p>
+                </div>
+              </TabsContent>
+            </Tabs>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Booker Name */}
+              <div className="space-y-2">
+                <Label htmlFor="booker-name">Your Name *</Label>
+                <div className="relative">
+                  <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="booker-name"
+                    placeholder="Enter your full name"
+                    value={bookerName}
+                    onChange={(e) => setBookerName(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
               </div>
-            </div>
 
             {/* Date & Duration */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -241,25 +428,26 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
               />
             </div>
 
-            {/* Actions */}
-            <div className="flex gap-3 pt-4">
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={onClose}
-                className="flex-1"
-              >
-                Cancel
-              </Button>
-              <Button 
-                type="submit" 
-                disabled={isSubmitting}
-                className="flex-1 hero-button"
-              >
-                {isSubmitting ? "Submitting..." : "Send Booking Request"}
-              </Button>
-            </div>
-          </form>
+              {/* Actions */}
+              <div className="flex gap-3 pt-4">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={onClose}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  type="submit" 
+                  disabled={isSubmitting}
+                  className="flex-1 hero-button"
+                >
+                  {isSubmitting ? "Submitting..." : "Send Booking Request"}
+                </Button>
+              </div>
+            </form>
+          )}
         </CardContent>
       </Card>
     </div>
