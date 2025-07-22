@@ -12,7 +12,7 @@ export function filterSensitiveContent(message: string): string {
     /\(\d{3}\)\s?\d{3}[-.]?\d{4}/g,   // (123) 456-7890, (123)456-7890
     /\+\d{1,3}[-.\s]?\d{3,4}[-.\s]?\d{3,4}[-.\s]?\d{3,4}/g, // International formats
     /\b\d{10,15}\b/g, // General long number sequences
-    /\b\d{5,9}\b/g, // Shorter number sequences that could be phone numbers
+    /\b\d{3,9}\b/g, // Number sequences that could be phone numbers (3-9 digits)
     /\b\d{4}[-.\s]\d{3,4}\b/g, // 4-3 or 4-4 digit patterns
     /\b\d{3}[-.\s]\d{3,4}[-.\s]\d{2,4}\b/g, // 3-3-2, 3-3-3, 3-4-3 patterns
   ];
