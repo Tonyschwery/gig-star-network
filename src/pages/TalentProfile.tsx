@@ -28,7 +28,7 @@ interface TalentProfile {
   artist_name: string;
   act: string;
   gender: string;
-  age: number;
+  age: string;
   location?: string;
   rate_per_hour?: number;
   currency: string;
