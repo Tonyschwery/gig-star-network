@@ -39,19 +39,11 @@ serve(async (req) => {
       }
     );
 
-    // Get booking details with talent profile
+    // Get booking details first
     logStep('Fetching booking details');
     const { data: booking, error: bookingError } = await supabaseAdmin
       .from('bookings')
-      .select(`
-        *,
-        talent_profiles (
-          id,
-          artist_name,
-          user_id,
-          is_pro_subscriber
-        )
-      `)
+      .select('*')
       .eq('id', bookingId)
       .maybeSingle();
 
@@ -65,15 +57,34 @@ serve(async (req) => {
       throw new Error('Booking not found');
     }
 
-    if (!booking.talent_profiles) {
-      logStep('No talent profile found', { booking });
-      throw new Error('No talent profile found for this booking');
+    if (!booking.talent_id) {
+      logStep('No talent assigned to booking', { booking });
+      throw new Error('No talent assigned to this booking yet');
     }
 
-    logStep('Booking details retrieved', {
+    // Get talent profile separately
+    logStep('Fetching talent profile');
+    const { data: talentProfile, error: talentError } = await supabaseAdmin
+      .from('talent_profiles')
+      .select('id, artist_name, user_id, is_pro_subscriber')
+      .eq('id', booking.talent_id)
+      .single();
+
+    if (talentError) {
+      logStep('Error fetching talent profile', talentError);
+      throw new Error(`Failed to fetch talent profile: ${talentError.message}`);
+    }
+
+    if (!talentProfile) {
+      logStep('Talent profile not found', { talentId: booking.talent_id });
+      throw new Error('Talent profile not found');
+    }
+
+    logStep('Booking and talent details retrieved', {
       bookingId: booking.id,
-      talentId: booking.talent_profiles.id,
-      booker: booking.user_id
+      talentId: talentProfile.id,
+      booker: booking.user_id,
+      artistName: talentProfile.artist_name
     });
 
     // Calculate amounts
@@ -96,7 +107,7 @@ serve(async (req) => {
       .insert({
         booking_id: bookingId,
         booker_id: booking.user_id,
-        talent_id: booking.talent_profiles.id,
+        talent_id: talentProfile.id,
         total_amount: totalAmount,
         platform_commission: platformCommission,
         talent_earnings: talentEarnings,
@@ -141,7 +152,7 @@ serve(async (req) => {
         user_id: booking.user_id,
         type: 'invoice_received',
         title: 'Invoice Received',
-        message: `${booking.talent_profiles.artist_name} has sent you an invoice for ${currency || 'USD'} ${totalAmount.toFixed(2)} for your ${booking.event_type} event.`,
+        message: `${talentProfile.artist_name} has sent you an invoice for ${currency || 'USD'} ${totalAmount.toFixed(2)} for your ${booking.event_type} event.`,
         booking_id: bookingId
       });
 
