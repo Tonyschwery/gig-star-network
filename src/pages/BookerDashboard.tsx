@@ -16,10 +16,15 @@ import {
   MessageCircle,
   CheckCircle,
   XCircle,
-  Clock3
+  Clock3,
+  Bell,
+  CreditCard,
+  AlertCircle
 } from "lucide-react";
 import { format } from "date-fns";
 import { BookerChat } from "@/components/BookerChat";
+import { PaymentModal } from "@/components/PaymentModal";
+import { NotificationCenter } from "@/components/NotificationCenter";
 
 interface Booking {
   id: string;
@@ -36,6 +41,8 @@ interface Booking {
   talent_profiles?: {
     artist_name: string;
     picture_url?: string;
+    rate_per_hour: number;
+    is_pro_subscriber: boolean;
   };
 }
 
@@ -45,6 +52,8 @@ const BookerDashboard = () => {
   const { toast } = useToast();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
 
   useEffect(() => {
     if (!user) {
@@ -86,7 +95,9 @@ const BookerDashboard = () => {
           *,
           talent_profiles (
             artist_name,
-            picture_url
+            picture_url,
+            rate_per_hour,
+            is_pro_subscriber
           )
         `)
         .eq('user_id', user.id)
@@ -186,6 +197,119 @@ const BookerDashboard = () => {
             </Button>
           </div>
         </div>
+
+        {/* Notification Center */}
+        <div className="mb-6">
+          <NotificationCenter />
+        </div>
+
+        {/* Approved Bookings - Payment Required */}
+        {approvedBookings.length > 0 && (
+          <Card className="glass-card border-green-500/20 mb-6">
+            <CardHeader>
+              <CardTitle className="flex items-center text-green-700">
+                <AlertCircle className="h-5 w-5 mr-2" />
+                Payment Required ({approvedBookings.length})
+              </CardTitle>
+              <CardDescription>
+                These bookings have been approved by the talent and require payment to confirm
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {approvedBookings.map((booking) => (
+                <div key={booking.id} className="border border-green-200 rounded-lg p-4 bg-green-50/50 dark:bg-green-950/20 space-y-3">
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-3 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg">{getEventTypeIcon(booking.event_type)}</span>
+                        <h3 className="font-semibold capitalize">
+                          {booking.event_type} Event
+                        </h3>
+                        <Badge className={getStatusColor(booking.status)}>
+                          {getStatusIcon(booking.status)}
+                          <span className="ml-1">{booking.status}</span>
+                        </Badge>
+                      </div>
+                      
+                      <div className="bg-green-100/50 dark:bg-green-900/20 p-3 rounded-lg">
+                        <div className="font-medium text-foreground mb-2 flex items-center gap-2">
+                          <User className="h-4 w-4" />
+                          Talent: {booking.talent_profiles?.artist_name || 'Unknown'}
+                        </div>
+                        <div className="text-sm text-green-700 dark:text-green-300 flex items-center gap-1">
+                          <CheckCircle className="h-4 w-4" />
+                          Approved! Payment required to confirm booking.
+                        </div>
+                      </div>
+                      
+                      <div className="grid md:grid-cols-2 gap-3 text-sm">
+                        <div className="flex items-center gap-2">
+                          <Calendar className="h-4 w-4" />
+                          <span>{format(new Date(booking.event_date), 'PPP')}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Clock className="h-4 w-4" />
+                          <span>{booking.event_duration} hours</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <MapPin className="h-4 w-4" />
+                          <span className="font-medium">{booking.event_location}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Mail className="h-4 w-4" />
+                          <span>Approved {format(new Date(booking.created_at), 'MMM d, yyyy')}</span>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <div className="text-sm">
+                          <span className="font-medium text-foreground">Full Address:</span>
+                          <p className="text-muted-foreground mt-1">{booking.event_address}</p>
+                        </div>
+                        {booking.description && (
+                          <div className="text-sm">
+                            <span className="font-medium text-foreground">Event Description:</span>
+                            <p className="text-muted-foreground mt-1">{booking.description}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Chat Section for Approved Bookings */}
+                  <div className="mt-4 pt-4 border-t">
+                    <BookerChat
+                      bookingId={booking.id}
+                      talentName={booking.talent_profiles?.artist_name || 'Talent'}
+                      bookingStatus={booking.status}
+                    />
+                  </div>
+
+                  <div className="flex gap-2 pt-4">
+                    <Button
+                      onClick={() => {
+                        setSelectedBooking(booking);
+                        setShowPaymentModal(true);
+                      }}
+                      className="bg-green-600 hover:bg-green-700 text-white flex-1"
+                    >
+                      <CreditCard className="h-4 w-4 mr-2" />
+                      Pay Now & Confirm Booking
+                    </Button>
+                    <Button
+                      onClick={() => navigate(`/talent/${booking.talent_id}`)}
+                      variant="outline"
+                      size="sm"
+                    >
+                      <User className="h-4 w-4 mr-2" />
+                      View Talent
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Stats Cards */}
         <div className="grid md:grid-cols-4 gap-4 mb-8">
@@ -436,6 +560,25 @@ const BookerDashboard = () => {
             )}
           </CardContent>
         </Card>
+
+        {/* Payment Modal */}
+        {selectedBooking && (
+          <PaymentModal
+            isOpen={showPaymentModal}
+            onClose={() => {
+              setShowPaymentModal(false);
+              setSelectedBooking(null);
+            }}
+            booking={selectedBooking}
+            onPaymentSuccess={() => {
+              // Refresh bookings to show updated status
+              fetchBookings();
+              setShowPaymentModal(false);
+              setSelectedBooking(null);
+            }}
+            userType="booker"
+          />
+        )}
       </div>
     </div>
   );
