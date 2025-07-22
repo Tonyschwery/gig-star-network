@@ -3,12 +3,13 @@ import { Header } from "@/components/Header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, Clock, MapPin, User, Briefcase, Crown, Mail, MessageCircle } from "lucide-react";
+import { Calendar, Clock, MapPin, User, Briefcase, Crown, MessageCircle, Mail } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
+import { ChatModal } from "@/components/ChatModal";
 
 interface PublicBooking {
   id: string;
@@ -33,6 +34,8 @@ export default function Gigs() {
   const [publicRequests, setPublicRequests] = useState<PublicBooking[]>([]);
   const [loading, setLoading] = useState(true);
   const [isProTalent, setIsProTalent] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
+  const [selectedBooker, setSelectedBooker] = useState<PublicBooking | null>(null);
 
   useEffect(() => {
     if (!user) {
@@ -101,24 +104,9 @@ export default function Gigs() {
     return iconMap[type] || "🎪";
   };
 
-  const handleContactBooker = (request: PublicBooking) => {
-    console.log('Contact booker clicked:', request); // Debug log
-    
-    if (!request.booker_email) {
-      toast({
-        title: "Error",
-        description: "Booker email not available for this request.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    const subject = `Event Inquiry: ${request.event_type} on ${format(new Date(request.event_date), 'PPP')}`;
-    const body = `Hi ${request.booker_name},\n\nI saw your event request on NAGHM and I'm interested in performing at your ${request.event_type} event.\n\nEvent Details:\n- Date: ${format(new Date(request.event_date), 'PPP')}\n- Duration: ${request.event_duration} hours\n- Location: ${request.event_location}\n\nI'd love to discuss this opportunity with you. Please let me know if you'd like to schedule a call.\n\nBest regards`;
-    
-    const mailtoUrl = `mailto:${request.booker_email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    console.log('Opening email:', mailtoUrl); // Debug log
-    window.location.href = mailtoUrl;
+  const handleStartChat = (request: PublicBooking) => {
+    setSelectedBooker(request);
+    setChatOpen(true);
   };
 
   if (loading) {
@@ -238,14 +226,7 @@ export default function Gigs() {
                     </div>
                     <div className="flex gap-2">
                       <Button 
-                        onClick={() => {
-                          toast({
-                            title: "Chat Started",
-                            description: `Direct message conversation started with ${request.booker_name}`,
-                          });
-                          // Navigate to a chat interface or open a modal
-                          console.log('Starting chat with:', request.booker_name, request.booker_email);
-                        }}
+                        onClick={() => handleStartChat(request)}
                         className="hero-button"
                       >
                         <MessageCircle className="h-4 w-4 mr-2" />
@@ -314,6 +295,16 @@ export default function Gigs() {
           </div>
         )}
       </div>
+
+      {selectedBooker && (
+        <ChatModal
+          isOpen={chatOpen}
+          onClose={() => setChatOpen(false)}
+          bookerName={selectedBooker.booker_name}
+          bookerEmail={selectedBooker.booker_email}
+          eventType={selectedBooker.event_type}
+        />
+      )}
     </div>
   );
 }
