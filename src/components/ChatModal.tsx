@@ -84,6 +84,7 @@ export function ChatModal({ isOpen, onClose, bookerName, bookerEmail, eventType,
 
   const loadBookingDetails = async () => {
     try {
+      // First try to get booking with talent profile joined
       const { data, error } = await supabase
         .from('bookings')
         .select(`
@@ -98,10 +99,31 @@ export function ChatModal({ isOpen, onClose, bookerName, bookerEmail, eventType,
         .maybeSingle();
 
       if (error) throw error;
-      setBooking(data);
+      
+      if (data && data.talent_profiles) {
+        // We have both booking and talent data
+        setBooking(data);
+      } else if (data && data.talent_id) {
+        // We have booking but talent profile didn't join properly, get it separately
+        const { data: talentData, error: talentError } = await supabase
+          .from('talent_profiles')
+          .select('artist_name, rate_per_hour, is_pro_subscriber')
+          .eq('id', data.talent_id)
+          .single();
+        
+        if (talentError) throw talentError;
+        
+        setBooking({
+          ...data,
+          talent_profiles: talentData
+        });
+      } else if (data) {
+        // Booking exists but no talent assigned yet (shouldn't happen after claiming)
+        setBooking(data);
+      }
     } catch (error) {
       console.error('Error loading booking details:', error);
-      // For gig opportunities, try loading without talent_profiles join
+      // Try basic booking load as fallback
       try {
         const { data: basicData, error: basicError } = await supabase
           .from('bookings')
@@ -110,22 +132,7 @@ export function ChatModal({ isOpen, onClose, bookerName, bookerEmail, eventType,
           .single();
 
         if (basicError) throw basicError;
-        
-        // If there's a talent_id, try to get the talent profile separately
-        if (basicData.talent_id) {
-          const { data: talentData } = await supabase
-            .from('talent_profiles')
-            .select('artist_name, rate_per_hour, is_pro_subscriber')
-            .eq('id', basicData.talent_id)
-            .single();
-          
-          setBooking({
-            ...basicData,
-            talent_profiles: talentData
-          });
-        } else {
-          setBooking(basicData);
-        }
+        setBooking(basicData);
       } catch (fallbackError) {
         console.error('Error loading basic booking details:', fallbackError);
       }

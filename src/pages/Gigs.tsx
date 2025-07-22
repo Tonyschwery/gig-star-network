@@ -166,8 +166,12 @@ export default function Gigs() {
       }
 
       // Update the local request to include talent_id for the chat
-      setSelectedBooker({ ...request, talent_id: talentProfile.id });
+      const updatedRequest = { ...request, talent_id: talentProfile.id };
+      setSelectedBooker(updatedRequest);
       setChatOpen(true);
+      
+      // Refresh the gig list to show updated status
+      fetchPublicRequests();
       
     } catch (error) {
       console.error('Error starting chat:', error);
