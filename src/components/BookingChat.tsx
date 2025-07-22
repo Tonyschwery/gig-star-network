@@ -209,11 +209,15 @@ export function BookingChat({ bookingId, bookerName, isProSubscriber = false, on
           <Input
             placeholder="Type your message..."
             value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
+            onChange={(e) => {
+              console.log('Input onChange triggered:', e.target.value);
+              setNewMessage(e.target.value);
+            }}
             onKeyDown={handleKeyDown}
             disabled={sending}
             className="flex-1"
             autoComplete="off"
+            key="booking-chat-input"
           />
           <Button 
             onClick={sendMessage} 

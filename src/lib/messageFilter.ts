@@ -5,6 +5,11 @@
 export function filterSensitiveContent(message: string): string {
   let filteredMessage = message;
   console.log('Original message:', message);
+  
+  // Test specific numbers
+  console.log('Testing "558":', /\b\d{3,9}\b/g.test("558"));
+  console.log('Testing " 558 ":', /\b\d{3,9}\b/g.test(" 558 "));
+  console.log('Testing "hi 558":', /\b\d{3,9}\b/g.test("hi 558"));
 
   // Remove phone numbers (various formats)
   const phonePatterns = [
