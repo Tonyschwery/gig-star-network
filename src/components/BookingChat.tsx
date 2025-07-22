@@ -209,8 +209,30 @@ const BookingChatComponent = ({ bookingId, bookerName, isProSubscriber = false, 
           <Input
             placeholder="Type your message..."
             value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            onKeyDown={handleKeyDown}
+            onChange={(e) => {
+              console.log('🔤 Input onChange triggered:', {
+                value: e.target.value,
+                previousValue: newMessage,
+                timestamp: new Date().toISOString(),
+                activeElement: document.activeElement?.tagName,
+                focusLost: document.activeElement !== e.target
+              });
+              setNewMessage(e.target.value);
+            }}
+            onKeyDown={(e) => {
+              console.log('⌨️ KeyDown event:', {
+                key: e.key,
+                value: e.currentTarget.value,
+                timestamp: new Date().toISOString()
+              });
+              handleKeyDown(e);
+            }}
+            onFocus={() => {
+              console.log('🎯 Input focused at:', new Date().toISOString());
+            }}
+            onBlur={() => {
+              console.log('😵‍💫 Input lost focus at:', new Date().toISOString());
+            }}
             disabled={sending}
             className="flex-1"
             autoComplete="off"
