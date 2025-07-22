@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { BookingNotifications } from "@/components/BookingNotifications";
 import { BookerNotifications } from "@/components/BookerNotifications";
+import { NotificationCenter } from "@/components/NotificationCenter";
 
 export function Header() {
   const navigate = useNavigate();
@@ -122,6 +123,7 @@ export function Header() {
                   >
                     Welcome, {talentName || user.user_metadata?.name || user.email?.split('@')[0] || 'User'}
                   </span>
+                  <NotificationCenter />
                   {talentId ? (
                     <BookingNotifications talentId={talentId} />
                   ) : (
