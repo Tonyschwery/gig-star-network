@@ -3,11 +3,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send, User } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Send, User, Check, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { filterSensitiveContent } from "@/lib/messageFilter";
+import { PaymentModal } from "./PaymentModal";
 
 interface ChatModalProps {
   isOpen: boolean;
@@ -26,17 +28,35 @@ interface Message {
   created_at: string;
 }
 
+interface Booking {
+  id: string;
+  status: string;
+  event_type: string;
+  event_date: string;
+  event_duration: number;
+  event_location: string;
+  talent_profiles?: {
+    artist_name: string;
+    rate_per_hour: number;
+    is_pro_subscriber: boolean;
+  };
+}
+
 export function ChatModal({ isOpen, onClose, bookerName, bookerEmail, eventType, bookingId }: ChatModalProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [booking, setBooking] = useState<Booking | null>(null);
+  const [updatingBooking, setUpdatingBooking] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
 
-  // Load existing messages when modal opens
+  // Load existing messages and booking details when modal opens
   useEffect(() => {
     if (isOpen && bookingId) {
       loadMessages();
+      loadBookingDetails();
       
       // Set up real-time subscription for new messages
       const channel = supabase
@@ -61,6 +81,28 @@ export function ChatModal({ isOpen, onClose, bookerName, bookerEmail, eventType,
       };
     }
   }, [isOpen, bookingId]);
+
+  const loadBookingDetails = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('bookings')
+        .select(`
+          *,
+          talent_profiles!inner (
+            artist_name,
+            rate_per_hour,
+            is_pro_subscriber
+          )
+        `)
+        .eq('id', bookingId)
+        .single();
+
+      if (error) throw error;
+      setBooking(data);
+    } catch (error) {
+      console.error('Error loading booking details:', error);
+    }
+  };
 
   const loadMessages = async () => {
     try {
@@ -144,20 +186,100 @@ export function ChatModal({ isOpen, onClose, bookerName, bookerEmail, eventType,
     }
   };
 
+  const updateBookingStatus = async (newStatus: 'approved' | 'declined') => {
+    setUpdatingBooking(true);
+    
+    try {
+      const { error } = await supabase
+        .from('bookings')
+        .update({ status: newStatus })
+        .eq('id', bookingId);
+
+      if (error) throw error;
+
+      // Update local booking state
+      setBooking(prev => prev ? { ...prev, status: newStatus } : null);
+
+      toast({
+        title: "Success",
+        description: `Booking ${newStatus} successfully!`,
+      });
+    } catch (error) {
+      console.error('Error updating booking:', error);
+      toast({
+        title: "Error",
+        description: `Failed to ${newStatus === 'approved' ? 'approve' : 'decline'} booking`,
+        variant: "destructive",
+      });
+    } finally {
+      setUpdatingBooking(false);
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return 'bg-yellow-500/20 text-yellow-700 border-yellow-500/20';
+      case 'approved':
+        return 'bg-green-500/20 text-green-700 border-green-500/20';
+      case 'declined':
+        return 'bg-red-500/20 text-red-700 border-red-500/20';
+      default:
+        return 'bg-muted';
+    }
+  };
+
   const isMyMessage = (message: Message) => {
     return user && message.sender_id === user.id;
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md h-[500px] flex flex-col">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <User className="h-5 w-5" />
-            Chat with {bookerName}
-          </DialogTitle>
-          <p className="text-sm text-muted-foreground">{bookerEmail}</p>
-        </DialogHeader>
+    <>
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="max-w-md h-[600px] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <User className="h-5 w-5" />
+              Chat with {bookerName}
+            </DialogTitle>
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-muted-foreground">{bookerEmail}</p>
+              {booking && (
+                <Badge className={getStatusColor(booking.status)}>
+                  {booking.status}
+                </Badge>
+              )}
+            </div>
+          </DialogHeader>
+
+          {/* Booking Action Buttons - Only show for pending bookings */}
+          {booking && booking.status === 'pending' && (
+            <div className="border-b pb-4">
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => {
+                    setShowPaymentModal(true);
+                  }}
+                  disabled={updatingBooking}
+                  size="sm"
+                  className="bg-green-600 hover:bg-green-700 text-white h-8 px-3 text-xs flex-1"
+                >
+                  <Check className="h-3 w-3 mr-1" />
+                  Approve & Send Invoice
+                </Button>
+                <Button
+                  onClick={() => updateBookingStatus('declined')}
+                  disabled={updatingBooking}
+                  variant="destructive"
+                  size="sm"
+                  className="h-8 px-3 text-xs flex-1"
+                >
+                  <X className="h-3 w-3 mr-1" />
+                  Decline
+                </Button>
+              </div>
+            </div>
+          )}
 
         <ScrollArea className="flex-1 px-4">
           <div className="space-y-4">{}
@@ -206,5 +328,20 @@ export function ChatModal({ isOpen, onClose, bookerName, bookerEmail, eventType,
         </div>
       </DialogContent>
     </Dialog>
+
+    {/* Payment Modal */}
+    {booking && (
+      <PaymentModal
+        isOpen={showPaymentModal}
+        onClose={() => setShowPaymentModal(false)}
+        booking={booking}
+        onPaymentSuccess={() => {
+          updateBookingStatus('approved');
+          setShowPaymentModal(false);
+        }}
+        userType="talent"
+      />
+    )}
+    </>
   );
 }
