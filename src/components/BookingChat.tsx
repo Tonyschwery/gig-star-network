@@ -1,16 +1,16 @@
 import { useState, useEffect, useRef, useCallback, memo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { MessageCircle, Send, Crown, Lock } from "lucide-react";
+import { MessageCircle, Crown, Lock } from "lucide-react";
 import { format } from "date-fns";
 import { ProFeatureWrapper } from "./ProFeatureWrapper";
 import { useAuth } from "@/hooks/useAuth";
 import { filterSensitiveContent } from "@/lib/messageFilter";
+import { ChatInput } from "./ChatInput";
 
 interface Message {
   id: string;
@@ -30,7 +30,6 @@ interface BookingChatProps {
 
 const BookingChatComponent = ({ bookingId, bookerName, isProSubscriber = false, onUpgrade, isDirectBooking = false }: BookingChatProps) => {
   const [messages, setMessages] = useState<Message[]>([]);
-  const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const { toast } = useToast();
@@ -42,7 +41,6 @@ const BookingChatComponent = ({ bookingId, bookerName, isProSubscriber = false, 
     bookingId,
     bookerName,
     isProSubscriber,
-    newMessage,
     timestamp: new Date().toISOString()
   });
 
@@ -105,11 +103,11 @@ const BookingChatComponent = ({ bookingId, bookerName, isProSubscriber = false, 
     }
   };
 
-  const sendMessage = useCallback(async () => {
-    if (!newMessage.trim() || !user) return;
+  const handleSendMessage = useCallback(async (message: string) => {
+    if (!user) return;
 
     // Filter sensitive content from the message
-    const filteredMessage = filterSensitiveContent(newMessage.trim());
+    const filteredMessage = filterSensitiveContent(message);
     
     if (!filteredMessage) {
       toast({
@@ -132,11 +130,9 @@ const BookingChatComponent = ({ bookingId, bookerName, isProSubscriber = false, 
         });
 
       if (error) throw error;
-
-      setNewMessage("");
       
       // Show a toast if the message was filtered
-      if (filteredMessage !== newMessage.trim()) {
+      if (filteredMessage !== message) {
         toast({
           title: "Message filtered",
           description: "Some sensitive information was removed from your message for security.",
@@ -152,14 +148,7 @@ const BookingChatComponent = ({ bookingId, bookerName, isProSubscriber = false, 
     } finally {
       setSending(false);
     }
-  }, [newMessage, user, bookingId, toast]);
-
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
-    }
-  }, [sendMessage]);
+  }, [user, bookingId, toast]);
 
   const ChatContent = () => (
     <Card className="glass-card">
@@ -214,47 +203,11 @@ const BookingChatComponent = ({ bookingId, bookerName, isProSubscriber = false, 
           )}
         </ScrollArea>
         
-        <div className="flex gap-2">
-          <Input
-            placeholder="Type your message..."
-            value={newMessage}
-            onChange={(e) => {
-              console.log('🔤 Input onChange triggered:', {
-                value: e.target.value,
-                previousValue: newMessage,
-                timestamp: new Date().toISOString(),
-                activeElement: document.activeElement?.tagName,
-                focusLost: document.activeElement !== e.target
-              });
-              setNewMessage(e.target.value);
-            }}
-            onKeyDown={(e) => {
-              console.log('⌨️ KeyDown event:', {
-                key: e.key,
-                value: e.currentTarget.value,
-                timestamp: new Date().toISOString()
-              });
-              handleKeyDown(e);
-            }}
-            onFocus={() => {
-              console.log('🎯 Input focused at:', new Date().toISOString());
-            }}
-            onBlur={() => {
-              console.log('😵‍💫 Input lost focus at:', new Date().toISOString());
-            }}
-            disabled={sending}
-            className="flex-1"
-            autoComplete="off"
-          />
-          <Button 
-            onClick={sendMessage} 
-            disabled={sending || !newMessage.trim()}
-            size="sm"
-            className="px-3"
-          >
-            <Send className="h-4 w-4" />
-          </Button>
-        </div>
+        <ChatInput
+          onSendMessage={handleSendMessage}
+          disabled={sending}
+          placeholder="Type your message..."
+        />
       </CardContent>
     </Card>
   );
