@@ -250,10 +250,6 @@ function TalentCard({ talent }: TalentCardProps) {
   const { user } = useAuth();
   
   const handleProfileClick = () => {
-    if (!user) {
-      navigate('/auth');
-      return;
-    }
     navigate(`/talent/${talent.id}`);
   };
   
