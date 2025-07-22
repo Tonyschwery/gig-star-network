@@ -139,7 +139,7 @@ export function BookerChat({ bookingId, talentName, bookingStatus }: BookerChatP
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       sendMessage();
@@ -224,9 +224,10 @@ export function BookerChat({ bookingId, talentName, bookingStatus }: BookerChatP
             placeholder="Type your message..."
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
-            onKeyPress={handleKeyPress}
+            onKeyDown={handleKeyDown}
             disabled={sending}
             className="flex-1"
+            autoComplete="off"
           />
           <Button 
             onClick={sendMessage} 

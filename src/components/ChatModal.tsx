@@ -137,7 +137,7 @@ export function ChatModal({ isOpen, onClose, bookerName, bookerEmail, eventType,
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
@@ -190,9 +190,10 @@ export function ChatModal({ isOpen, onClose, bookerName, bookerEmail, eventType,
           <Textarea
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
-            onKeyPress={handleKeyPress}
+            onKeyDown={handleKeyDown}
             placeholder="Type your message..."
             className="min-h-[60px] resize-none"
+            autoComplete="off"
           />
           <Button 
             onClick={handleSendMessage}
