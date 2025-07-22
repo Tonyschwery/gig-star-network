@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Move, Check, X } from 'lucide-react';
 
 interface ImagePositionerProps {
@@ -157,12 +157,12 @@ export function ImagePositioner({ src, isOpen, onPositionComplete, onCancel }: I
             <Move className="h-5 w-5 mr-2" />
             Position Your Photo
           </DialogTitle>
+          <DialogDescription>
+            Drag the image to position your face in the center of the circle.
+          </DialogDescription>
         </DialogHeader>
         
         <div className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            Drag the image to position your face in the center of the circle.
-          </p>
           
           {/* Image positioning area */}
           <div className="flex justify-center">
