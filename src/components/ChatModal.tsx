@@ -297,6 +297,11 @@ export function ChatModal({ isOpen, onClose, bookerName, bookerEmail, eventType,
           {/* Booking Action Buttons - Only show for pending bookings */}
           {booking && booking.status === 'pending' && (
             <div className="border-b pb-4">
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-3">
+                <p className="text-amber-800 text-sm">
+                  💡 <strong>Tip:</strong> Make sure to discuss and agree on the price with the booker via chat before sending the invoice to ensure a successful deal.
+                </p>
+              </div>
                <div className="flex gap-2">
                 <Button
                   onClick={() => setShowManualInvoiceModal(true)}
