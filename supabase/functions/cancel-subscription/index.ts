@@ -81,21 +81,17 @@ serve(async (req) => {
       currentPeriodEnd: new Date(canceledSubscription.current_period_end * 1000).toISOString()
     });
 
-    // Update the talent profile to reflect cancellation
-    const { error: updateError } = await supabaseClient
-      .from('talent_profiles')
-      .update({ 
-        is_pro_subscriber: false,
-        subscription_started_at: null
-      })
-      .eq('user_id', user.id);
+    // Note: We don't immediately revoke Pro status since the subscription 
+    // remains active until the end of the current period
+    logStep("Subscription successfully marked for cancellation at period end");
 
-    if (updateError) {
-      logStep("Error updating talent profile", { error: updateError.message });
-      throw new Error(`Failed to update profile: ${updateError.message}`);
-    }
-
-    logStep("Updated talent profile - subscription cancelled");
+    // Optionally, you could add a field to track cancellation status
+    // const { error: updateError } = await supabaseClient
+    //   .from('talent_profiles')
+    //   .update({ 
+    //     subscription_cancelled_at: new Date().toISOString()
+    //   })
+    //   .eq('user_id', user.id);
 
     return new Response(JSON.stringify({
       success: true,
