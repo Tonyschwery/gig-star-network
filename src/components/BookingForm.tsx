@@ -526,19 +526,15 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="budget">Budget Amount</Label>
-                  <div className="relative">
-                    <DollarSign className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="budget"
-                      type="number"
-                      placeholder="Enter your budget"
-                      value={budget}
-                      onChange={(e) => setBudget(e.target.value)}
-                      className="pl-10"
-                      min="0"
-                      step="0.01"
-                    />
-                  </div>
+                  <Input
+                    id="budget"
+                    type="number"
+                    placeholder="Enter your budget"
+                    value={budget}
+                    onChange={(e) => setBudget(e.target.value)}
+                    min="0"
+                    step="0.01"
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="budget-currency">Currency</Label>
