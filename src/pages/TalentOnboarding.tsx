@@ -55,7 +55,43 @@ const CURRENCIES = [
   { value: 'OMR', label: 'OMR (ر.ع.)' },
   { value: 'JOD', label: 'JOD (د.ا)' },
   { value: 'LBP', label: 'LBP (ل.ل)' },
-  { value: 'EGP', label: 'EGP (ج.م)' }
+  { value: 'EGP', label: 'EGP (ج.م)' },
+  { value: 'CAD', label: 'CAD ($)' },
+  { value: 'AUD', label: 'AUD ($)' },
+  { value: 'CHF', label: 'CHF (₣)' },
+  { value: 'JPY', label: 'JPY (¥)' },
+  { value: 'CNY', label: 'CNY (¥)' },
+  { value: 'INR', label: 'INR (₹)' },
+  { value: 'SGD', label: 'SGD ($)' },
+  { value: 'HKD', label: 'HKD ($)' },
+  { value: 'NZD', label: 'NZD ($)' },
+  { value: 'SEK', label: 'SEK (kr)' },
+  { value: 'NOK', label: 'NOK (kr)' },
+  { value: 'DKK', label: 'DKK (kr)' },
+  { value: 'PLN', label: 'PLN (zł)' },
+  { value: 'CZK', label: 'CZK (Kč)' },
+  { value: 'HUF', label: 'HUF (Ft)' },
+  { value: 'RON', label: 'RON (lei)' },
+  { value: 'BGN', label: 'BGN (лв)' },
+  { value: 'HRK', label: 'HRK (kn)' },
+  { value: 'RUB', label: 'RUB (₽)' },
+  { value: 'TRY', label: 'TRY (₺)' },
+  { value: 'ILS', label: 'ILS (₪)' },
+  { value: 'ZAR', label: 'ZAR (R)' },
+  { value: 'MXN', label: 'MXN ($)' },
+  { value: 'BRL', label: 'BRL (R$)' },
+  { value: 'CLP', label: 'CLP ($)' },
+  { value: 'COP', label: 'COP ($)' },
+  { value: 'PEN', label: 'PEN (S/)' },
+  { value: 'UYU', label: 'UYU ($)' },
+  { value: 'ARS', label: 'ARS ($)' },
+  { value: 'THB', label: 'THB (฿)' },
+  { value: 'MYR', label: 'MYR (RM)' },
+  { value: 'IDR', label: 'IDR (Rp)' },
+  { value: 'PHP', label: 'PHP (₱)' },
+  { value: 'VND', label: 'VND (₫)' },
+  { value: 'KRW', label: 'KRW (₩)' },
+  { value: 'TWD', label: 'TWD (NT$)' }
 ];
 
 export default function TalentOnboarding() {
@@ -411,7 +447,7 @@ export default function TalentOnboarding() {
                   <SelectTrigger>
                     <SelectValue placeholder="Select currency" />
                   </SelectTrigger>
-                  <SelectContent>
+                   <SelectContent className="max-h-[200px]">
                     {CURRENCIES.map((currency) => (
                       <SelectItem key={currency.value} value={currency.value}>
                         {currency.label}
