@@ -3,7 +3,7 @@ import { Header } from "@/components/Header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, Clock, MapPin, User, Briefcase, Crown, MessageCircle } from "lucide-react";
+import { Calendar, Clock, MapPin, User, Briefcase, Crown, MessageCircle, DollarSign } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -25,6 +25,8 @@ interface PublicBooking {
   equipment_types: string[];
   needs_equipment: boolean;
   custom_equipment: string | null;
+  budget: number | null;
+  budget_currency: string;
   talent_id?: string | null;
 }
 
@@ -322,6 +324,19 @@ export default function Gigs() {
                       <MapPin className="h-4 w-4 text-muted-foreground" />
                       <span className="font-medium">{request.event_location}</span>
                     </div>
+                    {request.budget && (
+                      <div className="flex items-center gap-2 text-sm">
+                        <DollarSign className="h-4 w-4 text-muted-foreground" />
+                        <span className="font-medium">
+                          {request.budget_currency === 'USD' && '$'}
+                          {request.budget_currency === 'EUR' && '€'}
+                          {request.budget_currency === 'GBP' && '£'}
+                          {!['USD', 'EUR', 'GBP'].includes(request.budget_currency) && request.budget_currency + ' '}
+                          {request.budget.toLocaleString()}
+                          {['CAD', 'AUD'].includes(request.budget_currency) && ' ' + request.budget_currency}
+                        </span>
+                      </div>
+                    )}
                   </div>
 
                   <div className="space-y-2">

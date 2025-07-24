@@ -56,6 +56,8 @@ export type Database = {
         Row: {
           booker_email: string | null
           booker_name: string
+          budget: number | null
+          budget_currency: string | null
           created_at: string
           custom_equipment: string | null
           description: string | null
@@ -78,6 +80,8 @@ export type Database = {
         Insert: {
           booker_email?: string | null
           booker_name?: string
+          budget?: number | null
+          budget_currency?: string | null
           created_at?: string
           custom_equipment?: string | null
           description?: string | null
@@ -100,6 +104,8 @@ export type Database = {
         Update: {
           booker_email?: string | null
           booker_name?: string
+          budget?: number | null
+          budget_currency?: string | null
           created_at?: string
           custom_equipment?: string | null
           description?: string | null
