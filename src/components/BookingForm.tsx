@@ -42,9 +42,6 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
   const [equipmentTypes, setEquipmentTypes] = useState<string[]>([]);
   const [customEquipment, setCustomEquipment] = useState("");
   
-  // Budget fields
-  const [budget, setBudget] = useState("");
-  const [budgetCurrency, setBudgetCurrency] = useState("USD");
   
   // Auth fields for non-authenticated users
   const [email, setEmail] = useState("");
@@ -208,8 +205,6 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
           needs_equipment: needsEquipment,
           equipment_types: needsEquipment ? allEquipmentTypes : [],
           custom_equipment: needsEquipment && customEquipment.trim() ? customEquipment.trim() : null,
-          budget: budget ? parseFloat(budget) : null,
-          budget_currency: budgetCurrency,
           is_public_request: isPublicRequest,
           is_gig_opportunity: isPublicRequest,
         });
@@ -510,51 +505,11 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
               <Label htmlFor="description">Event Description</Label>
               <Textarea
                 id="description"
-                placeholder="Tell us more about your event, special requirements, etc."
+                placeholder="Please mention your budget and any special requirements or extra details here. This information helps ensure a smooth workflow with the talent."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={4}
               />
-            </div>
-
-            {/* Budget Section */}
-            <div className="space-y-4 p-4 border rounded-lg">
-              <div className="flex items-center gap-2 mb-2">
-                <DollarSign className="h-4 w-4 text-muted-foreground" />
-                <Label className="text-base font-medium">Budget Information</Label>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="budget">Budget Amount</Label>
-                  <Input
-                    id="budget"
-                    type="number"
-                    placeholder="Enter your budget"
-                    value={budget}
-                    onChange={(e) => setBudget(e.target.value)}
-                    min="0"
-                    step="0.01"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="budget-currency">Currency</Label>
-                  <Select value={budgetCurrency} onValueChange={setBudgetCurrency}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select currency" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="USD">USD ($)</SelectItem>
-                      <SelectItem value="EUR">EUR (€)</SelectItem>
-                      <SelectItem value="GBP">GBP (£)</SelectItem>
-                      <SelectItem value="CAD">CAD ($)</SelectItem>
-                      <SelectItem value="AUD">AUD ($)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Providing your budget helps talents understand your expectations and prepare appropriate proposals.
-              </p>
             </div>
 
               {/* Actions */}
