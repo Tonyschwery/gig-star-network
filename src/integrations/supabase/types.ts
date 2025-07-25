@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_settings: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          setting_key: string
+          setting_value: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          setting_key: string
+          setting_value: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          setting_key?: string
+          setting_value?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       booking_messages: {
         Row: {
           booking_id: string
@@ -141,6 +168,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      email_preferences: {
+        Row: {
+          booking_notifications: boolean
+          created_at: string
+          id: string
+          marketing_emails: boolean
+          message_notifications: boolean
+          payment_notifications: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          booking_notifications?: boolean
+          created_at?: string
+          id?: string
+          marketing_emails?: boolean
+          message_notifications?: boolean
+          payment_notifications?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          booking_notifications?: boolean
+          created_at?: string
+          id?: string
+          marketing_emails?: boolean
+          message_notifications?: boolean
+          payment_notifications?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       notifications: {
         Row: {
