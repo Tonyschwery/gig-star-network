@@ -58,6 +58,21 @@ export function filterSensitiveContent(message: string): string {
   }
   filteredMessage = filteredMessage.replace(socialPattern, '[SOCIAL HANDLE REMOVED]');
 
+  // Remove words containing "phone", "instagram", "facebook" (case insensitive)
+  const restrictedWordsPatterns = [
+    /\b\w*phone\w*\b/gi, // Words containing "phone"
+    /\b\w*instagram\w*\b/gi, // Words containing "instagram"
+    /\b\w*facebook\w*\b/gi, // Words containing "facebook"
+  ];
+  
+  restrictedWordsPatterns.forEach((pattern, index) => {
+    const matches = filteredMessage.match(pattern);
+    if (matches) {
+      console.log(`Restricted word pattern ${index + 1} matched:`, matches);
+    }
+    filteredMessage = filteredMessage.replace(pattern, '[RESTRICTED WORD REMOVED]');
+  });
+
   console.log('Filtered message:', filteredMessage);
   return filteredMessage.trim();
 }

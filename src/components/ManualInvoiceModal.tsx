@@ -71,6 +71,7 @@ interface ManualInvoiceModalProps {
     event_location: string;
     talent_profiles?: {
       artist_name: string;
+      is_pro_subscriber?: boolean;
     };
   };
   onInvoiceSuccess: () => void;
@@ -88,7 +89,9 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({
   const { toast } = useToast();
 
   const price = parseFloat(agreedPrice) || 0;
-  const platformCommissionRate = 15; // 15% platform commission
+  // Use 20% commission for non-pro subscribers, 15% for pro subscribers
+  const isProSubscriber = booking.talent_profiles?.is_pro_subscriber ?? false;
+  const platformCommissionRate = isProSubscriber ? 15 : 20;
   const platformCommission = (price * platformCommissionRate) / 100;
   const talentEarnings = price - platformCommission;
 

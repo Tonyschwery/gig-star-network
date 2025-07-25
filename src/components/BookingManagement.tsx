@@ -455,15 +455,29 @@ export function BookingManagement({ talentId, isProSubscriber = false, onUpgrade
                             </p>
                           </div>
                         )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+                       </div>
+                     </div>
+                   </div>
+
+                   {/* Chat Section for Approved Bookings */}
+                   {booking.status === 'approved' && (
+                     <div className="mt-4 pt-4 border-t">
+                       <BookingChat
+                         key={`approved-booking-chat-${booking.id}`}
+                         bookingId={booking.id}
+                         bookerName={booking.booker_name}
+                         isProSubscriber={isProSubscriber}
+                         onUpgrade={stableOnUpgrade}
+                         isDirectBooking={Boolean(booking.talent_id && booking.user_id)}
+                       />
+                     </div>
+                   )}
+                 </div>
+               ))}
+             </div>
+           </CardContent>
+         </Card>
+       )}
 
       {/* No bookings message */}
       {bookings.length === 0 && (
