@@ -90,9 +90,12 @@ export function Header() {
             <a href="#how-it-works" className="text-foreground hover:text-accent transition-colors font-medium">
               How it works
             </a>
-            <a href="#" className="text-foreground hover:text-accent transition-colors font-medium">
+            <button 
+              onClick={() => navigate('/pricing')}
+              className="text-foreground hover:text-accent transition-colors font-medium"
+            >
               Pricing
-            </a>
+            </button>
           </div>
 
           {/* Right Side Actions */}

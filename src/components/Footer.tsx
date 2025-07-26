@@ -1,8 +1,11 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Facebook, Twitter, Instagram, Linkedin, Mail } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export function Footer() {
+  const navigate = useNavigate();
+
   return (
     <footer className="bg-card border-t border-card-border">
       <div className="container mx-auto px-4 py-16">
@@ -35,18 +38,37 @@ export function Footer() {
           <div className="space-y-4">
             <h4 className="font-semibold text-lg">For Clients</h4>
             <nav className="space-y-2">
-              <a href="#" className="block text-muted-foreground hover:text-foreground transition-colors">
+              <button 
+                onClick={() => {
+                  const talentsSection = document.getElementById('talents');
+                  if (talentsSection) {
+                    talentsSection.scrollIntoView({ behavior: 'smooth' });
+                  } else {
+                    navigate('/#talents');
+                  }
+                }}
+                className="block text-muted-foreground hover:text-foreground transition-colors text-left"
+              >
                 Find Talent
-              </a>
-              <a href="#" className="block text-muted-foreground hover:text-foreground transition-colors">
+              </button>
+              <button 
+                onClick={() => navigate('/how-it-works')}
+                className="block text-muted-foreground hover:text-foreground transition-colors text-left"
+              >
                 How It Works
-              </a>
-              <a href="#" className="block text-muted-foreground hover:text-foreground transition-colors">
-                Event Types
-              </a>
-              <a href="#" className="block text-muted-foreground hover:text-foreground transition-colors">
+              </button>
+              <button 
+                onClick={() => navigate('/your-event')}
+                className="block text-muted-foreground hover:text-foreground transition-colors text-left"
+              >
+                Post Event Request
+              </button>
+              <button 
+                onClick={() => navigate('/trust-safety')}
+                className="block text-muted-foreground hover:text-foreground transition-colors text-left"
+              >
                 Trust & Safety
-              </a>
+              </button>
             </nav>
           </div>
 
@@ -54,18 +76,30 @@ export function Footer() {
           <div className="space-y-4">
             <h4 className="font-semibold text-lg">For Talents</h4>
             <nav className="space-y-2">
-              <a href="#" className="block text-muted-foreground hover:text-foreground transition-colors">
+              <button 
+                onClick={() => navigate('/auth')}
+                className="block text-muted-foreground hover:text-foreground transition-colors text-left"
+              >
                 Join as Talent
-              </a>
-              <a href="#" className="block text-muted-foreground hover:text-foreground transition-colors">
+              </button>
+              <button 
+                onClick={() => navigate('/pricing')}
+                className="block text-muted-foreground hover:text-foreground transition-colors text-left"
+              >
                 Pro Membership
-              </a>
-              <a href="#" className="block text-muted-foreground hover:text-foreground transition-colors">
-                Success Stories
-              </a>
-              <a href="#" className="block text-muted-foreground hover:text-foreground transition-colors">
-                Resources
-              </a>
+              </button>
+              <button 
+                onClick={() => navigate('/gigs')}
+                className="block text-muted-foreground hover:text-foreground transition-colors text-left"
+              >
+                Browse Gigs
+              </button>
+              <button 
+                onClick={() => navigate('/how-it-works')}
+                className="block text-muted-foreground hover:text-foreground transition-colors text-left"
+              >
+                Getting Started
+              </button>
             </nav>
           </div>
 
@@ -95,15 +129,24 @@ export function Footer() {
               © 2024 Qtalent.live. All rights reserved.
             </div>
             <nav className="flex space-x-6 text-sm">
-              <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">
+              <button 
+                onClick={() => navigate('/privacy-policy')}
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
                 Privacy Policy
-              </a>
-              <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">
+              </button>
+              <button 
+                onClick={() => navigate('/terms-of-service')}
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
                 Terms of Service
-              </a>
-              <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">
-                Cookie Policy
-              </a>
+              </button>
+              <button 
+                onClick={() => navigate('/trust-safety')}
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Trust & Safety
+              </button>
             </nav>
           </div>
         </div>
