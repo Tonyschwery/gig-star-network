@@ -99,17 +99,17 @@ export function HeroSection() {
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           {/* Left Content */}
           <div className="space-y-8 animate-fadeIn">
-            <div className="space-y-4">
-              <div className="text-brand-accent font-semibold text-lg">
-                1000s of successful bookings
+            <div className="space-y-6">
+              <div className="text-accent font-medium text-lg">
+                Connect with live talent
               </div>
               
-              <h1 className="text-5xl lg:text-6xl font-bold leading-tight">
-                Find <span className="gradient-text">Amazing Talent</span> for your event
+              <h1 className="text-display">
+                Book <span className="text-accent">live talent</span> for your event
               </h1>
               
-               <p className="text-xl text-muted-foreground max-w-lg">
-                 NAGHM is the easiest way to book great artists, musicians, performers and creators for your event. Start by telling us about your event.
+               <p className="text-subhead max-w-lg">
+                 Qtalent.live is the simplest way to find and book exceptional performers, artists, and creators for any occasion.
                </p>
             </div>
 
@@ -229,12 +229,12 @@ export function HeroSection() {
         <div className="mt-16 text-center space-y-6">
           <div className="space-y-3">
             <div className="flex items-center justify-center">
-              <HelpCircle className="h-8 w-8 text-brand-primary mr-3" />
-              <h2 className="text-2xl lg:text-3xl font-bold text-foreground">
+              <HelpCircle className="h-8 w-8 text-accent mr-3" />
+              <h2 className="text-headline">
                 Can't find what you're looking for?
               </h2>
             </div>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-subhead max-w-2xl mx-auto">
               Let us help you find the perfect talent for your event. Our team will personally match you with artists that fit your specific needs and budget.
             </p>
           </div>

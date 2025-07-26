@@ -58,7 +58,7 @@ const BookerAuth = () => {
       } else {
         toast({
           title: "Account created successfully!",
-          description: "Welcome to NAGHM!",
+          description: "Welcome to Qtalent.live!",
         });
         navigate('/');
       }
@@ -123,9 +123,9 @@ const BookerAuth = () => {
 
         <Card className="glass-card">
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl gradient-text">Welcome to NAGHM</CardTitle>
+            <CardTitle className="text-2xl text-foreground">Welcome to Qtalent.live</CardTitle>
             <CardDescription>
-              Book amazing talent for your events
+              Book exceptional live talent for your events
             </CardDescription>
           </CardHeader>
           <CardContent>

@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { NotificationCenter } from "@/components/NotificationCenter";
+import { QtalentLogo } from "@/components/QtalentLogo";
 
 export function Header() {
   const navigate = useNavigate();
@@ -61,17 +62,10 @@ export function Header() {
       <div className="container mx-auto px-4 py-4">
         <nav className="flex items-center justify-between">
           {/* Logo */}
-          <div className="flex items-center space-x-2 cursor-pointer" onClick={() => navigate('/')}>
-            <div className="text-2xl font-bold gradient-text hover:opacity-80 transition-opacity">
-              NAGHM
-            </div>
-            <span className="text-sm text-muted-foreground hidden sm:block">
-              Book the Vibe
-            </span>
-          </div>
+          <QtalentLogo onClick={() => navigate('/')} />
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-6">
+          <div className="hidden md:flex items-center space-x-8">
             <button 
               onClick={() => {
                 const talentsSection = document.getElementById('talents');
@@ -81,22 +75,22 @@ export function Header() {
                   navigate('/#talents');
                 }
               }}
-              className="text-foreground hover:text-brand-primary transition-colors"
+              className="text-foreground hover:text-accent transition-colors font-medium"
             >
               Find Talent
             </button>
             {user && isProTalent && (
               <button 
                 onClick={() => navigate('/gigs')}
-                className="text-foreground hover:text-brand-primary transition-colors"
+                className="text-foreground hover:text-accent transition-colors font-medium"
               >
                 Gigs
               </button>
             )}
-            <a href="#how-it-works" className="text-foreground hover:text-brand-primary transition-colors">
+            <a href="#how-it-works" className="text-foreground hover:text-accent transition-colors font-medium">
               How it works
             </a>
-            <a href="#" className="text-foreground hover:text-brand-primary transition-colors">
+            <a href="#" className="text-foreground hover:text-accent transition-colors font-medium">
               Pricing
             </a>
           </div>

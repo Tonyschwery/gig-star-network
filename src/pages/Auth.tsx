@@ -139,7 +139,7 @@ const Auth = () => {
 
         <Card className="glass-card">
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl gradient-text">Welcome to NAGHM</CardTitle>
+            <CardTitle className="text-2xl text-foreground">Welcome to Qtalent.live</CardTitle>
             <CardDescription>
               Join our community of talented professionals
             </CardDescription>

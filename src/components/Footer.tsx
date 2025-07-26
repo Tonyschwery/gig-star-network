@@ -9,11 +9,11 @@ export function Footer() {
         <div className="grid lg:grid-cols-4 md:grid-cols-2 gap-8">
           {/* Brand */}
           <div className="space-y-4">
-            <div className="text-2xl font-bold gradient-text">
-              NAGHM
+            <div className="text-2xl font-bold text-foreground">
+              Qtalent.live
             </div>
             <p className="text-muted-foreground">
-              The easiest way to book amazing talent for your events. Connect with verified performers and creators worldwide.
+              The simplest way to connect with exceptional live talent for your events. Book verified performers and creators worldwide.
             </p>
             <div className="flex space-x-3">
               <Button variant="ghost" size="sm">
@@ -92,7 +92,7 @@ export function Footer() {
         <div className="border-t border-card-border mt-12 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
             <div className="text-muted-foreground text-sm">
-              © 2024 NAGHM. All rights reserved.
+              © 2024 Qtalent.live. All rights reserved.
             </div>
             <nav className="flex space-x-6 text-sm">
               <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">

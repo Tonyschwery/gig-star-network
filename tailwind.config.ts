@@ -25,9 +25,13 @@ export default {
 				background: 'hsl(var(--background))',
 				foreground: 'hsl(var(--foreground))',
 				
-				/* Brand Colors */
+				/* Live dot color */
+				'live-dot': 'hsl(var(--live-dot))',
+				'live-glow': 'hsl(var(--live-glow))',
+				
+				/* Brand Colors - Minimal */
 				'brand-primary': 'hsl(var(--brand-primary))',
-				'brand-primary-dark': 'hsl(var(--brand-primary-dark))',
+				'brand-secondary': 'hsl(var(--brand-secondary))',
 				'brand-accent': 'hsl(var(--brand-accent))',
 				'brand-success': 'hsl(var(--brand-success))',
 				'brand-warning': 'hsl(var(--brand-warning))',
@@ -74,10 +78,10 @@ export default {
 				}
 			},
 			boxShadow: {
-				'brand': '0 10px 30px -10px hsl(var(--brand-primary) / 0.3)',
-				'card': '0 4px 20px hsl(220 25% 4% / 0.5)',
-				'elevated': '0 20px 60px -10px hsl(220 25% 4% / 0.7)',
-				'pro': '0 0 20px hsl(45 100% 60% / 0.5)'
+				'minimal': '0 2px 10px hsl(0 0% 0% / 0.1)',
+				'card': '0 4px 20px hsl(0 0% 0% / 0.15)',
+				'elevated': '0 8px 40px hsl(0 0% 0% / 0.2)',
+				'live': '0 0 20px hsl(var(--live-glow) / 0.4)'
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
@@ -101,13 +105,33 @@ export default {
 						height: '0'
 					}
 				},
-				glow: {
-					'0%': { boxShadow: '0 0 5px hsl(var(--brand-primary))' },
-					'100%': { boxShadow: '0 0 20px hsl(var(--brand-primary)), 0 0 30px hsl(var(--brand-primary))' }
+				'live-glow': {
+					'0%': { 
+						boxShadow: '0 0 5px hsl(var(--live-glow) / 0.5)',
+						opacity: '0.8'
+					},
+					'50%': { 
+						boxShadow: '0 0 15px hsl(var(--live-glow) / 0.8)',
+						opacity: '1'
+					},
+					'100%': { 
+						boxShadow: '0 0 5px hsl(var(--live-glow) / 0.5)',
+						opacity: '0.8'
+					}
 				},
-				float: {
-					'0%, 100%': { transform: 'translateY(0px)' },
-					'50%': { transform: 'translateY(-10px)' }
+				'live-pulse': {
+					'0%': { 
+						transform: 'scale(1)',
+						boxShadow: '0 0 10px hsl(var(--live-glow) / 0.6)'
+					},
+					'50%': { 
+						transform: 'scale(1.1)',
+						boxShadow: '0 0 20px hsl(var(--live-glow) / 0.9)'
+					},
+					'100%': { 
+						transform: 'scale(1)',
+						boxShadow: '0 0 10px hsl(var(--live-glow) / 0.6)'
+					}
 				},
 				fadeIn: {
 					'0%': { opacity: '0', transform: 'translateY(20px)' },
@@ -117,8 +141,8 @@ export default {
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
 				'accordion-up': 'accordion-up 0.2s ease-out',
-				'glow': 'glow 2s ease-in-out infinite alternate',
-				'float': 'float 3s ease-in-out infinite',
+				'live-glow': 'live-glow 2s ease-in-out infinite',
+				'live-pulse': 'live-pulse 1s ease-in-out infinite',
 				'fadeIn': 'fadeIn 0.5s ease-out'
 			}
 		}
