@@ -40,7 +40,6 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
   // Equipment fields
   const [needsEquipment, setNeedsEquipment] = useState(false);
   const [equipmentTypes, setEquipmentTypes] = useState<string[]>([]);
-  const [customEquipment, setCustomEquipment] = useState("");
   
   
   // Auth fields for non-authenticated users
@@ -196,14 +195,8 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
       return;
     }
 
-    // Prepare equipment data - handle PostgreSQL ARRAY type properly
-    const allEquipmentTypes = [...equipmentTypes];
-    if (customEquipment.trim()) {
-      allEquipmentTypes.push(customEquipment.trim());
-    }
-    
     // Send null when no equipment needed to avoid PostgreSQL ARRAY parsing issues
-    const equipmentTypesForDB = needsEquipment && allEquipmentTypes.length > 0 ? allEquipmentTypes : null;
+    const equipmentTypesForDB = needsEquipment && equipmentTypes.length > 0 ? equipmentTypes : null;
 
     setIsSubmitting(true);
 
@@ -223,7 +216,6 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
         description: description || null,
         needs_equipment: needsEquipment,
         equipment_types: equipmentTypesForDB,
-        custom_equipment: needsEquipment && customEquipment.trim() ? customEquipment.trim() : null,
         is_public_request: isPublicRequest,
         is_gig_opportunity: isPublicRequest,
       });
@@ -243,7 +235,6 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
           description: description || null,
           needs_equipment: needsEquipment,
           equipment_types: equipmentTypesForDB,
-          custom_equipment: needsEquipment && customEquipment.trim() ? customEquipment.trim() : null,
           is_public_request: isPublicRequest,
           is_gig_opportunity: isPublicRequest,
         })
@@ -540,16 +531,6 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
                         </div>
                       ))}
                     </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="custom-equipment" className="text-sm font-medium">Other equipment needed:</Label>
-                    <Input
-                      id="custom-equipment"
-                      placeholder="e.g., microphones, lighting, etc."
-                      value={customEquipment}
-                      onChange={(e) => setCustomEquipment(e.target.value)}
-                    />
                   </div>
                 </div>
               )}

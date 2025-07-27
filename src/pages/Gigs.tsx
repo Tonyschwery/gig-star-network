@@ -24,7 +24,6 @@ interface PublicBooking {
   created_at: string;
   equipment_types: string[];
   needs_equipment: boolean;
-  custom_equipment: string | null;
   budget: number | null;
   budget_currency: string;
   talent_id?: string | null;
@@ -356,11 +355,6 @@ export default function Gigs() {
                               {equipment}
                             </Badge>
                           ))}
-                          {request.custom_equipment && (
-                            <Badge variant="secondary">
-                              {request.custom_equipment}
-                            </Badge>
-                          )}
                         </div>
                       </div>
                     </div>

@@ -24,7 +24,6 @@ interface Booking {
   talent_id?: string; // Add talent_id to determine if it's a direct booking
   needs_equipment?: boolean;
   equipment_types?: string[];
-  custom_equipment?: string;
   talent_profiles?: {
     artist_name: string;
     rate_per_hour: number;
@@ -294,12 +293,6 @@ export function BookingManagement({ talentId, isProSubscriber = false, onUpgrade
                                     </ul>
                                   </div>
                                 )}
-                                {booking.custom_equipment && (
-                                  <div className="mt-2">
-                                    <p className="text-xs font-medium text-amber-800 dark:text-amber-200">Custom Equipment:</p>
-                                    <p className="text-xs text-amber-700 dark:text-amber-300">{booking.custom_equipment}</p>
-                                  </div>
-                                )}
                               </div>
                             </div>
                           )}
@@ -432,12 +425,6 @@ export function BookingManagement({ talentId, isProSubscriber = false, onUpgrade
                                           <li key={index} className="capitalize">{equipment}</li>
                                         ))}
                                       </ul>
-                                    </div>
-                                  )}
-                                  {booking.custom_equipment && (
-                                    <div className="mt-2">
-                                      <p className="text-xs font-medium text-amber-800 dark:text-amber-200">Custom Equipment:</p>
-                                      <p className="text-xs text-amber-700 dark:text-amber-300">{booking.custom_equipment}</p>
                                     </div>
                                   )}
                                 </div>
