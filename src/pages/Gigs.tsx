@@ -9,7 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
-import { ChatModal } from "@/components/ChatModal";
+import { TalentChatModal } from "@/components/TalentChatModal";
 
 interface PublicBooking {
   id: string;
@@ -362,15 +362,13 @@ export default function Gigs() {
       </div>
 
       {selectedBooker && (
-        <ChatModal
+        <TalentChatModal
           isOpen={chatOpen}
           onClose={() => setChatOpen(false)}
           bookerName={selectedBooker.booker_name}
           bookerEmail={selectedBooker.booker_email}
           eventType={selectedBooker.event_type}
           bookingId={selectedBooker.id}
-          isGigOpportunity={true}
-          isPublicRequest={true}
         />
       )}
     </div>

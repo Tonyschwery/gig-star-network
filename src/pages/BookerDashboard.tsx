@@ -22,7 +22,7 @@ import {
   AlertCircle
 } from "lucide-react";
 import { format } from "date-fns";
-import { BookerChat } from "@/components/BookerChat";
+import { SimpleChat } from "@/components/SimpleChat";
 import { BookerPaymentModal } from "@/components/BookerPaymentModal";
 import { BookerPaymentActions } from "@/components/BookerPaymentActions";
 import { NotificationCenter } from "@/components/NotificationCenter";
@@ -301,10 +301,10 @@ const BookerDashboard = () => {
 
                   {/* Chat Section for Approved Bookings */}
                   <div className="mt-4 pt-4 border-t">
-                    <BookerChat
+                    <SimpleChat
                       bookingId={booking.id}
-                      talentName={booking.talent_profiles?.artist_name || 'Talent'}
-                      bookingStatus={booking.status}
+                      recipientName={booking.talent_profiles?.artist_name || 'Talent'}
+                      userType="booker"
                     />
                   </div>
 
@@ -467,10 +467,12 @@ const BookerDashboard = () => {
 
                   {/* Chat Section */}
                   <div className="mt-4 pt-4 border-t">
-                    <BookerChat
+                    <SimpleChat
                       bookingId={booking.id}
-                      talentName={booking.talent_profiles?.artist_name || 'Talent'}
-                      bookingStatus={booking.status}
+                      recipientName={booking.talent_profiles?.artist_name || 'Talent'}
+                      userType="booker"
+                      disabled={booking.status !== 'approved'}
+                      disabledMessage="Chat available after booking approval"
                     />
                   </div>
 
@@ -568,10 +570,10 @@ const BookerDashboard = () => {
                         {/* Chat Section for All Bookings */}
                         {booking.status === 'approved' && (
                           <div className="mt-4 pt-4 border-t">
-                            <BookerChat
+                            <SimpleChat
                               bookingId={booking.id}
-                              talentName={booking.talent_profiles?.artist_name || 'Talent'}
-                              bookingStatus={booking.status}
+                              recipientName={booking.talent_profiles?.artist_name || 'Talent'}
+                              userType="booker"
                             />
                           </div>
                         )}

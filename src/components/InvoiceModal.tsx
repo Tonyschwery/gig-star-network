@@ -15,73 +15,33 @@ const CURRENCIES = [
   { value: 'EUR', label: 'EUR (€)' },
   { value: 'GBP', label: 'GBP (£)' },
   { value: 'AED', label: 'AED (د.إ)' },
-  { value: 'SAR', label: 'SAR (ر.س)' },
-  { value: 'QAR', label: 'QAR (ر.ق)' },
-  { value: 'KWD', label: 'KWD (د.ك)' },
-  { value: 'BHD', label: 'BHD (.د.ب)' },
-  { value: 'OMR', label: 'OMR (ر.ع.)' },
-  { value: 'JOD', label: 'JOD (د.ا)' },
-  { value: 'LBP', label: 'LBP (ل.ل)' },
-  { value: 'EGP', label: 'EGP (ج.م)' },
   { value: 'CAD', label: 'CAD ($)' },
   { value: 'AUD', label: 'AUD ($)' },
-  { value: 'CHF', label: 'CHF (₣)' },
-  { value: 'JPY', label: 'JPY (¥)' },
-  { value: 'CNY', label: 'CNY (¥)' },
-  { value: 'INR', label: 'INR (₹)' },
-  { value: 'SGD', label: 'SGD ($)' },
-  { value: 'HKD', label: 'HKD ($)' },
-  { value: 'NZD', label: 'NZD ($)' },
-  { value: 'SEK', label: 'SEK (kr)' },
-  { value: 'NOK', label: 'NOK (kr)' },
-  { value: 'DKK', label: 'DKK (kr)' },
-  { value: 'PLN', label: 'PLN (zł)' },
-  { value: 'CZK', label: 'CZK (Kč)' },
-  { value: 'HUF', label: 'HUF (Ft)' },
-  { value: 'RON', label: 'RON (lei)' },
-  { value: 'BGN', label: 'BGN (лв)' },
-  { value: 'HRK', label: 'HRK (kn)' },
-  { value: 'RUB', label: 'RUB (₽)' },
-  { value: 'TRY', label: 'TRY (₺)' },
-  { value: 'ILS', label: 'ILS (₪)' },
-  { value: 'ZAR', label: 'ZAR (R)' },
-  { value: 'MXN', label: 'MXN ($)' },
-  { value: 'BRL', label: 'BRL (R$)' },
-  { value: 'CLP', label: 'CLP ($)' },
-  { value: 'COP', label: 'COP ($)' },
-  { value: 'PEN', label: 'PEN (S/)' },
-  { value: 'UYU', label: 'UYU ($)' },
-  { value: 'ARS', label: 'ARS ($)' },
-  { value: 'THB', label: 'THB (฿)' },
-  { value: 'MYR', label: 'MYR (RM)' },
-  { value: 'IDR', label: 'IDR (Rp)' },
-  { value: 'PHP', label: 'PHP (₱)' },
-  { value: 'VND', label: 'VND (₫)' },
-  { value: 'KRW', label: 'KRW (₩)' },
-  { value: 'TWD', label: 'TWD (NT$)' }
 ];
 
-interface ManualInvoiceModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  booking: {
-    id: string;
-    event_type: string;
-    event_date: string;
-    event_location: string;
-    talent_profiles?: {
-      artist_name: string;
-      is_pro_subscriber?: boolean;
-    };
+interface BookingData {
+  id: string;
+  event_type: string;
+  event_date: string;
+  event_location: string;
+  talent_profiles?: {
+    artist_name: string;
+    is_pro_subscriber?: boolean;
   };
-  onInvoiceSuccess: () => void;
 }
 
-export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({
+interface InvoiceModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  booking: BookingData;
+  onSuccess: () => void;
+}
+
+export const InvoiceModal: React.FC<InvoiceModalProps> = ({
   isOpen,
   onClose,
   booking,
-  onInvoiceSuccess
+  onSuccess
 }) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [agreedPrice, setAgreedPrice] = useState('');
@@ -89,7 +49,6 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({
   const { toast } = useToast();
 
   const price = parseFloat(agreedPrice) || 0;
-  // Use 20% commission for non-pro subscribers, 15% for pro subscribers
   const isProSubscriber = booking.talent_profiles?.is_pro_subscriber ?? false;
   const platformCommissionRate = isProSubscriber ? 15 : 20;
   const platformCommission = (price * platformCommissionRate) / 100;
@@ -107,23 +66,16 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({
 
     setIsProcessing(true);
     try {
-      // Prepare invoice data with proper validation
-      const invoiceData = {
-        bookingId: booking.id,
-        agreedPrice: Number(price),
-        currency: currency || 'USD',
-        platformCommissionRate: Number(platformCommissionRate)
-      };
-
-      console.log('Sending manual invoice:', invoiceData);
-
-      const { data, error } = await supabase.functions.invoke('send-manual-invoice', {
-        body: invoiceData
+      const { data, error } = await supabase.functions.invoke('create-booking-invoice', {
+        body: {
+          bookingId: booking.id,
+          agreedPrice: price,
+          currency: currency,
+          platformCommissionRate: platformCommissionRate
+        }
       });
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
 
       if (data.success) {
         toast({
@@ -131,7 +83,7 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({
           description: `Invoice for ${currency} ${price.toFixed(2)} has been sent to the booker.`,
         });
         
-        onInvoiceSuccess();
+        onSuccess();
         onClose();
         
         // Reset form
@@ -158,7 +110,7 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <CreditCard className="h-5 w-5" />
-            Send Manual Invoice
+            Send Invoice
           </DialogTitle>
         </DialogHeader>
 
@@ -265,7 +217,7 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({
               {/* Invoice Notice */}
               <div className="p-3 bg-green-50 dark:bg-green-950 rounded-md">
                 <p className="text-sm text-green-700 dark:text-green-300">
-                  💰 <strong>Manual Invoice:</strong> This will send an invoice to the booker. 
+                  💰 <strong>Invoice:</strong> This will send an invoice to the booker. 
                   They will receive a notification and can complete payment to confirm the booking.
                 </p>
               </div>

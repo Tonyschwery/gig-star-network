@@ -1,13 +1,12 @@
 import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { MessageCircle, Send } from "lucide-react";
-import { format } from "date-fns";
 import { useAuth } from "@/hooks/useAuth";
 import { filterSensitiveContent } from "@/lib/messageFilter";
 
@@ -19,13 +18,21 @@ interface Message {
   created_at: string;
 }
 
-interface BookerChatProps {
+interface SimpleChatProps {
   bookingId: string;
-  talentName: string;
-  bookingStatus: string;
+  recipientName: string;
+  userType: 'talent' | 'booker';
+  disabled?: boolean;
+  disabledMessage?: string;
 }
 
-export function BookerChat({ bookingId, talentName, bookingStatus }: BookerChatProps) {
+export function SimpleChat({ 
+  bookingId, 
+  recipientName, 
+  userType, 
+  disabled = false,
+  disabledMessage = "Chat is not available"
+}: SimpleChatProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(true);
@@ -39,30 +46,13 @@ export function BookerChat({ bookingId, talentName, bookingStatus }: BookerChatP
   };
 
   useEffect(() => {
-    fetchMessages();
-    
-    // Set up real-time subscription for new messages
-    const channel = supabase
-      .channel(`booking-chat-${bookingId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'booking_messages',
-          filter: `booking_id=eq.${bookingId}`
-        },
-        (payload) => {
-          const newMessage = payload.new as Message;
-          setMessages(prev => [...prev, newMessage]);
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [bookingId]);
+    if (!disabled) {
+      fetchMessages();
+      setupRealtimeSubscription();
+    } else {
+      setLoading(false);
+    }
+  }, [bookingId, disabled]);
 
   useEffect(() => {
     scrollToBottom();
@@ -90,10 +80,32 @@ export function BookerChat({ bookingId, talentName, bookingStatus }: BookerChatP
     }
   };
 
-  const sendMessage = async () => {
-    if (!newMessage.trim() || !user) return;
+  const setupRealtimeSubscription = () => {
+    const channel = supabase
+      .channel(`chat-${bookingId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'booking_messages',
+          filter: `booking_id=eq.${bookingId}`
+        },
+        (payload) => {
+          const newMessage = payload.new as Message;
+          setMessages(prev => [...prev, newMessage]);
+        }
+      )
+      .subscribe();
 
-    // Filter sensitive content from the message
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  };
+
+  const sendMessage = async () => {
+    if (!newMessage.trim() || !user || sending) return;
+
     const filteredMessage = filterSensitiveContent(newMessage.trim());
     
     if (!filteredMessage) {
@@ -107,28 +119,19 @@ export function BookerChat({ bookingId, talentName, bookingStatus }: BookerChatP
 
     setSending(true);
     try {
-      // Prepare message data with proper validation
-      const messageData = {
-        booking_id: bookingId,
-        sender_id: user.id,
-        sender_type: 'booker' as const,
-        message: filteredMessage
-      };
-
-      console.log('Sending booker message:', messageData);
-
       const { error } = await supabase
         .from('booking_messages')
-        .insert(messageData);
+        .insert({
+          booking_id: bookingId,
+          sender_id: user.id,
+          sender_type: userType,
+          message: filteredMessage
+        });
 
-      if (error) {
-        console.error('Database error sending message:', error);
-        throw error;
-      }
+      if (error) throw error;
 
       setNewMessage("");
       
-      // Show a toast if the message was filtered
       if (filteredMessage !== newMessage.trim()) {
         toast({
           title: "Message filtered",
@@ -154,20 +157,19 @@ export function BookerChat({ bookingId, talentName, bookingStatus }: BookerChatP
     }
   };
 
-  // Only show chat for approved bookings or if there are existing messages
-  if (bookingStatus !== 'approved' && messages.length === 0) {
+  if (disabled) {
     return (
       <Card className="glass-card opacity-60">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base">
             <MessageCircle className="h-4 w-4" />
-            Chat with {talentName}
+            Chat with {recipientName}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-center py-4 text-muted-foreground">
             <MessageCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
-            <p className="text-sm">Chat available after booking approval</p>
+            <p className="text-sm">{disabledMessage}</p>
           </div>
         </CardContent>
       </Card>
@@ -179,7 +181,7 @@ export function BookerChat({ bookingId, talentName, bookingStatus }: BookerChatP
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-base">
           <MessageCircle className="h-4 w-4" />
-          Chat with {talentName}
+          Chat with {recipientName}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -201,22 +203,25 @@ export function BookerChat({ bookingId, talentName, bookingStatus }: BookerChatP
               {messages.map((message) => (
                 <div
                   key={message.id}
-                  className={`flex ${message.sender_type === 'booker' ? 'justify-end' : 'justify-start'}`}
+                  className={`flex ${message.sender_type === userType ? 'justify-end' : 'justify-start'}`}
                 >
-                  <div className={`flex items-start gap-2 max-w-[80%] ${message.sender_type === 'booker' ? 'flex-row-reverse' : 'flex-row'}`}>
+                  <div className={`flex items-start gap-2 max-w-[80%] ${message.sender_type === userType ? 'flex-row-reverse' : 'flex-row'}`}>
                     <Avatar className="h-6 w-6">
                       <AvatarFallback className="text-xs">
                         {message.sender_type === 'talent' ? 'T' : 'B'}
                       </AvatarFallback>
                     </Avatar>
                     <div className={`rounded-lg p-2 ${
-                      message.sender_type === 'booker' 
+                      message.sender_type === userType 
                         ? 'bg-primary text-primary-foreground' 
                         : 'bg-muted'
                     }`}>
                       <p className="text-sm">{message.message}</p>
                       <p className="text-xs opacity-70 mt-1">
-                        {format(new Date(message.created_at), 'HH:mm')}
+                        {new Date(message.created_at).toLocaleTimeString([], { 
+                          hour: '2-digit', 
+                          minute: '2-digit' 
+                        })}
                       </p>
                     </div>
                   </div>
@@ -228,13 +233,13 @@ export function BookerChat({ bookingId, talentName, bookingStatus }: BookerChatP
         </ScrollArea>
         
         <div className="flex gap-2">
-          <Input
+          <Textarea
             placeholder="Type your message..."
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
             onKeyDown={handleKeyDown}
             disabled={sending}
-            className="flex-1"
+            className="min-h-[40px] resize-none"
             autoComplete="off"
           />
           <Button 

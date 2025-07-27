@@ -5,8 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Check, X, Calendar, Clock, MapPin, Mail, User, Crown, Lock, MessageCircle } from "lucide-react";
-import { BookingChat } from "./BookingChat";
-import { ManualInvoiceModal } from "./ManualInvoiceModal";
+import { SimpleChat } from "./SimpleChat";
+import { InvoiceModal } from "./InvoiceModal";
 import { format } from "date-fns";
 
 interface Booking {
@@ -221,7 +221,7 @@ export function BookingManagement({ talentId, isProSubscriber = false, onUpgrade
                       <Button
                         onClick={() => {
                           setSelectedBooking(booking);
-                          setShowManualInvoiceModal(true);
+                           setShowManualInvoiceModal(true);
                         }}
                         disabled={updatingBooking === booking.id}
                         size="sm"
@@ -293,13 +293,12 @@ export function BookingManagement({ talentId, isProSubscriber = false, onUpgrade
 
                 {/* Chat Section for Pending Bookings */}
                 <div className="mt-4 pt-4 border-t">
-                  <BookingChat
-                    key={`booking-chat-${booking.id}`}
+                  <SimpleChat
                     bookingId={booking.id}
-                    bookerName={booking.booker_name}
-                    isProSubscriber={isProSubscriber}
-                    onUpgrade={stableOnUpgrade}
-                    isDirectBooking={Boolean(booking.talent_id && booking.user_id)}
+                    recipientName={booking.booker_name}
+                    userType="talent"
+                    disabled={!isProSubscriber}
+                    disabledMessage="Chat available with Pro subscription"
                   />
                 </div>
               </div>
@@ -407,14 +406,13 @@ export function BookingManagement({ talentId, isProSubscriber = false, onUpgrade
                    {/* Chat Section for Approved Bookings */}
                    {booking.status === 'approved' && (
                      <div className="mt-4 pt-4 border-t">
-                       <BookingChat
-                         key={`approved-booking-chat-${booking.id}`}
-                         bookingId={booking.id}
-                         bookerName={booking.booker_name}
-                         isProSubscriber={isProSubscriber}
-                         onUpgrade={stableOnUpgrade}
-                         isDirectBooking={Boolean(booking.talent_id && booking.user_id)}
-                       />
+                        <SimpleChat
+                          bookingId={booking.id}
+                          recipientName={booking.booker_name}
+                          userType="talent"
+                          disabled={!isProSubscriber}
+                          disabledMessage="Chat available with Pro subscription"
+                        />
                      </div>
                    )}
                  </div>
@@ -437,16 +435,16 @@ export function BookingManagement({ talentId, isProSubscriber = false, onUpgrade
         </Card>
       )}
 
-      {/* Manual Invoice Modal */}
+      {/* Invoice Modal */}
       {selectedBooking && (
-        <ManualInvoiceModal
+        <InvoiceModal
           isOpen={showManualInvoiceModal}
           onClose={() => {
             setShowManualInvoiceModal(false);
             setSelectedBooking(null);
           }}
           booking={selectedBooking}
-          onInvoiceSuccess={() => {
+          onSuccess={() => {
             // Refresh bookings to show updated status
             fetchBookings();
             setShowManualInvoiceModal(false);
