@@ -80,14 +80,18 @@ export function HeroSection() {
     console.log('Generated URL:', newUrl);
     
     // Navigate to the new URL and scroll to talents section
-    window.location.href = newUrl;
+    navigate(newUrl);
     
-    // Ensure scroll to talents section after navigation
-    setTimeout(() => {
-      document.getElementById('talents')?.scrollIntoView({ 
-        behavior: 'smooth' 
-      });
-    }, 100);
+    // Show search feedback
+    const hasFilters = searchFilters.location !== 'all' || searchFilters.talentType !== 'all';
+    if (hasFilters) {
+      // Small delay to allow navigation to complete
+      setTimeout(() => {
+        document.getElementById('talents')?.scrollIntoView({ 
+          behavior: 'smooth' 
+        });
+      }, 100);
+    }
   };
 
   return (
@@ -173,7 +177,7 @@ export function HeroSection() {
               </div>
             </Card>
 
-            {/* Reviews */}
+            {/* Search Results Info */}
             <div className="flex items-center space-x-2">
               <div className="flex">
                 {[...Array(5)].map((_, i) => (
@@ -184,6 +188,27 @@ export function HeroSection() {
                 Excellent - <strong>4320</strong> five-star reviews by organizers
               </span>
             </div>
+            
+            {/* Search Status Message */}
+            {(searchFilters.location !== 'all' && searchFilters.location) || 
+             (searchFilters.talentType !== 'all' && searchFilters.talentType) ? (
+              <div className="mt-4 p-3 bg-accent/10 border border-accent/20 rounded-lg">
+                <div className="text-sm text-accent font-medium">
+                  🎯 Your search will show results below in the talent section
+                </div>
+                <div className="text-xs text-muted-foreground mt-1">
+                  Looking for{' '}
+                  {searchFilters.talentType !== 'all' && searchFilters.talentType ? (
+                    <span className="font-medium">{searchFilters.talentType}s</span>
+                  ) : (
+                    <span className="font-medium">all talent types</span>
+                  )}
+                  {searchFilters.location !== 'all' && searchFilters.location && (
+                    <span> in <span className="font-medium">{searchFilters.location}</span></span>
+                  )}
+                </div>
+              </div>
+            ) : null}
           </div>
 
           {/* Right Content - Featured Talents Carousel */}

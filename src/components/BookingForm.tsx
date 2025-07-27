@@ -189,13 +189,31 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
     try {
       const isPublicRequest = talentId === "public-request";
       
-      const { error } = await supabase
+      console.log('Submitting booking with data:', {
+        user_id: user.id,
+        talent_id: isPublicRequest ? null : talentId,
+        booker_name: bookerName,
+        booker_email: user.email,
+        event_date: format(eventDate, 'yyyy-MM-dd'),
+        event_duration: parseInt(eventDuration),
+        event_location: eventLocation,
+        event_address: eventAddress,
+        event_type: eventType,
+        description: description || null,
+        needs_equipment: needsEquipment,
+        equipment_types: needsEquipment ? allEquipmentTypes : [],
+        custom_equipment: needsEquipment && customEquipment.trim() ? customEquipment.trim() : null,
+        is_public_request: isPublicRequest,
+        is_gig_opportunity: isPublicRequest,
+      });
+      
+      const { data, error } = await supabase
         .from('bookings')
         .insert({
           user_id: user.id,
           talent_id: isPublicRequest ? null : talentId,
           booker_name: bookerName,
-          booker_email: user.email, // Add booker email
+          booker_email: user.email,
           event_date: format(eventDate, 'yyyy-MM-dd'),
           event_duration: parseInt(eventDuration),
           event_location: eventLocation,
@@ -207,9 +225,15 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
           custom_equipment: needsEquipment && customEquipment.trim() ? customEquipment.trim() : null,
           is_public_request: isPublicRequest,
           is_gig_opportunity: isPublicRequest,
-        });
+        })
+        .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Database error:', error);
+        throw error;
+      }
+      
+      console.log('Booking created successfully:', data);
 
       toast({
         title: isPublicRequest ? "Request Submitted!" : "Booking Request Sent!",
@@ -220,11 +244,21 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
 
       onSuccess();
       onClose();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating booking:', error);
+      
+      // More specific error handling
+      let errorMessage = "There was an error submitting your booking request. Please try again.";
+      
+      if (error.code === 'PGRST116') {
+        errorMessage = "Database connection error. Please check your internet connection and try again.";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       toast({
         title: "Booking Failed",
-        description: "There was an error submitting your booking request. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -233,10 +267,10 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-      <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-2xl">Your Event</CardTitle>
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-2 sm:p-4 z-50">
+      <Card className="w-full max-w-2xl max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
+        <CardHeader className="flex flex-row items-center justify-between pb-4">
+          <CardTitle className="text-xl sm:text-2xl">Your Event</CardTitle>
           <Button variant="ghost" size="sm" onClick={onClose}>
             <X className="h-4 w-4" />
           </Button>
@@ -360,7 +394,7 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
               </div>
 
             {/* Date & Duration */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="event-date">Event Date *</Label>
                 <Popover>
@@ -513,19 +547,19 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
             </div>
 
               {/* Actions */}
-              <div className="flex gap-3 pt-4">
+              <div className="flex flex-col sm:flex-row gap-3 pt-4">
                 <Button 
                   type="button" 
                   variant="outline" 
                   onClick={onClose}
-                  className="flex-1"
+                  className="flex-1 order-2 sm:order-1"
                 >
                   Cancel
                 </Button>
                 <Button 
                   type="submit" 
                   disabled={isSubmitting}
-                  className="flex-1 hero-button"
+                  className="flex-1 hero-button order-1 sm:order-2"
                 >
                   {isSubmitting ? "Submitting..." : "Send Booking Request"}
                 </Button>

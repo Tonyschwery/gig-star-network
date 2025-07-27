@@ -44,7 +44,6 @@ export default function Pricing() {
         "Reduced 15% commission",
         "Priority listing in search",
         "Access to premium gigs",
-        "Advanced analytics",
         "Priority support",
         "Verified badge",
         "Custom booking requirements"
@@ -263,7 +262,7 @@ export default function Pricing() {
             <CardContent className="pt-6">
               <h3 className="font-semibold mb-2">What's included in Pro membership?</h3>
               <p className="text-muted-foreground">
-                Pro members get reduced commission (15% vs 20%), priority listing, access to premium gigs, verified badge, and advanced analytics.
+                Pro members get reduced commission (15% vs 20%), priority listing, access to premium gigs, verified badge, and priority support.
               </p>
             </CardContent>
           </Card>

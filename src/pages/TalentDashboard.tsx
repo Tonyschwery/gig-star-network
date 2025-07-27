@@ -234,10 +234,14 @@ const TalentDashboard = () => {
       const { data, error } = await supabase.functions.invoke('cancel-subscription', {
         headers: {
           Authorization: `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json'
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase function error:', error);
+        throw new Error(error.message || 'Failed to cancel subscription');
+      }
 
       toast({
         title: "Subscription Cancelled",
