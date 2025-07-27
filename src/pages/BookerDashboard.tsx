@@ -22,7 +22,7 @@ import {
   AlertCircle
 } from "lucide-react";
 import { format } from "date-fns";
-import { SimpleChat } from "@/components/SimpleChat";
+
 import { BookerPaymentModal } from "@/components/BookerPaymentModal";
 import { BookerPaymentActions } from "@/components/BookerPaymentActions";
 import { NotificationCenter } from "@/components/NotificationCenter";
@@ -299,14 +299,6 @@ const BookerDashboard = () => {
                     </div>
                   </div>
 
-                  {/* Chat Section for Approved Bookings */}
-                  <div className="mt-4 pt-4 border-t">
-                    <SimpleChat
-                      bookingId={booking.id}
-                      recipientName={booking.talent_profiles?.artist_name || 'Talent'}
-                      userType="booker"
-                    />
-                  </div>
 
                   {/* Payment Actions */}
                   {bookingPayments[booking.id] && (
@@ -465,16 +457,6 @@ const BookerDashboard = () => {
                     </div>
                   </div>
 
-                  {/* Chat Section */}
-                  <div className="mt-4 pt-4 border-t">
-                    <SimpleChat
-                      bookingId={booking.id}
-                      recipientName={booking.talent_profiles?.artist_name || 'Talent'}
-                      userType="booker"
-                      disabled={booking.status !== 'approved'}
-                      disabledMessage="Chat available after booking approval"
-                    />
-                  </div>
 
                   <div className="flex gap-2 pt-2">
                     <Button
@@ -567,16 +549,6 @@ const BookerDashboard = () => {
                           )}
                         </div>
 
-                        {/* Chat Section for All Bookings */}
-                        {booking.status === 'approved' && (
-                          <div className="mt-4 pt-4 border-t">
-                            <SimpleChat
-                              bookingId={booking.id}
-                              recipientName={booking.talent_profiles?.artist_name || 'Talent'}
-                              userType="booker"
-                            />
-                          </div>
-                        )}
 
                         <div className="flex gap-2 pt-2">
                           <Button

@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { User, Check, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { SimpleChat } from "./SimpleChat";
+
 import { InvoiceModal } from "./InvoiceModal";
 
 interface TalentChatModalProps {
@@ -167,12 +167,10 @@ export function TalentChatModal({
             </div>
           )}
 
-          <div className="flex-1 min-h-0">
-            <SimpleChat
-              bookingId={bookingId}
-              recipientName={bookerName}
-              userType="talent"
-            />
+          <div className="flex-1 min-h-0 flex items-center justify-center">
+            <div className="text-center text-muted-foreground">
+              <p className="text-sm">Chat functionality has been removed</p>
+            </div>
           </div>
         </DialogContent>
       </Dialog>

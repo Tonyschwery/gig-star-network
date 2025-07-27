@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Check, X, Calendar, Clock, MapPin, Mail, User, Crown, Lock, MessageCircle } from "lucide-react";
-import { SimpleChat } from "./SimpleChat";
+
 import { InvoiceModal } from "./InvoiceModal";
 import { format } from "date-fns";
 
@@ -291,16 +291,6 @@ export function BookingManagement({ talentId, isProSubscriber = false, onUpgrade
                 </div>
 
 
-                {/* Chat Section for Pending Bookings */}
-                <div className="mt-4 pt-4 border-t">
-                  <SimpleChat
-                    bookingId={booking.id}
-                    recipientName={booking.booker_name}
-                    userType="talent"
-                    disabled={!isProSubscriber}
-                    disabledMessage="Chat available with Pro subscription"
-                  />
-                </div>
               </div>
             ))}
           </CardContent>
@@ -403,18 +393,6 @@ export function BookingManagement({ talentId, isProSubscriber = false, onUpgrade
                      </div>
                    </div>
 
-                   {/* Chat Section for Approved Bookings */}
-                   {booking.status === 'approved' && (
-                     <div className="mt-4 pt-4 border-t">
-                        <SimpleChat
-                          bookingId={booking.id}
-                          recipientName={booking.booker_name}
-                          userType="talent"
-                          disabled={!isProSubscriber}
-                          disabledMessage="Chat available with Pro subscription"
-                        />
-                     </div>
-                   )}
                  </div>
                ))}
              </div>
