@@ -107,13 +107,18 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({
 
     setIsProcessing(true);
     try {
+      // Prepare invoice data with proper validation
+      const invoiceData = {
+        bookingId: booking.id,
+        agreedPrice: Number(price),
+        currency: currency || 'USD',
+        platformCommissionRate: Number(platformCommissionRate)
+      };
+
+      console.log('Sending manual invoice:', invoiceData);
+
       const { data, error } = await supabase.functions.invoke('send-manual-invoice', {
-        body: { 
-          bookingId: booking.id,
-          agreedPrice: price,
-          currency: currency,
-          platformCommissionRate: platformCommissionRate
-        }
+        body: invoiceData
       });
 
       if (error) {

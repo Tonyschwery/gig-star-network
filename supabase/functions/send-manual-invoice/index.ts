@@ -223,22 +223,35 @@ serve(async (req) => {
       throw new Error(`Failed to update booking: ${updateError.message}`);
     }
 
-    // Create notification for the booker
+    // Create notification for the booker - with user validation
     logStep('Creating notification for booker');
-    const { error: notificationError } = await supabaseAdmin
-      .from('notifications')
-      .insert({
-        user_id: booking.user_id,
-        type: 'invoice_received',
-        title: 'Invoice Received',
-        message: `${assignedTalentProfile.artist_name} has sent you an invoice for ${currency || 'USD'} ${totalAmount.toFixed(2)} for your ${booking.event_type} event.`,
-        booking_id: bookingId
+    
+    // First verify the user exists in auth.users
+    const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.getUserById(booking.user_id);
+    
+    if (authError || !authUser) {
+      logStep('Warning: User not found in auth.users, skipping notification', { 
+        userId: booking.user_id, 
+        error: authError?.message 
       });
+    } else {
+      const { error: notificationError } = await supabaseAdmin
+        .from('notifications')
+        .insert({
+          user_id: booking.user_id,
+          type: 'invoice_received',
+          title: 'Invoice Received',
+          message: `${assignedTalentProfile.artist_name} has sent you an invoice for ${currency || 'USD'} ${totalAmount.toFixed(2)} for your ${booking.event_type} event.`,
+          booking_id: bookingId
+        });
 
-    if (notificationError) {
-      logStep('Error creating notification', notificationError);
-      // Don't throw error for notification failure, just log it
-      console.warn('Failed to create notification:', notificationError);
+      if (notificationError) {
+        logStep('Error creating notification', notificationError);
+        // Don't throw error for notification failure, just log it
+        console.warn('Failed to create notification:', notificationError);
+      } else {
+        logStep('Notification created successfully');
+      }
     }
 
     logStep('Manual invoice process completed successfully');

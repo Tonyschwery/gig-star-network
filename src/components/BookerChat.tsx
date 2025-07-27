@@ -107,16 +107,24 @@ export function BookerChat({ bookingId, talentName, bookingStatus }: BookerChatP
 
     setSending(true);
     try {
+      // Prepare message data with proper validation
+      const messageData = {
+        booking_id: bookingId,
+        sender_id: user.id,
+        sender_type: 'booker' as const,
+        message: filteredMessage
+      };
+
+      console.log('Sending booker message:', messageData);
+
       const { error } = await supabase
         .from('booking_messages')
-        .insert({
-          booking_id: bookingId,
-          sender_id: user.id,
-          sender_type: 'booker',
-          message: filteredMessage
-        });
+        .insert(messageData);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Database error sending message:', error);
+        throw error;
+      }
 
       setNewMessage("");
       

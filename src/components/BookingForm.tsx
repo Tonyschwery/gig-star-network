@@ -195,49 +195,34 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
       return;
     }
 
-    // Send null when no equipment needed to avoid PostgreSQL ARRAY parsing issues
-    const equipmentTypesForDB = needsEquipment && equipmentTypes.length > 0 ? equipmentTypes : null;
-
     setIsSubmitting(true);
 
     try {
       const isPublicRequest = talentId === "public-request";
       
-      console.log('Submitting booking with data:', {
+      // Prepare the booking data with proper types
+      const bookingData = {
         user_id: user.id,
         talent_id: isPublicRequest ? null : talentId,
-        booker_name: bookerName,
-        booker_email: user.email,
+        booker_name: bookerName.trim(),
+        booker_email: user.email || '',
         event_date: format(eventDate, 'yyyy-MM-dd'),
         event_duration: parseInt(eventDuration),
-        event_location: eventLocation,
-        event_address: eventAddress,
+        event_location: eventLocation.trim(),
+        event_address: eventAddress.trim(),
         event_type: eventType,
-        description: description || null,
-        needs_equipment: needsEquipment,
-        equipment_types: equipmentTypesForDB,
-        is_public_request: isPublicRequest,
-        is_gig_opportunity: isPublicRequest,
-      });
+        description: description?.trim() || null,
+        needs_equipment: Boolean(needsEquipment),
+        equipment_types: needsEquipment && equipmentTypes.length > 0 ? equipmentTypes : null,
+        is_public_request: Boolean(isPublicRequest),
+        is_gig_opportunity: Boolean(isPublicRequest),
+      };
+      
+      console.log('Submitting booking with data:', bookingData);
       
       const { data, error } = await supabase
         .from('bookings')
-        .insert({
-          user_id: user.id,
-          talent_id: isPublicRequest ? null : talentId,
-          booker_name: bookerName,
-          booker_email: user.email,
-          event_date: format(eventDate, 'yyyy-MM-dd'),
-          event_duration: parseInt(eventDuration),
-          event_location: eventLocation,
-          event_address: eventAddress,
-          event_type: eventType,
-          description: description || null,
-          needs_equipment: needsEquipment,
-          equipment_types: equipmentTypesForDB,
-          is_public_request: isPublicRequest,
-          is_gig_opportunity: isPublicRequest,
-        })
+        .insert(bookingData)
         .select();
 
       if (error) {

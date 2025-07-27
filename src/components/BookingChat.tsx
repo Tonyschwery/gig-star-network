@@ -104,10 +104,10 @@ const BookingChatComponent = ({ bookingId, bookerName, isProSubscriber = false, 
   };
 
   const handleSendMessage = useCallback(async (message: string) => {
-    if (!user) return;
+    if (!user || !message.trim()) return;
 
     // Filter sensitive content from the message
-    const filteredMessage = filterSensitiveContent(message);
+    const filteredMessage = filterSensitiveContent(message.trim());
     
     if (!filteredMessage) {
       toast({
@@ -120,16 +120,24 @@ const BookingChatComponent = ({ bookingId, bookerName, isProSubscriber = false, 
 
     setSending(true);
     try {
+      // Prepare message data with proper validation
+      const messageData = {
+        booking_id: bookingId,
+        sender_id: user.id,
+        sender_type: 'talent' as const,
+        message: filteredMessage
+      };
+
+      console.log('Sending message:', messageData);
+
       const { error } = await supabase
         .from('booking_messages')
-        .insert({
-          booking_id: bookingId,
-          sender_id: user.id,
-          sender_type: 'talent', // Assuming this component is used by talent
-          message: filteredMessage
-        });
+        .insert(messageData);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Database error sending message:', error);
+        throw error;
+      }
       
       // Show a toast if the message was filtered
       if (filteredMessage !== message) {
