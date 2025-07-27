@@ -6,16 +6,29 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { MessageCircle, Send } from "lucide-react";
+import { MessageCircle, Send, AlertTriangle } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { filterSensitiveContent } from "@/lib/messageFilter";
 
 interface Message {
   id: string;
+  conversation_id: string;
   sender_id: string;
-  sender_type: 'talent' | 'booker';
-  message: string;
+  sender_type: string;
+  content: string;
+  is_filtered: boolean;
+  original_content: string;
   created_at: string;
+  updated_at: string;
+}
+
+interface Conversation {
+  id: string;
+  booker_id: string;
+  talent_id: string;
+  booking_id: string;
+  created_at: string;
+  updated_at: string;
+  last_message_at: string | null;
 }
 
 interface SimpleChatProps {
@@ -34,6 +47,7 @@ export function SimpleChat({
   disabledMessage = "Chat is not available"
 }: SimpleChatProps) {
   const [messages, setMessages] = useState<Message[]>([]);
+  const [conversation, setConversation] = useState<Conversation | null>(null);
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
@@ -46,33 +60,89 @@ export function SimpleChat({
   };
 
   useEffect(() => {
-    if (!disabled) {
-      fetchMessages();
-      setupRealtimeSubscription();
+    if (!disabled && user && bookingId) {
+      initializeChat();
     } else {
       setLoading(false);
     }
-  }, [bookingId, disabled]);
+  }, [bookingId, disabled, user]);
 
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
-  const fetchMessages = async () => {
+  const initializeChat = async () => {
     try {
-      const { data, error } = await supabase
-        .from('booking_messages')
+      // Get booking details to find talent_id and booker_id
+      const { data: booking } = await supabase
+        .from('bookings')
+        .select('talent_id, user_id')
+        .eq('id', bookingId)
+        .single();
+
+      if (!booking) {
+        console.error('Booking not found');
+        setLoading(false);
+        return;
+      }
+
+      const talentId = booking.talent_id;
+      const bookerId = booking.user_id;
+
+      // Find or create conversation
+      let conversationData;
+      const { data: existingConv } = await supabase
+        .from('conversations')
         .select('*')
         .eq('booking_id', bookingId)
+        .eq('talent_id', talentId)
+        .eq('booker_id', bookerId)
+        .single();
+
+      if (existingConv) {
+        conversationData = existingConv;
+      } else {
+        const { data: newConv, error: createError } = await supabase
+          .from('conversations')
+          .insert({
+            booker_id: bookerId,
+            talent_id: talentId,
+            booking_id: bookingId
+          })
+          .select()
+          .single();
+
+        if (createError) {
+          console.error('Error creating conversation:', createError);
+          throw createError;
+        }
+        conversationData = newConv;
+      }
+
+      setConversation(conversationData);
+
+      // Fetch messages
+      const { data: messagesData, error: messagesError } = await supabase
+        .from('messages')
+        .select('*')
+        .eq('conversation_id', conversationData.id)
         .order('created_at', { ascending: true });
 
-      if (error) throw error;
-      setMessages((data || []) as Message[]);
+      if (messagesError) {
+        console.error('Error fetching messages:', messagesError);
+        throw messagesError;
+      }
+      
+      setMessages(messagesData || []);
+
+      // Setup realtime subscription
+      setupRealtimeSubscription(conversationData.id);
+
     } catch (error) {
-      console.error('Error fetching messages:', error);
+      console.error('Error initializing chat:', error);
       toast({
         title: "Error",
-        description: "Failed to load messages",
+        description: "Failed to load chat",
         variant: "destructive",
       });
     } finally {
@@ -80,16 +150,16 @@ export function SimpleChat({
     }
   };
 
-  const setupRealtimeSubscription = () => {
+  const setupRealtimeSubscription = (conversationId: string) => {
     const channel = supabase
-      .channel(`chat-${bookingId}`)
+      .channel(`messages:${conversationId}`)
       .on(
         'postgres_changes',
         {
           event: 'INSERT',
           schema: 'public',
-          table: 'booking_messages',
-          filter: `booking_id=eq.${bookingId}`
+          table: 'messages',
+          filter: `conversation_id=eq.${conversationId}`
         },
         (payload) => {
           const newMessage = payload.new as Message;
@@ -104,40 +174,34 @@ export function SimpleChat({
   };
 
   const sendMessage = async () => {
-    if (!newMessage.trim() || !user || sending) return;
-
-    const filteredMessage = filterSensitiveContent(newMessage.trim());
-    
-    if (!filteredMessage) {
-      toast({
-        title: "Message blocked",
-        description: "Your message contained sensitive information and was not sent.",
-        variant: "destructive",
-      });
-      return;
-    }
+    if (!newMessage.trim() || !user || sending || !conversation) return;
 
     setSending(true);
     try {
+      // Determine sender type based on user role
+      const { data: talentProfile } = await supabase
+        .from('talent_profiles')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+
+      const senderType = talentProfile ? 'talent' : 'booker';
+
       const { error } = await supabase
-        .from('booking_messages')
+        .from('messages')
         .insert({
-          booking_id: bookingId,
+          conversation_id: conversation.id,
           sender_id: user.id,
-          sender_type: userType,
-          message: filteredMessage
+          sender_type: senderType,
+          content: newMessage.trim()
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error sending message:', error);
+        throw error;
+      }
 
       setNewMessage("");
-      
-      if (filteredMessage !== newMessage.trim()) {
-        toast({
-          title: "Message filtered",
-          description: "Some sensitive information was removed from your message for security.",
-        });
-      }
     } catch (error) {
       console.error('Error sending message:', error);
       toast({
@@ -200,33 +264,46 @@ export function SimpleChat({
             </div>
           ) : (
             <div className="space-y-3">
-              {messages.map((message) => (
-                <div
-                  key={message.id}
-                  className={`flex ${message.sender_type === userType ? 'justify-end' : 'justify-start'}`}
-                >
-                  <div className={`flex items-start gap-2 max-w-[80%] ${message.sender_type === userType ? 'flex-row-reverse' : 'flex-row'}`}>
-                    <Avatar className="h-6 w-6">
-                      <AvatarFallback className="text-xs">
-                        {message.sender_type === 'talent' ? 'T' : 'B'}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className={`rounded-lg p-2 ${
-                      message.sender_type === userType 
-                        ? 'bg-primary text-primary-foreground' 
-                        : 'bg-muted'
-                    }`}>
-                      <p className="text-sm">{message.message}</p>
-                      <p className="text-xs opacity-70 mt-1">
-                        {new Date(message.created_at).toLocaleTimeString([], { 
-                          hour: '2-digit', 
-                          minute: '2-digit' 
-                        })}
-                      </p>
+              {messages.map((message) => {
+                const isOwnMessage = message.sender_id === user?.id;
+                const showFilterWarning = message.is_filtered;
+                
+                return (
+                  <div
+                    key={message.id}
+                    className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'}`}
+                  >
+                    <div className={`flex items-start gap-2 max-w-[80%] ${isOwnMessage ? 'flex-row-reverse' : 'flex-row'}`}>
+                      <Avatar className="h-6 w-6">
+                        <AvatarFallback className="text-xs">
+                          {message.sender_type === 'talent' ? 'T' : 'B'}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className={`rounded-lg p-2 ${
+                        isOwnMessage 
+                          ? 'bg-primary text-primary-foreground' 
+                          : 'bg-muted'
+                      }`}>
+                        <p className="text-sm">{message.content}</p>
+                        <p className="text-xs opacity-70 mt-1">
+                          {new Date(message.created_at).toLocaleTimeString([], { 
+                            hour: '2-digit', 
+                            minute: '2-digit' 
+                          })}
+                        </p>
+                        {showFilterWarning && (
+                          <div className="mt-2 pt-2 border-t border-border/50">
+                            <div className="flex items-center gap-1 text-xs text-yellow-600">
+                              <AlertTriangle className="h-3 w-3" />
+                              <span>Content was filtered for security</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
               <div ref={messagesEndRef} />
             </div>
           )}
