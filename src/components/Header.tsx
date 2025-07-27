@@ -1,11 +1,14 @@
 import { Button } from "@/components/ui/button";
-import { Search, User, Menu, LogOut } from "lucide-react";
+import { Search, User, Menu, LogOut, Crown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { NotificationCenter } from "@/components/NotificationCenter";
 import { QtalentLogo } from "@/components/QtalentLogo";
+import { MobileMenu } from "@/components/ui/mobile-menu";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { ProSubscriptionDialog } from "@/components/ProSubscriptionDialog";
 
 export function Header() {
   const navigate = useNavigate();
@@ -13,6 +16,8 @@ export function Header() {
   const [talentName, setTalentName] = useState<string | null>(null);
   const [talentId, setTalentId] = useState<string | null>(null);
   const [isProTalent, setIsProTalent] = useState<boolean>(false);
+  const [showProDialog, setShowProDialog] = useState(false);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     if (user) {
@@ -67,130 +72,248 @@ export function Header() {
     }
   };
 
-  return (
-    <header className="fixed top-0 w-full z-50 glass-card border-b border-card-border">
-      <div className="container mx-auto px-4 py-4">
-        <nav className="flex items-center justify-between">
-          {/* Logo */}
-          <QtalentLogo onClick={() => navigate('/')} />
+  const handleProButtonClick = () => {
+    if (isMobile) {
+      setShowProDialog(true);
+    } else {
+      navigate('/pricing');
+    }
+  };
 
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-8">
-            <button 
-              onClick={() => {
-                const talentsSection = document.getElementById('talents');
-                if (talentsSection) {
-                  talentsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                } else {
-                  navigate('/#talents');
-                }
-              }}
-              className="text-foreground hover:text-accent transition-colors font-medium"
-            >
-              Find Talent
-            </button>
-            {user && isProTalent && (
+  const handleRefreshProfile = () => {
+    fetchTalentProfile();
+    setShowProDialog(false);
+  };
+
+  return (
+    <>
+      <header className="fixed top-0 w-full z-50 glass-card border-b border-card-border">
+        <div className="container mx-auto px-4 py-4">
+          <nav className="flex items-center justify-between">
+            {/* Logo */}
+            <QtalentLogo onClick={() => navigate('/')} />
+
+            {/* Desktop Navigation */}
+            <div className="hidden md:flex items-center space-x-8">
               <button 
-                onClick={() => navigate('/gigs')}
+                onClick={() => {
+                  const talentsSection = document.getElementById('talents');
+                  if (talentsSection) {
+                    talentsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  } else {
+                    navigate('/#talents');
+                  }
+                }}
                 className="text-foreground hover:text-accent transition-colors font-medium"
               >
-                Gigs
+                Find Talent
               </button>
-            )}
-            <a href="#how-it-works" className="text-foreground hover:text-accent transition-colors font-medium">
-              How it works
-            </a>
-            <button 
-              onClick={() => navigate('/pricing')}
-              className="text-foreground hover:text-accent transition-colors font-medium"
-            >
-              Pricing
-            </button>
-          </div>
+              {user && isProTalent && (
+                <button 
+                  onClick={() => navigate('/gigs')}
+                  className="text-foreground hover:text-accent transition-colors font-medium"
+                >
+                  Gigs
+                </button>
+              )}
+              <a href="#how-it-works" className="text-foreground hover:text-accent transition-colors font-medium">
+                How it works
+              </a>
+              <button 
+                onClick={() => navigate('/pricing')}
+                className="text-foreground hover:text-accent transition-colors font-medium"
+              >
+                Pricing
+              </button>
+            </div>
 
-          {/* Right Side Actions */}
-          <div className="flex items-center space-x-2 md:space-x-4">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="hidden md:flex"
-              onClick={() => console.log('Search clicked')}
-            >
-              <Search className="h-4 w-4" />
-            </Button>
-            
-            {user ? (
-              <div className="flex items-center space-x-1 md:space-x-2">
-                <div className="flex items-center gap-1 md:gap-2">
-                  <span 
-                    className="text-xs md:text-sm text-muted-foreground cursor-pointer hover:text-primary transition-colors truncate max-w-[80px] md:max-w-none"
-                    onClick={handleWelcomeClick}
+            {/* Desktop Right Side Actions */}
+            <div className="hidden md:flex items-center space-x-4">
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => console.log('Search clicked')}
+              >
+                <Search className="h-4 w-4" />
+              </Button>
+              
+              {user ? (
+                <div className="flex items-center space-x-2">
+                  <div className="flex items-center gap-2">
+                    <span 
+                      className="text-sm text-muted-foreground cursor-pointer hover:text-primary transition-colors"
+                      onClick={handleWelcomeClick}
+                    >
+                      Welcome, {talentName || user.user_metadata?.name || user.email?.split('@')[0] || 'User'}
+                    </span>
+                    <NotificationCenter />
+                  </div>
+                  {!talentName && (
+                    <Button 
+                      className="hero-button text-sm px-4"
+                      size="sm"
+                      onClick={handleTalentSignup}
+                    >
+                      Complete Profile
+                    </Button>
+                  )}
+                  {talentName && !isProTalent && (
+                    <Button 
+                      className="hero-button text-sm px-4"
+                      size="sm"
+                      onClick={handleProButtonClick}
+                    >
+                      Subscribe to Pro
+                    </Button>
+                  )}
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    className="px-4"
+                    onClick={handleAuthAction}
                   >
-                    Welcome, {talentName || user.user_metadata?.name || user.email?.split('@')[0] || 'User'}
-                  </span>
-                  <NotificationCenter />
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Logout
+                  </Button>
                 </div>
-                {!talentName && (
+              ) : (
+                <>
                   <Button 
-                    className="hero-button text-xs md:text-sm px-2 md:px-4"
+                    variant="outline" 
                     size="sm"
-                    onClick={handleTalentSignup}
+                    onClick={handleAuthAction}
                   >
-                    <span className="hidden sm:inline">Complete Profile</span>
-                    <span className="sm:hidden">Complete</span>
+                    Login
                   </Button>
-                )}
-                {talentName && !isProTalent && (
+                  
                   <Button 
-                    className="hero-button text-xs md:text-sm px-2 md:px-4"
-                    size="sm"
-                    onClick={() => navigate('/pricing')}
+                    className="hero-button"
+                    onClick={() => navigate("/auth")}
                   >
-                    <span className="hidden sm:inline">Subscribe to Pro</span>
-                    <span className="sm:hidden">Pro</span>
+                    Join as Talent
                   </Button>
-                )}
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  className="px-2 md:px-4"
-                  onClick={handleAuthAction}
-                >
-                  <LogOut className="h-4 w-4 md:mr-2" />
-                  <span className="hidden md:inline">Logout</span>
-                </Button>
-              </div>
-            ) : (
-              <>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={handleAuthAction}
-                >
-                  Login
-                </Button>
-                
-                <Button 
-                  className="hero-button"
-                  onClick={() => navigate("/auth")}
-                >
-                  Join as Talent
-                </Button>
-              </>
-            )}
+                </>
+              )}
+            </div>
 
             {/* Mobile Menu */}
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="md:hidden"
-              onClick={() => console.log('Mobile menu clicked')}
-            >
-              <Menu className="h-4 w-4" />
-            </Button>
-          </div>
-        </nav>
-      </div>
-    </header>
+            <div className="md:hidden">
+              <MobileMenu>
+                {/* Mobile Navigation Links */}
+                <button 
+                  onClick={() => {
+                    const talentsSection = document.getElementById('talents');
+                    if (talentsSection) {
+                      talentsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    } else {
+                      navigate('/#talents');
+                    }
+                  }}
+                  className="text-left text-foreground hover:text-accent transition-colors font-medium py-2"
+                >
+                  Find Talent
+                </button>
+                
+                {user && isProTalent && (
+                  <button 
+                    onClick={() => navigate('/gigs')}
+                    className="text-left text-foreground hover:text-accent transition-colors font-medium py-2"
+                  >
+                    Gigs
+                  </button>
+                )}
+                
+                <button 
+                  onClick={() => {
+                    const section = document.getElementById('how-it-works');
+                    if (section) {
+                      section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                  }}
+                  className="text-left text-foreground hover:text-accent transition-colors font-medium py-2"
+                >
+                  How it works
+                </button>
+                
+                <button 
+                  onClick={() => navigate('/pricing')}
+                  className="text-left text-foreground hover:text-accent transition-colors font-medium py-2"
+                >
+                  Pricing
+                </button>
+
+                {user && (
+                  <>
+                    <div className="border-t pt-4 mt-4">
+                      <span 
+                        className="text-sm text-muted-foreground cursor-pointer hover:text-primary transition-colors block py-2"
+                        onClick={handleWelcomeClick}
+                      >
+                        Welcome, {talentName || user.user_metadata?.name || user.email?.split('@')[0] || 'User'}
+                      </span>
+                      
+                      {!talentName && (
+                        <Button 
+                          className="w-full hero-button mt-2"
+                          onClick={handleTalentSignup}
+                        >
+                          Complete Profile
+                        </Button>
+                      )}
+                      
+                      {talentName && !isProTalent && (
+                        <Button 
+                          className="w-full hero-button mt-2"
+                          onClick={handleProButtonClick}
+                        >
+                          <Crown className="h-4 w-4 mr-2" />
+                          Subscribe to Pro
+                        </Button>
+                      )}
+                      
+                      <Button 
+                        variant="outline" 
+                        className="w-full mt-2"
+                        onClick={handleAuthAction}
+                      >
+                        <LogOut className="h-4 w-4 mr-2" />
+                        Logout
+                      </Button>
+                    </div>
+                  </>
+                )}
+
+                {!user && (
+                  <div className="border-t pt-4 mt-4 space-y-2">
+                    <Button 
+                      variant="outline" 
+                      className="w-full"
+                      onClick={handleAuthAction}
+                    >
+                      Login
+                    </Button>
+                    
+                    <Button 
+                      className="w-full hero-button"
+                      onClick={() => navigate("/auth")}
+                    >
+                      Join as Talent
+                    </Button>
+                  </div>
+                )}
+              </MobileMenu>
+            </div>
+          </nav>
+        </div>
+      </header>
+
+      {/* Pro Subscription Dialog */}
+      <ProSubscriptionDialog
+        open={showProDialog}
+        onOpenChange={setShowProDialog}
+        onSubscribe={handleRefreshProfile}
+        profileId={talentId || 'temp-id'}
+      />
+    </>
   );
 }

@@ -285,10 +285,10 @@ const TalentDashboard = () => {
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-8">
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-bold gradient-text">
+              <h1 className="text-2xl lg:text-3xl font-bold gradient-text">
                 Welcome, {profile.artist_name}!
               </h1>
               {profile.is_pro_subscriber && (
@@ -300,34 +300,68 @@ const TalentDashboard = () => {
             </div>
             <p className="text-muted-foreground">Manage your talent profile</p>
           </div>
-          <div className="flex gap-2">
+          
+          {/* Action Buttons */}
+          <div className="flex flex-wrap gap-2">
+            {/* Edit Profile Button - Primary Action */}
+            <Button
+              variant={isEditing ? "secondary" : "default"}
+              onClick={() => {
+                if (!isEditing) {
+                  // Initialize genres and gallery when starting to edit
+                  setSelectedGenres(profile.music_genres || []);
+                  setCustomGenre(profile.custom_genre || '');
+                  setGalleryImages(profile.gallery_images || []);
+                }
+                setIsEditing(!isEditing);
+              }}
+              className="flex-shrink-0"
+            >
+              <Edit3 className="h-4 w-4 mr-2" />
+              {isEditing ? "Cancel Edit" : "Edit Profile"}
+            </Button>
+            
+            {/* Pro/Subscription Button */}
             {!profile.is_pro_subscriber ? (
               <Button 
                 onClick={() => setShowProDialog(true)}
-                className="hero-button"
+                className="hero-button flex-shrink-0"
               >
                 <Crown className="h-4 w-4 mr-2" />
-                Subscribe to Pro
+                <span className="hidden sm:inline">Subscribe to Pro</span>
+                <span className="sm:hidden">Pro</span>
               </Button>
             ) : (
               <Button 
                 onClick={handleCancelSubscription}
                 variant="outline"
-                className="border-red-200 text-red-600 hover:bg-red-50"
+                className="border-red-200 text-red-600 hover:bg-red-50 flex-shrink-0"
               >
-                Cancel Pro
+                <span className="hidden sm:inline">Cancel Pro</span>
+                <span className="sm:hidden">Cancel</span>
               </Button>
             )}
+            
+            {/* View Public Profile */}
             <Button 
               variant="outline" 
               onClick={() => navigate(`/talent/${profile.id}`)}
+              className="flex-shrink-0"
             >
               <ExternalLink className="h-4 w-4 mr-2" />
-              View Public Profile
+              <span className="hidden sm:inline">View Public Profile</span>
+              <span className="sm:hidden">View</span>
             </Button>
-            <Button variant="outline" onClick={handleSignOut}>
+            
+            {/* Sign Out */}
+            <Button 
+              variant="outline" 
+              onClick={handleSignOut}
+              className="flex-shrink-0"
+            >
               <LogOut className="h-4 w-4 mr-2" />
-              Sign Out
+              <span className="hidden sm:inline">Sign Out</span>
+              <span className="sm:hidden">Logout</span>
             </Button>
           </div>
         </div>
@@ -409,27 +443,10 @@ const TalentDashboard = () => {
           {/* Profile Info Card */}
           <Card className="glass-card md:col-span-2">
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center">
-                  <User className="h-5 w-5 mr-2" />
-                  Profile Information
-                </CardTitle>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    if (!isEditing) {
-                      // Initialize genres and gallery when starting to edit
-                      setSelectedGenres(profile.music_genres || []);
-                      setCustomGenre(profile.custom_genre || '');
-                      setGalleryImages(profile.gallery_images || []);
-                    }
-                    setIsEditing(!isEditing);
-                  }}
-                >
-                  <Edit3 className="h-4 w-4 mr-2" />
-                  {isEditing ? "Cancel" : "Edit"}
-                </Button>
-              </div>
+              <CardTitle className="flex items-center">
+                <User className="h-5 w-5 mr-2" />
+                Profile Information
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="grid md:grid-cols-2 gap-4">
