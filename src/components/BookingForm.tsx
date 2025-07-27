@@ -202,6 +202,7 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
       };
       
       console.log('Submitting booking with data:', bookingData);
+      console.log('JSON.stringify bookingData:', JSON.stringify(bookingData));
       
       const { data, error } = await supabase
         .from('bookings')
