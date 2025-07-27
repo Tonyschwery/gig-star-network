@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 
 interface TalentProfile {
   id: string;
@@ -47,9 +48,11 @@ export default function TalentProfile() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
   const [talent, setTalent] = useState<TalentProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [showBookingForm, setShowBookingForm] = useState(false);
+  const [isOwnProfile, setIsOwnProfile] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -86,6 +89,17 @@ export default function TalentProfile() {
       }
 
       setTalent(data);
+      
+      // Check if this is the user's own profile
+      if (user) {
+        const { data: userTalentProfile } = await supabase
+          .from('talent_profiles')
+          .select('id')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        
+        setIsOwnProfile(userTalentProfile?.id === data.id);
+      }
     } catch (error) {
       console.error('Error:', error);
       toast({
@@ -135,6 +149,14 @@ export default function TalentProfile() {
   };
 
   const handleBookNow = () => {
+    if (isOwnProfile) {
+      toast({
+        title: "Cannot Book Yourself",
+        description: "You cannot book yourself as a talent.",
+        variant: "destructive",
+      });
+      return;
+    }
     setShowBookingForm(true);
   };
 
@@ -356,13 +378,15 @@ export default function TalentProfile() {
                 </div>
 
                 <div className="space-y-3">
-                  <Button 
-                    className="w-full hero-button"
-                    onClick={handleBookNow}
-                  >
-                    <Calendar className="h-4 w-4 mr-2" />
-                    Book Now
-                  </Button>
+                  {!isOwnProfile && (
+                    <Button 
+                      className="w-full hero-button"
+                      onClick={handleBookNow}
+                    >
+                      <Calendar className="h-4 w-4 mr-2" />
+                      Book Now
+                    </Button>
+                  )}
                   
                   <Button 
                     variant="outline" 

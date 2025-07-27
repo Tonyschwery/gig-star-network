@@ -27,6 +27,11 @@ export function MobileMenu({ children }: MobileMenuProps) {
         </Button>
       </SheetTrigger>
       <SheetContent side="right" className="w-[280px] sm:w-[400px]">
+        <button 
+          data-mobile-menu-close 
+          className="absolute top-4 right-4 opacity-0 pointer-events-none"
+          onClick={() => setOpen(false)}
+        />
         <div className="flex flex-col space-y-4 py-4">
           {children}
         </div>

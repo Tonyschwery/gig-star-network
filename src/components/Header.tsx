@@ -121,7 +121,14 @@ export function Header() {
                 How it works
               </a>
               <button 
-                onClick={() => navigate('/pricing')}
+                onClick={() => {
+                  const upgradeSection = document.getElementById('upgrade-to-pro');
+                  if (upgradeSection) {
+                    upgradeSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  } else {
+                    navigate('/pricing#upgrade-to-pro');
+                  }
+                }}
                 className="text-foreground hover:text-accent transition-colors font-medium"
               >
                 Pricing
@@ -149,7 +156,7 @@ export function Header() {
                     </span>
                     <NotificationCenter />
                   </div>
-                  {!talentName && (
+                  {user && !talentName && (
                     <Button 
                       className="hero-button text-sm px-4"
                       size="sm"
@@ -230,6 +237,11 @@ export function Header() {
                     if (section) {
                       section.scrollIntoView({ behavior: 'smooth', block: 'start' });
                     }
+                    // Close mobile menu - trigger click on overlay/close button
+                    const mobileMenuClose = document.querySelector('[data-mobile-menu-close]') as HTMLElement;
+                    if (mobileMenuClose) {
+                      mobileMenuClose.click();
+                    }
                   }}
                   className="text-left text-foreground hover:text-accent transition-colors font-medium py-2"
                 >
@@ -237,7 +249,19 @@ export function Header() {
                 </button>
                 
                 <button 
-                  onClick={() => navigate('/pricing')}
+                  onClick={() => {
+                    const upgradeSection = document.getElementById('upgrade-to-pro');
+                    if (upgradeSection) {
+                      upgradeSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    } else {
+                      navigate('/pricing#upgrade-to-pro');
+                    }
+                    // Close mobile menu
+                    const mobileMenuClose = document.querySelector('[data-mobile-menu-close]') as HTMLElement;
+                    if (mobileMenuClose) {
+                      mobileMenuClose.click();
+                    }
+                  }}
                   className="text-left text-foreground hover:text-accent transition-colors font-medium py-2"
                 >
                   Pricing
@@ -253,7 +277,7 @@ export function Header() {
                         Welcome, {talentName || user.user_metadata?.name || user.email?.split('@')[0] || 'User'}
                       </span>
                       
-                      {!talentName && (
+                      {user && !talentName && (
                         <Button 
                           className="w-full hero-button mt-2"
                           onClick={handleTalentSignup}

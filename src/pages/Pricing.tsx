@@ -116,7 +116,7 @@ export default function Pricing() {
       </section>
 
       {/* For Talent Section */}
-      <section className="container mx-auto px-4 mb-20">
+      <section id="upgrade-to-pro" className="container mx-auto px-4 mb-20">
         <div className="text-center mb-12">
           <h2 className="text-headline mb-4">For Talent</h2>
           <p className="text-subhead mb-8">Join thousands of performers earning with Qtalent.live</p>
