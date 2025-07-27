@@ -147,7 +147,7 @@ export default function Pricing() {
           </div>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+        <div className="grid md:grid-cols-2 gap-4 md:gap-8 max-w-4xl mx-auto px-2">
           {talentPlans.map((plan, index) => (
             <Card 
               key={plan.name} 
@@ -157,42 +157,42 @@ export default function Pricing() {
             >
               {plan.popular && (
                 <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                  <Badge className="bg-accent text-accent-foreground">
+                  <Badge className="bg-accent text-accent-foreground text-xs">
                     <Crown className="h-3 w-3 mr-1" />
                     Most Popular
                   </Badge>
                 </div>
               )}
               
-              <CardHeader className="text-center pb-8">
-                <CardTitle className="text-2xl">{plan.name}</CardTitle>
-                <CardDescription className="text-base">{plan.description}</CardDescription>
+              <CardHeader className="text-center pb-4 md:pb-8 px-4 md:px-6">
+                <CardTitle className="text-xl md:text-2xl">{plan.name}</CardTitle>
+                <CardDescription className="text-sm md:text-base">{plan.description}</CardDescription>
                 
-                <div className="mt-4">
-                  <div className="text-4xl font-bold">
+                <div className="mt-3 md:mt-4">
+                  <div className="text-3xl md:text-4xl font-bold">
                     ${billingCycle === 'monthly' ? plan.monthlyPrice : plan.yearlyPrice}
-                    <span className="text-lg font-normal text-muted-foreground">
+                    <span className="text-base md:text-lg font-normal text-muted-foreground">
                       /{billingCycle === 'monthly' ? 'month' : 'year'}
                     </span>
                   </div>
-                  <div className="text-sm text-accent font-semibold mt-2">
+                  <div className="text-xs md:text-sm text-accent font-semibold mt-2">
                     {plan.commission} platform commission
                   </div>
                 </div>
               </CardHeader>
               
-              <CardContent className="space-y-6">
-                <div className="space-y-3">
+              <CardContent className="space-y-4 md:space-y-6 px-4 md:px-6 pb-4 md:pb-6">
+                <div className="space-y-2 md:space-y-3">
                   {plan.features.map((feature, idx) => (
-                    <div key={idx} className="flex items-start space-x-3">
-                      <Check className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
-                      <span className="text-sm">{feature}</span>
+                    <div key={idx} className="flex items-start space-x-2 md:space-x-3">
+                      <Check className="h-4 w-4 md:h-5 md:w-5 text-accent flex-shrink-0 mt-0.5" />
+                      <span className="text-xs md:text-sm">{feature}</span>
                     </div>
                   ))}
                 </div>
                 
                 <Button 
-                  className={`w-full ${plan.popular ? 'hero-button' : 'outline-button'}`}
+                  className={`w-full text-sm md:text-base py-2 md:py-3 ${plan.popular ? 'hero-button' : 'outline-button'}`}
                   onClick={() => handleGetStarted(plan.name)}
                 >
                   {plan.buttonText}

@@ -109,21 +109,21 @@ export function Header() {
           </div>
 
           {/* Right Side Actions */}
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2 md:space-x-4">
             <Button 
               variant="ghost" 
               size="sm" 
-              className="hidden sm:flex"
+              className="hidden md:flex"
               onClick={() => console.log('Search clicked')}
             >
               <Search className="h-4 w-4" />
             </Button>
             
             {user ? (
-              <div className="flex items-center space-x-2">
-                <div className="flex items-center gap-2">
+              <div className="flex items-center space-x-1 md:space-x-2">
+                <div className="flex items-center gap-1 md:gap-2">
                   <span 
-                    className="text-sm text-muted-foreground hidden sm:block cursor-pointer hover:text-primary transition-colors"
+                    className="text-xs md:text-sm text-muted-foreground cursor-pointer hover:text-primary transition-colors truncate max-w-[80px] md:max-w-none"
                     onClick={handleWelcomeClick}
                   >
                     Welcome, {talentName || user.user_metadata?.name || user.email?.split('@')[0] || 'User'}
@@ -132,20 +132,32 @@ export function Header() {
                 </div>
                 {!talentName && (
                   <Button 
-                    className="hero-button"
+                    className="hero-button text-xs md:text-sm px-2 md:px-4"
                     size="sm"
                     onClick={handleTalentSignup}
                   >
-                    Complete Profile
+                    <span className="hidden sm:inline">Complete Profile</span>
+                    <span className="sm:hidden">Complete</span>
+                  </Button>
+                )}
+                {talentName && !isProTalent && (
+                  <Button 
+                    className="hero-button text-xs md:text-sm px-2 md:px-4"
+                    size="sm"
+                    onClick={() => navigate('/pricing')}
+                  >
+                    <span className="hidden sm:inline">Subscribe to Pro</span>
+                    <span className="sm:hidden">Pro</span>
                   </Button>
                 )}
                 <Button 
                   variant="outline" 
                   size="sm"
+                  className="px-2 md:px-4"
                   onClick={handleAuthAction}
                 >
-                  <LogOut className="h-4 w-4 mr-2" />
-                  Logout
+                  <LogOut className="h-4 w-4 md:mr-2" />
+                  <span className="hidden md:inline">Logout</span>
                 </Button>
               </div>
             ) : (
