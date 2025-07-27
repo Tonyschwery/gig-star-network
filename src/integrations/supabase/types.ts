@@ -41,44 +41,6 @@ export type Database = {
         }
         Relationships: []
       }
-      booking_messages: {
-        Row: {
-          booking_id: string
-          created_at: string
-          id: string
-          message: string
-          sender_id: string
-          sender_type: string
-          updated_at: string
-        }
-        Insert: {
-          booking_id: string
-          created_at?: string
-          id?: string
-          message: string
-          sender_id: string
-          sender_type: string
-          updated_at?: string
-        }
-        Update: {
-          booking_id?: string
-          created_at?: string
-          id?: string
-          message?: string
-          sender_id?: string
-          sender_type?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "booking_messages_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "bookings"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       bookings: {
         Row: {
           booker_email: string | null
@@ -169,44 +131,6 @@ export type Database = {
           },
         ]
       }
-      conversations: {
-        Row: {
-          booker_id: string
-          booking_id: string | null
-          created_at: string
-          id: string
-          last_message_at: string | null
-          talent_id: string
-          updated_at: string
-        }
-        Insert: {
-          booker_id: string
-          booking_id?: string | null
-          created_at?: string
-          id?: string
-          last_message_at?: string | null
-          talent_id: string
-          updated_at?: string
-        }
-        Update: {
-          booker_id?: string
-          booking_id?: string | null
-          created_at?: string
-          id?: string
-          last_message_at?: string | null
-          talent_id?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "conversations_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "bookings"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       email_preferences: {
         Row: {
           booking_notifications: boolean
@@ -239,50 +163,6 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
-      }
-      messages: {
-        Row: {
-          content: string
-          conversation_id: string
-          created_at: string
-          id: string
-          is_filtered: boolean | null
-          original_content: string | null
-          sender_id: string
-          sender_type: string
-          updated_at: string
-        }
-        Insert: {
-          content: string
-          conversation_id: string
-          created_at?: string
-          id?: string
-          is_filtered?: boolean | null
-          original_content?: string | null
-          sender_id: string
-          sender_type: string
-          updated_at?: string
-        }
-        Update: {
-          content?: string
-          conversation_id?: string
-          created_at?: string
-          id?: string
-          is_filtered?: boolean | null
-          original_content?: string | null
-          sender_id?: string
-          sender_type?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "messages_conversation_id_fkey"
-            columns: ["conversation_id"]
-            isOneToOne: false
-            referencedRelation: "conversations"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       notifications: {
         Row: {
@@ -327,13 +207,6 @@ export type Database = {
             columns: ["booking_id"]
             isOneToOne: false
             referencedRelation: "bookings"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "notifications_message_id_fkey"
-            columns: ["message_id"]
-            isOneToOne: false
-            referencedRelation: "booking_messages"
             referencedColumns: ["id"]
           },
         ]
