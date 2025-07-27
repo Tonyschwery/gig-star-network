@@ -57,6 +57,16 @@ export function Header() {
     }
   };
 
+  const handleTalentSignup = () => {
+    if (user && !talentName) {
+      // User is logged in but doesn't have a talent profile
+      navigate("/talent-onboarding");
+    } else {
+      // User is not logged in, go to auth
+      navigate("/auth");
+    }
+  };
+
   return (
     <header className="fixed top-0 w-full z-50 glass-card border-b border-card-border">
       <div className="container mx-auto px-4 py-4">
@@ -120,6 +130,15 @@ export function Header() {
                   </span>
                   <NotificationCenter />
                 </div>
+                {!talentName && (
+                  <Button 
+                    className="hero-button"
+                    size="sm"
+                    onClick={handleTalentSignup}
+                  >
+                    Complete Profile
+                  </Button>
+                )}
                 <Button 
                   variant="outline" 
                   size="sm"

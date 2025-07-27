@@ -15,6 +15,7 @@ import { countries } from '@/lib/countries';
 import { SimpleGalleryUpload } from '@/components/SimpleGalleryUpload';
 import { SimpleAvatarUpload } from '@/components/SimpleAvatarUpload';
 import { ProFeatureWrapper } from '@/components/ProFeatureWrapper';
+import { ProSubscriptionDialog } from '@/components/ProSubscriptionDialog';
 
 const MUSIC_GENRES = [
   'afro-house',
@@ -101,6 +102,7 @@ export default function TalentOnboarding() {
   const [pictureFile, setPictureFile] = useState<File | null>(null);
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
   const [galleryImages, setGalleryImages] = useState<string[]>([]);
+  const [showProDialog, setShowProDialog] = useState(false);
   const [formData, setFormData] = useState({
     artistName: '',
     act: '',
@@ -228,10 +230,8 @@ export default function TalentOnboarding() {
         return;
       }
 
-      toast({
-        title: "Profile created successfully!",
-        description: "Welcome to our talent community",
-      });
+      // Show pro subscription CTA
+      showProSubscriptionCTA();
 
       navigate('/talent-dashboard');
     } catch (error) {
@@ -246,9 +246,21 @@ export default function TalentOnboarding() {
     }
   };
 
+  const showProSubscriptionCTA = () => {
+    toast({
+      title: "Profile created successfully!",
+      description: "Welcome to our talent community",
+    });
+    
+    // Show pro subscription dialog after a short delay
+    setTimeout(() => {
+      setShowProDialog(true);
+    }, 1000);
+  };
+
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <Card className="w-full max-w-2xl">
+      <Card className="w-full max-w-2xl form-card border-0">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold flex items-center justify-center gap-2">
             <Music className="h-6 w-6" />
@@ -303,27 +315,28 @@ export default function TalentOnboarding() {
             </div>
 
             {/* Music Genres */}
-            <div className="space-y-3">
-              <Label>Music Genres * (Select all that apply)</Label>
-              <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-4">
+              <Label className="text-base font-semibold">Music Genres * (Select all that apply)</Label>
+              <div className="flex flex-wrap gap-3">
                 {MUSIC_GENRES.map((genre) => (
-                  <div key={genre} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={genre}
-                      checked={formData.musicGenres.includes(genre)}
-                      onCheckedChange={(checked) => handleGenreChange(genre, !!checked)}
-                    />
-                    <Label htmlFor={genre} className="text-sm">{genre}</Label>
-                  </div>
+                  <button
+                    key={genre}
+                    type="button"
+                    className={`genre-bubble ${formData.musicGenres.includes(genre) ? 'selected' : ''}`}
+                    onClick={() => handleGenreChange(genre, !formData.musicGenres.includes(genre))}
+                  >
+                    {genre}
+                  </button>
                 ))}
               </div>
-              <div className="mt-3">
-                <Label htmlFor="customGenre">Custom Genre</Label>
+              <div className="mt-4">
+                <Label htmlFor="customGenre" className="text-sm font-medium">Custom Genre</Label>
                 <Input
                   id="customGenre"
                   placeholder="Enter your own style"
                   value={formData.customGenre}
                   onChange={(e) => setFormData(prev => ({ ...prev, customGenre: e.target.value }))}
+                  className="mt-2"
                 />
               </div>
             </div>
@@ -486,6 +499,20 @@ export default function TalentOnboarding() {
 
         </CardContent>
       </Card>
+      
+      {/* Pro Subscription CTA Dialog */}
+      <ProSubscriptionDialog
+        open={showProDialog}
+        onOpenChange={setShowProDialog}
+        onSubscribe={() => {
+          toast({
+            title: "Pro Features Activated! 🎉",
+            description: "Your pro subscription will be activated shortly.",
+            duration: 5000,
+          });
+        }}
+        profileId="temp-id"
+      />
     </div>
   );
 }

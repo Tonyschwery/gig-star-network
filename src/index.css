@@ -23,11 +23,15 @@ All colors MUST be HSL.
     --brand-warning: 38 92% 50%;
     --brand-error: 0 84% 60%;
     
-    /* Elegant shadows */
+  /* Elegant shadows */
     --shadow-minimal: 0 2px 10px hsl(0 0% 0% / 0.1);
     --shadow-card: 0 4px 20px hsl(0 0% 0% / 0.15);
     --shadow-elevated: 0 8px 40px hsl(0 0% 0% / 0.2);
     --shadow-live: 0 0 20px hsl(var(--live-glow) / 0.4);
+    
+    /* Form gradients */
+    --form-gradient: linear-gradient(135deg, hsl(var(--card)) 0%, hsl(var(--secondary)) 100%);
+    --form-border-gradient: linear-gradient(135deg, hsl(var(--border)) 0%, hsl(var(--accent) / 0.3) 100%);
     
     /* UI Colors */
     --card: 0 0% 6%;
@@ -162,5 +166,35 @@ All colors MUST be HSL.
   
   .text-subhead {
     @apply text-lg md:text-xl text-muted-foreground leading-relaxed;
+  }
+  
+  /* Modern Form Styles */
+  .form-card {
+    background: var(--form-gradient);
+    border: 1px solid;
+    border-image: var(--form-border-gradient) 1;
+    @apply rounded-xl shadow-card backdrop-blur-sm;
+  }
+  
+  /* Genre Bubble Buttons */
+  .genre-bubble {
+    @apply px-4 py-2 rounded-full border-2 transition-all duration-200 cursor-pointer text-sm font-medium;
+    border-color: hsl(var(--border));
+    background: hsl(var(--background));
+    color: hsl(var(--foreground));
+  }
+  
+  .genre-bubble:hover {
+    border-color: hsl(var(--accent));
+    background: hsl(var(--accent) / 0.1);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px hsl(var(--accent) / 0.3);
+  }
+  
+  .genre-bubble.selected {
+    border-color: hsl(var(--accent));
+    background: hsl(var(--accent));
+    color: hsl(var(--accent-foreground));
+    box-shadow: 0 0 20px hsl(var(--accent) / 0.4);
   }
 }

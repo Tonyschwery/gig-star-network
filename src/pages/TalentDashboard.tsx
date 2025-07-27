@@ -522,16 +522,16 @@ const TalentDashboard = () => {
                 <Label className="text-sm font-medium">Music Genres</Label>
                 {isEditing ? (
                   <div className="space-y-4">
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                    <div className="flex flex-wrap gap-3">
                       {musicGenres.map((genre) => (
-                        <div key={genre} className="flex items-center space-x-2">
-                          <Checkbox
-                            id={genre}
-                            checked={selectedGenres.includes(genre)}
-                            onCheckedChange={() => handleGenreToggle(genre)}
-                          />
-                          <Label htmlFor={genre} className="text-sm">{genre}</Label>
-                        </div>
+                        <button
+                          key={genre}
+                          type="button"
+                          className={`genre-bubble ${selectedGenres.includes(genre) ? 'selected' : ''}`}
+                          onClick={() => handleGenreToggle(genre)}
+                        >
+                          {genre}
+                        </button>
                       ))}
                     </div>
                     <div>
@@ -541,6 +541,7 @@ const TalentDashboard = () => {
                         value={customGenre}
                         onChange={(e) => setCustomGenre(e.target.value)}
                         placeholder="Add your own genre"
+                        className="mt-2"
                       />
                     </div>
                   </div>
