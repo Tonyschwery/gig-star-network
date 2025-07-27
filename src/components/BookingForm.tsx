@@ -202,8 +202,8 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
       allEquipmentTypes.push(customEquipment.trim());
     }
     
-    // For PostgreSQL ARRAY columns, send null instead of empty array to avoid JSON parsing issues
-    const equipmentTypesForDB = needsEquipment && allEquipmentTypes.length > 0 ? allEquipmentTypes : null;
+    // Always send an array (empty if no equipment) for consistent frontend handling
+    const equipmentTypesForDB = needsEquipment && allEquipmentTypes.length > 0 ? allEquipmentTypes : [];
 
     setIsSubmitting(true);
 

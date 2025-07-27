@@ -351,7 +351,7 @@ export default function Gigs() {
                       <div className="text-sm">
                         <span className="font-medium text-foreground">Equipment Needed:</span>
                         <div className="flex flex-wrap gap-2 mt-1">
-                          {request.equipment_types.map((equipment, index) => (
+                          {Array.isArray(request.equipment_types) && request.equipment_types.map((equipment, index) => (
                             <Badge key={index} variant="secondary">
                               {equipment}
                             </Badge>
