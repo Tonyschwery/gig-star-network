@@ -19,10 +19,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
+        
+        // Handle successful sign up during onboarding
+        if (event === 'SIGNED_IN' && session?.user && window.location.pathname === '/auth') {
+          // Small delay to ensure state is updated
+          setTimeout(async () => {
+            // Check if user has a talent profile
+            const { data: profile } = await supabase
+              .from('talent_profiles')
+              .select('id')
+              .eq('user_id', session.user.id)
+              .maybeSingle();
+              
+            if (!profile) {
+              window.location.href = '/talent-onboarding';
+            }
+          }, 100);
+        }
       }
     );
 

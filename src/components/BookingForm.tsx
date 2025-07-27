@@ -169,6 +169,24 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
       return;
     }
 
+    // Prevent talents from booking themselves
+    if (talentId !== "public-request") {
+      const { data: talentProfile } = await supabase
+        .from('talent_profiles')
+        .select('user_id')
+        .eq('id', talentId)
+        .maybeSingle();
+      
+      if (talentProfile?.user_id === user.id) {
+        toast({
+          title: "Cannot Book Yourself",
+          description: "You cannot book yourself as a talent.",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
     if (!bookerName || !eventDate || !eventDuration || !eventLocation || !eventAddress || !eventType) {
       toast({
         title: "Missing Information",
@@ -282,7 +300,7 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
           </div>
 
           {!user ? (
-            <Tabs defaultValue="signin" className="w-full">
+            <Tabs defaultValue="signup" className="w-full">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="signin">Sign In</TabsTrigger>
                 <TabsTrigger value="signup">Sign Up</TabsTrigger>

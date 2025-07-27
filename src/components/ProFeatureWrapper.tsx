@@ -104,7 +104,7 @@ export function ProFeatureWrapper({
             type="button"
             size="sm"
             variant="outline"
-            className="absolute -top-2 -right-2 h-6 w-6 p-0 bg-gradient-to-br from-amber-400 to-orange-500 border-amber-300 hover:from-amber-500 hover:to-orange-600 shadow-lg"
+            className="absolute -top-2 -right-2 h-6 w-6 p-0 bg-gradient-to-br from-amber-400 to-orange-500 border-amber-300 hover:from-amber-500 hover:to-orange-600 shadow-lg z-10"
             onClick={() => setShowProDialog(true)}
           >
             <Crown className="h-3 w-3 text-white" />

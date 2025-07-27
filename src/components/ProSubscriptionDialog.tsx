@@ -113,7 +113,7 @@ export function ProSubscriptionDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl glass-card">
+      <DialogContent className="max-w-2xl w-[95vw] max-h-[95vh] overflow-y-auto glass-card">
         <DialogHeader>
           <DialogTitle className="text-2xl gradient-text flex items-center gap-2">
             <Crown className="h-6 w-6 text-brand-warning" />
@@ -126,9 +126,9 @@ export function ProSubscriptionDialog({
 
         <div className="space-y-6 py-6">
           {/* Benefits Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
             {benefits.map((benefit, index) => (
-              <div key={index} className="flex items-start gap-3 p-4 rounded-xl bg-muted/50 border border-border">
+              <div key={index} className="flex items-start gap-3 p-3 sm:p-4 rounded-xl bg-muted/50 border border-border">
                 <div className="flex-shrink-0 w-10 h-10 rounded-full bg-brand-primary/20 flex items-center justify-center">
                   <benefit.icon className="h-5 w-5 text-brand-primary" />
                 </div>

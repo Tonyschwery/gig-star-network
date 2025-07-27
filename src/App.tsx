@@ -19,6 +19,7 @@ import TrustSafety from "./pages/TrustSafety";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import NotFound from "./pages/NotFound";
+import { ProtectedTalentRoute } from "./components/ProtectedTalentRoute";
 
 const queryClient = new QueryClient();
 
@@ -34,11 +35,23 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/booker-auth" element={<BookerAuth />} />
             <Route path="/booker-dashboard" element={<BookerDashboard />} />
-            <Route path="/talent-onboarding" element={<TalentOnboarding />} />
+            <Route path="/talent-onboarding" element={
+              <ProtectedTalentRoute requireProfile={false}>
+                <TalentOnboarding />
+              </ProtectedTalentRoute>
+            } />
             <Route path="/talent/:id" element={<TalentProfile />} />
-            <Route path="/talent-dashboard" element={<TalentDashboard />} />
+            <Route path="/talent-dashboard" element={
+              <ProtectedTalentRoute>
+                <TalentDashboard />
+              </ProtectedTalentRoute>
+            } />
             <Route path="/your-event" element={<YourEvent />} />
-            <Route path="/gigs" element={<Gigs />} />
+            <Route path="/gigs" element={
+              <ProtectedTalentRoute>
+                <Gigs />
+              </ProtectedTalentRoute>
+            } />
             <Route path="/pricing" element={<Pricing />} />
             <Route path="/how-it-works" element={<HowItWorks />} />
             <Route path="/trust-safety" element={<TrustSafety />} />

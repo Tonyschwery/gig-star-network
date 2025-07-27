@@ -62,9 +62,10 @@ const Auth = () => {
       } else {
         toast({
           title: "Account created successfully!",
-          description: "Please complete your talent profile.",
+          description: "Please complete your talent profile to continue.",
         });
-        navigate('/talent-onboarding');
+        // Don't navigate immediately, wait for email verification
+        // navigate('/talent-onboarding');
       }
     } catch (error) {
       toast({
@@ -109,7 +110,8 @@ const Auth = () => {
         if (profile) {
           navigate("/talent-dashboard");
         } else {
-          navigate("/");
+          // For new users without profile, redirect to onboarding
+          navigate("/talent-onboarding");
         }
       }
     } catch (error) {
@@ -145,7 +147,7 @@ const Auth = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="login" className="w-full">
+            <Tabs defaultValue="signup" className="w-full">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="login">Login</TabsTrigger>
                 <TabsTrigger value="signup">Sign Up</TabsTrigger>

@@ -122,6 +122,8 @@ All colors MUST be HSL.
   
   html {
     @apply dark;
+    scroll-behavior: smooth;
+    scroll-padding-top: 80px;
   }
 }
 

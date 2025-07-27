@@ -233,7 +233,7 @@ export default function TalentOnboarding() {
         description: "Welcome to our talent community",
       });
 
-      navigate('/');
+      navigate('/talent-dashboard');
     } catch (error) {
       console.error('Error creating profile:', error);
       toast({

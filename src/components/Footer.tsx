@@ -42,7 +42,7 @@ export function Footer() {
                 onClick={() => {
                   const talentsSection = document.getElementById('talents');
                   if (talentsSection) {
-                    talentsSection.scrollIntoView({ behavior: 'smooth' });
+                    talentsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
                   } else {
                     navigate('/#talents');
                   }

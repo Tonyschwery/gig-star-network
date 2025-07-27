@@ -88,7 +88,8 @@ export function HeroSection() {
       // Small delay to allow navigation to complete
       setTimeout(() => {
         document.getElementById('talents')?.scrollIntoView({ 
-          behavior: 'smooth' 
+          behavior: 'smooth',
+          block: 'start'
         });
       }, 100);
     }
