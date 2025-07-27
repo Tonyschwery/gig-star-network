@@ -37,10 +37,6 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
   const [eventType, setEventType] = useState("");
   const [description, setDescription] = useState("");
   
-  // Equipment fields
-  const [needsEquipment, setNeedsEquipment] = useState(false);
-  const [equipmentTypes, setEquipmentTypes] = useState<string[]>([]);
-  
   
   // Auth fields for non-authenticated users
   const [email, setEmail] = useState("");
@@ -57,19 +53,6 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
     "festival"
   ];
 
-  const equipmentOptions = [
-    "DJ set",
-    "speakers", 
-    "monitor"
-  ];
-
-  const handleEquipmentToggle = (equipment: string) => {
-    setEquipmentTypes(prev => 
-      prev.includes(equipment) 
-        ? prev.filter(e => e !== equipment)
-        : [...prev, equipment]
-    );
-  };
 
   const handleSignUp = async () => {
     if (!email || !password) {
@@ -212,8 +195,6 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
         event_address: eventAddress.trim(),
         event_type: eventType,
         description: description?.trim() || null,
-        needs_equipment: Boolean(needsEquipment),
-        equipment_types: needsEquipment && equipmentTypes.length > 0 ? equipmentTypes : [],
         is_public_request: Boolean(isPublicRequest),
         is_gig_opportunity: Boolean(isPublicRequest),
       };
@@ -484,42 +465,6 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
               </Select>
             </div>
 
-            {/* Equipment Question */}
-            <div className="space-y-4 p-4 border rounded-lg">
-              <div className="flex items-center space-x-2">
-                <Checkbox 
-                  id="needs-equipment" 
-                  checked={needsEquipment}
-                  onCheckedChange={(checked) => setNeedsEquipment(checked as boolean)}
-                />
-                <Label htmlFor="needs-equipment" className="text-base font-medium flex items-center">
-                  <Settings className="h-4 w-4 mr-2" />
-                  Do you need equipment?
-                </Label>
-              </div>
-              
-              {needsEquipment && (
-                <div className="space-y-3 ml-6">
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">Select equipment:</Label>
-                    <div className="grid grid-cols-1 gap-2">
-                      {equipmentOptions.map((equipment) => (
-                        <div key={equipment} className="flex items-center space-x-2">
-                          <Checkbox
-                            id={equipment}
-                            checked={equipmentTypes.includes(equipment)}
-                            onCheckedChange={() => handleEquipmentToggle(equipment)}
-                          />
-                          <Label htmlFor={equipment} className="text-sm">
-                            {equipment.charAt(0).toUpperCase() + equipment.slice(1)}
-                          </Label>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
 
             {/* Description */}
             <div className="space-y-2">
