@@ -24,6 +24,7 @@ import {
 import { format } from "date-fns";
 import { BookerChat } from "@/components/BookerChat";
 import { BookerPaymentModal } from "@/components/BookerPaymentModal";
+import { BookerPaymentActions } from "@/components/BookerPaymentActions";
 import { NotificationCenter } from "@/components/NotificationCenter";
 
 interface Booking {
@@ -54,6 +55,7 @@ const BookerDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+  const [bookingPayments, setBookingPayments] = useState<Record<string, any>>({});
 
   useEffect(() => {
     if (!user) {
@@ -105,6 +107,26 @@ const BookerDashboard = () => {
 
       if (error) throw error;
       setBookings(data || []);
+      
+      // Fetch payment details for approved bookings
+      const approvedBookingIds = (data || [])
+        .filter(booking => booking.status === 'approved' && booking.payment_id)
+        .map(booking => booking.payment_id);
+        
+      if (approvedBookingIds.length > 0) {
+        const { data: payments, error: paymentsError } = await supabase
+          .from('payments')
+          .select('*')
+          .in('id', approvedBookingIds);
+          
+        if (!paymentsError && payments) {
+          const paymentsMap = payments.reduce((acc, payment) => {
+            acc[payment.booking_id] = payment;
+            return acc;
+          }, {} as Record<string, any>);
+          setBookingPayments(paymentsMap);
+        }
+      }
     } catch (error) {
       console.error('Error fetching bookings:', error);
       toast({
@@ -286,6 +308,17 @@ const BookerDashboard = () => {
                     />
                   </div>
 
+                  {/* Payment Actions */}
+                  {bookingPayments[booking.id] && (
+                    <div className="mt-4 pt-4 border-t">
+                      <BookerPaymentActions
+                        booking={booking}
+                        payment={bookingPayments[booking.id]}
+                        onPaymentUpdate={fetchBookings}
+                      />
+                    </div>
+                  )}
+
                   <div className="flex gap-2 pt-4">
                     <Button
                       onClick={() => {
@@ -295,7 +328,7 @@ const BookerDashboard = () => {
                       className="bg-green-600 hover:bg-green-700 text-white flex-1"
                     >
                       <CreditCard className="h-4 w-4 mr-2" />
-                      View Invoice & Pay
+                      View Invoice Details
                     </Button>
                     <Button
                       onClick={() => navigate(`/talent/${booking.talent_id}`)}
