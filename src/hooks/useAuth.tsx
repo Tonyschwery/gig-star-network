@@ -24,7 +24,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(session?.user ?? null);
         setLoading(false);
         
-        // Handle successful sign up during onboarding
+        // Handle successful sign up during onboarding - ONLY redirect new users
         if (event === 'SIGNED_IN' && session?.user && window.location.pathname === '/auth') {
           // Small delay to ensure state is updated
           setTimeout(async () => {
@@ -36,7 +36,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               .maybeSingle();
               
             if (!profile) {
+              // Only redirect to onboarding if no profile exists
               window.location.href = '/talent-onboarding';
+            } else {
+              // User has a profile, redirect to their dashboard
+              window.location.href = '/talent-dashboard';
             }
           }, 100);
         }

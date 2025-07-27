@@ -183,14 +183,17 @@ export function ChatModal({ isOpen, onClose, bookerName, bookerEmail, eventType,
 
     setLoading(true);
     try {
+      console.log('Original message:', newMessage.trim());
+      console.log('Filtered message:', filteredMessage);
+      
       const { error } = await supabase
         .from('booking_messages')
-        .insert({
+        .insert([{
           booking_id: bookingId,
           sender_id: user.id,
           sender_type: 'talent', // Since this is from gigs page, sender is always talent
           message: filteredMessage
-        });
+        }]);
 
       if (error) throw error;
 

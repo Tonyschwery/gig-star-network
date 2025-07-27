@@ -228,7 +228,8 @@ serve(async (req) => {
       .from('bookings')
       .update({
         status: 'approved',
-        payment_id: payment.id
+        payment_id: payment.id,
+        updated_at: new Date().toISOString()
       })
       .eq('id', bookingId);
 
