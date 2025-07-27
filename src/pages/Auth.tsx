@@ -230,18 +230,6 @@ const Auth = () => {
               </TabsContent>
             </Tabs>
             
-            <div className="mt-6 text-center">
-              <p className="text-sm text-muted-foreground">
-                Looking to book talent?{" "}
-                <Button 
-                  variant="link" 
-                  className="p-0 h-auto"
-                  onClick={() => navigate("/booker-auth")}
-                >
-                  Join as Booker
-                </Button>
-              </p>
-            </div>
           </CardContent>
         </Card>
       </div>

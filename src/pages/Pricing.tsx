@@ -233,7 +233,7 @@ export default function Pricing() {
               </p>
               <Button 
                 className="hero-button"
-                onClick={() => navigate('/booker-auth')}
+                onClick={() => navigate('/your-event')}
               >
                 Start Booking Now
               </Button>

@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Search, User, Menu, LogOut, Crown, Calendar } from "lucide-react";
+import { Search, LogOut, Crown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useState, useEffect } from "react";
@@ -9,7 +9,6 @@ import { QtalentLogo } from "@/components/QtalentLogo";
 import { MobileMenu } from "@/components/ui/mobile-menu";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ProSubscriptionDialog } from "@/components/ProSubscriptionDialog";
-import { BookingManagement } from "@/components/BookingManagement";
 
 export function Header() {
   const navigate = useNavigate();
@@ -51,7 +50,7 @@ export function Header() {
     if (user) {
       signOut();
     } else {
-      navigate("/booker-auth");
+      navigate("/auth");
     }
   };
 
@@ -195,14 +194,6 @@ export function Header() {
                   </Button>
                   
                   <Button 
-                    variant="outline"
-                    size="sm"
-                    onClick={() => navigate("/booker-auth")}
-                  >
-                    Join as Booker
-                  </Button>
-                  
-                  <Button 
                     className="hero-button"
                     onClick={() => navigate("/auth")}
                   >
@@ -304,20 +295,6 @@ export function Header() {
                         </Button>
                       )}
                       
-                      {/* Booking Management for Talents */}
-                      {talentName && (
-                        <div className="mt-4 pt-4 border-t">
-                          <div className="flex items-center gap-2 mb-4">
-                            <Calendar className="h-4 w-4" />
-                            <span className="font-medium text-foreground">Booking Requests</span>
-                          </div>
-                          <BookingManagement 
-                            talentId={talentId || ''} 
-                            isProSubscriber={isProTalent}
-                            onUpgrade={() => setShowProDialog(true)}
-                          />
-                        </div>
-                      )}
                       
                       <Button 
                         variant="outline" 
@@ -339,14 +316,6 @@ export function Header() {
                       onClick={handleAuthAction}
                     >
                       Login
-                    </Button>
-                    
-                    <Button 
-                      variant="outline" 
-                      className="w-full"
-                      onClick={() => navigate("/booker-auth")}
-                    >
-                      Join as Booker
                     </Button>
                     
                     <Button 

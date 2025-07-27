@@ -98,7 +98,7 @@ export default function HowItWorks() {
         <div className="text-center">
           <Button 
             className="hero-button"
-            onClick={() => navigate('/booker-auth')}
+            onClick={() => navigate('/your-event')}
           >
             Start Booking Today
           </Button>
@@ -199,7 +199,7 @@ export default function HowItWorks() {
               <div className="space-y-3">
                 <Button 
                   className="hero-button w-full"
-                  onClick={() => navigate('/booker-auth')}
+                  onClick={() => navigate('/your-event')}
                 >
                   Book Talent
                 </Button>

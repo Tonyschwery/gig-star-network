@@ -57,7 +57,7 @@ const BookerDashboard = () => {
 
   useEffect(() => {
     if (!user) {
-      navigate('/booker-auth');
+      navigate('/auth');
       return;
     }
     fetchBookings();
