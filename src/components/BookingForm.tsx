@@ -202,8 +202,8 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
       allEquipmentTypes.push(customEquipment.trim());
     }
     
-    // Always send an array (empty if no equipment) for consistent frontend handling
-    const equipmentTypesForDB = needsEquipment && allEquipmentTypes.length > 0 ? allEquipmentTypes : [];
+    // Send null when no equipment needed to avoid PostgreSQL ARRAY parsing issues
+    const equipmentTypesForDB = needsEquipment && allEquipmentTypes.length > 0 ? allEquipmentTypes : null;
 
     setIsSubmitting(true);
 
@@ -223,7 +223,7 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
         description: description || null,
         needs_equipment: needsEquipment,
         equipment_types: equipmentTypesForDB,
-        custom_equipment: needsEquipment && customEquipment.trim() ? customEquipment.trim() : null,
+          custom_equipment: needsEquipment && customEquipment.trim() ? customEquipment.trim() : null,
         is_public_request: isPublicRequest,
         is_gig_opportunity: isPublicRequest,
       });

@@ -284,7 +284,7 @@ export function BookingManagement({ talentId, isProSubscriber = false, onUpgrade
                                 Equipment Needed:
                               </div>
                               <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3">
-                                {booking.equipment_types && Array.isArray(booking.equipment_types) && booking.equipment_types.length > 0 && (
+                                {booking.equipment_types && booking.equipment_types.length > 0 && (
                                   <div className="space-y-1">
                                     <p className="text-xs font-medium text-amber-800 dark:text-amber-200">Selected Equipment:</p>
                                     <ul className="text-xs text-amber-700 dark:text-amber-300 list-disc list-inside">
@@ -424,7 +424,7 @@ export function BookingManagement({ talentId, isProSubscriber = false, onUpgrade
                                   Equipment Needed:
                                 </div>
                                 <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3">
-                                  {booking.equipment_types && Array.isArray(booking.equipment_types) && booking.equipment_types.length > 0 && (
+                                  {booking.equipment_types && booking.equipment_types.length > 0 && (
                                     <div className="space-y-1">
                                       <p className="text-xs font-medium text-amber-800 dark:text-amber-200">Selected Equipment:</p>
                                       <ul className="text-xs text-amber-700 dark:text-amber-300 list-disc list-inside">
