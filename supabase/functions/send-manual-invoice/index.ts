@@ -73,9 +73,22 @@ serve(async (req) => {
 
       const token = authHeader.replace('Bearer ', '');
       
+      if (!token || token.trim() === '') {
+        throw new Error('Invalid or empty authorization token');
+      }
+      
       // Decode the JWT to get the user ID (simple decode, not verification since we're in a secure context)
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      const userId = payload.sub;
+      try {
+        const tokenParts = token.split('.');
+        if (tokenParts.length !== 3) {
+          throw new Error('Invalid JWT token format');
+        }
+        const payload = JSON.parse(atob(tokenParts[1]));
+        var userId = payload.sub;
+      } catch (error) {
+        logStep('Error parsing JWT token', { token: token.substring(0, 20) + '...', error });
+        throw new Error('Failed to parse authorization token');
+      }
       
       if (!userId) {
         throw new Error('No user ID found in token');
