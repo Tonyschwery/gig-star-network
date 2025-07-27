@@ -6,7 +6,7 @@ import { User, Check, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
-import { InvoiceModal } from "./InvoiceModal";
+
 
 interface TalentChatModalProps {
   isOpen: boolean;
@@ -39,7 +39,7 @@ export function TalentChatModal({
 }: TalentChatModalProps) {
   const [booking, setBooking] = useState<BookingData | null>(null);
   const [updatingBooking, setUpdatingBooking] = useState(false);
-  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+  
   const { toast } = useToast();
 
   useEffect(() => {
@@ -145,13 +145,13 @@ export function TalentChatModal({
               </div>
                <div className="flex gap-2">
                 <Button
-                  onClick={() => setShowInvoiceModal(true)}
+                  onClick={() => updateBookingStatus('approved')}
                   disabled={updatingBooking}
                   size="sm"
                   className="bg-green-600 hover:bg-green-700 text-white h-8 px-3 text-xs flex-1"
                 >
                   <Check className="h-3 w-3 mr-1" />
-                  Approve & Send Invoice
+                  Approve
                 </Button>
                 <Button
                   onClick={() => updateBookingStatus('declined')}
@@ -175,18 +175,6 @@ export function TalentChatModal({
         </DialogContent>
       </Dialog>
 
-      {/* Invoice Modal */}
-      {booking && (
-        <InvoiceModal
-          isOpen={showInvoiceModal}
-          onClose={() => setShowInvoiceModal(false)}
-          booking={booking}
-          onSuccess={() => {
-            loadBookingDetails();
-            setShowInvoiceModal(false);
-          }}
-        />
-      )}
     </>
   );
 }

@@ -18,7 +18,7 @@ import {
   Crown
 } from "lucide-react";
 import { ProSubscriptionDialog } from "@/components/ProSubscriptionDialog";
-import { BookingManagement } from "@/components/BookingManagement";
+import { BookingRequests } from "@/components/BookingRequests";
 
 interface TalentProfile {
   id: string;
@@ -223,13 +223,12 @@ const TalentDashboard = () => {
           </div>
         </div>
 
-        {/* Booking Management Section */}
+        {/* Booking Requests Section */}
         {profile && (
           <div className="mb-8">
-            <BookingManagement 
+            <BookingRequests 
               talentId={profile.id} 
               isProSubscriber={profile.is_pro_subscriber || false}
-              onUpgrade={() => setShowProDialog(true)}
             />
           </div>
         )}

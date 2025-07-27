@@ -23,8 +23,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 
-import { BookerPaymentModal } from "@/components/BookerPaymentModal";
-import { BookerPaymentActions } from "@/components/BookerPaymentActions";
+import { BookerInvoiceCard } from "@/components/BookerInvoiceCard";
 import { NotificationCenter } from "@/components/NotificationCenter";
 
 interface Booking {
@@ -53,8 +52,6 @@ const BookerDashboard = () => {
   const { toast } = useToast();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [bookingPayments, setBookingPayments] = useState<Record<string, any>>({});
 
   useEffect(() => {
@@ -300,37 +297,16 @@ const BookerDashboard = () => {
                   </div>
 
 
-                  {/* Payment Actions */}
+                  {/* Payment Interface */}
                   {bookingPayments[booking.id] && (
                     <div className="mt-4 pt-4 border-t">
-                      <BookerPaymentActions
+                      <BookerInvoiceCard
                         booking={booking}
                         payment={bookingPayments[booking.id]}
                         onPaymentUpdate={fetchBookings}
                       />
                     </div>
                   )}
-
-                  <div className="flex gap-2 pt-4">
-                    <Button
-                      onClick={() => {
-                        setSelectedBooking(booking);
-                        setShowPaymentModal(true);
-                      }}
-                      className="bg-green-600 hover:bg-green-700 text-white flex-1"
-                    >
-                      <CreditCard className="h-4 w-4 mr-2" />
-                      View Invoice Details
-                    </Button>
-                    <Button
-                      onClick={() => navigate(`/talent/${booking.talent_id}`)}
-                      variant="outline"
-                      size="sm"
-                    >
-                      <User className="h-4 w-4 mr-2" />
-                      View Talent
-                    </Button>
-                  </div>
                 </div>
               ))}
             </CardContent>
@@ -569,23 +545,6 @@ const BookerDashboard = () => {
           </CardContent>
         </Card>
 
-        {/* Payment Modal */}
-        {selectedBooking && (
-          <BookerPaymentModal
-            isOpen={showPaymentModal}
-            onClose={() => {
-              setShowPaymentModal(false);
-              setSelectedBooking(null);
-            }}
-            booking={selectedBooking}
-            onPaymentSuccess={() => {
-              // Refresh bookings to show updated status
-              fetchBookings();
-              setShowPaymentModal(false);
-              setSelectedBooking(null);
-            }}
-          />
-        )}
       </div>
     </div>
   );
