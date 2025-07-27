@@ -37,7 +37,10 @@ const BookerAuth = () => {
         email,
         password,
         options: {
-          emailRedirectTo: redirectUrl
+          emailRedirectTo: redirectUrl,
+          data: {
+            user_type: 'booker'
+          }
         }
       });
 
@@ -123,9 +126,9 @@ const BookerAuth = () => {
 
         <Card className="glass-card">
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl text-foreground">Welcome to Qtalent.live</CardTitle>
+            <CardTitle className="text-2xl text-foreground">Join as Booker</CardTitle>
             <CardDescription>
-              Book exceptional live talent for your events
+              Create an account to book talented performers for your events
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -199,6 +202,19 @@ const BookerAuth = () => {
                 </form>
               </TabsContent>
             </Tabs>
+            
+            <div className="mt-6 text-center">
+              <p className="text-sm text-muted-foreground">
+                Are you a performer?{" "}
+                <Button 
+                  variant="link" 
+                  className="p-0 h-auto"
+                  onClick={() => navigate("/auth")}
+                >
+                  Join as Talent
+                </Button>
+              </p>
+            </div>
           </CardContent>
         </Card>
       </div>

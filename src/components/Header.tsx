@@ -156,7 +156,7 @@ export function Header() {
                     </span>
                     <NotificationCenter />
                   </div>
-                  {user && !talentName && (
+                  {user && !talentName && user.user_metadata?.user_type === 'talent' && (
                     <Button 
                       className="hero-button text-sm px-4"
                       size="sm"
@@ -192,6 +192,14 @@ export function Header() {
                     onClick={handleAuthAction}
                   >
                     Login
+                  </Button>
+                  
+                  <Button 
+                    variant="outline"
+                    size="sm"
+                    onClick={() => navigate("/booker-auth")}
+                  >
+                    Join as Booker
                   </Button>
                   
                   <Button 
@@ -277,7 +285,7 @@ export function Header() {
                         Welcome, {talentName || user.user_metadata?.name || user.email?.split('@')[0] || 'User'}
                       </span>
                       
-                      {user && !talentName && (
+                      {user && !talentName && user.user_metadata?.user_type === 'talent' && (
                         <Button 
                           className="w-full hero-button mt-2"
                           onClick={handleTalentSignup}
@@ -331,6 +339,14 @@ export function Header() {
                       onClick={handleAuthAction}
                     >
                       Login
+                    </Button>
+                    
+                    <Button 
+                      variant="outline" 
+                      className="w-full"
+                      onClick={() => navigate("/booker-auth")}
+                    >
+                      Join as Booker
                     </Button>
                     
                     <Button 

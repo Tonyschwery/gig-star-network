@@ -40,7 +40,8 @@ const Auth = () => {
         options: {
           emailRedirectTo: redirectUrl,
           data: {
-            name: name
+            name: name,
+            user_type: 'talent'
           }
         }
       });
@@ -141,9 +142,9 @@ const Auth = () => {
 
         <Card className="glass-card">
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl text-foreground">Welcome to Qtalent.live</CardTitle>
+            <CardTitle className="text-2xl text-foreground">Join as Talent</CardTitle>
             <CardDescription>
-              Join our community of talented professionals
+              Create your talent profile and start getting booked for events
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -228,6 +229,19 @@ const Auth = () => {
                 </form>
               </TabsContent>
             </Tabs>
+            
+            <div className="mt-6 text-center">
+              <p className="text-sm text-muted-foreground">
+                Looking to book talent?{" "}
+                <Button 
+                  variant="link" 
+                  className="p-0 h-auto"
+                  onClick={() => navigate("/booker-auth")}
+                >
+                  Join as Booker
+                </Button>
+              </p>
+            </div>
           </CardContent>
         </Card>
       </div>
