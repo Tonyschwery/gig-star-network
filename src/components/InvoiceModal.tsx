@@ -50,7 +50,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
 
   const price = parseFloat(agreedPrice) || 0;
   const isProSubscriber = booking.talent_profiles?.is_pro_subscriber ?? false;
-  const platformCommissionRate = isProSubscriber ? 15 : 20;
+  const platformCommissionRate = isProSubscriber ? 10 : 20;
   const platformCommission = (price * platformCommissionRate) / 100;
   const talentEarnings = price - platformCommission;
 
@@ -66,12 +66,11 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
 
     setIsProcessing(true);
     try {
-      const { data, error } = await supabase.functions.invoke('create-booking-invoice', {
+      const { data, error } = await supabase.functions.invoke('create-invoice', {
         body: {
           bookingId: booking.id,
-          agreedPrice: price,
-          currency: currency,
-          platformCommissionRate: platformCommissionRate
+          totalAmount: price,
+          currency: currency
         }
       });
 

@@ -6,7 +6,7 @@ verify_jwt = false
 [functions.send-notification-email]
 verify_jwt = false
 
-[functions.send-manual-invoice]
+[functions.create-invoice]
 verify_jwt = true
 
 [functions.process-payment]
