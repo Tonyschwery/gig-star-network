@@ -1,0 +1,479 @@
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { countries, musicGenres, actTypes } from "@/lib/countries";
+import { SimpleGalleryUpload } from "@/components/SimpleGalleryUpload";
+import { SimpleAvatarUpload } from "@/components/SimpleAvatarUpload";
+import { 
+  User, 
+  Save,
+  ArrowLeft,
+  Camera,
+  Plus,
+  X
+} from "lucide-react";
+
+interface TalentProfile {
+  id: string;
+  artist_name: string;
+  act: string;
+  gender: string;
+  age: string;
+  location?: string;
+  rate_per_hour?: number;
+  currency: string;
+  music_genres: string[];
+  custom_genre?: string;
+  picture_url?: string;
+  gallery_images?: string[];
+  soundcloud_link?: string;
+  youtube_link?: string;
+  biography: string;
+  nationality: string;
+  created_at: string;
+  is_pro_subscriber?: boolean;
+  subscription_started_at?: string;
+}
+
+const TalentProfileEdit = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [profile, setProfile] = useState<TalentProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
+  const [customGenre, setCustomGenre] = useState('');
+  const [galleryImages, setGalleryImages] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (!user) {
+      navigate('/auth');
+      return;
+    }
+    fetchTalentProfile();
+  }, [user, navigate]);
+
+  const fetchTalentProfile = async () => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('talent_profiles')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error fetching profile:', error);
+        return;
+      }
+
+      if (!data) {
+        navigate('/talent-onboarding');
+        return;
+      }
+
+      setProfile(data);
+      setSelectedGenres(data.music_genres || []);
+      setCustomGenre(data.custom_genre || '');
+      setGalleryImages(data.gallery_images || []);
+    } catch (error) {
+      console.error('Error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAvatarImageChange = (imageUrl: string | null) => {
+    // This will be handled by direct upload in SimpleAvatarUpload
+  };
+
+  const handleAvatarFileChange = async (file: File | null) => {
+    if (!file || !user || !profile) return;
+
+    setUploadingImage(true);
+
+    try {
+      const fileName = `${user.id}/profile.jpg`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('talent-pictures')
+        .upload(fileName, file, { upsert: true });
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      const { data: urlData } = supabase.storage
+        .from('talent-pictures')
+        .getPublicUrl(fileName);
+
+      const { error: updateError } = await supabase
+        .from('talent_profiles')
+        .update({ picture_url: urlData.publicUrl })
+        .eq('id', profile.id);
+
+      if (updateError) {
+        throw updateError;
+      }
+
+      setProfile({ ...profile, picture_url: urlData.publicUrl });
+      toast({
+        title: "Success",
+        description: "Profile picture updated successfully!"
+      });
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      toast({
+        title: "Error",
+        description: "Failed to upload image. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const handleGenreToggle = (genre: string) => {
+    setSelectedGenres(prev => 
+      prev.includes(genre) 
+        ? prev.filter(g => g !== genre)
+        : [...prev, genre]
+    );
+  };
+
+  const handleSaveProfile = async () => {
+    if (!profile || !user) return;
+
+    setSaving(true);
+
+    try {
+      // Prepare music genres array
+      const allGenres = [...selectedGenres];
+      if (customGenre.trim()) {
+        allGenres.push(customGenre.trim());
+      }
+
+      const { error } = await supabase
+        .from('talent_profiles')
+        .update({
+          act: profile.act as any,
+          location: profile.location,
+          nationality: profile.nationality,
+          music_genres: allGenres,
+          custom_genre: customGenre.trim() || null,
+          gallery_images: galleryImages,
+          soundcloud_link: profile.soundcloud_link,
+          youtube_link: profile.youtube_link,
+          biography: profile.biography,
+          rate_per_hour: profile.rate_per_hour
+        })
+        .eq('id', profile.id);
+
+      if (error) {
+        throw error;
+      }
+
+      toast({
+        title: "Success",
+        description: "Profile updated successfully!"
+      });
+
+      // Navigate back to dashboard
+      navigate('/talent-dashboard');
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update profile. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">Profile not found</h1>
+          <Button onClick={() => navigate('/talent-onboarding')}>
+            Complete Your Profile
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-8">
+          <div>
+            <h1 className="text-2xl lg:text-3xl font-bold gradient-text">
+              Edit Profile
+            </h1>
+            <p className="text-muted-foreground">Update your talent profile information</p>
+          </div>
+          
+          {/* Action Buttons */}
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant="outline"
+              onClick={() => navigate('/talent-dashboard')}
+              className="flex-shrink-0"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Dashboard
+            </Button>
+            
+            <Button
+              onClick={handleSaveProfile}
+              disabled={saving}
+              className="flex-shrink-0 hero-button"
+            >
+              <Save className="h-4 w-4 mr-2" />
+              {saving ? "Saving..." : "Save Changes"}
+            </Button>
+          </div>
+        </div>
+
+        <div className="grid md:grid-cols-3 gap-6">
+          {/* Profile Picture Card */}
+          <Card className="glass-card">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Camera className="h-5 w-5 mr-2" />
+                Profile Picture
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <SimpleAvatarUpload
+                currentImage={profile.picture_url}
+                onImageChange={handleAvatarImageChange}
+                onFileChange={handleAvatarFileChange}
+                disabled={uploadingImage}
+              />
+            </CardContent>
+          </Card>
+
+          {/* Photo Gallery Card */}
+          <Card className="glass-card md:col-span-3">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Camera className="h-5 w-5 mr-2" />
+                Photo Gallery
+              </CardTitle>
+              <CardDescription>
+                Upload up to 5 additional photos to showcase your talent
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <SimpleGalleryUpload
+                currentImages={galleryImages}
+                onImagesChange={setGalleryImages}
+                maxImages={5}
+                disabled={false}
+              />
+            </CardContent>
+          </Card>
+
+          {/* Profile Info Card */}
+          <Card className="glass-card md:col-span-2">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <User className="h-5 w-5 mr-2" />
+                Profile Information
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-medium">Artist Name</Label>
+                  <div className="p-2 bg-muted rounded">{profile.artist_name}</div>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Act Type</Label>
+                  <Select value={profile.act} onValueChange={(value) => setProfile({ ...profile, act: value })}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {actTypes.map((act) => (
+                        <SelectItem key={act} value={act.toLowerCase()}>
+                          {act}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Talent Location (Where you're available)</Label>
+                  <Select value={profile.location || ''} onValueChange={(value) => setProfile({ ...profile, location: value })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select location" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {countries.map((country) => (
+                        <SelectItem key={country.code} value={country.name}>
+                          {country.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Nationality</Label>
+                  <Select value={profile.nationality} onValueChange={(value) => setProfile({ ...profile, nationality: value })}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {countries.map((country) => (
+                        <SelectItem key={country.code} value={country.name}>
+                          {country.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div>
+                <Label className="text-sm font-medium">Rate per Hour</Label>
+                <div className="flex gap-2">
+                  <Input
+                    type="number"
+                    placeholder="Enter your rate"
+                    value={profile.rate_per_hour || ''}
+                    onChange={(e) => setProfile({ ...profile, rate_per_hour: parseFloat(e.target.value) || undefined })}
+                  />
+                  <Select value={profile.currency} onValueChange={(value) => setProfile({ ...profile, currency: value })}>
+                    <SelectTrigger className="w-24">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="USD">USD</SelectItem>
+                      <SelectItem value="EUR">EUR</SelectItem>
+                      <SelectItem value="GBP">GBP</SelectItem>
+                      <SelectItem value="AED">AED</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div>
+                <Label className="text-sm font-medium mb-3 block">Music Genres</Label>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                    {musicGenres.map((genre) => (
+                      <div key={genre} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={genre}
+                          checked={selectedGenres.includes(genre)}
+                          onCheckedChange={() => handleGenreToggle(genre)}
+                        />
+                        <Label htmlFor={genre} className="text-xs font-medium cursor-pointer">
+                          {genre}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  <div>
+                    <Label className="text-xs font-medium">Custom Genre</Label>
+                    <Input
+                      placeholder="Add your own genre"
+                      value={customGenre}
+                      onChange={(e) => setCustomGenre(e.target.value)}
+                    />
+                  </div>
+                  
+                  <div className="flex flex-wrap gap-1">
+                    {selectedGenres.map((genre) => (
+                      <Badge key={genre} variant="secondary" className="text-xs">
+                        {genre}
+                        <button
+                          type="button"
+                          onClick={() => handleGenreToggle(genre)}
+                          className="ml-1 hover:bg-destructive/20 rounded-full p-0.5"
+                        >
+                          <X className="h-2 w-2" />
+                        </button>
+                      </Badge>
+                    ))}
+                    {customGenre && (
+                      <Badge variant="secondary" className="text-xs">
+                        {customGenre}
+                        <button
+                          type="button"
+                          onClick={() => setCustomGenre('')}
+                          className="ml-1 hover:bg-destructive/20 rounded-full p-0.5"
+                        >
+                          <X className="h-2 w-2" />
+                        </button>
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <Label className="text-sm font-medium">Biography</Label>
+                <Textarea
+                  placeholder="Tell us about yourself and your talent..."
+                  value={profile.biography}
+                  onChange={(e) => setProfile({ ...profile, biography: e.target.value })}
+                  rows={4}
+                />
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-medium">SoundCloud Link</Label>
+                  <Input
+                    placeholder="https://soundcloud.com/..."
+                    value={profile.soundcloud_link || ''}
+                    onChange={(e) => setProfile({ ...profile, soundcloud_link: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">YouTube Link</Label>
+                  <Input
+                    placeholder="https://youtube.com/..."
+                    value={profile.youtube_link || ''}
+                    onChange={(e) => setProfile({ ...profile, youtube_link: e.target.value })}
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default TalentProfileEdit;

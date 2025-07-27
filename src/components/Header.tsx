@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Search, User, Menu, LogOut, Crown } from "lucide-react";
+import { Search, User, Menu, LogOut, Crown, Calendar } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useState, useEffect } from "react";
@@ -9,6 +9,7 @@ import { QtalentLogo } from "@/components/QtalentLogo";
 import { MobileMenu } from "@/components/ui/mobile-menu";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ProSubscriptionDialog } from "@/components/ProSubscriptionDialog";
+import { BookingManagement } from "@/components/BookingManagement";
 
 export function Header() {
   const navigate = useNavigate();
@@ -141,7 +142,7 @@ export function Header() {
                 <div className="flex items-center space-x-2">
                   <div className="flex items-center gap-2">
                     <span 
-                      className="text-sm text-muted-foreground cursor-pointer hover:text-primary transition-colors"
+                      className="text-sm font-bold text-foreground cursor-pointer hover:text-primary transition-colors"
                       onClick={handleWelcomeClick}
                     >
                       Welcome, {talentName || user.user_metadata?.name || user.email?.split('@')[0] || 'User'}
@@ -246,7 +247,7 @@ export function Header() {
                   <>
                     <div className="border-t pt-4 mt-4">
                       <span 
-                        className="text-sm text-muted-foreground cursor-pointer hover:text-primary transition-colors block py-2"
+                        className="text-sm font-bold text-foreground cursor-pointer hover:text-primary transition-colors block py-2"
                         onClick={handleWelcomeClick}
                       >
                         Welcome, {talentName || user.user_metadata?.name || user.email?.split('@')[0] || 'User'}
@@ -269,6 +270,21 @@ export function Header() {
                           <Crown className="h-4 w-4 mr-2" />
                           Subscribe to Pro
                         </Button>
+                      )}
+                      
+                      {/* Booking Management for Talents */}
+                      {talentName && (
+                        <div className="mt-4 pt-4 border-t">
+                          <div className="flex items-center gap-2 mb-4">
+                            <Calendar className="h-4 w-4" />
+                            <span className="font-medium text-foreground">Booking Requests</span>
+                          </div>
+                          <BookingManagement 
+                            talentId={talentId || ''} 
+                            isProSubscriber={isProTalent}
+                            onUpgrade={() => setShowProDialog(true)}
+                          />
+                        </div>
                       )}
                       
                       <Button 

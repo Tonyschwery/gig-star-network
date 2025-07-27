@@ -11,6 +11,7 @@ import BookerDashboard from "./pages/BookerDashboard";
 import TalentOnboarding from "./pages/TalentOnboarding";
 import TalentProfile from "./pages/TalentProfile";
 import TalentDashboard from "./pages/TalentDashboard";
+import TalentProfileEdit from "./pages/TalentProfileEdit";
 import YourEvent from "./pages/YourEvent";
 import Gigs from "./pages/Gigs";
 import Pricing from "./pages/Pricing";
@@ -44,6 +45,11 @@ const App = () => (
             <Route path="/talent-dashboard" element={
               <ProtectedTalentRoute>
                 <TalentDashboard />
+              </ProtectedTalentRoute>
+            } />
+            <Route path="/talent-profile-edit" element={
+              <ProtectedTalentRoute>
+                <TalentProfileEdit />
               </ProtectedTalentRoute>
             } />
             <Route path="/your-event" element={<YourEvent />} />

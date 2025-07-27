@@ -59,21 +59,8 @@ const TalentDashboard = () => {
   const { toast } = useToast();
   const [profile, setProfile] = useState<TalentProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isEditing, setIsEditing] = useState(false);
-  const [uploadingImage, setUploadingImage] = useState(false);
-  const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
-  const [customGenre, setCustomGenre] = useState('');
-  const [galleryImages, setGalleryImages] = useState<string[]>([]);
   const [showProDialog, setShowProDialog] = useState(false);
 
-  // Initialize selected genres and gallery when profile loads
-  useEffect(() => {
-    if (profile && !isEditing) {
-      setSelectedGenres(profile.music_genres || []);
-      setCustomGenre(profile.custom_genre || '');
-      setGalleryImages(profile.gallery_images || []);
-    }
-  }, [profile, isEditing]);
 
   useEffect(() => {
     if (!user) {
@@ -116,116 +103,6 @@ const TalentDashboard = () => {
     navigate('/');
   };
 
-  const handleAvatarImageChange = (imageUrl: string | null) => {
-    // This will be handled by direct upload in SimpleAvatarUpload
-  };
-
-  const handleAvatarFileChange = async (file: File | null) => {
-    if (!file || !user || !profile) return;
-
-    setUploadingImage(true);
-
-    try {
-      const fileName = `${user.id}/profile.jpg`;
-      
-      const { error: uploadError } = await supabase.storage
-        .from('talent-pictures')
-        .upload(fileName, file, { upsert: true });
-
-      if (uploadError) {
-        throw uploadError;
-      }
-
-      const { data: urlData } = supabase.storage
-        .from('talent-pictures')
-        .getPublicUrl(fileName);
-
-      const { error: updateError } = await supabase
-        .from('talent_profiles')
-        .update({ picture_url: urlData.publicUrl })
-        .eq('id', profile.id);
-
-      if (updateError) {
-        throw updateError;
-      }
-
-      setProfile({ ...profile, picture_url: urlData.publicUrl });
-      toast({
-        title: "Success",
-        description: "Profile picture updated successfully!"
-      });
-    } catch (error) {
-      console.error('Error uploading image:', error);
-      toast({
-        title: "Error",
-        description: "Failed to upload image. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setUploadingImage(false);
-    }
-  };
-
-  const handleGenreToggle = (genre: string) => {
-    setSelectedGenres(prev => 
-      prev.includes(genre) 
-        ? prev.filter(g => g !== genre)
-        : [...prev, genre]
-    );
-  };
-
-  const handleSaveProfile = async () => {
-    if (!profile || !user) return;
-
-    try {
-      // Prepare music genres array
-      const allGenres = [...selectedGenres];
-      if (customGenre.trim()) {
-        allGenres.push(customGenre.trim());
-      }
-
-      const { error } = await supabase
-        .from('talent_profiles')
-        .update({
-          act: profile.act as any,
-          location: profile.location,
-          nationality: profile.nationality,
-          music_genres: allGenres,
-          custom_genre: customGenre.trim() || null,
-          gallery_images: galleryImages,
-          soundcloud_link: profile.soundcloud_link,
-          youtube_link: profile.youtube_link,
-          biography: profile.biography,
-          rate_per_hour: profile.rate_per_hour
-        })
-        .eq('id', profile.id);
-
-      if (error) {
-        throw error;
-      }
-
-      // Update local profile state
-      setProfile({
-        ...profile,
-        music_genres: allGenres,
-        custom_genre: customGenre.trim() || undefined,
-        gallery_images: galleryImages
-      });
-
-      setIsEditing(false);
-      toast({
-        title: "Success",
-        description: "Profile updated successfully!"
-      });
-    } catch (error) {
-      console.error('Error updating profile:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update profile. Please try again.",
-        variant: "destructive"
-      });
-    }
-  };
 
   const handleCancelSubscription = async () => {
     if (!user || !session) return;
@@ -305,20 +182,11 @@ const TalentDashboard = () => {
           <div className="flex flex-wrap gap-2">
             {/* Edit Profile Button - Primary Action */}
             <Button
-              variant={isEditing ? "secondary" : "default"}
-              onClick={() => {
-                if (!isEditing) {
-                  // Initialize genres and gallery when starting to edit
-                  setSelectedGenres(profile.music_genres || []);
-                  setCustomGenre(profile.custom_genre || '');
-                  setGalleryImages(profile.gallery_images || []);
-                }
-                setIsEditing(!isEditing);
-              }}
+              onClick={() => navigate('/talent-profile-edit')}
               className="flex-shrink-0"
             >
               <Edit3 className="h-4 w-4 mr-2" />
-              {isEditing ? "Cancel Edit" : "Edit Profile"}
+              Edit Profile
             </Button>
             
             {/* Pro/Subscription Button */}
@@ -366,14 +234,7 @@ const TalentDashboard = () => {
           </div>
         </div>
 
-        {/* Booking Management Section */}
-        <div className="mb-8">
-          <BookingManagement 
-            talentId={profile.id} 
-            isProSubscriber={profile.is_pro_subscriber}
-            onUpgrade={() => setShowProDialog(true)}
-          />
-        </div>
+        {/* Booking Management Section moved to Header mobile menu */}
 
         <div className="grid md:grid-cols-3 gap-6">
           {/* Profile Picture Card */}
@@ -385,12 +246,22 @@ const TalentDashboard = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <SimpleAvatarUpload
-                currentImage={profile.picture_url}
-                onImageChange={handleAvatarImageChange}
-                onFileChange={handleAvatarFileChange}
-                disabled={uploadingImage}
-              />
+              <div className="flex items-center justify-center">
+                {profile.picture_url ? (
+                  <img 
+                    src={profile.picture_url} 
+                    alt={profile.artist_name}
+                    className="w-32 h-32 rounded-full object-cover border-4 border-primary/20"
+                  />
+                ) : (
+                  <div className="w-32 h-32 rounded-full bg-muted flex items-center justify-center border-4 border-primary/20">
+                    <User className="h-16 w-16 text-muted-foreground" />
+                  </div>
+                )}
+              </div>
+              <p className="text-center text-sm text-muted-foreground mt-4">
+                Click Edit Profile to change your picture
+              </p>
             </CardContent>
           </Card>
 
@@ -406,37 +277,28 @@ const TalentDashboard = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {isEditing ? (
-                <SimpleGalleryUpload
-                  currentImages={galleryImages}
-                  onImagesChange={setGalleryImages}
-                  maxImages={5}
-                  disabled={false}
-                />
-              ) : (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {profile.gallery_images && profile.gallery_images.length > 0 ? 
-                    profile.gallery_images.map((imageUrl, index) => (
-                      <div key={index} className="relative aspect-square rounded-lg overflow-hidden bg-muted">
-                        <img 
-                          src={imageUrl} 
-                          alt={`Gallery image ${index + 1}`}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    )) : (
-                    <div className="col-span-full text-center py-12">
-                      <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
-                        <Camera className="h-8 w-8 text-muted-foreground" />
-                      </div>
-                      <h3 className="font-medium mb-2">No Gallery Photos</h3>
-                      <p className="text-sm text-muted-foreground">
-                        Click Edit to add photos to your gallery
-                      </p>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {profile.gallery_images && profile.gallery_images.length > 0 ? 
+                  profile.gallery_images.map((imageUrl, index) => (
+                    <div key={index} className="relative aspect-square rounded-lg overflow-hidden bg-muted">
+                      <img 
+                        src={imageUrl} 
+                        alt={`Gallery image ${index + 1}`}
+                        className="w-full h-full object-cover"
+                      />
                     </div>
-                  )}
-                </div>
-              )}
+                  )) : (
+                  <div className="col-span-full text-center py-12">
+                    <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Camera className="h-8 w-8 text-muted-foreground" />
+                    </div>
+                    <h3 className="font-medium mb-2">No Gallery Photos</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Click Edit Profile to add photos to your gallery
+                    </p>
+                  </div>
+                )}
+              </div>
             </CardContent>
           </Card>
 
@@ -456,192 +318,73 @@ const TalentDashboard = () => {
                 </div>
                 <div>
                   <Label className="text-sm font-medium">Act Type</Label>
-                  {isEditing ? (
-                    <Select value={profile.act} onValueChange={(value) => setProfile({ ...profile, act: value })}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {actTypes.map((act) => (
-                          <SelectItem key={act} value={act.toLowerCase()}>
-                            {act}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  ) : (
-                    <div className="p-2 bg-muted rounded capitalize">{profile.act}</div>
-                  )}
+                  <div className="p-2 bg-muted rounded capitalize">{profile.act}</div>
                 </div>
                 <div>
                   <Label className="text-sm font-medium">Talent Location (Where you're available)</Label>
-                  {isEditing ? (
-                    <Select value={profile.location || ''} onValueChange={(value) => setProfile({ ...profile, location: value })}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select location" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {countries.map((country) => (
-                          <SelectItem key={country.code} value={country.name}>
-                            {country.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  ) : (
-                    <div className="p-2 bg-muted rounded flex items-center">
-                      <MapPin className="h-4 w-4 mr-1" />
-                      {profile.location || 'Not specified'}
-                    </div>
-                  )}
+                  <div className="p-2 bg-muted rounded flex items-center">
+                    <MapPin className="h-4 w-4 mr-1" />
+                    {profile.location || 'Not specified'}
+                  </div>
                 </div>
                 <div>
                   <Label className="text-sm font-medium">Nationality</Label>
-                  {isEditing ? (
-                    <Select value={profile.nationality || ''} onValueChange={(value) => setProfile({ ...profile, nationality: value })}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select nationality" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {countries.map((country) => (
-                          <SelectItem key={country.code} value={country.name}>
-                            {country.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  ) : (
-                    <div className="p-2 bg-muted rounded">{profile.nationality}</div>
-                  )}
+                  <div className="p-2 bg-muted rounded">{profile.nationality}</div>
                 </div>
                 <div className="md:col-span-2">
                   <Label className="text-sm font-medium">Rate per Hour</Label>
-                  {isEditing ? (
-                    <Input
-                      type="number"
-                      value={profile.rate_per_hour || ''}
-                      onChange={(e) => setProfile({ 
-                        ...profile, 
-                        rate_per_hour: parseFloat(e.target.value) || 0 
-                      })}
-                      placeholder="Enter rate"
-                    />
-                  ) : (
-                    <div className="p-2 bg-muted rounded flex items-center">
-                      <DollarSign className="h-4 w-4 mr-1" />
-                      {profile.rate_per_hour ? `${profile.rate_per_hour} ${profile.currency}` : 'Not set'}
-                    </div>
-                  )}
+                  <div className="p-2 bg-muted rounded flex items-center">
+                    <DollarSign className="h-4 w-4 mr-1" />
+                    {profile.rate_per_hour ? `${profile.rate_per_hour} ${profile.currency}` : 'Not set'}
+                  </div>
                 </div>
               </div>
 
               <div>
                 <Label className="text-sm font-medium">Music Genres</Label>
-                {isEditing ? (
-                  <div className="space-y-4">
-                    <div className="flex flex-wrap gap-3">
-                      {musicGenres.map((genre) => (
-                        <button
-                          key={genre}
-                          type="button"
-                          className={`genre-bubble ${selectedGenres.includes(genre) ? 'selected' : ''}`}
-                          onClick={() => handleGenreToggle(genre)}
-                        >
-                          {genre}
-                        </button>
-                      ))}
-                    </div>
-                    <div>
-                      <Label htmlFor="customGenre" className="text-sm font-medium">Custom Genre</Label>
-                      <Input
-                        id="customGenre"
-                        value={customGenre}
-                        onChange={(e) => setCustomGenre(e.target.value)}
-                        placeholder="Add your own genre"
-                        className="mt-2"
-                      />
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex flex-wrap gap-1 mt-1">
-                    {profile.music_genres.map((genre) => (
-                      <Badge key={genre} variant="secondary">
-                        {genre}
-                      </Badge>
-                    ))}
-                    {profile.custom_genre && (
-                      <Badge variant="secondary">{profile.custom_genre}</Badge>
-                    )}
-                  </div>
-                )}
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {profile.music_genres.map((genre) => (
+                    <Badge key={genre} variant="secondary">
+                      {genre}
+                    </Badge>
+                  ))}
+                  {profile.custom_genre && (
+                    <Badge variant="secondary">{profile.custom_genre}</Badge>
+                  )}
+                </div>
               </div>
 
               <div>
                 <Label className="text-sm font-medium">Biography</Label>
-                {isEditing ? (
-                  <Textarea
-                    value={profile.biography}
-                    onChange={(e) => setProfile({ ...profile, biography: e.target.value })}
-                    rows={3}
-                  />
-                ) : (
-                  <div className="p-2 bg-muted rounded">{profile.biography}</div>
-                )}
+                <div className="p-2 bg-muted rounded">{profile.biography}</div>
               </div>
 
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
                   <Label className="text-sm font-medium">SoundCloud Link</Label>
-                  {isEditing ? (
-                    <Input
-                      value={profile.soundcloud_link || ''}
-                      onChange={(e) => setProfile({ ...profile, soundcloud_link: e.target.value })}
-                      placeholder="https://soundcloud.com/..."
-                    />
-                  ) : (
-                    <div className="p-2 bg-muted rounded">
-                      {profile.soundcloud_link ? (
-                        <a href={profile.soundcloud_link} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
-                          {profile.soundcloud_link}
-                        </a>
-                      ) : (
-                        'Not provided'
-                      )}
-                    </div>
-                  )}
+                  <div className="p-2 bg-muted rounded">
+                    {profile.soundcloud_link ? (
+                      <a href={profile.soundcloud_link} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                        {profile.soundcloud_link}
+                      </a>
+                    ) : (
+                      'Not provided'
+                    )}
+                  </div>
                 </div>
                 <div>
                   <Label className="text-sm font-medium">YouTube Link</Label>
-                  {isEditing ? (
-                    <Input
-                      value={profile.youtube_link || ''}
-                      onChange={(e) => setProfile({ ...profile, youtube_link: e.target.value })}
-                      placeholder="https://youtube.com/..."
-                    />
-                  ) : (
-                    <div className="p-2 bg-muted rounded">
-                      {profile.youtube_link ? (
-                        <a href={profile.youtube_link} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
-                          {profile.youtube_link}
-                        </a>
-                      ) : (
-                        'Not provided'
-                      )}
-                    </div>
-                  )}
+                  <div className="p-2 bg-muted rounded">
+                    {profile.youtube_link ? (
+                      <a href={profile.youtube_link} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                        {profile.youtube_link}
+                      </a>
+                    ) : (
+                      'Not provided'
+                    )}
+                  </div>
                 </div>
               </div>
-
-              {isEditing && (
-                <div className="flex justify-end space-x-2 pt-4">
-                  <Button variant="outline" onClick={() => setIsEditing(false)}>
-                    Cancel
-                  </Button>
-                  <Button onClick={handleSaveProfile}>
-                    Save Changes
-                  </Button>
-                </div>
-              )}
             </CardContent>
           </Card>
         </div>
