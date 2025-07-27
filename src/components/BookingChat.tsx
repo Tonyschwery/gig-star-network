@@ -120,27 +120,29 @@ const BookingChatComponent = ({ bookingId, bookerName, isProSubscriber = false, 
 
     setSending(true);
     try {
-      // Prepare message data with proper validation
+      // Prepare message data with proper validation - ensure all fields are clean strings
       const messageData = {
-        booking_id: bookingId,
-        sender_id: user.id,
-        sender_type: 'talent' as const,
-        message: filteredMessage
+        booking_id: String(bookingId).trim(),
+        sender_id: String(user.id).trim(),
+        sender_type: 'talent',
+        message: String(filteredMessage).trim()
       };
 
-      console.log('Sending message:', messageData);
+      console.log('Sending message with clean data:', messageData);
 
       const { error } = await supabase
         .from('booking_messages')
-        .insert(messageData);
+        .insert([messageData]); // Wrap in array for consistency
 
       if (error) {
         console.error('Database error sending message:', error);
         throw error;
       }
+
+      console.log('Message sent successfully');
       
       // Show a toast if the message was filtered
-      if (filteredMessage !== message) {
+      if (filteredMessage !== message.trim()) {
         toast({
           title: "Message filtered",
           description: "Some sensitive information was removed from your message for security.",
@@ -150,7 +152,7 @@ const BookingChatComponent = ({ bookingId, bookerName, isProSubscriber = false, 
       console.error('Error sending message:', error);
       toast({
         title: "Error",
-        description: "Failed to send message",
+        description: "Failed to send message. Please try again.",
         variant: "destructive",
       });
     } finally {

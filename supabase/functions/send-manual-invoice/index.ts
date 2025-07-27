@@ -194,30 +194,71 @@ serve(async (req) => {
       talentEarnings
     });
 
-    // Create payment record
-    logStep('Creating payment record');
-    const { data: payment, error: paymentError } = await supabaseAdmin
+    // Check if payment already exists for this booking
+    logStep('Checking for existing payment');
+    const { data: existingPayment, error: checkError } = await supabaseAdmin
       .from('payments')
-      .insert({
-        booking_id: bookingId,
-        booker_id: booking.user_id,
-        talent_id: assignedTalentProfile.id,
-        total_amount: totalAmount,
-        platform_commission: platformCommission,
-        talent_earnings: talentEarnings,
-        commission_rate: commissionRate,
-        hourly_rate: 0, // Not applicable for manual pricing
-        hours_booked: 0, // Not applicable for manual pricing
-        currency: currency || 'USD',
-        payment_status: 'pending',
-        payment_method: 'manual_invoice'
-      })
-      .select()
-      .single();
+      .select('*')
+      .eq('booking_id', bookingId)
+      .eq('payment_method', 'manual_invoice')
+      .maybeSingle();
 
-    if (paymentError) {
-      logStep('Error creating payment record', paymentError);
-      throw new Error(`Failed to create payment record: ${paymentError.message}`);
+    if (checkError) {
+      logStep('Error checking existing payment', checkError);
+      throw new Error(`Failed to check existing payment: ${checkError.message}`);
+    }
+
+    let payment;
+    if (existingPayment) {
+      // Update existing payment record
+      logStep('Updating existing payment record');
+      const { data: updatedPayment, error: updateError } = await supabaseAdmin
+        .from('payments')
+        .update({
+          total_amount: totalAmount,
+          platform_commission: platformCommission,
+          talent_earnings: talentEarnings,
+          commission_rate: commissionRate,
+          currency: currency || 'USD',
+          payment_status: 'pending',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', existingPayment.id)
+        .select()
+        .single();
+
+      if (updateError) {
+        logStep('Error updating payment record', updateError);
+        throw new Error(`Failed to update payment record: ${updateError.message}`);
+      }
+      payment = updatedPayment;
+    } else {
+      // Create new payment record
+      logStep('Creating new payment record');
+      const { data: newPayment, error: paymentError } = await supabaseAdmin
+        .from('payments')
+        .insert({
+          booking_id: bookingId,
+          booker_id: booking.user_id,
+          talent_id: assignedTalentProfile.id,
+          total_amount: totalAmount,
+          platform_commission: platformCommission,
+          talent_earnings: talentEarnings,
+          commission_rate: commissionRate,
+          hourly_rate: 0, // Not applicable for manual pricing
+          hours_booked: 0, // Not applicable for manual pricing
+          currency: currency || 'USD',
+          payment_status: 'pending',
+          payment_method: 'manual_invoice'
+        })
+        .select()
+        .single();
+
+      if (paymentError) {
+        logStep('Error creating payment record', paymentError);
+        throw new Error(`Failed to create payment record: ${paymentError.message}`);
+      }
+      payment = newPayment;
     }
 
     logStep('Payment record created', payment);

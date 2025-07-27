@@ -183,21 +183,27 @@ export function ChatModal({ isOpen, onClose, bookerName, bookerEmail, eventType,
 
     setLoading(true);
     try {
-      console.log('Original message:', newMessage.trim());
-      console.log('Filtered message:', filteredMessage);
+      // Prepare message data with proper validation - ensure all fields are clean strings
+      const messageData = {
+        booking_id: String(bookingId).trim(),
+        sender_id: String(user.id).trim(),
+        sender_type: 'talent',
+        message: String(filteredMessage).trim()
+      };
+      
+      console.log('Sending message with clean data:', messageData);
       
       const { error } = await supabase
         .from('booking_messages')
-        .insert([{
-          booking_id: bookingId,
-          sender_id: user.id,
-          sender_type: 'talent', // Since this is from gigs page, sender is always talent
-          message: filteredMessage
-        }]);
+        .insert([messageData]);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Database error sending message:', error);
+        throw error;
+      }
 
       setNewMessage("");
+      console.log('Message sent successfully');
       
       // Show success message
       toast({
