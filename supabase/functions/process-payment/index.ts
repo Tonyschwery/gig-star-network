@@ -19,9 +19,9 @@ serve(async (req) => {
   try {
     logStep('Starting payment processing');
     
-    const { paymentId, successUrl, cancelUrl } = await req.json();
+    const { paymentId } = await req.json();
     
-    logStep('Request data received', { paymentId, successUrl, cancelUrl });
+    logStep('Request data received', { paymentId });
     
     if (!paymentId) {
       throw new Error('Payment ID is required');
@@ -39,17 +39,21 @@ serve(async (req) => {
       }
     );
 
-    // Get payment details
+    // Get payment details with booking info
     logStep('Fetching payment details');
     const { data: payment, error: paymentError } = await supabaseAdmin
       .from('payments')
       .select(`
         *,
         bookings (
+          id,
           event_type,
           event_date,
+          user_id,
+          talent_id,
           talent_profiles (
-            artist_name
+            artist_name,
+            user_id
           )
         )
       `)
@@ -61,6 +65,21 @@ serve(async (req) => {
       throw new Error('Payment not found');
     }
 
+    // Check if payment is already completed
+    if (payment.payment_status === 'completed') {
+      logStep('Payment already completed');
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: 'Payment already completed'
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200,
+        }
+      );
+    }
+
     logStep('Payment details retrieved', {
       paymentId: payment.id,
       amount: payment.total_amount,
@@ -68,40 +87,78 @@ serve(async (req) => {
       status: payment.payment_status
     });
 
-    // For demo purposes, create a mock Stripe session URL
-    // In production, this would create an actual Stripe checkout session
-    const mockStripeUrl = `https://checkout.stripe.com/demo?session_id=cs_demo_${paymentId}&amount=${payment.total_amount * 100}&currency=${payment.currency.toLowerCase()}`;
+    // Process payment instantly (manual invoice system)
+    const { error: updateError } = await supabaseAdmin
+      .from('payments')
+      .update({
+        payment_status: 'completed',
+        processed_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', paymentId);
+
+    if (updateError) {
+      logStep('Error updating payment status', updateError);
+      throw new Error('Failed to process payment');
+    }
+
+    // Update booking status to completed
+    const { error: bookingUpdateError } = await supabaseAdmin
+      .from('bookings')
+      .update({
+        status: 'completed',
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', payment.bookings.id);
+
+    if (bookingUpdateError) {
+      logStep('Error updating booking status', bookingUpdateError);
+      // Don't throw error, payment is already processed
+    }
+
+    // Create notifications
+    const booking = payment.bookings;
     
-    logStep('Mock Stripe session created', { url: mockStripeUrl });
+    // Notify booker
+    await supabaseAdmin
+      .from('notifications')
+      .insert({
+        user_id: booking.user_id,
+        type: 'payment_completed',
+        title: 'Payment Completed',
+        message: `Your payment of ${payment.currency} ${payment.total_amount.toFixed(2)} has been processed successfully. Your booking is confirmed!`,
+        booking_id: booking.id
+      });
 
-    // In a real implementation, you would:
-    // 1. Create a Stripe checkout session
-    // 2. Return the session URL
-    // 3. Handle webhook to update payment status when completed
+    // Notify talent if assigned
+    if (booking.talent_id && booking.talent_profiles?.user_id) {
+      await supabaseAdmin
+        .from('notifications')
+        .insert({
+          user_id: booking.talent_profiles.user_id,
+          type: 'payment_completed',
+          title: 'Payment Received',
+          message: `Payment of ${payment.currency} ${payment.talent_earnings.toFixed(2)} has been received for your ${booking.event_type} event.`,
+          booking_id: booking.id
+        });
+    }
 
-    // For demo, we'll simulate the payment flow
-    setTimeout(async () => {
-      // Simulate payment completion after 30 seconds (for demo)
-      try {
-        await supabaseAdmin
-          .from('payments')
-          .update({
-            payment_status: 'completed',
-            processed_at: new Date().toISOString()
-          })
-          .eq('id', paymentId);
-        
-        logStep('Demo payment marked as completed');
-      } catch (error) {
-        logStep('Error updating demo payment', error);
-      }
-    }, 30000);
+    logStep('Payment processed successfully', {
+      paymentId: payment.id,
+      bookingId: booking.id,
+      amount: payment.total_amount
+    });
 
     return new Response(
       JSON.stringify({
         success: true,
-        url: mockStripeUrl,
-        message: 'Redirecting to payment processor (demo mode)'
+        message: 'Payment processed successfully',
+        payment: {
+          id: payment.id,
+          status: 'completed',
+          amount: payment.total_amount,
+          currency: payment.currency
+        }
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

@@ -408,7 +408,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      complete_manual_payment: {
+        Args: { payment_id_param: string }
+        Returns: Json
+      }
+      get_payment_status: {
+        Args: { booking_id_param: string }
+        Returns: Json
+      }
     }
     Enums: {
       talent_act:

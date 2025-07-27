@@ -262,11 +262,11 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({
                 </>
               )}
 
-              {/* Demo Notice */}
-              <div className="p-3 bg-blue-50 dark:bg-blue-950 rounded-md">
-                <p className="text-sm text-blue-700 dark:text-blue-300">
-                  🎭 <strong>Demo Mode:</strong> This will send a mock invoice to the booker. 
-                  The booker will receive a notification and can process payment instantly.
+              {/* Invoice Notice */}
+              <div className="p-3 bg-green-50 dark:bg-green-950 rounded-md">
+                <p className="text-sm text-green-700 dark:text-green-300">
+                  💰 <strong>Manual Invoice:</strong> This will send an invoice to the booker. 
+                  They will receive a notification and can complete payment to confirm the booking.
                 </p>
               </div>
             </div>
