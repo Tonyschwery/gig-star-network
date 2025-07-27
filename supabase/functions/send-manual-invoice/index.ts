@@ -60,6 +60,7 @@ serve(async (req) => {
     }
 
     let finalTalentId = booking.talent_id;
+    let assignedTalentProfile: any = null;
 
     // If this is a gig opportunity without an assigned talent, we need to assign the current user as the talent
     if (!booking.talent_id && booking.is_public_request && booking.is_gig_opportunity) {
@@ -78,13 +79,14 @@ serve(async (req) => {
       }
       
       // Decode the JWT to get the user ID (simple decode, not verification since we're in a secure context)
+      let userId: string;
       try {
         const tokenParts = token.split('.');
         if (tokenParts.length !== 3) {
           throw new Error('Invalid JWT token format');
         }
         const payload = JSON.parse(atob(tokenParts[1]));
-        var userId = payload.sub;
+        userId = payload.sub;
       } catch (error) {
         logStep('Error parsing JWT token', { token: token.substring(0, 20) + '...', error });
         throw new Error('Failed to parse authorization token');
@@ -142,7 +144,7 @@ serve(async (req) => {
       });
 
       // Use the talent profile we already have
-      var assignedTalentProfile = talentProfile;
+      assignedTalentProfile = talentProfile;
     } else if (booking.talent_id) {
       // Get talent profile for existing assignment
       logStep('Fetching talent profile for existing assignment');
@@ -157,7 +159,7 @@ serve(async (req) => {
         throw new Error(`Failed to fetch talent profile: ${existingTalentError.message}`);
       }
 
-      var assignedTalentProfile = existingTalentProfile;
+      assignedTalentProfile = existingTalentProfile;
       logStep('Found existing talent assignment', { 
         talentId: assignedTalentProfile.id,
         artistName: assignedTalentProfile.artist_name 
