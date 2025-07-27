@@ -196,11 +196,14 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
       return;
     }
 
-    // Prepare equipment data
+    // Prepare equipment data - handle PostgreSQL ARRAY type properly
     const allEquipmentTypes = [...equipmentTypes];
     if (customEquipment.trim()) {
       allEquipmentTypes.push(customEquipment.trim());
     }
+    
+    // For PostgreSQL ARRAY columns, send null instead of empty array to avoid JSON parsing issues
+    const equipmentTypesForDB = needsEquipment && allEquipmentTypes.length > 0 ? allEquipmentTypes : null;
 
     setIsSubmitting(true);
 
@@ -219,7 +222,7 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
         event_type: eventType,
         description: description || null,
         needs_equipment: needsEquipment,
-        equipment_types: needsEquipment && allEquipmentTypes.length > 0 ? allEquipmentTypes : [],
+        equipment_types: equipmentTypesForDB,
         custom_equipment: needsEquipment && customEquipment.trim() ? customEquipment.trim() : null,
         is_public_request: isPublicRequest,
         is_gig_opportunity: isPublicRequest,
@@ -239,7 +242,7 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
           event_type: eventType,
           description: description || null,
           needs_equipment: needsEquipment,
-          equipment_types: needsEquipment && allEquipmentTypes.length > 0 ? allEquipmentTypes : [],
+          equipment_types: equipmentTypesForDB,
           custom_equipment: needsEquipment && customEquipment.trim() ? customEquipment.trim() : null,
           is_public_request: isPublicRequest,
           is_gig_opportunity: isPublicRequest,
