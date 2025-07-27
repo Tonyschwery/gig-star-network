@@ -196,6 +196,9 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
         description: description?.trim() || null,
         is_public_request: Boolean(isPublicRequest),
         is_gig_opportunity: Boolean(isPublicRequest),
+        needs_equipment: false,
+        equipment_types: [],
+        custom_equipment: null,
       };
       
       console.log('Submitting booking with data:', bookingData);
