@@ -213,7 +213,7 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
         event_type: eventType,
         description: description?.trim() || null,
         needs_equipment: Boolean(needsEquipment),
-        equipment_types: needsEquipment && equipmentTypes.length > 0 ? equipmentTypes : null,
+        equipment_types: needsEquipment && equipmentTypes.length > 0 ? equipmentTypes : [],
         is_public_request: Boolean(isPublicRequest),
         is_gig_opportunity: Boolean(isPublicRequest),
       };
