@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Check, X, Calendar, Clock, MapPin, Mail, User, Crown, Lock, MessageCircle, Settings } from "lucide-react";
+import { Check, X, Calendar, Clock, MapPin, Mail, User, Crown, Lock, MessageCircle } from "lucide-react";
 import { BookingChat } from "./BookingChat";
 import { ManualInvoiceModal } from "./ManualInvoiceModal";
 import { format } from "date-fns";
@@ -22,8 +22,6 @@ interface Booking {
   created_at: string;
   user_id: string;
   talent_id?: string; // Add talent_id to determine if it's a direct booking
-  needs_equipment?: boolean;
-  equipment_types?: string[];
   talent_profiles?: {
     artist_name: string;
     rate_per_hour: number;
@@ -276,26 +274,6 @@ export function BookingManagement({ talentId, isProSubscriber = false, onUpgrade
                               <p className="text-muted-foreground mt-1">{booking.description}</p>
                             </div>
                           )}
-                          {booking.needs_equipment && (
-                            <div className="text-sm">
-                              <div className="flex items-center gap-2 font-medium text-foreground mb-2">
-                                <Settings className="h-4 w-4" />
-                                Equipment Needed:
-                              </div>
-                              <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3">
-                                {booking.equipment_types && booking.equipment_types.length > 0 && (
-                                  <div className="space-y-1">
-                                    <p className="text-xs font-medium text-amber-800 dark:text-amber-200">Selected Equipment:</p>
-                                    <ul className="text-xs text-amber-700 dark:text-amber-300 list-disc list-inside">
-                                      {booking.equipment_types.map((equipment, index) => (
-                                        <li key={index} className="capitalize">{equipment}</li>
-                                      ))}
-                                    </ul>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          )}
                         </>
                       ) : (
                         <div className="text-sm border rounded-lg p-3 bg-muted/10">
@@ -408,26 +386,6 @@ export function BookingManagement({ talentId, isProSubscriber = false, onUpgrade
                               <div className="text-sm">
                                 <span className="font-medium text-foreground">Event Description:</span>
                                 <p className="text-muted-foreground mt-1">{booking.description}</p>
-                              </div>
-                            )}
-                            {booking.needs_equipment && (
-                              <div className="text-sm">
-                                <div className="flex items-center gap-2 font-medium text-foreground mb-2">
-                                  <Settings className="h-4 w-4" />
-                                  Equipment Needed:
-                                </div>
-                                <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3">
-                                  {booking.equipment_types && booking.equipment_types.length > 0 && (
-                                    <div className="space-y-1">
-                                      <p className="text-xs font-medium text-amber-800 dark:text-amber-200">Selected Equipment:</p>
-                                      <ul className="text-xs text-amber-700 dark:text-amber-300 list-disc list-inside">
-                                        {booking.equipment_types.map((equipment, index) => (
-                                          <li key={index} className="capitalize">{equipment}</li>
-                                        ))}
-                                      </ul>
-                                    </div>
-                                  )}
-                                </div>
                               </div>
                             )}
                           </>

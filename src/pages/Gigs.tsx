@@ -22,8 +22,6 @@ interface PublicBooking {
   event_type: string;
   description: string | null;
   created_at: string;
-  equipment_types: string[];
-  needs_equipment: boolean;
   budget: number | null;
   budget_currency: string;
   talent_id?: string | null;
@@ -345,20 +343,6 @@ export default function Gigs() {
                     </div>
                   </div>
 
-                  {request.needs_equipment && (
-                    <div className="space-y-2">
-                      <div className="text-sm">
-                        <span className="font-medium text-foreground">Equipment Needed:</span>
-                        <div className="flex flex-wrap gap-2 mt-1">
-                          {request.equipment_types && request.equipment_types.map((equipment, index) => (
-                            <Badge key={index} variant="secondary">
-                              {equipment}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  )}
 
                   {request.description && (
                     <div className="text-sm">
