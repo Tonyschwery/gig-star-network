@@ -50,7 +50,7 @@ export function Header() {
     if (user) {
       signOut();
     } else {
-      navigate("/auth");
+      navigate("/login");
     }
   };
 
@@ -313,7 +313,7 @@ export function Header() {
                     <Button 
                       variant="outline" 
                       className="w-full"
-                      onClick={handleAuthAction}
+                      onClick={() => navigate("/login")}
                     >
                       Login
                     </Button>
