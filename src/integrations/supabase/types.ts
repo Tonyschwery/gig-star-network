@@ -131,6 +131,27 @@ export type Database = {
           },
         ]
       }
+      conversations: {
+        Row: {
+          booking_id: string
+          created_at: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          booking_id: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          booking_id?: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       email_preferences: {
         Row: {
           booking_notifications: boolean
@@ -163,6 +184,44 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      messages: {
+        Row: {
+          content: string
+          conversation_id: string
+          created_at: string
+          id: string
+          sender_type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          conversation_id: string
+          created_at?: string
+          id?: string
+          sender_type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          sender_type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       notifications: {
         Row: {
@@ -305,7 +364,9 @@ export type Database = {
           picture_url: string | null
           rate_per_hour: number | null
           soundcloud_link: string | null
+          stripe_customer_id: string | null
           subscription_started_at: string | null
+          subscription_status: string
           updated_at: string
           user_id: string
           youtube_link: string | null
@@ -328,7 +389,9 @@ export type Database = {
           picture_url?: string | null
           rate_per_hour?: number | null
           soundcloud_link?: string | null
+          stripe_customer_id?: string | null
           subscription_started_at?: string | null
+          subscription_status?: string
           updated_at?: string
           user_id: string
           youtube_link?: string | null
@@ -351,7 +414,9 @@ export type Database = {
           picture_url?: string | null
           rate_per_hour?: number | null
           soundcloud_link?: string | null
+          stripe_customer_id?: string | null
           subscription_started_at?: string | null
+          subscription_status?: string
           updated_at?: string
           user_id?: string
           youtube_link?: string | null
@@ -366,6 +431,10 @@ export type Database = {
       complete_manual_payment: {
         Args: { payment_id_param: string }
         Returns: Json
+      }
+      filter_message_content: {
+        Args: { content: string }
+        Returns: string
       }
       get_payment_status: {
         Args: { booking_id_param: string }
