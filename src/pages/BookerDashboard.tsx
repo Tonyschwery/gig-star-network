@@ -25,6 +25,8 @@ import { format } from "date-fns";
 
 import { BookerInvoiceCard } from "@/components/BookerInvoiceCard";
 import { NotificationCenter } from "@/components/NotificationCenter";
+import { ChatModal } from "@/components/ChatModal";
+import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 
 interface Booking {
   id: string;
@@ -53,6 +55,8 @@ const BookerDashboard = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [bookingPayments, setBookingPayments] = useState<Record<string, any>>({});
+  const [showChatModal, setShowChatModal] = useState(false);
+  const [chatBooking, setChatBooking] = useState<Booking | null>(null);
 
   useEffect(() => {
     if (!user) {
@@ -180,6 +184,31 @@ const BookerDashboard = () => {
     return icons[type] || "🎵";
   };
 
+  const handleOpenChat = (booking: Booking) => {
+    setChatBooking(booking);
+    setShowChatModal(true);
+  };
+
+  // Chat Button Component with unread indicator
+  const ChatButton = ({ booking, variant = "outline", size = "sm" }: { booking: Booking, variant?: any, size?: any }) => {
+    const { hasUnread } = useUnreadMessages(booking.id);
+    
+    return (
+      <Button
+        onClick={() => handleOpenChat(booking)}
+        variant={variant}
+        size={size}
+        className="relative"
+      >
+        <MessageCircle className="h-4 w-4 mr-2" />
+        Chat with Talent
+        {hasUnread && (
+          <div className="absolute -top-1 -right-1 h-2 w-2 bg-red-500 rounded-full" />
+        )}
+      </Button>
+    );
+  };
+
   const pendingBookings = bookings.filter(booking => booking.status === 'pending');
   const approvedBookings = bookings.filter(booking => booking.status === 'approved');
   const declinedBookings = bookings.filter(booking => booking.status === 'declined');
@@ -296,6 +325,19 @@ const BookerDashboard = () => {
                     </div>
                   </div>
 
+
+                  {/* Chat and Payment Interface */}
+                  <div className="flex gap-2 pt-2 border-t">
+                    <ChatButton booking={booking} />
+                    <Button
+                      onClick={() => navigate(`/talent/${booking.talent_id}`)}
+                      variant="outline"
+                      size="sm"
+                    >
+                      <User className="h-4 w-4 mr-2" />
+                      View Talent
+                    </Button>
+                  </div>
 
                   {/* Payment Interface */}
                   {bookingPayments[booking.id] && (
@@ -435,10 +477,11 @@ const BookerDashboard = () => {
 
 
                   <div className="flex gap-2 pt-2">
+                    <ChatButton booking={booking} />
                     <Button
                       onClick={() => navigate(`/talent/${booking.talent_id}`)}
                       variant="outline"
-                      className="flex-1"
+                      size="sm"
                     >
                       <User className="h-4 w-4 mr-2" />
                       View Talent Profile
@@ -527,6 +570,7 @@ const BookerDashboard = () => {
 
 
                         <div className="flex gap-2 pt-2">
+                          <ChatButton booking={booking} />
                           <Button
                             onClick={() => navigate(`/talent/${booking.talent_id}`)}
                             variant="outline"
@@ -546,6 +590,18 @@ const BookerDashboard = () => {
         </Card>
 
       </div>
+
+      {/* Chat Modal */}
+      {chatBooking && (
+        <ChatModal
+          open={showChatModal}
+          onOpenChange={setShowChatModal}
+          bookingId={chatBooking.id}
+          talentName={chatBooking.talent_profiles?.artist_name || 'Unknown'}
+          eventType={chatBooking.event_type}
+          eventDate={chatBooking.event_date}
+        />
+      )}
     </div>
   );
 };
