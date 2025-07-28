@@ -239,7 +239,7 @@ const TalentDashboard = () => {
 
         {/* Booking Requests Section */}
         {profile && (
-          <div className="mb-8">
+          <div className="mb-6 md:mb-8">
             <BookingRequests 
               talentId={profile.id} 
               isProSubscriber={profile.is_pro_subscriber || false}
@@ -247,7 +247,7 @@ const TalentDashboard = () => {
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 lg:gap-6">
           {/* Profile Picture Card */}
           <Card className="glass-card">
             <CardHeader>
@@ -288,7 +288,7 @@ const TalentDashboard = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-3 md:gap-4">
                 {profile.gallery_images && profile.gallery_images.length > 0 ? 
                   profile.gallery_images.map((imageUrl, index) => (
                     <div key={index} className="relative aspect-square rounded-lg overflow-hidden bg-muted">
@@ -321,8 +321,8 @@ const TalentDashboard = () => {
                 Profile Information
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4 md:space-y-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
+            <CardContent className="space-y-3 sm:space-y-4 md:space-y-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 md:gap-4">
                 <div>
                   <Label className="text-xs sm:text-sm font-medium">Artist Name</Label>
                   <div className="p-2 bg-muted rounded text-xs sm:text-sm">{profile.artist_name}</div>
@@ -370,7 +370,7 @@ const TalentDashboard = () => {
                 <div className="p-2 bg-muted rounded text-xs sm:text-sm max-h-32 overflow-y-auto">{profile.biography}</div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 md:gap-4">
                 <div>
                   <Label className="text-xs sm:text-sm font-medium">SoundCloud Link</Label>
                   <div className="p-2 bg-muted rounded text-xs sm:text-sm">

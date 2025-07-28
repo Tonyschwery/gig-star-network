@@ -198,10 +198,11 @@ const BookerDashboard = () => {
         onClick={() => handleOpenChat(booking)}
         variant={variant}
         size={size}
-        className="relative"
+        className="relative flex-shrink-0"
       >
         <MessageCircle className="h-4 w-4 mr-2" />
-        Chat with Talent
+        <span className="hidden sm:inline">Chat with Talent</span>
+        <span className="sm:hidden">Chat</span>
         {hasUnread && (
           <div className="absolute -top-1 -right-1 h-2 w-2 bg-red-500 rounded-full" />
         )}
@@ -226,23 +227,35 @@ const BookerDashboard = () => {
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-bold gradient-text">
-              Welcome, {user?.email?.split('@')[0] || 'Guest'}!
-            </h1>
-            <p className="text-muted-foreground">Manage your event bookings</p>
+        <div className="flex flex-col gap-4 mb-6 lg:mb-8">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold gradient-text">
+                Welcome, {user?.email?.split('@')[0] || 'Guest'}!
+              </h1>
+              <p className="text-muted-foreground text-sm sm:text-base">Manage your event bookings</p>
+            </div>
           </div>
-          <div className="flex gap-2">
+          
+          {/* Action Buttons */}
+          <div className="flex flex-wrap gap-2">
             <Button 
               variant="outline" 
               onClick={() => navigate('/')}
+              className="flex-shrink-0"
+              size="sm"
             >
               Browse Talents
             </Button>
-            <Button variant="outline" onClick={handleSignOut}>
+            <Button 
+              variant="outline" 
+              onClick={handleSignOut}
+              className="flex-shrink-0"
+              size="sm"
+            >
               <LogOut className="h-4 w-4 mr-2" />
-              Sign Out
+              <span className="hidden sm:inline">Sign Out</span>
+              <span className="sm:hidden">Logout</span>
             </Button>
           </div>
         </div>
@@ -291,7 +304,7 @@ const BookerDashboard = () => {
                         </div>
                       </div>
                       
-                      <div className="grid md:grid-cols-2 gap-3 text-sm">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-3 text-xs sm:text-sm">
                         <div className="flex items-center gap-2">
                           <Calendar className="h-4 w-4" />
                           <span>{format(new Date(booking.event_date), 'PPP')}</span>
@@ -327,15 +340,17 @@ const BookerDashboard = () => {
 
 
                   {/* Chat and Payment Interface */}
-                  <div className="flex gap-2 pt-2 border-t">
-                    <ChatButton booking={booking} />
+                  <div className="flex flex-wrap gap-2 pt-2 border-t">
+                    <ChatButton booking={booking} variant="outline" size="sm" />
                     <Button
                       onClick={() => navigate(`/talent/${booking.talent_id}`)}
                       variant="outline"
                       size="sm"
+                      className="flex-shrink-0"
                     >
                       <User className="h-4 w-4 mr-2" />
-                      View Talent
+                      <span className="hidden sm:inline">View Talent</span>
+                      <span className="sm:hidden">Profile</span>
                     </Button>
                   </div>
 
@@ -356,51 +371,51 @@ const BookerDashboard = () => {
         )}
 
         {/* Stats Cards */}
-        <div className="grid md:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6 md:mb-8">
           <Card className="glass-card">
-            <CardContent className="p-6">
+            <CardContent className="p-3 md:p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Total Bookings</p>
-                  <p className="text-2xl font-bold">{bookings.length}</p>
+                  <p className="text-xs md:text-sm font-medium text-muted-foreground">Total</p>
+                  <p className="text-lg md:text-2xl font-bold">{bookings.length}</p>
                 </div>
-                <Calendar className="h-8 w-8 text-primary" />
+                <Calendar className="h-6 w-6 md:h-8 md:w-8 text-primary" />
               </div>
             </CardContent>
           </Card>
           
           <Card className="glass-card">
-            <CardContent className="p-6">
+            <CardContent className="p-3 md:p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Pending</p>
-                  <p className="text-2xl font-bold text-yellow-600">{pendingBookings.length}</p>
+                  <p className="text-xs md:text-sm font-medium text-muted-foreground">Pending</p>
+                  <p className="text-lg md:text-2xl font-bold text-yellow-600">{pendingBookings.length}</p>
                 </div>
-                <Clock3 className="h-8 w-8 text-yellow-500" />
+                <Clock3 className="h-6 w-6 md:h-8 md:w-8 text-yellow-500" />
               </div>
             </CardContent>
           </Card>
           
           <Card className="glass-card">
-            <CardContent className="p-6">
+            <CardContent className="p-3 md:p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Approved</p>
-                  <p className="text-2xl font-bold text-green-600">{approvedBookings.length}</p>
+                  <p className="text-xs md:text-sm font-medium text-muted-foreground">Approved</p>
+                  <p className="text-lg md:text-2xl font-bold text-green-600">{approvedBookings.length}</p>
                 </div>
-                <CheckCircle className="h-8 w-8 text-green-500" />
+                <CheckCircle className="h-6 w-6 md:h-8 md:w-8 text-green-500" />
               </div>
             </CardContent>
           </Card>
           
           <Card className="glass-card">
-            <CardContent className="p-6">
+            <CardContent className="p-3 md:p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Declined</p>
-                  <p className="text-2xl font-bold text-red-600">{declinedBookings.length}</p>
+                  <p className="text-xs md:text-sm font-medium text-muted-foreground">Declined</p>
+                  <p className="text-lg md:text-2xl font-bold text-red-600">{declinedBookings.length}</p>
                 </div>
-                <XCircle className="h-8 w-8 text-red-500" />
+                <XCircle className="h-6 w-6 md:h-8 md:w-8 text-red-500" />
               </div>
             </CardContent>
           </Card>
@@ -441,7 +456,7 @@ const BookerDashboard = () => {
                         </div>
                       </div>
                       
-                      <div className="grid md:grid-cols-2 gap-3 text-sm">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-3 text-xs sm:text-sm">
                         <div className="flex items-center gap-2">
                           <Calendar className="h-4 w-4" />
                           <span>{format(new Date(booking.event_date), 'PPP')}</span>
@@ -476,15 +491,17 @@ const BookerDashboard = () => {
                   </div>
 
 
-                  <div className="flex gap-2 pt-2">
-                    <ChatButton booking={booking} />
+                  <div className="flex flex-wrap gap-2 pt-2">
+                    <ChatButton booking={booking} variant="outline" size="sm" />
                     <Button
                       onClick={() => navigate(`/talent/${booking.talent_id}`)}
                       variant="outline"
                       size="sm"
+                      className="flex-shrink-0"
                     >
                       <User className="h-4 w-4 mr-2" />
-                      View Talent Profile
+                      <span className="hidden sm:inline">View Talent Profile</span>
+                      <span className="sm:hidden">Profile</span>
                     </Button>
                   </div>
                 </div>
@@ -540,7 +557,7 @@ const BookerDashboard = () => {
                           </div>
                         </div>
                         
-                        <div className="grid md:grid-cols-3 gap-3 text-sm">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 md:gap-3 text-xs sm:text-sm">
                           <div className="flex items-center gap-2">
                             <Calendar className="h-4 w-4" />
                             <span>{format(new Date(booking.event_date), 'PPP')}</span>
@@ -569,15 +586,17 @@ const BookerDashboard = () => {
                         </div>
 
 
-                        <div className="flex gap-2 pt-2">
-                          <ChatButton booking={booking} />
+                        <div className="flex flex-wrap gap-2 pt-2">
+                          <ChatButton booking={booking} variant="outline" size="sm" />
                           <Button
                             onClick={() => navigate(`/talent/${booking.talent_id}`)}
                             variant="outline"
                             size="sm"
+                            className="flex-shrink-0"
                           >
                             <User className="h-4 w-4 mr-2" />
-                            View Talent
+                            <span className="hidden sm:inline">View Talent</span>
+                            <span className="sm:hidden">Profile</span>
                           </Button>
                         </div>
                       </div>

@@ -170,29 +170,29 @@ export function BookingRequests({ talentId, isProSubscriber = false }: BookingRe
             New booking requests that need your response
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-3 sm:space-y-4">
           {bookings.map((booking) => (
-            <div key={booking.id} className="border rounded-lg p-6 bg-card space-y-4">
+            <div key={booking.id} className="border rounded-lg p-3 sm:p-4 md:p-6 bg-card space-y-3 sm:space-y-4">
               {/* Header */}
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
-                  <span className="text-2xl">{getEventTypeIcon(booking.event_type)}</span>
+                  <span className="text-xl sm:text-2xl">{getEventTypeIcon(booking.event_type)}</span>
                   <div>
-                    <h3 className="font-semibold text-lg capitalize">
+                    <h3 className="font-semibold text-base sm:text-lg capitalize">
                       {booking.event_type} Event
                     </h3>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-xs sm:text-sm text-muted-foreground">
                       Requested {format(new Date(booking.created_at), 'MMM d, yyyy')}
                     </p>
                   </div>
                 </div>
-                <Badge className="bg-yellow-500/20 text-yellow-700 border-yellow-500/20">
+                <Badge className="bg-yellow-500/20 text-yellow-700 border-yellow-500/20 self-start sm:self-center text-xs">
                   Pending
                 </Badge>
               </div>
 
               {/* Event Details */}
-              <div className="grid md:grid-cols-2 gap-4 bg-muted/30 p-4 rounded-lg">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 md:gap-4 bg-muted/30 p-3 sm:p-4 rounded-lg text-sm">
                 <div className="flex items-center gap-2">
                   <Calendar className="h-4 w-4 text-muted-foreground" />
                   <span className="font-medium">{format(new Date(booking.event_date), 'PPP')}</span>
@@ -212,25 +212,25 @@ export function BookingRequests({ talentId, isProSubscriber = false }: BookingRe
               </div>
 
               {/* Additional Details */}
-              <div className="space-y-3">
+              <div className="space-y-2 sm:space-y-3">
                 <div>
-                  <span className="font-medium text-sm">Full Address:</span>
-                  <p className="text-muted-foreground mt-1">{booking.event_address}</p>
+                  <span className="font-medium text-xs sm:text-sm">Full Address:</span>
+                  <p className="text-muted-foreground mt-1 text-xs sm:text-sm">{booking.event_address}</p>
                 </div>
                 <div>
-                  <span className="font-medium text-sm">Contact Email:</span>
-                  <p className="text-muted-foreground mt-1">{booking.booker_email}</p>
+                  <span className="font-medium text-xs sm:text-sm">Contact Email:</span>
+                  <p className="text-muted-foreground mt-1 text-xs sm:text-sm break-all">{booking.booker_email}</p>
                 </div>
                 {booking.description && (
                   <div>
-                    <span className="font-medium text-sm">Event Description:</span>
-                    <p className="text-muted-foreground mt-1">{booking.description}</p>
+                    <span className="font-medium text-xs sm:text-sm">Event Description:</span>
+                    <p className="text-muted-foreground mt-1 text-xs sm:text-sm">{booking.description}</p>
                   </div>
                 )}
                 {booking.budget && (
                   <div>
-                    <span className="font-medium text-sm">Client Budget:</span>
-                    <p className="text-muted-foreground mt-1">
+                    <span className="font-medium text-xs sm:text-sm">Client Budget:</span>
+                    <p className="text-muted-foreground mt-1 text-xs sm:text-sm">
                       {booking.budget} {booking.budget_currency || 'USD'}
                     </p>
                   </div>
@@ -238,29 +238,34 @@ export function BookingRequests({ talentId, isProSubscriber = false }: BookingRe
               </div>
 
               {/* Action Buttons */}
-              <div className="flex justify-end gap-3 pt-4 border-t">
+              <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 pt-3 sm:pt-4 border-t">
                 <Button
                   onClick={() => handleOpenChat(booking)}
                   variant="outline"
-                  className="border-blue-200 text-blue-600 hover:bg-blue-50"
+                  className="border-blue-200 text-blue-600 hover:bg-blue-50 w-full sm:w-auto"
+                  size="sm"
                 >
                   <MessageCircle className="h-4 w-4 mr-2" />
-                  Chat with Booker
+                  <span className="hidden sm:inline">Chat with Booker</span>
+                  <span className="sm:hidden">Chat</span>
                 </Button>
                 <Button
                   onClick={() => handleDecline(booking.id)}
                   variant="outline"
-                  className="border-red-200 text-red-600 hover:bg-red-50"
+                  className="border-red-200 text-red-600 hover:bg-red-50 w-full sm:w-auto"
+                  size="sm"
                 >
                   <X className="h-4 w-4 mr-2" />
                   Decline
                 </Button>
                 <Button
                   onClick={() => handleAccept(booking)}
-                  className="bg-green-600 hover:bg-green-700 text-white"
+                  className="bg-green-600 hover:bg-green-700 text-white w-full sm:w-auto"
+                  size="sm"
                 >
                   <Check className="h-4 w-4 mr-2" />
-                  Accept & Send Invoice
+                  <span className="hidden sm:inline">Accept & Send Invoice</span>
+                  <span className="sm:hidden">Accept</span>
                 </Button>
               </div>
             </div>
