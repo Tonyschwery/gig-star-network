@@ -20,6 +20,7 @@ import {
 import { ChatNotificationBell } from "@/components/ChatNotificationBell";
 import { ProSubscriptionDialog } from "@/components/ProSubscriptionDialog";
 import { BookingRequests } from "@/components/BookingRequests";
+import { NotificationCenter } from "@/components/NotificationCenter";
 
 interface TalentProfile {
   id: string;
@@ -178,7 +179,16 @@ export const BookingManagementView = ({
             
             {/* Chat Notification Bell */}
             <div className="flex items-center">
-              <ChatNotificationBell className="mr-2" />
+              <ChatNotificationBell 
+                className="mr-2" 
+                onClick={() => {
+                  // Find NotificationCenter component and click it
+                  const notificationCenter = document.querySelector('[data-notification-center]') as HTMLElement;
+                  if (notificationCenter) {
+                    notificationCenter.click();
+                  }
+                }}
+              />
             </div>
           </div>
           
@@ -241,6 +251,13 @@ export const BookingManagementView = ({
               <span className="hidden sm:inline">Sign Out</span>
               <span className="sm:hidden">Logout</span>
             </Button>
+          </div>
+        </div>
+
+        {/* Notification Center */}
+        <div className="mb-6">
+          <div data-notification-center>
+            <NotificationCenter />
           </div>
         </div>
 

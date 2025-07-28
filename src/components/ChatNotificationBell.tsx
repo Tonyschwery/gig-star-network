@@ -1,7 +1,7 @@
 import { Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { useUnreadMessageCount } from '@/hooks/useUnreadMessageCount';
+import { useUnreadNotifications } from '@/hooks/useUnreadNotifications';
 
 interface ChatNotificationBellProps {
   onClick?: () => void;
@@ -9,7 +9,7 @@ interface ChatNotificationBellProps {
 }
 
 export function ChatNotificationBell({ onClick, className }: ChatNotificationBellProps) {
-  const { unreadCount, loading } = useUnreadMessageCount();
+  const { unreadCount, loading } = useUnreadNotifications();
 
   if (loading) {
     return (

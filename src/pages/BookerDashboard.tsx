@@ -104,6 +104,7 @@ const BookerDashboard = () => {
           )
         `)
         .eq('user_id', user.id)
+        .neq('status', 'declined') // Hide declined bookings from booker dashboard
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -412,10 +413,10 @@ const BookerDashboard = () => {
             <CardContent className="p-3 md:p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs md:text-sm font-medium text-muted-foreground">Declined</p>
-                  <p className="text-lg md:text-2xl font-bold text-red-600">{declinedBookings.length}</p>
+                  <p className="text-xs md:text-sm font-medium text-muted-foreground">Completed</p>
+                  <p className="text-lg md:text-2xl font-bold text-blue-600">{bookings.filter(b => b.status === 'completed').length}</p>
                 </div>
-                <XCircle className="h-6 w-6 md:h-8 md:w-8 text-red-500" />
+                <CheckCircle className="h-6 w-6 md:h-8 md:w-8 text-blue-500" />
               </div>
             </CardContent>
           </Card>
