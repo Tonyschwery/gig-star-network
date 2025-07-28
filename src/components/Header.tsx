@@ -9,6 +9,8 @@ import { QtalentLogo } from "@/components/QtalentLogo";
 import { MobileMenu } from "@/components/ui/mobile-menu";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ProSubscriptionDialog } from "@/components/ProSubscriptionDialog";
+import { ProfileMenu } from "@/components/ProfileMenu";
+import { SubscriptionButton } from "@/components/SubscriptionButton";
 
 export function Header() {
   const navigate = useNavigate();
@@ -16,6 +18,7 @@ export function Header() {
   const [talentName, setTalentName] = useState<string | null>(null);
   const [talentId, setTalentId] = useState<string | null>(null);
   const [isProTalent, setIsProTalent] = useState<boolean>(false);
+  const [profilePictureUrl, setProfilePictureUrl] = useState<string | null>(null);
   const [showProDialog, setShowProDialog] = useState(false);
   const isMobile = useIsMobile();
 
@@ -34,13 +37,14 @@ export function Header() {
     try {
       const { data } = await supabase
         .from('talent_profiles')
-        .select('id, artist_name, is_pro_subscriber')
+        .select('id, artist_name, is_pro_subscriber, picture_url')
         .eq('user_id', user.id)
         .maybeSingle();
 
       setTalentName(data?.artist_name || null);
       setTalentId(data?.id || null);
       setIsProTalent(data?.is_pro_subscriber || false);
+      setProfilePictureUrl(data?.picture_url || null);
     } catch (error) {
       console.error('Error fetching talent profile:', error);
     }
@@ -83,6 +87,23 @@ export function Header() {
   const handleRefreshProfile = () => {
     fetchTalentProfile();
     setShowProDialog(false);
+  };
+
+  const handleManageSubscription = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('customer-portal', {
+        headers: {
+          Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+        },
+      });
+
+      if (error) throw error;
+      if (data?.url) {
+        window.open(data.url, '_blank');
+      }
+    } catch (error) {
+      console.error('Error opening customer portal:', error);
+    }
   };
 
   return (
@@ -145,16 +166,9 @@ export function Header() {
               </Button>
               
               {user ? (
-                <div className="flex items-center space-x-2">
-                  <div className="flex items-center gap-2">
-                    <span 
-                      className="text-sm font-bold text-foreground cursor-pointer hover:text-primary transition-colors"
-                      onClick={handleWelcomeClick}
-                    >
-                      Welcome, {talentName || user.user_metadata?.name || user.email?.split('@')[0] || 'User'}
-                    </span>
-                    <NotificationCenter />
-                  </div>
+                <div className="flex items-center space-x-4">
+                  <NotificationCenter />
+                  
                   {user && !talentName && user.user_metadata?.user_type === 'talent' && (
                     <Button 
                       className="hero-button text-sm px-4"
@@ -164,24 +178,22 @@ export function Header() {
                       Complete Profile
                     </Button>
                   )}
-                  {talentName && !isProTalent && (
-                    <Button 
-                      className="hero-button text-sm px-4"
+                  
+                  {talentName && (
+                    <SubscriptionButton
+                      isProSubscriber={isProTalent}
+                      onSubscriptionChange={fetchTalentProfile}
+                      variant="outline"
                       size="sm"
-                      onClick={handleProButtonClick}
-                    >
-                      Subscribe to Pro
-                    </Button>
+                    />
                   )}
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    className="px-4"
-                    onClick={handleAuthAction}
-                  >
-                    <LogOut className="h-4 w-4 mr-2" />
-                    Logout
-                  </Button>
+                  
+                  <ProfileMenu
+                    talentName={talentName || undefined}
+                    isProSubscriber={isProTalent}
+                    profilePictureUrl={profilePictureUrl || undefined}
+                    onManageSubscription={handleManageSubscription}
+                  />
                 </div>
               ) : (
                 <>
