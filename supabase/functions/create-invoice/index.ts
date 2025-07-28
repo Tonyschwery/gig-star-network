@@ -2,145 +2,172 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
 interface InvoiceRequest {
-  bookingId: string;
-  totalAmount: number;
+  booking_id: string;
+  total_amount: number;
   currency: string;
+  platform_commission: number;
+  talent_earnings: number;
+  commission_rate: number;
+  hourly_rate: number;
+  hours_booked: number;
 }
 
 serve(async (req) => {
-  if (req.method === 'OPTIONS') {
+  // Handle CORS preflight requests
+  if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    // Create Supabase client with service role key for elevated privileges
+    const supabaseService = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+      {
+        auth: {
+          persistSession: false,
+        },
+      }
     );
 
-    const { bookingId, totalAmount, currency }: InvoiceRequest = await req.json();
+    // Create regular client for user authentication
+    const supabaseClient = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_ANON_KEY") ?? ""
+    );
 
-    if (!bookingId || !totalAmount || totalAmount <= 0) {
-      throw new Error('Invalid booking ID or total amount');
+    // Verify user authentication
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      throw new Error("No authorization header");
     }
 
-    console.log('Creating invoice for booking:', bookingId, 'amount:', totalAmount);
+    const token = authHeader.replace("Bearer ", "");
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token);
+    
+    if (authError || !user) {
+      throw new Error("Invalid authentication");
+    }
 
-    // Get booking and talent details
-    const { data: booking, error: bookingError } = await supabase
-      .from('bookings')
-      .select(`
-        *,
-        talent_profiles!inner(
-          id,
-          artist_name,
-          is_pro_subscriber,
-          user_id
-        )
-      `)
-      .eq('id', bookingId)
+    // Parse request body
+    const invoiceData: InvoiceRequest = await req.json();
+    const { booking_id, total_amount, currency, platform_commission, talent_earnings, commission_rate, hourly_rate, hours_booked } = invoiceData;
+
+    // Validate required fields
+    if (!booking_id || !total_amount || total_amount <= 0) {
+      throw new Error("Missing or invalid required fields");
+    }
+
+    console.log("Creating invoice for booking:", booking_id);
+
+    // Step A: Get booking details and talent_id
+    const { data: booking, error: bookingFetchError } = await supabaseService
+      .from("bookings")
+      .select("*, talent_id")
+      .eq("id", booking_id)
       .single();
 
-    if (bookingError || !booking) {
-      console.error('Booking fetch error:', bookingError);
-      throw new Error('Booking not found');
+    if (bookingFetchError) {
+      console.error("Error fetching booking:", bookingFetchError);
+      throw new Error("Failed to fetch booking details");
     }
 
-    // Calculate commission rates: 20% for non-pro, 10% for pro
-    const isProSubscriber = booking.talent_profiles.is_pro_subscriber || false;
-    const commissionRate = isProSubscriber ? 10 : 20;
-    const platformCommission = (totalAmount * commissionRate) / 100;
-    const talentEarnings = totalAmount - platformCommission;
+    if (!booking.talent_id) {
+      throw new Error("No talent assigned to this booking");
+    }
 
-    console.log('Commission calculation:', {
-      isProSubscriber,
-      commissionRate,
-      platformCommission,
-      talentEarnings
-    });
+    console.log("Found booking with talent_id:", booking.talent_id);
 
-    // Create payment record
-    const { data: payment, error: paymentError } = await supabase
-      .from('payments')
+    // Step B: Insert payment record with correct talent_id
+    const { data: payment, error: paymentError } = await supabaseService
+      .from("payments")
       .insert({
-        booking_id: bookingId,
+        booking_id: booking_id,
         booker_id: booking.user_id,
-        talent_id: booking.talent_id,
-        total_amount: totalAmount,
-        platform_commission: platformCommission,
-        talent_earnings: talentEarnings,
-        commission_rate: commissionRate,
-        currency: currency,
-        payment_status: 'pending',
-        payment_method: 'manual_invoice',
-        hourly_rate: 0,
-        hours_booked: 0
+        talent_id: booking.talent_id, // ✅ FIXED: Use actual talent_id from booking
+        total_amount: total_amount,
+        platform_commission: platform_commission,
+        talent_earnings: talent_earnings,
+        commission_rate: commission_rate,
+        hourly_rate: hourly_rate,
+        hours_booked: hours_booked,
+        currency: currency || "USD",
+        payment_status: "pending",
+        payment_method: "manual_invoice"
       })
       .select()
       .single();
 
     if (paymentError) {
-      console.error('Payment creation error:', paymentError);
-      throw new Error(`Failed to create payment: ${paymentError.message}`);
+      console.error("Error creating payment:", paymentError);
+      throw new Error("Failed to create payment record");
     }
 
-    // Update booking with payment ID and status
-    const { error: updateError } = await supabase
-      .from('bookings')
+    console.log("Created payment record:", payment.id);
+
+    // Step C: Update booking status and link payment
+    const { error: bookingUpdateError } = await supabaseService
+      .from("bookings")
       .update({
-        status: 'approved',
+        status: "approved",
         payment_id: payment.id
       })
-      .eq('id', bookingId);
+      .eq("id", booking_id);
 
-    if (updateError) {
-      console.error('Booking update error:', updateError);
-      throw new Error(`Failed to update booking: ${updateError.message}`);
+    if (bookingUpdateError) {
+      console.error("Error updating booking:", bookingUpdateError);
+      throw new Error("Failed to update booking status");
     }
 
-    // Create notification for booker
-    await supabase
-      .from('notifications')
+    console.log("Updated booking status to approved");
+
+    // Step D: Create notification for booker
+    const { error: notificationError } = await supabaseService
+      .from("notifications")
       .insert({
         user_id: booking.user_id,
-        type: 'invoice_received',
-        title: 'Invoice Received',
-        message: `You have received an invoice for ${currency} ${totalAmount.toFixed(2)} from ${booking.talent_profiles.artist_name}.`,
-        booking_id: bookingId
+        type: "invoice_received",
+        title: "Invoice Received",
+        message: `You have received an invoice for your ${booking.event_type} event. Please review and complete payment.`,
+        booking_id: booking_id
       });
 
-    console.log('Invoice created successfully:', payment.id);
+    if (notificationError) {
+      console.error("Error creating notification:", notificationError);
+      // Don't throw here as the main process succeeded
+    }
 
+    console.log("Created notification for booker");
+
+    // Return success response
     return new Response(
       JSON.stringify({
         success: true,
-        paymentId: payment.id,
-        totalAmount,
-        currency,
-        platformCommission,
-        talentEarnings,
-        commissionRate
+        payment_id: payment.id,
+        message: "Invoice created successfully"
       }),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
       }
     );
 
   } catch (error) {
-    console.error('Invoice creation error:', error);
+    console.error("Error in create-invoice function:", error);
+    
     return new Response(
       JSON.stringify({
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error.message || "Failed to create invoice"
       }),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 400
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500,
       }
     );
   }

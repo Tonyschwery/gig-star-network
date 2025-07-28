@@ -70,53 +70,27 @@ export function ManualInvoiceModal({
     setLoading(true);
 
     try {
-      // Create payment record
-      const { data: payment, error: paymentError } = await supabase
-        .from('payments')
-        .insert({
+      // Call the secure create-invoice Edge Function
+      const { data, error } = await supabase.functions.invoke('create-invoice', {
+        body: {
           booking_id: booking.id,
-          booker_id: booking.user_id,
-          talent_id: booking.id, // This should be the talent profile id
           total_amount: price,
+          currency: currency,
           platform_commission: platformCommission,
           talent_earnings: talentEarnings,
           commission_rate: platformCommissionRate,
           hourly_rate: price / booking.event_duration,
-          hours_booked: booking.event_duration,
-          currency: currency,
-          payment_status: 'pending',
-          payment_method: 'manual_invoice'
-        })
-        .select()
-        .single();
+          hours_booked: booking.event_duration
+        }
+      });
 
-      if (paymentError) throw paymentError;
+      if (error) {
+        console.error('Edge function error:', error);
+        throw new Error(error.message || 'Failed to create invoice');
+      }
 
-      // Update booking status to approved and link payment
-      const { error: bookingError } = await supabase
-        .from('bookings')
-        .update({ 
-          status: 'approved',
-          payment_id: payment.id
-        })
-        .eq('id', booking.id);
-
-      if (bookingError) throw bookingError;
-
-      // Create notification for booker
-      const { error: notificationError } = await supabase
-        .from('notifications')
-        .insert({
-          user_id: booking.user_id,
-          type: 'invoice_received',
-          title: 'Invoice Received',
-          message: `You have received an invoice for your ${booking.event_type} event. Please review and complete payment.`,
-          booking_id: booking.id
-        });
-
-      if (notificationError) {
-        console.error('Error creating notification:', notificationError);
-        // Don't throw here as the main process succeeded
+      if (!data?.success) {
+        throw new Error(data?.error || 'Failed to create invoice');
       }
 
       toast({
@@ -133,7 +107,7 @@ export function ManualInvoiceModal({
       console.error('Error sending invoice:', error);
       toast({
         title: "Error",
-        description: "Failed to send invoice. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to send invoice. Please try again.",
         variant: "destructive",
       });
     } finally {
