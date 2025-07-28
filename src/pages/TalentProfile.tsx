@@ -160,12 +160,6 @@ export default function TalentProfile() {
     setShowBookingForm(true);
   };
 
-  const handleChatWithTalent = () => {
-    toast({
-      title: "Chat Feature",
-      description: "Chat functionality will be implemented soon!",
-    });
-  };
 
   if (loading) {
     return (
@@ -388,14 +382,6 @@ export default function TalentProfile() {
                     </Button>
                   )}
                   
-                  <Button 
-                    variant="outline" 
-                    className="w-full"
-                    onClick={handleChatWithTalent}
-                  >
-                    <MessageCircle className="h-4 w-4 mr-2" />
-                    Chat with Talent
-                  </Button>
                 </div>
               </Card>
 

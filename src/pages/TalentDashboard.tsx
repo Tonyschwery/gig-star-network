@@ -17,6 +17,7 @@ import {
   Camera,
   Crown
 } from "lucide-react";
+import { ChatNotificationBell } from "@/components/ChatNotificationBell";
 import { ProSubscriptionDialog } from "@/components/ProSubscriptionDialog";
 import { BookingRequests } from "@/components/BookingRequests";
 
@@ -151,20 +152,27 @@ const TalentDashboard = () => {
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
-        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-8">
-          <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-2xl lg:text-3xl font-bold gradient-text">
-                Welcome, {profile.artist_name}!
-              </h1>
-              {profile.is_pro_subscriber && (
-                <Badge className="pro-badge">
-                  <Crown className="h-3 w-3 mr-1" />
-                  PRO
-                </Badge>
-              )}
+        <div className="flex flex-col gap-4 mb-6">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <div className="flex items-center gap-3">
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold gradient-text">
+                  Welcome, {profile.artist_name}!
+                </h1>
+                {profile.is_pro_subscriber && (
+                  <Badge className="pro-badge">
+                    <Crown className="h-3 w-3 mr-1" />
+                    PRO
+                  </Badge>
+                )}
+              </div>
+              <p className="text-muted-foreground text-sm sm:text-base">Manage your talent profile</p>
             </div>
-            <p className="text-muted-foreground">Manage your talent profile</p>
+            
+            {/* Chat Notification Bell */}
+            <div className="flex items-center">
+              <ChatNotificationBell className="mr-2" />
+            </div>
           </div>
           
           {/* Action Buttons */}
@@ -173,9 +181,11 @@ const TalentDashboard = () => {
             <Button
               onClick={() => navigate('/talent-profile-edit')}
               className="flex-shrink-0"
+              size="sm"
             >
               <Edit3 className="h-4 w-4 mr-2" />
-              Edit Profile
+              <span className="hidden sm:inline">Edit Profile</span>
+              <span className="sm:hidden">Edit</span>
             </Button>
             
             {/* Pro/Subscription Button */}
@@ -183,6 +193,7 @@ const TalentDashboard = () => {
               <Button 
                 onClick={() => setShowProDialog(true)}
                 className="hero-button flex-shrink-0"
+                size="sm"
               >
                 <Crown className="h-4 w-4 mr-2" />
                 <span className="hidden sm:inline">Subscribe to Pro</span>
@@ -193,6 +204,7 @@ const TalentDashboard = () => {
                 onClick={handleCancelSubscription}
                 variant="outline"
                 className="border-red-200 text-red-600 hover:bg-red-50 flex-shrink-0"
+                size="sm"
               >
                 <span className="hidden sm:inline">Cancel Pro</span>
                 <span className="sm:hidden">Cancel</span>
@@ -204,9 +216,10 @@ const TalentDashboard = () => {
               variant="outline" 
               onClick={() => navigate(`/talent/${profile.id}`)}
               className="flex-shrink-0"
+              size="sm"
             >
               <ExternalLink className="h-4 w-4 mr-2" />
-              <span className="hidden sm:inline">View Public Profile</span>
+              <span className="hidden sm:inline">View Public</span>
               <span className="sm:hidden">View</span>
             </Button>
             
@@ -215,6 +228,7 @@ const TalentDashboard = () => {
               variant="outline" 
               onClick={handleSignOut}
               className="flex-shrink-0"
+              size="sm"
             >
               <LogOut className="h-4 w-4 mr-2" />
               <span className="hidden sm:inline">Sign Out</span>
@@ -233,12 +247,12 @@ const TalentDashboard = () => {
           </div>
         )}
 
-        <div className="grid md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
           {/* Profile Picture Card */}
           <Card className="glass-card">
             <CardHeader>
-              <CardTitle className="flex items-center">
-                <Camera className="h-5 w-5 mr-2" />
+              <CardTitle className="flex items-center text-sm sm:text-base">
+                <Camera className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
                 Profile Picture
               </CardTitle>
             </CardHeader>
@@ -248,33 +262,33 @@ const TalentDashboard = () => {
                   <img 
                     src={profile.picture_url} 
                     alt={profile.artist_name}
-                    className="w-32 h-32 rounded-full object-cover border-4 border-primary/20"
+                    className="w-24 h-24 sm:w-32 sm:h-32 rounded-full object-cover border-4 border-primary/20"
                   />
                 ) : (
-                  <div className="w-32 h-32 rounded-full bg-muted flex items-center justify-center border-4 border-primary/20">
-                    <User className="h-16 w-16 text-muted-foreground" />
+                  <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full bg-muted flex items-center justify-center border-4 border-primary/20">
+                    <User className="h-12 w-12 sm:h-16 sm:w-16 text-muted-foreground" />
                   </div>
                 )}
               </div>
-              <p className="text-center text-sm text-muted-foreground mt-4">
+              <p className="text-center text-xs sm:text-sm text-muted-foreground mt-4">
                 Click Edit Profile to change your picture
               </p>
             </CardContent>
           </Card>
 
           {/* Photo Gallery Card */}
-          <Card className="glass-card md:col-span-3">
+          <Card className="glass-card col-span-1 md:col-span-2 lg:col-span-3">
             <CardHeader>
-              <CardTitle className="flex items-center">
-                <Camera className="h-5 w-5 mr-2" />
+              <CardTitle className="flex items-center text-sm sm:text-base">
+                <Camera className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
                 Photo Gallery
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-xs sm:text-sm">
                 Upload up to 5 additional photos to showcase your talent
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
                 {profile.gallery_images && profile.gallery_images.length > 0 ? 
                   profile.gallery_images.map((imageUrl, index) => (
                     <div key={index} className="relative aspect-square rounded-lg overflow-hidden bg-muted">
@@ -285,12 +299,12 @@ const TalentDashboard = () => {
                       />
                     </div>
                   )) : (
-                  <div className="col-span-full text-center py-12">
-                    <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
-                      <Camera className="h-8 w-8 text-muted-foreground" />
+                  <div className="col-span-full text-center py-8 md:py-12">
+                    <div className="w-12 h-12 md:w-16 md:h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Camera className="h-6 w-6 md:h-8 md:w-8 text-muted-foreground" />
                     </div>
-                    <h3 className="font-medium mb-2">No Gallery Photos</h3>
-                    <p className="text-sm text-muted-foreground">
+                    <h3 className="font-medium mb-2 text-sm md:text-base">No Gallery Photos</h3>
+                    <p className="text-xs md:text-sm text-muted-foreground">
                       Click Edit Profile to add photos to your gallery
                     </p>
                   </div>
@@ -300,69 +314,69 @@ const TalentDashboard = () => {
           </Card>
 
           {/* Profile Info Card */}
-          <Card className="glass-card md:col-span-2">
+          <Card className="glass-card col-span-1 md:col-span-2 lg:col-span-3">
             <CardHeader>
-              <CardTitle className="flex items-center">
-                <User className="h-5 w-5 mr-2" />
+              <CardTitle className="flex items-center text-sm sm:text-base">
+                <User className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
                 Profile Information
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid md:grid-cols-2 gap-4">
+            <CardContent className="space-y-4 md:space-y-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
                 <div>
-                  <Label className="text-sm font-medium">Artist Name</Label>
-                  <div className="p-2 bg-muted rounded">{profile.artist_name}</div>
+                  <Label className="text-xs sm:text-sm font-medium">Artist Name</Label>
+                  <div className="p-2 bg-muted rounded text-xs sm:text-sm">{profile.artist_name}</div>
                 </div>
                 <div>
-                  <Label className="text-sm font-medium">Act Type</Label>
-                  <div className="p-2 bg-muted rounded capitalize">{profile.act}</div>
+                  <Label className="text-xs sm:text-sm font-medium">Act Type</Label>
+                  <div className="p-2 bg-muted rounded capitalize text-xs sm:text-sm">{profile.act}</div>
                 </div>
-                <div>
-                  <Label className="text-sm font-medium">Talent Location (Where you're available)</Label>
-                  <div className="p-2 bg-muted rounded flex items-center">
-                    <MapPin className="h-4 w-4 mr-1" />
+                <div className="sm:col-span-2">
+                  <Label className="text-xs sm:text-sm font-medium">Talent Location (Where you're available)</Label>
+                  <div className="p-2 bg-muted rounded flex items-center text-xs sm:text-sm">
+                    <MapPin className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                     {profile.location || 'Not specified'}
                   </div>
                 </div>
                 <div>
-                  <Label className="text-sm font-medium">Nationality</Label>
-                  <div className="p-2 bg-muted rounded">{profile.nationality}</div>
+                  <Label className="text-xs sm:text-sm font-medium">Nationality</Label>
+                  <div className="p-2 bg-muted rounded text-xs sm:text-sm">{profile.nationality}</div>
                 </div>
-                <div className="md:col-span-2">
-                  <Label className="text-sm font-medium">Rate per Hour</Label>
-                  <div className="p-2 bg-muted rounded flex items-center">
-                    <DollarSign className="h-4 w-4 mr-1" />
+                <div>
+                  <Label className="text-xs sm:text-sm font-medium">Rate per Hour</Label>
+                  <div className="p-2 bg-muted rounded flex items-center text-xs sm:text-sm">
+                    <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                     {profile.rate_per_hour ? `${profile.rate_per_hour} ${profile.currency}` : 'Not set'}
                   </div>
                 </div>
               </div>
 
               <div>
-                <Label className="text-sm font-medium">Music Genres</Label>
+                <Label className="text-xs sm:text-sm font-medium">Music Genres</Label>
                 <div className="flex flex-wrap gap-1 mt-1">
                   {profile.music_genres.map((genre) => (
-                    <Badge key={genre} variant="secondary">
+                    <Badge key={genre} variant="secondary" className="text-xs">
                       {genre}
                     </Badge>
                   ))}
                   {profile.custom_genre && (
-                    <Badge variant="secondary">{profile.custom_genre}</Badge>
+                    <Badge variant="secondary" className="text-xs">{profile.custom_genre}</Badge>
                   )}
                 </div>
               </div>
 
               <div>
-                <Label className="text-sm font-medium">Biography</Label>
-                <div className="p-2 bg-muted rounded">{profile.biography}</div>
+                <Label className="text-xs sm:text-sm font-medium">Biography</Label>
+                <div className="p-2 bg-muted rounded text-xs sm:text-sm max-h-32 overflow-y-auto">{profile.biography}</div>
               </div>
 
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
                 <div>
-                  <Label className="text-sm font-medium">SoundCloud Link</Label>
-                  <div className="p-2 bg-muted rounded">
+                  <Label className="text-xs sm:text-sm font-medium">SoundCloud Link</Label>
+                  <div className="p-2 bg-muted rounded text-xs sm:text-sm">
                     {profile.soundcloud_link ? (
-                      <a href={profile.soundcloud_link} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
-                        {profile.soundcloud_link}
+                      <a href={profile.soundcloud_link} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline break-all">
+                        {profile.soundcloud_link.length > 30 ? `${profile.soundcloud_link.substring(0, 30)}...` : profile.soundcloud_link}
                       </a>
                     ) : (
                       'Not provided'
@@ -370,11 +384,11 @@ const TalentDashboard = () => {
                   </div>
                 </div>
                 <div>
-                  <Label className="text-sm font-medium">YouTube Link</Label>
-                  <div className="p-2 bg-muted rounded">
+                  <Label className="text-xs sm:text-sm font-medium">YouTube Link</Label>
+                  <div className="p-2 bg-muted rounded text-xs sm:text-sm">
                     {profile.youtube_link ? (
-                      <a href={profile.youtube_link} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
-                        {profile.youtube_link}
+                      <a href={profile.youtube_link} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline break-all">
+                        {profile.youtube_link.length > 30 ? `${profile.youtube_link.substring(0, 30)}...` : profile.youtube_link}
                       </a>
                     ) : (
                       'Not provided'
