@@ -193,6 +193,7 @@ export function Header() {
                     isProSubscriber={isProTalent}
                     profilePictureUrl={profilePictureUrl || undefined}
                     onManageSubscription={handleManageSubscription}
+                    isTalent={!!talentName}
                   />
                 </div>
               ) : (

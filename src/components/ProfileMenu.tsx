@@ -19,13 +19,15 @@ interface ProfileMenuProps {
   isProSubscriber?: boolean;
   profilePictureUrl?: string;
   onManageSubscription?: () => void;
+  isTalent?: boolean; // New prop to indicate if user is a talent
 }
 
 export function ProfileMenu({ 
   talentName, 
   isProSubscriber, 
   profilePictureUrl,
-  onManageSubscription 
+  onManageSubscription,
+  isTalent 
 }: ProfileMenuProps) {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
@@ -57,6 +59,11 @@ export function ProfileMenu({
 
   const handleNavigation = (path: string) => {
     navigate(path);
+  };
+
+  // Determine the correct dashboard URL based on user type
+  const getDashboardUrl = () => {
+    return isTalent ? '/talent-dashboard' : '/booker-dashboard';
   };
 
   return (
@@ -101,24 +108,27 @@ export function ProfileMenu({
         
         <DropdownMenuSeparator />
         
-        <DropdownMenuItem 
-          onClick={() => handleNavigation('/talent-profile-edit')}
-          className="cursor-pointer hover:bg-accent"
-        >
-          <User className="mr-2 h-4 w-4" />
-          <span>Edit Profile</span>
-        </DropdownMenuItem>
+        {/* Only show Edit Profile for talents */}
+        {isTalent && (
+          <DropdownMenuItem 
+            onClick={() => handleNavigation('/talent-profile-edit')}
+            className="cursor-pointer hover:bg-accent"
+          >
+            <User className="mr-2 h-4 w-4" />
+            <span>Edit Profile</span>
+          </DropdownMenuItem>
+        )}
         
         <DropdownMenuItem 
-          onClick={() => handleNavigation('/talent-dashboard')}
+          onClick={() => handleNavigation(getDashboardUrl())}
           className="cursor-pointer hover:bg-accent"
         >
           <Calendar className="mr-2 h-4 w-4" />
-          <span>My Bookings</span>
+          <span>{isTalent ? 'My Bookings' : 'Dashboard'}</span>
         </DropdownMenuItem>
         
         <DropdownMenuItem 
-          onClick={() => handleNavigation('/talent-dashboard')}
+          onClick={() => handleNavigation(getDashboardUrl())}
           className="cursor-pointer hover:bg-accent"
         >
           <MessageSquare className="mr-2 h-4 w-4" />
@@ -127,31 +137,36 @@ export function ProfileMenu({
         
         <DropdownMenuSeparator />
         
-        {isProSubscriber ? (
-          <DropdownMenuItem 
-            onClick={onManageSubscription}
-            className="cursor-pointer hover:bg-accent"
-          >
-            <Crown className="mr-2 h-4 w-4" />
-            <span>Manage Subscription</span>
-          </DropdownMenuItem>
-        ) : (
-          <DropdownMenuItem 
-            onClick={() => handleNavigation('/pricing')}
-            className="cursor-pointer hover:bg-accent"
-          >
-            <Crown className="mr-2 h-4 w-4" />
-            <span>Upgrade to Pro</span>
-          </DropdownMenuItem>
+        {/* Only show subscription/earnings options for talents */}
+        {isTalent && (
+          <>
+            {isProSubscriber ? (
+              <DropdownMenuItem 
+                onClick={onManageSubscription}
+                className="cursor-pointer hover:bg-accent"
+              >
+                <Crown className="mr-2 h-4 w-4" />
+                <span>Manage Subscription</span>
+              </DropdownMenuItem>
+            ) : (
+              <DropdownMenuItem 
+                onClick={() => handleNavigation('/pricing')}
+                className="cursor-pointer hover:bg-accent"
+              >
+                <Crown className="mr-2 h-4 w-4" />
+                <span>Upgrade to Pro</span>
+              </DropdownMenuItem>
+            )}
+            
+            <DropdownMenuItem 
+              onClick={() => handleNavigation(getDashboardUrl())}
+              className="cursor-pointer hover:bg-accent"
+            >
+              <DollarSign className="mr-2 h-4 w-4" />
+              <span>Earnings</span>
+            </DropdownMenuItem>
+          </>
         )}
-        
-        <DropdownMenuItem 
-          onClick={() => handleNavigation('/talent-dashboard')}
-          className="cursor-pointer hover:bg-accent"
-        >
-          <DollarSign className="mr-2 h-4 w-4" />
-          <span>Earnings</span>
-        </DropdownMenuItem>
         
         <DropdownMenuSeparator />
         
