@@ -4,8 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Calendar, Clock, MapPin, Mail, User, Check, X } from "lucide-react";
+import { Calendar, Clock, MapPin, Mail, User, Check, X, MessageCircle } from "lucide-react";
 import { ManualInvoiceModal } from "./ManualInvoiceModal";
+import { ChatModal } from "./ChatModal";
 import { format } from "date-fns";
 
 interface Booking {
@@ -36,6 +37,8 @@ export function BookingRequests({ talentId, isProSubscriber = false }: BookingRe
   const [loading, setLoading] = useState(true);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+  const [showChatModal, setShowChatModal] = useState(false);
+  const [chatBooking, setChatBooking] = useState<Booking | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -100,6 +103,11 @@ export function BookingRequests({ talentId, isProSubscriber = false }: BookingRe
     fetchBookings(); // Refresh to remove accepted bookings
     setShowInvoiceModal(false);
     setSelectedBooking(null);
+  };
+
+  const handleOpenChat = (booking: Booking) => {
+    setChatBooking(booking);
+    setShowChatModal(true);
   };
 
   const getEventTypeIcon = (type: string) => {
@@ -232,6 +240,14 @@ export function BookingRequests({ talentId, isProSubscriber = false }: BookingRe
               {/* Action Buttons */}
               <div className="flex justify-end gap-3 pt-4 border-t">
                 <Button
+                  onClick={() => handleOpenChat(booking)}
+                  variant="outline"
+                  className="border-blue-200 text-blue-600 hover:bg-blue-50"
+                >
+                  <MessageCircle className="h-4 w-4 mr-2" />
+                  Chat with Booker
+                </Button>
+                <Button
                   onClick={() => handleDecline(booking.id)}
                   variant="outline"
                   className="border-red-200 text-red-600 hover:bg-red-50"
@@ -263,6 +279,18 @@ export function BookingRequests({ talentId, isProSubscriber = false }: BookingRe
           booking={selectedBooking}
           isProSubscriber={isProSubscriber}
           onSuccess={handleInvoiceSuccess}
+        />
+      )}
+
+      {/* Chat Modal */}
+      {chatBooking && (
+        <ChatModal
+          open={showChatModal}
+          onOpenChange={setShowChatModal}
+          bookingId={chatBooking.id}
+          talentName={chatBooking.booker_name}
+          eventType={chatBooking.event_type}
+          eventDate={chatBooking.event_date}
         />
       )}
     </>
