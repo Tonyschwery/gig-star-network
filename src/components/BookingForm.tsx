@@ -395,7 +395,16 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
                     <Calendar
                       mode="single"
                       selected={eventDate}
-                      onSelect={setEventDate}
+                      onSelect={(date) => {
+                        setEventDate(date);
+                        // Auto-close the popover after selection
+                        if (date) {
+                          const popoverTrigger = document.querySelector('[data-state="open"]');
+                          if (popoverTrigger) {
+                            (popoverTrigger as HTMLElement).click();
+                          }
+                        }
+                      }}
                       disabled={(date) => date < new Date()}
                       initialFocus
                       className="p-3 pointer-events-auto"

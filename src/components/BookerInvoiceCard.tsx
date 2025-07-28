@@ -144,19 +144,14 @@ export function BookerInvoiceCard({ booking, payment, onPaymentUpdate }: BookerI
 
   const handleDeclineInvoice = async () => {
     try {
-      const { error } = await supabase
-        .from('payments')
-        .update({ payment_status: 'declined' })
-        .eq('id', payment.id);
+      const { data, error } = await supabase.functions.invoke('decline-invoice', {
+        body: { booking_id: booking.id },
+        headers: {
+          Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+        },
+      });
 
       if (error) throw error;
-
-      const { error: bookingError } = await supabase
-        .from('bookings')
-        .update({ status: 'declined' })
-        .eq('id', booking.id);
-
-      if (bookingError) throw bookingError;
 
       toast({
         title: "Invoice Declined",
