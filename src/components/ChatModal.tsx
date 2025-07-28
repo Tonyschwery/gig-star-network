@@ -74,6 +74,38 @@ export function ChatModal({
     }
   }, [open, conversationId, user]);
 
+  // Subscribe to real-time messages
+  useEffect(() => {
+    if (!conversationId || !open) return;
+
+    const channel = supabase
+      .channel('messages')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `conversation_id=eq.${conversationId}`
+        },
+        (payload) => {
+          const newMessage = payload.new as Message;
+          setMessages(prev => {
+            // Avoid duplicate messages
+            if (prev.find(msg => msg.id === newMessage.id)) {
+              return prev;
+            }
+            return [...prev, newMessage];
+          });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [conversationId, open]);
+
   const determineSenderType = async () => {
     try {
       const { data: booking } = await supabase

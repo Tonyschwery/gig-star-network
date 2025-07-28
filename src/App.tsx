@@ -14,6 +14,7 @@ import TalentDashboard from "./pages/TalentDashboard";
 import TalentProfileEdit from "./pages/TalentProfileEdit";
 import YourEvent from "./pages/YourEvent";
 import Gigs from "./pages/Gigs";
+import GigsDashboard from "./pages/GigsDashboard";
 import Pricing from "./pages/Pricing";
 import HowItWorks from "./pages/HowItWorks";
 import TrustSafety from "./pages/TrustSafety";
@@ -61,6 +62,11 @@ const App = () => (
             <Route path="/gigs" element={
               <ProtectedTalentRoute>
                 <Gigs />
+              </ProtectedTalentRoute>
+            } />
+            <Route path="/gigs-dashboard" element={
+              <ProtectedTalentRoute>
+                <GigsDashboard />
               </ProtectedTalentRoute>
             } />
             <Route path="/pricing" element={<Pricing />} />

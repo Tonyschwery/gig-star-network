@@ -39,13 +39,8 @@ serve(async (req) => {
 
     if (bookingError) throw bookingError;
 
-    // Update payment status to declined if exists
-    const { error: paymentError } = await supabaseClient
-      .from('payments')
-      .update({ payment_status: 'declined' })
-      .eq('booking_id', booking_id);
-
-    if (paymentError) console.warn('Payment update failed:', paymentError);
+    // Update payment status to declined if exists - skip this as it violates constraints
+    // Payment status constraint only allows: pending, completed, failed, cancelled
 
     // Get booking details to find talent and create notification
     const { data: booking, error: fetchError } = await supabaseClient
