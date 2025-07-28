@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { NotificationCenter } from "@/components/NotificationCenter";
+import { ChatNotificationBell } from "@/components/ChatNotificationBell";
 import { QtalentLogo } from "@/components/QtalentLogo";
 import { MobileMenu } from "@/components/ui/mobile-menu";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -106,6 +107,15 @@ export function Header() {
     }
   };
 
+  const handleChatNotificationClick = () => {
+    // Navigate to appropriate dashboard where messages can be accessed
+    if (talentName) {
+      navigate("/talent-dashboard");
+    } else if (user) {
+      navigate("/booker-dashboard");
+    }
+  };
+
   return (
     <>
       <header className="fixed top-0 w-full z-50 glass-card border-b border-card-border">
@@ -167,6 +177,7 @@ export function Header() {
               
               {user ? (
                 <div className="flex items-center space-x-4">
+                  <ChatNotificationBell onClick={handleChatNotificationClick} />
                   <NotificationCenter />
                   
                   {user && !talentName && user.user_metadata?.user_type === 'talent' && (
@@ -282,12 +293,15 @@ export function Header() {
                 {user && (
                   <>
                     <div className="border-t pt-4 mt-4">
-                      <span 
-                        className="text-sm font-bold text-foreground cursor-pointer hover:text-primary transition-colors block py-2"
-                        onClick={handleWelcomeClick}
-                      >
-                        Welcome, {talentName || user.user_metadata?.name || user.email?.split('@')[0] || 'User'}
-                      </span>
+                      <div className="flex items-center justify-between mb-2">
+                        <span 
+                          className="text-sm font-bold text-foreground cursor-pointer hover:text-primary transition-colors"
+                          onClick={handleWelcomeClick}
+                        >
+                          Welcome, {talentName || user.user_metadata?.name || user.email?.split('@')[0] || 'User'}
+                        </span>
+                        <ChatNotificationBell onClick={handleChatNotificationClick} className="h-8 w-8" />
+                      </div>
                       
                       {user && !talentName && user.user_metadata?.user_type === 'talent' && (
                         <Button 

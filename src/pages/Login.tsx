@@ -63,10 +63,10 @@ const Login = () => {
       } else {
         toast({
           title: "Account created successfully!",
-          description: "You can now book talent for your events.",
+          description: "Welcome! You can now book talent for your events.",
         });
-        // Redirect to your event form for new bookers
-        navigate('/your-event');
+        // Let useAuth handle the redirect - no automatic "Your Event" form
+        navigate('/');
       }
     } catch (error) {
       toast({
@@ -100,6 +100,7 @@ const Login = () => {
           title: "Welcome back!",
           description: "You have successfully logged in.",
         });
+        // Let useAuth handle the redirect to prevent state issues
         navigate("/");
       }
     } catch (error) {

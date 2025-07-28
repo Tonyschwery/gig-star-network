@@ -191,6 +191,7 @@ export type Database = {
           conversation_id: string
           created_at: string
           id: string
+          is_read: boolean
           sender_type: string
           updated_at: string
           user_id: string
@@ -200,6 +201,7 @@ export type Database = {
           conversation_id: string
           created_at?: string
           id?: string
+          is_read?: boolean
           sender_type: string
           updated_at?: string
           user_id: string
@@ -209,6 +211,7 @@ export type Database = {
           conversation_id?: string
           created_at?: string
           id?: string
+          is_read?: boolean
           sender_type?: string
           updated_at?: string
           user_id?: string
@@ -439,6 +442,14 @@ export type Database = {
       get_payment_status: {
         Args: { booking_id_param: string }
         Returns: Json
+      }
+      get_unread_message_count: {
+        Args: { user_id_param: string }
+        Returns: number
+      }
+      mark_conversation_messages_read: {
+        Args: { conversation_id_param: string; user_id_param: string }
+        Returns: undefined
       }
     }
     Enums: {

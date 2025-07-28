@@ -51,8 +51,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     // Existing talent with profile - redirect to dashboard
                     window.location.href = '/talent-dashboard';
                   }
-                } else if (userType === 'booker') {
-                  // Booker - redirect to home/dashboard
+                } else {
+                  // Non-talent users (including bookers) go to homepage
+                  // Removed the "Your Event" form trigger
                   window.location.href = '/';
                 }
               } catch (error) {
@@ -80,6 +81,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     await supabase.auth.signOut();
+    // Redirect to homepage after sign out
+    window.location.href = '/';
   };
 
   const value = {

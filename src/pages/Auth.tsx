@@ -63,10 +63,10 @@ const Auth = () => {
       } else {
         toast({
           title: "Account created successfully!",
-          description: "Please complete your talent profile to continue.",
+          description: "Please check your email to verify your account, then complete your talent profile.",
         });
         // Don't navigate immediately, wait for email verification
-        // navigate('/talent-onboarding');
+        // User will be redirected after email verification through useAuth
       }
     } catch (error) {
       toast({
@@ -101,19 +101,7 @@ const Auth = () => {
           description: "You have successfully logged in.",
         });
         
-        // Check if user has a talent profile and redirect accordingly
-        const { data: profile } = await supabase
-          .from('talent_profiles')
-          .select('id')
-          .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
-          .maybeSingle();
-        
-        if (profile) {
-          navigate("/talent-dashboard");
-        } else {
-          // For new users without profile, redirect to onboarding
-          navigate("/talent-onboarding");
-        }
+        // Redirect will be handled by useAuth hook to prevent state issues
       }
     } catch (error) {
       toast({

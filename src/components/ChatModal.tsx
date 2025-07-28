@@ -67,6 +67,13 @@ export function ChatModal({
     }
   }, [open, bookingId, user]);
 
+  // Mark messages as read when chat is opened
+  useEffect(() => {
+    if (open && conversationId && user) {
+      markMessagesAsRead();
+    }
+  }, [open, conversationId, user]);
+
   const determineSenderType = async () => {
     try {
       const { data: booking } = await supabase
@@ -130,6 +137,19 @@ export function ChatModal({
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const markMessagesAsRead = async () => {
+    if (!conversationId || !user) return;
+
+    try {
+      await supabase.rpc('mark_conversation_messages_read', {
+        conversation_id_param: conversationId,
+        user_id_param: user.id
+      });
+    } catch (error) {
+      console.error('Error marking messages as read:', error);
     }
   };
 
