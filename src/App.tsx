@@ -21,6 +21,7 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import NotFound from "./pages/NotFound";
 import { ProtectedTalentRoute } from "./components/ProtectedTalentRoute";
+import { ProtectedRoute } from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -35,7 +36,11 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/login" element={<Login />} />
-            <Route path="/booker-dashboard" element={<BookerDashboard />} />
+            <Route path="/booker-dashboard" element={
+              <ProtectedRoute>
+                <BookerDashboard />
+              </ProtectedRoute>
+            } />
             <Route path="/talent-onboarding" element={
               <ProtectedTalentRoute requireProfile={false}>
                 <TalentOnboarding />
