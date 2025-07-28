@@ -1,5 +1,9 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { Resend } from "npm:resend@4.0.0";
+import { renderAsync } from "npm:@react-email/components@0.0.22";
+import React from "npm:react@18.3.1";
+import { PaymentNotificationEmail } from "../send-email/_templates/payment-notification.tsx";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -8,6 +12,98 @@ const corsHeaders = {
 
 interface PaymentRequest {
   paymentId: string;
+}
+
+const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+
+async function sendPaymentConfirmationEmails(payment: any) {
+  try {
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
+    // Fetch full user details for booker and talent
+    const [bookerResponse, talentResponse] = await Promise.all([
+      supabase.auth.admin.getUserById(payment.bookings.user_id),
+      payment.bookings.talent_profiles?.user_id 
+        ? supabase.auth.admin.getUserById(payment.bookings.talent_profiles.user_id)
+        : Promise.resolve({ data: { user: null } })
+    ]);
+
+    const bookerEmail = bookerResponse.data.user?.email;
+    const talentEmail = talentResponse.data.user?.email;
+    const appUrl = Deno.env.get("SUPABASE_URL")?.replace('/auth/v1', '') || 'https://gcctalents.com';
+
+    // Format date from booking
+    const eventDate = new Date(payment.bookings.event_date || payment.bookings.created_at).toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+
+    const emailPromises = [];
+
+    // Send email to booker
+    if (bookerEmail) {
+      const bookerHtml = await renderAsync(
+        React.createElement(PaymentNotificationEmail, {
+          recipientName: bookerResponse.data.user?.user_metadata?.first_name || 'Valued Customer',
+          eventType: payment.bookings.event_type,
+          eventDate: eventDate,
+          totalAmount: (payment.total_amount / 100).toFixed(2),
+          currency: payment.currency.toUpperCase(),
+          bookingId: payment.booking_id,
+          appUrl: appUrl,
+          isForTalent: false
+        })
+      );
+
+      emailPromises.push(
+        resend.emails.send({
+          from: "GCC Talents <bookings@gcctalents.com>",
+          to: [bookerEmail],
+          subject: "Your Booking is Confirmed!",
+          html: bookerHtml,
+        })
+      );
+    }
+
+    // Send email to talent
+    if (talentEmail && payment.bookings.talent_profiles) {
+      const talentHtml = await renderAsync(
+        React.createElement(PaymentNotificationEmail, {
+          recipientName: payment.bookings.talent_profiles.artist_name || 'Talented Artist',
+          eventType: payment.bookings.event_type,
+          eventDate: eventDate,
+          totalAmount: (payment.total_amount / 100).toFixed(2),
+          currency: payment.currency.toUpperCase(),
+          bookingId: payment.booking_id,
+          appUrl: appUrl,
+          isForTalent: true,
+          talentEarnings: (payment.talent_earnings / 100).toFixed(2),
+          platformCommission: ((payment.total_amount - payment.talent_earnings) / 100).toFixed(2)
+        })
+      );
+
+      emailPromises.push(
+        resend.emails.send({
+          from: "GCC Talents <bookings@gcctalents.com>",
+          to: [talentEmail],
+          subject: "You Have a New Confirmed Booking!",
+          html: talentHtml,
+        })
+      );
+    }
+
+    await Promise.all(emailPromises);
+    console.log('Payment confirmation emails sent successfully');
+
+  } catch (error) {
+    console.error('Error sending payment confirmation emails:', error);
+    // Don't throw error here - we don't want email failures to break payment processing
+  }
 }
 
 serve(async (req) => {
@@ -118,6 +214,9 @@ serve(async (req) => {
         .from('notifications')
         .insert(notifications);
     }
+
+    // Send email notifications after successful payment processing
+    await sendPaymentConfirmationEmails(payment);
 
     console.log('Payment processed successfully:', paymentId);
 
