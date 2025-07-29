@@ -22,8 +22,6 @@ import { ProSubscriptionDialog } from "@/components/ProSubscriptionDialog";
 import { BookingRequests } from "@/components/BookingRequests";
 import { NotificationCenter } from "@/components/NotificationCenter";
 import { ModeSwitch } from "@/components/ModeSwitch";
-import { GigOpportunities } from "@/components/GigOpportunities";
-
 
 interface TalentProfile {
   id: string;
@@ -50,11 +48,13 @@ interface TalentProfile {
 interface BookingManagementViewProps {
   title: string;
   subtitle?: string;
+  showGigProFeatures?: boolean;
 }
 
 export const BookingManagementView = ({ 
   title, 
-  subtitle = "Manage your talent profile"
+  subtitle = "Manage your talent profile",
+  showGigProFeatures = false 
 }: BookingManagementViewProps) => {
   const { user, session, signOut } = useAuth();
   const navigate = useNavigate();
@@ -250,17 +250,6 @@ export const BookingManagementView = ({
             />
           </div>
         )}
-
-        {/* Gig Opportunities Section - Pro Feature */}
-        {profile && (
-          <div className="mb-6 md:mb-8">
-            <GigOpportunities 
-              talentId={profile.id} 
-              isProSubscriber={profile.is_pro_subscriber || false}
-            />
-          </div>
-        )}
-
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 lg:gap-6">
           {/* Profile Picture Card */}

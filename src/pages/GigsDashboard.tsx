@@ -9,6 +9,7 @@ const GigsDashboard = () => {
         <BookingManagementView 
           title="Gigs Dashboard - {name}"
           subtitle="Manage your gig opportunities and direct bookings"
+          showGigProFeatures={true}
         />
       </div>
     </div>
