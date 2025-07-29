@@ -5,13 +5,13 @@ import { useAuth } from "@/hooks/useAuth";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { NotificationCenter } from "@/components/NotificationCenter";
-import { ChatNotificationBell } from "@/components/ChatNotificationBell";
 import { QtalentLogo } from "@/components/QtalentLogo";
 import { MobileMenu } from "@/components/ui/mobile-menu";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ProSubscriptionDialog } from "@/components/ProSubscriptionDialog";
 import { ProfileMenu } from "@/components/ProfileMenu";
 import { SubscriptionButton } from "@/components/SubscriptionButton";
+import { ModeSwitch } from "@/components/ModeSwitch";
 
 export function Header() {
   const navigate = useNavigate();
@@ -177,7 +177,7 @@ export function Header() {
               
               {user ? (
                 <div className="flex items-center space-x-4">
-                  <ChatNotificationBell onClick={handleChatNotificationClick} />
+                  <ModeSwitch />
                   <NotificationCenter />
                   
                   {user && !talentName && user.user_metadata?.user_type === 'talent' && (
@@ -300,7 +300,7 @@ export function Header() {
                         >
                           Welcome, {talentName || user.user_metadata?.name || user.email?.split('@')[0] || 'User'}
                         </span>
-                        <ChatNotificationBell onClick={handleChatNotificationClick} className="h-8 w-8" />
+                        <ModeSwitch size="sm" />
                       </div>
                       
                       {user && !talentName && user.user_metadata?.user_type === 'talent' && (

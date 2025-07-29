@@ -17,7 +17,7 @@ import {
   Camera,
   Crown
 } from "lucide-react";
-import { ChatNotificationBell } from "@/components/ChatNotificationBell";
+
 import { ProSubscriptionDialog } from "@/components/ProSubscriptionDialog";
 import { BookingRequests } from "@/components/BookingRequests";
 import { NotificationCenter } from "@/components/NotificationCenter";
@@ -177,19 +177,6 @@ export const BookingManagementView = ({
               <p className="text-muted-foreground text-sm sm:text-base">{subtitle}</p>
             </div>
             
-            {/* Chat Notification Bell */}
-            <div className="flex items-center">
-              <ChatNotificationBell 
-                className="mr-2" 
-                onClick={() => {
-                  // Find NotificationCenter component and click it
-                  const notificationCenter = document.querySelector('[data-notification-center]') as HTMLElement;
-                  if (notificationCenter) {
-                    notificationCenter.click();
-                  }
-                }}
-              />
-            </div>
           </div>
           
           {/* Action Buttons */}

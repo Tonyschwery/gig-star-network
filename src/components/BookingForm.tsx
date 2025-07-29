@@ -32,7 +32,6 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
   const [eventDate, setEventDate] = useState<Date>();
   const [eventDuration, setEventDuration] = useState("");
   const [eventLocation, setEventLocation] = useState("");
-  const [eventAddress, setEventAddress] = useState("");
   const [eventType, setEventType] = useState("");
   const [description, setDescription] = useState("");
   
@@ -168,7 +167,7 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
       }
     }
 
-    if (!bookerName || !eventDate || !eventDuration || !eventLocation || !eventAddress || !eventType) {
+    if (!bookerName || !eventDate || !eventDuration || !eventLocation || !eventType) {
       toast({
         title: "Missing Information",
         description: "Please fill in all required fields.",
@@ -191,7 +190,7 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
         event_date: format(eventDate, 'yyyy-MM-dd'),
         event_duration: parseInt(eventDuration),
         event_location: eventLocation.trim(),
-        event_address: eventAddress.trim(),
+        event_address: eventLocation.trim(), // Use event_location for address field
         event_type: eventType,
         description: description?.trim() || null,
         is_public_request: Boolean(isPublicRequest),
@@ -449,15 +448,6 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
                 </Select>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="address">Full Address *</Label>
-                <Input
-                  id="address"
-                  placeholder="e.g., 123 Main Street, City, Country"
-                  value={eventAddress}
-                  onChange={(e) => setEventAddress(e.target.value)}
-                />
-              </div>
             </div>
 
             {/* Event Type */}

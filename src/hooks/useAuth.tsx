@@ -48,12 +48,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     // New talent without profile - redirect to onboarding
                     window.location.href = '/talent-onboarding';
                   } else if (profile) {
-                    // Existing talent with profile - redirect to dashboard
+                    // Existing talent with profile - always redirect to talent dashboard
                     window.location.href = '/talent-dashboard';
                   }
                 } else {
                   // Non-talent users (including bookers) go to homepage
-                  // Removed the "Your Event" form trigger
                   window.location.href = '/';
                 }
               } catch (error) {

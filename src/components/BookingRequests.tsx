@@ -8,6 +8,8 @@ import { Calendar, Clock, MapPin, Mail, User, Check, X, MessageCircle } from "lu
 import { ManualInvoiceModal } from "./ManualInvoiceModal";
 import { ChatModal } from "./ChatModal";
 import { format } from "date-fns";
+import { useUnreadMessages } from "@/hooks/useUnreadMessages";
+import { useUnreadNotifications } from "@/hooks/useUnreadNotifications";
 
 interface Booking {
   id: string;
@@ -32,6 +34,38 @@ interface BookingRequestsProps {
   isProSubscriber?: boolean;
 }
 
+// Chat Button Component with unread indicator
+const ChatButtonWithNotifications = ({ booking }: { booking: Booking }) => {
+  const { hasUnread } = useUnreadMessages(booking.id);
+  const { unreadCount } = useUnreadNotifications();
+  
+  const handleOpenChat = (booking: Booking) => {
+    // This functionality will be handled by the parent component
+    const event = new CustomEvent('openChat', { detail: booking });
+    window.dispatchEvent(event);
+  };
+  
+  return (
+    <Button
+      onClick={() => handleOpenChat(booking)}
+      variant="outline"
+      className="border-blue-200 text-blue-600 hover:bg-blue-50 w-full sm:w-auto relative"
+      size="sm"
+    >
+      <MessageCircle className="h-4 w-4 mr-2" />
+      <span className="hidden sm:inline">Chat with Booker</span>
+      <span className="sm:hidden">Chat</span>
+      {(hasUnread || unreadCount > 0) && (
+        <div className="absolute -top-1 -right-1 w-5 h-5 bg-destructive rounded-full flex items-center justify-center">
+          <span className="text-xs text-white font-bold">
+            {unreadCount > 99 ? '99+' : unreadCount}
+          </span>
+        </div>
+      )}
+    </Button>
+  );
+};
+
 export function BookingRequests({ talentId, isProSubscriber = false }: BookingRequestsProps) {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
@@ -43,6 +77,19 @@ export function BookingRequests({ talentId, isProSubscriber = false }: BookingRe
 
   useEffect(() => {
     fetchBookings();
+    
+    // Listen for openChat events from chat buttons
+    const handleOpenChatEvent = (event: any) => {
+      const booking = event.detail;
+      setChatBooking(booking);
+      setShowChatModal(true);
+    };
+    
+    window.addEventListener('openChat', handleOpenChatEvent);
+    
+    return () => {
+      window.removeEventListener('openChat', handleOpenChatEvent);
+    };
   }, [talentId]);
 
   const fetchBookings = async () => {
@@ -239,16 +286,7 @@ export function BookingRequests({ talentId, isProSubscriber = false }: BookingRe
 
               {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 pt-3 sm:pt-4 border-t">
-                <Button
-                  onClick={() => handleOpenChat(booking)}
-                  variant="outline"
-                  className="border-blue-200 text-blue-600 hover:bg-blue-50 w-full sm:w-auto"
-                  size="sm"
-                >
-                  <MessageCircle className="h-4 w-4 mr-2" />
-                  <span className="hidden sm:inline">Chat with Booker</span>
-                  <span className="sm:hidden">Chat</span>
-                </Button>
+                <ChatButtonWithNotifications booking={booking} />
                 <Button
                   onClick={() => handleDecline(booking.id)}
                   variant="outline"

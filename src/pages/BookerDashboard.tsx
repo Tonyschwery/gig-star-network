@@ -27,6 +27,7 @@ import { BookerInvoiceCard } from "@/components/BookerInvoiceCard";
 import { NotificationCenter } from "@/components/NotificationCenter";
 import { ChatModal } from "@/components/ChatModal";
 import { useUnreadMessages } from "@/hooks/useUnreadMessages";
+import { useUnreadNotifications } from "@/hooks/useUnreadNotifications";
 
 interface Booking {
   id: string;
@@ -190,9 +191,10 @@ const BookerDashboard = () => {
     setShowChatModal(true);
   };
 
-  // Chat Button Component with unread indicator
+  // Chat Button Component with unread indicator including total unread count
   const ChatButton = ({ booking, variant = "outline", size = "sm" }: { booking: Booking, variant?: any, size?: any }) => {
     const { hasUnread } = useUnreadMessages(booking.id);
+    const { unreadCount } = useUnreadNotifications();
     
     return (
       <Button
@@ -202,10 +204,14 @@ const BookerDashboard = () => {
         className="relative flex-shrink-0"
       >
         <MessageCircle className="h-4 w-4 mr-2" />
-        <span className="hidden sm:inline">Chat with Talent</span>
+        <span className="hidden sm:inline">Chat</span>
         <span className="sm:hidden">Chat</span>
-        {hasUnread && (
-          <div className="absolute -top-1 -right-1 h-2 w-2 bg-red-500 rounded-full" />
+        {(hasUnread || unreadCount > 0) && (
+          <div className="absolute -top-1 -right-1 w-5 h-5 bg-destructive rounded-full flex items-center justify-center">
+            <span className="text-xs text-white font-bold">
+              {unreadCount > 99 ? '99+' : unreadCount}
+            </span>
+          </div>
         )}
       </Button>
     );
