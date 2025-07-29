@@ -5,10 +5,12 @@ const TalentDashboard = () => {
   return (
     <>
       <Header />
-      <BookingManagementView 
-        title="Welcome, {name}!"
-        subtitle="Manage your talent profile"
-      />
+      <div className="pt-24">
+        <BookingManagementView 
+          title="Welcome, {name}!"
+          subtitle="Manage your talent profile and gig opportunities"
+        />
+      </div>
     </>
   );
 };
