@@ -177,7 +177,8 @@ export function Header() {
               
               {user ? (
                 <div className="flex items-center space-x-4">
-                  <ModeSwitch />
+                  {/* Only show switch to artist dashboard when talent is in booking mode */}
+                  {talentName && <ModeSwitch />}
                   <NotificationCenter />
                   
                   {user && !talentName && user.user_metadata?.user_type === 'talent' && (
@@ -300,7 +301,8 @@ export function Header() {
                         >
                           Welcome, {talentName || user.user_metadata?.name || user.email?.split('@')[0] || 'User'}
                         </span>
-                        <ModeSwitch size="sm" />
+                        {/* Only show switch to artist dashboard when talent is in booking mode */}
+                        {talentName && <ModeSwitch size="sm" />}
                       </div>
                       
                       {user && !talentName && user.user_metadata?.user_type === 'talent' && (

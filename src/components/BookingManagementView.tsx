@@ -21,6 +21,7 @@ import {
 import { ProSubscriptionDialog } from "@/components/ProSubscriptionDialog";
 import { BookingRequests } from "@/components/BookingRequests";
 import { NotificationCenter } from "@/components/NotificationCenter";
+import { ModeSwitch } from "@/components/ModeSwitch";
 
 interface TalentProfile {
   id: string;
@@ -181,6 +182,9 @@ export const BookingManagementView = ({
           
           {/* Action Buttons */}
           <div className="flex flex-wrap gap-2">
+            {/* Switch to Booking Button - appears only on talent dashboard */}
+            <ModeSwitch size="sm" />
+            
             {/* Edit Profile Button - Primary Action */}
             <Button
               onClick={() => navigate('/talent-profile-edit')}
