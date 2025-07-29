@@ -12,16 +12,21 @@ import { ProSubscriptionDialog } from "@/components/ProSubscriptionDialog";
 import { ProfileMenu } from "@/components/ProfileMenu";
 import { SubscriptionButton } from "@/components/SubscriptionButton";
 import { ModeSwitch } from "@/components/ModeSwitch";
+import { useUserMode } from "@/contexts/UserModeContext";
 
 export function Header() {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
+  const { mode } = useUserMode();
   const [talentName, setTalentName] = useState<string | null>(null);
   const [talentId, setTalentId] = useState<string | null>(null);
   const [isProTalent, setIsProTalent] = useState<boolean>(false);
   const [profilePictureUrl, setProfilePictureUrl] = useState<string | null>(null);
   const [showProDialog, setShowProDialog] = useState(false);
   const isMobile = useIsMobile();
+  
+  // Check if we should show artist dashboard navigation
+  const showArtistDashboardNav = talentName && mode === 'artist';
 
   useEffect(() => {
     if (user) {
@@ -126,43 +131,64 @@ export function Header() {
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-8">
-              <button 
-                onClick={() => {
-                  const talentsSection = document.getElementById('talents');
-                  if (talentsSection) {
-                    talentsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                  } else {
-                    navigate('/#talents');
-                  }
-                }}
-                className="text-foreground hover:text-accent transition-colors font-medium"
-              >
-                Find Talent
-              </button>
-              {user && isProTalent && (
-                <button 
-                  onClick={() => navigate('/gigs')}
-                  className="text-foreground hover:text-accent transition-colors font-medium"
-                >
-                  Gigs
-                </button>
+              {showArtistDashboardNav ? (
+                // Artist Dashboard Navigation
+                <>
+                  <button 
+                    onClick={() => navigate('/talent-dashboard')}
+                    className="text-foreground hover:text-accent transition-colors font-medium"
+                  >
+                    Dashboard
+                  </button>
+                  <SubscriptionButton
+                    isProSubscriber={isProTalent}
+                    onSubscriptionChange={fetchTalentProfile}
+                    variant="ghost"
+                    size="sm"
+                  />
+                </>
+              ) : (
+                // Public Navigation
+                <>
+                  <button 
+                    onClick={() => {
+                      const talentsSection = document.getElementById('talents');
+                      if (talentsSection) {
+                        talentsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                      } else {
+                        navigate('/#talents');
+                      }
+                    }}
+                    className="text-foreground hover:text-accent transition-colors font-medium"
+                  >
+                    Find Talent
+                  </button>
+                  {user && isProTalent && (
+                    <button 
+                      onClick={() => navigate('/gigs')}
+                      className="text-foreground hover:text-accent transition-colors font-medium"
+                    >
+                      Gigs
+                    </button>
+                  )}
+                  <a href="#how-it-works" className="text-foreground hover:text-accent transition-colors font-medium">
+                    How it works
+                  </a>
+                  <button 
+                    onClick={() => {
+                      const upgradeSection = document.getElementById('upgrade-to-pro');
+                      if (upgradeSection) {
+                        upgradeSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                      } else {
+                        navigate('/pricing#upgrade-to-pro');
+                      }
+                    }}
+                    className="text-foreground hover:text-accent transition-colors font-medium"
+                  >
+                    Pricing
+                  </button>
+                </>
               )}
-              <a href="#how-it-works" className="text-foreground hover:text-accent transition-colors font-medium">
-                How it works
-              </a>
-              <button 
-                onClick={() => {
-                  const upgradeSection = document.getElementById('upgrade-to-pro');
-                  if (upgradeSection) {
-                    upgradeSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                  } else {
-                    navigate('/pricing#upgrade-to-pro');
-                  }
-                }}
-                className="text-foreground hover:text-accent transition-colors font-medium"
-              >
-                Pricing
-              </button>
             </div>
 
             {/* Desktop Right Side Actions */}
@@ -177,9 +203,11 @@ export function Header() {
               
               {user ? (
                 <div className="flex items-center space-x-4">
-                  {/* Only show switch to artist dashboard when talent is in booking mode */}
+                  {/* Mode switch and notifications */}
                   {talentName && <ModeSwitch />}
-                  <NotificationCenter />
+                  <div className="relative" data-notification-indicator>
+                    <NotificationCenter />
+                  </div>
                   
                   {user && !talentName && user.user_metadata?.user_type === 'talent' && (
                     <Button 
@@ -191,7 +219,8 @@ export function Header() {
                     </Button>
                   )}
                   
-                  {talentName && (
+                  {/* Only show subscription button in artist dashboard mode if not already shown in nav */}
+                  {talentName && !showArtistDashboardNav && (
                     <SubscriptionButton
                       isProSubscriber={isProTalent}
                       onSubscriptionChange={fetchTalentProfile}
@@ -232,64 +261,86 @@ export function Header() {
             <div className="md:hidden">
               <MobileMenu>
                 {/* Mobile Navigation Links */}
-                <button 
-                  onClick={() => {
-                    const talentsSection = document.getElementById('talents');
-                    if (talentsSection) {
-                      talentsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    } else {
-                      navigate('/#talents');
-                    }
-                  }}
-                  className="text-left text-foreground hover:text-accent transition-colors font-medium py-2"
-                >
-                  Find Talent
-                </button>
-                
-                {user && isProTalent && (
-                  <button 
-                    onClick={() => navigate('/gigs')}
-                    className="text-left text-foreground hover:text-accent transition-colors font-medium py-2"
-                  >
-                    Gigs
-                  </button>
+                {showArtistDashboardNav ? (
+                  // Artist Dashboard Mobile Navigation
+                  <>
+                    <button 
+                      onClick={() => {
+                        navigate('/talent-dashboard');
+                        // Close mobile menu
+                        const mobileMenuClose = document.querySelector('[data-mobile-menu-close]') as HTMLElement;
+                        if (mobileMenuClose) {
+                          mobileMenuClose.click();
+                        }
+                      }}
+                      className="text-left text-foreground hover:text-accent transition-colors font-medium py-2"
+                    >
+                      Dashboard
+                    </button>
+                  </>
+                ) : (
+                  // Public Mobile Navigation
+                  <>
+                    <button 
+                      onClick={() => {
+                        const talentsSection = document.getElementById('talents');
+                        if (talentsSection) {
+                          talentsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        } else {
+                          navigate('/#talents');
+                        }
+                      }}
+                      className="text-left text-foreground hover:text-accent transition-colors font-medium py-2"
+                    >
+                      Find Talent
+                    </button>
+                    
+                    {user && isProTalent && (
+                      <button 
+                        onClick={() => navigate('/gigs')}
+                        className="text-left text-foreground hover:text-accent transition-colors font-medium py-2"
+                      >
+                        Gigs
+                      </button>
+                    )}
+                    
+                    <button 
+                      onClick={() => {
+                        const section = document.getElementById('how-it-works');
+                        if (section) {
+                          section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }
+                        // Close mobile menu - trigger click on overlay/close button
+                        const mobileMenuClose = document.querySelector('[data-mobile-menu-close]') as HTMLElement;
+                        if (mobileMenuClose) {
+                          mobileMenuClose.click();
+                        }
+                      }}
+                      className="text-left text-foreground hover:text-accent transition-colors font-medium py-2"
+                    >
+                      How it works
+                    </button>
+                    
+                    <button 
+                      onClick={() => {
+                        const upgradeSection = document.getElementById('upgrade-to-pro');
+                        if (upgradeSection) {
+                          upgradeSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        } else {
+                          navigate('/pricing#upgrade-to-pro');
+                        }
+                        // Close mobile menu
+                        const mobileMenuClose = document.querySelector('[data-mobile-menu-close]') as HTMLElement;
+                        if (mobileMenuClose) {
+                          mobileMenuClose.click();
+                        }
+                      }}
+                      className="text-left text-foreground hover:text-accent transition-colors font-medium py-2"
+                    >
+                      Pricing
+                    </button>
+                  </>
                 )}
-                
-                <button 
-                  onClick={() => {
-                    const section = document.getElementById('how-it-works');
-                    if (section) {
-                      section.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    }
-                    // Close mobile menu - trigger click on overlay/close button
-                    const mobileMenuClose = document.querySelector('[data-mobile-menu-close]') as HTMLElement;
-                    if (mobileMenuClose) {
-                      mobileMenuClose.click();
-                    }
-                  }}
-                  className="text-left text-foreground hover:text-accent transition-colors font-medium py-2"
-                >
-                  How it works
-                </button>
-                
-                <button 
-                  onClick={() => {
-                    const upgradeSection = document.getElementById('upgrade-to-pro');
-                    if (upgradeSection) {
-                      upgradeSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    } else {
-                      navigate('/pricing#upgrade-to-pro');
-                    }
-                    // Close mobile menu
-                    const mobileMenuClose = document.querySelector('[data-mobile-menu-close]') as HTMLElement;
-                    if (mobileMenuClose) {
-                      mobileMenuClose.click();
-                    }
-                  }}
-                  className="text-left text-foreground hover:text-accent transition-colors font-medium py-2"
-                >
-                  Pricing
-                </button>
 
                 {user && (
                   <>
@@ -314,7 +365,7 @@ export function Header() {
                         </Button>
                       )}
                       
-                      {talentName && !isProTalent && (
+                      {talentName && !isProTalent && !showArtistDashboardNav && (
                         <Button 
                           className="w-full hero-button mt-2"
                           onClick={handleProButtonClick}
@@ -322,6 +373,16 @@ export function Header() {
                           <Crown className="h-4 w-4 mr-2" />
                           Subscribe to Pro
                         </Button>
+                      )}
+                      
+                      {talentName && showArtistDashboardNav && (
+                        <SubscriptionButton
+                          isProSubscriber={isProTalent}
+                          onSubscriptionChange={fetchTalentProfile}
+                          variant="outline"
+                          size="sm"
+                          className="w-full mt-2"
+                        />
                       )}
                       
                       
