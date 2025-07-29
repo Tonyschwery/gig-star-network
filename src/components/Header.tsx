@@ -139,14 +139,6 @@ export function Header() {
               >
                 Find Talent
               </button>
-              {user && isProTalent && (
-                <button 
-                  onClick={() => navigate('/gigs')}
-                  className="text-foreground hover:text-accent transition-colors font-medium"
-                >
-                  Gigs
-                </button>
-              )}
               <a href="#how-it-works" className="text-foreground hover:text-accent transition-colors font-medium">
                 How it works
               </a>
@@ -246,14 +238,6 @@ export function Header() {
                   Find Talent
                 </button>
                 
-                {user && isProTalent && (
-                  <button 
-                    onClick={() => navigate('/gigs')}
-                    className="text-left text-foreground hover:text-accent transition-colors font-medium py-2"
-                  >
-                    Gigs
-                  </button>
-                )}
                 
                 <button 
                   onClick={() => {

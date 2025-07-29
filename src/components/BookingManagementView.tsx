@@ -24,6 +24,7 @@ import { NotificationCenter } from "@/components/NotificationCenter";
 import { ModeSwitch } from "@/components/ModeSwitch";
 import { GigOpportunities } from "@/components/GigOpportunities";
 
+
 interface TalentProfile {
   id: string;
   artist_name: string;
@@ -250,7 +251,7 @@ export const BookingManagementView = ({
           </div>
         )}
 
-        {/* Gig Opportunities Section - Always show, but conditionally enabled */}
+        {/* Gig Opportunities Section - Pro Feature */}
         {profile && (
           <div className="mb-6 md:mb-8">
             <GigOpportunities 
@@ -259,6 +260,7 @@ export const BookingManagementView = ({
             />
           </div>
         )}
+
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 lg:gap-6">
           {/* Profile Picture Card */}

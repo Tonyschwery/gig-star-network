@@ -259,7 +259,7 @@ export const GigOpportunities = ({ talentId, isProSubscriber }: GigOpportunities
             </div>
           </div>
           <div className="flex gap-2">
-            {request.status === 'pending' && (
+            {request.status === 'pending' && !request.talent_id && (
               <>
                 <Button 
                   onClick={() => handleAcceptGig(request)}
@@ -288,6 +288,11 @@ export const GigOpportunities = ({ talentId, isProSubscriber }: GigOpportunities
                   Decline
                 </Button>
               </>
+            )}
+            {request.talent_id === talentId && (
+              <Badge variant="outline" className="text-xs">
+                Accepted by you
+              </Badge>
             )}
             <Button 
               onClick={() => handleStartChat(request)}
