@@ -119,6 +119,16 @@ export function ProfileMenu({
           </DropdownMenuItem>
         )}
         
+        {/* Dashboard link for bookers only */}
+        {!isTalent && (
+          <DropdownMenuItem 
+            onClick={() => handleNavigation('/booker-dashboard')}
+            className="cursor-pointer hover:bg-accent"
+          >
+            <User className="mr-2 h-4 w-4" />
+            <span>{displayName} - Dashboard</span>
+          </DropdownMenuItem>
+        )}
         
         <DropdownMenuSeparator />
         
