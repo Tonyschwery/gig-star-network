@@ -5,7 +5,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./hooks/useAuth";
 import { UserModeProvider } from "./contexts/UserModeContext";
-import { GlobalNotificationIndicator } from "./components/GlobalNotificationIndicator";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Login from "./pages/Login";
@@ -33,7 +32,6 @@ const App = () => (
     <AuthProvider>
       <UserModeProvider>
         <TooltipProvider>
-          <GlobalNotificationIndicator />
           <Toaster />
           <Sonner />
           <Routes>
