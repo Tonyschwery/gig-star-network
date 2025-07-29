@@ -219,17 +219,6 @@ export const BookingManagementView = ({
               </Button>
             )}
             
-            {/* View Public Profile */}
-            <Button 
-              variant="outline" 
-              onClick={() => navigate(`/talent/${profile.id}`)}
-              className="flex-shrink-0"
-              size="sm"
-            >
-              <ExternalLink className="h-4 w-4 mr-2" />
-              <span className="hidden sm:inline">View Public</span>
-              <span className="sm:hidden">View</span>
-            </Button>
             
             {/* Sign Out */}
             <Button 
