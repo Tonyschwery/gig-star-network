@@ -119,16 +119,21 @@ export function ProfileMenu({
           </DropdownMenuItem>
         )}
         
-        {/* Dashboard link for bookers only */}
-        {!isTalent && (
-          <DropdownMenuItem 
-            onClick={() => handleNavigation('/booker-dashboard')}
-            className="cursor-pointer hover:bg-accent"
-          >
-            <User className="mr-2 h-4 w-4" />
-            <span>{displayName} - Dashboard</span>
-          </DropdownMenuItem>
-        )}
+        <DropdownMenuItem 
+          onClick={() => handleNavigation(getDashboardUrl())}
+          className="cursor-pointer hover:bg-accent"
+        >
+          <Calendar className="mr-2 h-4 w-4" />
+          <span>{isTalent ? 'My Bookings' : 'Dashboard'}</span>
+        </DropdownMenuItem>
+        
+        <DropdownMenuItem 
+          onClick={() => handleNavigation(getDashboardUrl())}
+          className="cursor-pointer hover:bg-accent"
+        >
+          <MessageSquare className="mr-2 h-4 w-4" />
+          <span>Messages</span>
+        </DropdownMenuItem>
         
         <DropdownMenuSeparator />
         
@@ -145,7 +150,7 @@ export function ProfileMenu({
               </DropdownMenuItem>
             ) : (
               <DropdownMenuItem 
-                onClick={onManageSubscription}
+                onClick={() => handleNavigation('/pricing')}
                 className="cursor-pointer hover:bg-accent"
               >
                 <Crown className="mr-2 h-4 w-4" />
@@ -153,6 +158,13 @@ export function ProfileMenu({
               </DropdownMenuItem>
             )}
             
+            <DropdownMenuItem 
+              onClick={() => handleNavigation(getDashboardUrl())}
+              className="cursor-pointer hover:bg-accent"
+            >
+              <DollarSign className="mr-2 h-4 w-4" />
+              <span>Earnings</span>
+            </DropdownMenuItem>
           </>
         )}
         
