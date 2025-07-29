@@ -150,7 +150,7 @@ export function ProfileMenu({
               </DropdownMenuItem>
             ) : (
               <DropdownMenuItem 
-                onClick={() => handleNavigation('/pricing')}
+                onClick={onManageSubscription}
                 className="cursor-pointer hover:bg-accent"
               >
                 <Crown className="mr-2 h-4 w-4" />

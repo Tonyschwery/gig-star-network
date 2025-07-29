@@ -28,42 +28,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (event === 'SIGNED_IN' && session?.user) {
           const currentPath = window.location.pathname;
           
-          // Only redirect if coming from auth page or onboarding
-          if (currentPath === '/auth' || currentPath === '/talent-onboarding') {
-            // Small delay to ensure state is updated
-            setTimeout(async () => {
-              try {
-                // Check user type from metadata
-                const userType = session.user.user_metadata?.user_type;
-                
-                if (userType === 'talent') {
-                  // Check if talent has completed profile
-                  const { data: profile } = await supabase
-                    .from('talent_profiles')
-                    .select('id')
-                    .eq('user_id', session.user.id)
-                    .maybeSingle();
-                    
-                  if (!profile && currentPath !== '/talent-onboarding') {
-                    // New talent without profile - redirect to onboarding
-                    window.location.href = '/talent-onboarding';
-                  } else if (profile) {
-                    // Existing talent with profile - always redirect to talent dashboard
-                    window.location.href = '/talent-dashboard';
-                  }
-                } else {
-                  // Non-talent users (including bookers) go to homepage
-                  window.location.href = '/';
+          // Small delay to ensure state is updated
+          setTimeout(async () => {
+            try {
+              // Check user type from metadata
+              const userType = session.user.user_metadata?.user_type;
+              
+              if (userType === 'talent') {
+                // Check if talent has completed profile
+                const { data: profile } = await supabase
+                  .from('talent_profiles')
+                  .select('id')
+                  .eq('user_id', session.user.id)
+                  .maybeSingle();
+                  
+                if (!profile && currentPath !== '/talent-onboarding') {
+                  // New talent without profile - redirect to onboarding
+                  window.location.href = '/talent-onboarding';
+                } else if (profile && currentPath !== '/talent-dashboard') {
+                  // Existing talent with profile - always redirect to talent dashboard unless already there
+                  window.location.href = '/talent-dashboard';
                 }
-              } catch (error) {
-                console.error('Error checking user profile:', error);
-                // Fallback: redirect based on current path
-                if (currentPath === '/auth') {
-                  window.location.href = '/';
-                }
+              } else if (currentPath === '/auth' || currentPath === '/talent-onboarding') {
+                // Non-talent users only redirect if coming from auth pages
+                window.location.href = '/';
               }
-            }, 100);
-          }
+            } catch (error) {
+              console.error('Error checking user profile:', error);
+              // Fallback: redirect based on current path
+              if (currentPath === '/auth') {
+                window.location.href = '/';
+              }
+            }
+          }, 100);
         }
       }
     );

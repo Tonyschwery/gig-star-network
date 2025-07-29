@@ -86,7 +86,7 @@ export default function Pricing() {
     if (planName === 'Standard') {
       navigate('/talent-dashboard');
     } else {
-      // Handle Pro subscription - would integrate with Stripe
+      // Navigate to talent dashboard where the subscription button will handle the payment flow
       navigate('/talent-dashboard');
     }
   };
