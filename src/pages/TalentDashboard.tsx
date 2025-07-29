@@ -1,11 +1,15 @@
 import { BookingManagementView } from "@/components/BookingManagementView";
+import { Header } from "@/components/Header";
 
 const TalentDashboard = () => {
   return (
-    <BookingManagementView 
-      title="Welcome, {name}!"
-      subtitle="Manage your talent profile"
-    />
+    <>
+      <Header />
+      <BookingManagementView 
+        title="Welcome, {name}!"
+        subtitle="Manage your talent profile"
+      />
+    </>
   );
 };
 
