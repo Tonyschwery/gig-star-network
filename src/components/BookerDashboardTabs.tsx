@@ -319,12 +319,9 @@ export const BookerDashboardTabs = ({ userId }: BookerDashboardTabsProps) => {
         )}
       </div>
 
-      {/* MASTER TASK 3: Payment Interface for approved bookings with Chat button */}
+      {/* Payment Interface for approved bookings */}
       {showPaymentInterface && bookingPayments[booking.id] && (
         <div className="mt-4 pt-4 border-t space-y-3">
-          <div className="flex flex-wrap gap-2">
-            <ChatButton booking={booking} variant="outline" size="sm" />
-          </div>
           <BookerInvoiceCard
             booking={booking}
             payment={bookingPayments[booking.id]}

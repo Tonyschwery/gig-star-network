@@ -135,12 +135,12 @@ export function ChatModal({
         .from('conversations')
         .select('*')
         .eq('booking_id', bookingId)
-        .single();
+        .maybeSingle();
 
       if (!conversation) {
         const { data: newConversation, error: createError } = await supabase
           .from('conversations')
-          .insert({ booking_id: bookingId })
+          .upsert({ booking_id: bookingId }, { onConflict: 'booking_id' })
           .select()
           .single();
 
