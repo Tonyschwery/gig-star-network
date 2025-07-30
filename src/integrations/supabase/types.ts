@@ -185,6 +185,48 @@ export type Database = {
         }
         Relationships: []
       }
+      gig_applications: {
+        Row: {
+          created_at: string
+          gig_id: string
+          id: string
+          status: string
+          talent_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          gig_id: string
+          id?: string
+          status?: string
+          talent_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          gig_id?: string
+          id?: string
+          status?: string
+          talent_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gig_applications_gig_id_fkey"
+            columns: ["gig_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gig_applications_talent_id_fkey"
+            columns: ["talent_id"]
+            isOneToOne: false
+            referencedRelation: "talent_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           content: string
