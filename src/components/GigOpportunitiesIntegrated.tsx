@@ -124,12 +124,29 @@ export function GigOpportunitiesIntegrated({ isProSubscriber, onUpgrade, talentI
 
   const createOrGetGigApplication = async (gigId: string): Promise<string> => {
     try {
+      // Get current authenticated user
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError) throw userError;
+      if (!user) throw new Error('User not authenticated');
+
+      // Fetch talent profile to get talent_id
+      const { data: talentProfile, error: profileError } = await supabase
+        .from('talent_profiles')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (profileError) throw profileError;
+      if (!talentProfile) throw new Error('Talent profile not found');
+
+      const currentTalentId = talentProfile.id;
+
       // First check if application already exists
       const { data: existingApp, error: checkError } = await supabase
         .from('gig_applications')
         .select('id')
         .eq('gig_id', gigId)
-        .eq('talent_id', talentId)
+        .eq('talent_id', currentTalentId)
         .maybeSingle();
 
       if (checkError) throw checkError;
@@ -143,7 +160,7 @@ export function GigOpportunitiesIntegrated({ isProSubscriber, onUpgrade, talentI
         .from('gig_applications')
         .insert({
           gig_id: gigId,
-          talent_id: talentId,
+          talent_id: currentTalentId,
           status: 'interested'
         })
         .select('id')
