@@ -7,7 +7,7 @@ const corsHeaders = {
 };
 
 interface InvoiceRequest {
-  id: string; // Can be booking_id or gig_id
+  id: string; // Can be booking_id or gig_application_id
   type: 'booking' | 'gig'; // Type to determine data source
   total_amount: number;
   currency: string;
@@ -92,11 +92,23 @@ serve(async (req) => {
 
       recordData = booking;
     } else if (recordType === 'gig') {
-      // For gigs, the record is still in the bookings table but marked as gig opportunity
+      // For gigs, the id is a gig_application_id, not the booking id
+      const { data: gigApplication, error: gigAppError } = await supabaseService
+        .from("gig_applications")
+        .select("*, gig_id, talent_id")
+        .eq("id", recordId)
+        .single();
+
+      if (gigAppError) {
+        console.error("Error fetching gig application:", gigAppError);
+        throw new Error("Failed to fetch gig application details");
+      }
+
+      // Get the actual gig data from bookings table
       const { data: gig, error: gigFetchError } = await supabaseService
         .from("bookings")
-        .select("*, talent_id")
-        .eq("id", recordId)
+        .select("*")
+        .eq("id", gigApplication.gig_id)
         .eq("is_gig_opportunity", true)
         .eq("is_public_request", true)
         .single();
@@ -106,11 +118,12 @@ serve(async (req) => {
         throw new Error("Failed to fetch gig details");
       }
 
-      if (!gig.talent_id) {
-        throw new Error("No talent assigned to this gig");
-      }
-
-      recordData = gig;
+      // Combine gig data with application data
+      recordData = { 
+        ...gig, 
+        talent_id: gigApplication.talent_id,
+        gig_application_id: gigApplication.id
+      };
     } else {
       throw new Error("Invalid type. Must be 'booking' or 'gig'");
     }
@@ -121,7 +134,7 @@ serve(async (req) => {
     const { data: payment, error: paymentError } = await supabaseService
       .from("payments")
       .insert({
-        booking_id: recordId,
+        booking_id: recordType === 'gig' ? recordData.gig_id : recordId, // Use gig_id for gigs, booking_id for bookings
         booker_id: recordData.user_id,
         talent_id: recordData.talent_id, // Use actual talent_id from record
         total_amount: total_amount,
@@ -145,17 +158,47 @@ serve(async (req) => {
     console.log("Created payment record:", payment.id);
 
     // Step C: Update record status and link payment
-    const { error: recordUpdateError } = await supabaseService
-      .from("bookings")
-      .update({
-        status: "approved",
-        payment_id: payment.id
-      })
-      .eq("id", recordId);
+    if (recordType === 'gig') {
+      // Update gig application status
+      const { error: gigAppUpdateError } = await supabaseService
+        .from("gig_applications")
+        .update({
+          status: "invoice_sent"
+        })
+        .eq("id", recordId);
 
-    if (recordUpdateError) {
-      console.error(`Error updating ${recordType}:`, recordUpdateError);
-      throw new Error(`Failed to update ${recordType} status`);
+      if (gigAppUpdateError) {
+        console.error("Error updating gig application:", gigAppUpdateError);
+        throw new Error("Failed to update gig application status");
+      }
+
+      // Update the original gig booking
+      const { error: gigUpdateError } = await supabaseService
+        .from("bookings")
+        .update({
+          status: "approved",
+          payment_id: payment.id,
+          talent_id: recordData.talent_id // Assign talent to the gig
+        })
+        .eq("id", recordData.gig_id);
+
+      if (gigUpdateError) {
+        console.error("Error updating gig:", gigUpdateError);
+        throw new Error("Failed to update gig status");
+      }
+    } else {
+      const { error: recordUpdateError } = await supabaseService
+        .from("bookings")
+        .update({
+          status: "approved",
+          payment_id: payment.id
+        })
+        .eq("id", recordId);
+
+      if (recordUpdateError) {
+        console.error("Error updating booking:", recordUpdateError);
+        throw new Error("Failed to update booking status");
+      }
     }
 
     console.log(`Updated ${recordType} status to approved`);
@@ -168,7 +211,7 @@ serve(async (req) => {
         type: "invoice_received",
         title: "Invoice Received",
         message: `You have received an invoice for your ${recordData.event_type} ${recordType === 'gig' ? 'gig' : 'event'}. Please review and complete payment.`,
-        booking_id: recordId
+        booking_id: recordType === 'gig' ? recordData.gig_id : recordId
       });
 
     if (notificationError) {

@@ -13,7 +13,7 @@ import TalentProfile from "./pages/TalentProfile";
 import TalentDashboard from "./pages/TalentDashboard";
 import TalentProfileEdit from "./pages/TalentProfileEdit";
 import YourEvent from "./pages/YourEvent";
-import Gigs from "./pages/Gigs";
+
 
 import Pricing from "./pages/Pricing";
 import HowItWorks from "./pages/HowItWorks";
@@ -56,11 +56,6 @@ const App = () => (
               </ProtectedTalentRoute>
             } />
             <Route path="/your-event" element={<YourEvent />} />
-            <Route path="/gigs" element={
-              <ProtectedTalentRoute>
-                <Gigs />
-              </ProtectedTalentRoute>
-            } />
             <Route path="/pricing" element={<Pricing />} />
             <Route path="/how-it-works" element={<HowItWorks />} />
             <Route path="/trust-safety" element={<TrustSafety />} />

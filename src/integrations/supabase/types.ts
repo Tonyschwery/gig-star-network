@@ -135,22 +135,33 @@ export type Database = {
         Row: {
           booking_id: string
           created_at: string
+          gig_application_id: string | null
           id: string
           updated_at: string
         }
         Insert: {
           booking_id: string
           created_at?: string
+          gig_application_id?: string | null
           id?: string
           updated_at?: string
         }
         Update: {
           booking_id?: string
           created_at?: string
+          gig_application_id?: string | null
           id?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "conversations_gig_application_id_fkey"
+            columns: ["gig_application_id"]
+            isOneToOne: false
+            referencedRelation: "gig_applications"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       email_preferences: {
         Row: {

@@ -40,6 +40,7 @@ interface ManualInvoiceModalProps {
   booking: Booking;
   isProSubscriber: boolean;
   onSuccess: () => void;
+  gigApplicationId?: string; // Optional for gig applications
 }
 
 export function ManualInvoiceModal({ 
@@ -47,7 +48,8 @@ export function ManualInvoiceModal({
   onClose, 
   booking, 
   isProSubscriber,
-  onSuccess 
+  onSuccess,
+  gigApplicationId
 }: ManualInvoiceModalProps) {
   const [agreedPrice, setAgreedPrice] = useState<string>('');
   const [currency, setCurrency] = useState<string>('USD');
@@ -76,7 +78,7 @@ export function ManualInvoiceModal({
       const isGig = booking.is_gig_opportunity && booking.is_public_request;
       const { data, error } = await supabase.functions.invoke('create-invoice', {
         body: {
-          id: booking.id,
+          id: isGig && gigApplicationId ? gigApplicationId : booking.id,
           type: isGig ? 'gig' : 'booking',
           total_amount: price,
           currency: currency,
