@@ -78,8 +78,10 @@ export function ChatModal({
   useEffect(() => {
     if (!conversationId || !open) return;
 
+    console.log('Setting up real-time subscription for conversation:', conversationId);
+    
     const channel = supabase
-      .channel('messages')
+      .channel(`messages-${conversationId}`)
       .on(
         'postgres_changes',
         {
@@ -89,19 +91,25 @@ export function ChatModal({
           filter: `conversation_id=eq.${conversationId}`
         },
         (payload) => {
+          console.log('Real-time message received:', payload);
           const newMessage = payload.new as Message;
           setMessages(prev => {
             // Avoid duplicate messages
             if (prev.find(msg => msg.id === newMessage.id)) {
+              console.log('Duplicate message ignored:', newMessage.id);
               return prev;
             }
+            console.log('Adding new message to state:', newMessage);
             return [...prev, newMessage];
           });
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Real-time subscription status:', status);
+      });
 
     return () => {
+      console.log('Cleaning up real-time subscription');
       supabase.removeChannel(channel);
     };
   }, [conversationId, open]);

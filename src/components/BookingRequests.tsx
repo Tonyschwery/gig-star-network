@@ -8,6 +8,7 @@ import { Calendar, Clock, MapPin, Mail, User, Check, X, MessageCircle } from "lu
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ManualInvoiceModal } from "./ManualInvoiceModal";
 import { ChatModal } from "./ChatModal";
+import { BookingCard } from "./BookingCard";
 import { format } from "date-fns";
 import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 import { useUnreadNotifications } from "@/hooks/useUnreadNotifications";
@@ -69,14 +70,16 @@ const ChatButtonWithNotifications = ({ booking }: { booking: Booking }) => {
 
 export function BookingRequests({ talentId, isProSubscriber = false }: BookingRequestsProps) {
   const [pendingBookings, setPendingBookings] = useState<Booking[]>([]);
+  const [pendingApprovalBookings, setPendingApprovalBookings] = useState<Booking[]>([]);
   const [confirmedBookings, setConfirmedBookings] = useState<Booking[]>([]);
   const [pastBookings, setPastBookings] = useState<Booking[]>([]);
-  const [activeTab, setActiveTab] = useState<'pending' | 'confirmed' | 'past'>('pending');
+  const [activeTab, setActiveTab] = useState<'pending' | 'pendingApproval' | 'confirmed' | 'past'>('pending');
   const [loading, setLoading] = useState(true);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [showChatModal, setShowChatModal] = useState(false);
   const [chatBooking, setChatBooking] = useState<Booking | null>(null);
+  const [hasViewedTab, setHasViewedTab] = useState<Record<string, boolean>>({});
   const { toast } = useToast();
 
   useEffect(() => {
@@ -102,22 +105,23 @@ export function BookingRequests({ talentId, isProSubscriber = false }: BookingRe
         .from('bookings')
         .select('*')
         .eq('talent_id', talentId)
-        .in('status', ['pending', 'approved', 'confirmed', 'completed'])
+        .in('status', ['pending', 'approved', 'pending_approval', 'confirmed', 'completed'])
         .order('created_at', { ascending: false });
 
       if (error) throw error;
       
       const bookings = data || [];
-      const now = new Date();
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); // Start of today
       
       setPendingBookings(bookings.filter(b => b.status === 'pending'));
+      setPendingApprovalBookings(bookings.filter(b => b.status === 'pending_approval'));
       setConfirmedBookings(bookings.filter(b => 
         (b.status === 'approved' || b.status === 'confirmed') && 
-        new Date(b.event_date) >= now
+        new Date(b.event_date) >= today
       ));
       setPastBookings(bookings.filter(b => 
-        b.status === 'completed' || 
-        (new Date(b.event_date) < now && b.status !== 'pending')
+        new Date(b.event_date) < today || b.status === 'completed'
       ));
     } catch (error) {
       console.error('Error fetching bookings:', error);
@@ -199,107 +203,15 @@ export function BookingRequests({ talentId, isProSubscriber = false }: BookingRe
   }
 
   const renderBookingCard = (booking: Booking, showActions: boolean = true) => (
-    <div key={booking.id} className="border rounded-lg p-3 sm:p-4 bg-card space-y-3 sm:space-y-4">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <span className="text-xl sm:text-2xl">{getEventTypeIcon(booking.event_type)}</span>
-          <div>
-            <h3 className="font-semibold text-base sm:text-lg capitalize">
-              {booking.event_type} Event
-            </h3>
-            <p className="text-xs sm:text-sm text-muted-foreground">
-              Requested {format(new Date(booking.created_at), 'MMM d, yyyy')}
-            </p>
-          </div>
-        </div>
-        <Badge className={
-          booking.status === 'pending' ? "bg-yellow-500/20 text-yellow-700 border-yellow-500/20" :
-          booking.status === 'confirmed' ? "bg-green-500/20 text-green-700 border-green-500/20" :
-          booking.status === 'approved' ? "bg-blue-500/20 text-blue-700 border-blue-500/20" :
-          "bg-gray-500/20 text-gray-700 border-gray-500/20"
-        }>
-          {booking.status === 'confirmed' ? 'Confirmed' : 
-           booking.status === 'approved' ? 'Approved' :
-           booking.status === 'completed' ? 'Completed' : 'Pending'}
-        </Badge>
-      </div>
-
-      {/* Event Details - Compact for confirmed bookings */}
-      <div className={`grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 bg-muted/30 p-3 rounded-lg text-sm ${!showActions ? 'md:grid-cols-4' : ''}`}>
-        <div className="flex items-center gap-2">
-          <Calendar className="h-4 w-4 text-muted-foreground" />
-          <span className="font-medium">{format(new Date(booking.event_date), 'PPP')}</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <Clock className="h-4 w-4 text-muted-foreground" />
-          <span>{booking.event_duration} hours</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <MapPin className="h-4 w-4 text-muted-foreground" />
-          <span>{booking.event_location}</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <User className="h-4 w-4 text-muted-foreground" />
-          <span>{booking.booker_name}</span>
-        </div>
-      </div>
-
-      {/* Additional Details - Show less for confirmed bookings */}
-      {showActions && (
-        <div className="space-y-2 sm:space-y-3">
-          <div>
-            <span className="font-medium text-xs sm:text-sm">Full Address:</span>
-            <p className="text-muted-foreground mt-1 text-xs sm:text-sm">{booking.event_address}</p>
-          </div>
-          <div>
-            <span className="font-medium text-xs sm:text-sm">Contact Email:</span>
-            <p className="text-muted-foreground mt-1 text-xs sm:text-sm break-all">{booking.booker_email}</p>
-          </div>
-          {booking.description && (
-            <div>
-              <span className="font-medium text-xs sm:text-sm">Event Description:</span>
-              <p className="text-muted-foreground mt-1 text-xs sm:text-sm">{booking.description}</p>
-            </div>
-          )}
-          {booking.budget && (
-            <div>
-              <span className="font-medium text-xs sm:text-sm">Client Budget:</span>
-              <p className="text-muted-foreground mt-1 text-xs sm:text-sm">
-                {booking.budget} {booking.budget_currency || 'USD'}
-              </p>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Action Buttons */}
-      <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 pt-3 sm:pt-4 border-t">
-        <ChatButtonWithNotifications booking={booking} />
-        {showActions && (
-          <>
-            <Button
-              onClick={() => handleDecline(booking.id)}
-              variant="outline"
-              className="border-red-200 text-red-600 hover:bg-red-50 w-full sm:w-auto"
-              size="sm"
-            >
-              <X className="h-4 w-4 mr-2" />
-              Decline
-            </Button>
-            <Button
-              onClick={() => handleAccept(booking)}
-              className="bg-green-600 hover:bg-green-700 text-white w-full sm:w-auto"
-              size="sm"
-            >
-              <Check className="h-4 w-4 mr-2" />
-              <span className="hidden sm:inline">Accept & Send Invoice</span>
-              <span className="sm:hidden">Accept</span>
-            </Button>
-          </>
-        )}
-      </div>
-    </div>
+    <BookingCard
+      key={booking.id}
+      booking={booking}
+      mode="talent"
+      showActions={showActions}
+      onUpdate={fetchAllBookings}
+      isProSubscriber={isProSubscriber}
+      talentId={talentId}
+    />
   );
 
   const renderEmptyState = (tab: string) => (
@@ -307,12 +219,14 @@ export function BookingRequests({ talentId, isProSubscriber = false }: BookingRe
       <CardContent className="text-center py-8">
         <Mail className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
         <h3 className="font-medium mb-2">
-          {tab === 'pending' ? 'No Pending Requests' :
+          {tab === 'pending' ? 'No New Requests' :
+           tab === 'pendingApproval' ? 'No Pending Approvals' :
            tab === 'confirmed' ? 'No Upcoming Events' :
            'No Past Events'}
         </h3>
         <p className="text-sm text-muted-foreground">
           {tab === 'pending' ? 'When clients book you, their requests will appear here' :
+           tab === 'pendingApproval' ? 'Invoices awaiting payment will appear here' :
            tab === 'confirmed' ? 'Your confirmed bookings will appear here' :
            'Your completed events will appear here'}
         </p>
@@ -327,11 +241,39 @@ export function BookingRequests({ talentId, isProSubscriber = false }: BookingRe
         <div className="flex flex-wrap gap-2">
           <Button
             variant={activeTab === 'pending' ? 'default' : 'outline'}
-            onClick={() => setActiveTab('pending')}
-            className="flex items-center gap-2"
+            onClick={() => {
+              setActiveTab('pending');
+              setHasViewedTab(prev => ({ ...prev, pending: true }));
+            }}
+            className="flex items-center gap-2 relative"
           >
             <Mail className="h-4 w-4" />
-            Pending Approval ({pendingBookings.length})
+            New Requests ({pendingBookings.length})
+            {pendingBookings.length > 0 && !hasViewedTab.pending && (
+              <div className="absolute -top-1 -right-1 w-5 h-5 bg-destructive rounded-full flex items-center justify-center">
+                <span className="text-xs text-white font-bold">
+                  {pendingBookings.length > 99 ? '99+' : pendingBookings.length}
+                </span>
+              </div>
+            )}
+          </Button>
+          <Button
+            variant={activeTab === 'pendingApproval' ? 'default' : 'outline'}
+            onClick={() => {
+              setActiveTab('pendingApproval');
+              setHasViewedTab(prev => ({ ...prev, pendingApproval: true }));
+            }}
+            className="flex items-center gap-2 relative"
+          >
+            <Clock className="h-4 w-4" />
+            Pending Approval ({pendingApprovalBookings.length})
+            {pendingApprovalBookings.length > 0 && !hasViewedTab.pendingApproval && (
+              <div className="absolute -top-1 -right-1 w-5 h-5 bg-destructive rounded-full flex items-center justify-center">
+                <span className="text-xs text-white font-bold">
+                  {pendingApprovalBookings.length > 99 ? '99+' : pendingApprovalBookings.length}
+                </span>
+              </div>
+            )}
           </Button>
           <Button
             variant={activeTab === 'confirmed' ? 'default' : 'outline'}
@@ -358,7 +300,7 @@ export function BookingRequests({ talentId, isProSubscriber = false }: BookingRe
               <CardHeader>
                 <CardTitle className="flex items-center text-yellow-700">
                   <Mail className="h-5 w-5 mr-2" />
-                  Booking Requests ({pendingBookings.length})
+                  New Requests ({pendingBookings.length})
                 </CardTitle>
                 <CardDescription>
                   New booking requests that need your response
@@ -366,6 +308,25 @@ export function BookingRequests({ talentId, isProSubscriber = false }: BookingRe
               </CardHeader>
               <CardContent className="space-y-3 sm:space-y-4">
                 {pendingBookings.map((booking) => renderBookingCard(booking, true))}
+              </CardContent>
+            </Card>
+          )
+        )}
+
+        {activeTab === 'pendingApproval' && (
+          pendingApprovalBookings.length === 0 ? renderEmptyState('pendingApproval') : (
+            <Card className="glass-card border-orange-500/20">
+              <CardHeader>
+                <CardTitle className="flex items-center text-orange-700">
+                  <Clock className="h-5 w-5 mr-2" />
+                  Pending Approval ({pendingApprovalBookings.length})
+                </CardTitle>
+                <CardDescription>
+                  Invoices sent, awaiting booker payment and approval
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3 sm:space-y-4">
+                {pendingApprovalBookings.map((booking) => renderBookingCard(booking, false))}
               </CardContent>
             </Card>
           )

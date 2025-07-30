@@ -23,12 +23,14 @@ import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { BookerInvoiceCard } from "@/components/BookerInvoiceCard";
 import { ChatModal } from "@/components/ChatModal";
+import { BookingCard } from "@/components/BookingCard";
 import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 import { useUnreadNotifications } from "@/hooks/useUnreadNotifications";
 
 interface Booking {
   id: string;
   booker_name: string;
+  booker_email?: string;
   event_date: string;
   event_duration: number;
   event_location: string;
@@ -37,7 +39,8 @@ interface Booking {
   description?: string;
   status: string;
   created_at: string;
-  talent_id: string;
+  user_id: string;
+  talent_id?: string;
   is_gig_opportunity?: boolean;
   is_public_request?: boolean;
   payment_id?: string;
@@ -55,6 +58,7 @@ interface BookerDashboardTabsProps {
 
 export const BookerDashboardTabs = ({ userId }: BookerDashboardTabsProps) => {
   const [activeTab, setActiveTab] = useState("awaiting");
+  const [hasViewedTab, setHasViewedTab] = useState<Record<string, boolean>>({});
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [bookingPayments, setBookingPayments] = useState<Record<string, any>>({});
@@ -85,9 +89,9 @@ export const BookerDashboardTabs = ({ userId }: BookerDashboardTabsProps) => {
       if (error) throw error;
       setBookings(data || []);
       
-      // Fetch payment details for approved bookings
+      // Fetch payment details for approved and pending_approval bookings
       const approvedBookingIds = (data || [])
-        .filter(booking => booking.status === 'approved' && booking.payment_id)
+        .filter(booking => (booking.status === 'approved' || booking.status === 'pending_approval') && booking.payment_id)
         .map(booking => booking.payment_id);
         
       if (approvedBookingIds.length > 0) {
@@ -215,122 +219,35 @@ export const BookerDashboardTabs = ({ userId }: BookerDashboardTabsProps) => {
     );
   };
 
-  // Filter bookings by status and date
+  // MASTER TASK 1: Fix booking status logic - filter by event_date, not payment status
+  const today = new Date();
+  today.setHours(0, 0, 0, 0); // Start of today
+  
   const awaitingBookings = bookings.filter(booking => booking.status === 'pending');
-  const actionRequiredBookings = bookings.filter(booking => booking.status === 'approved');
+  const pendingApprovalBookings = bookings.filter(booking => booking.status === 'pending_approval');
   const upcomingBookings = bookings.filter(booking => 
-    booking.status === 'confirmed' && new Date(booking.event_date) >= new Date()
+    (booking.status === 'confirmed' || booking.status === 'approved') && 
+    new Date(booking.event_date) >= today
   );
   const pastBookings = bookings.filter(booking => 
-    booking.status === 'completed' || 
-    (new Date(booking.event_date) < new Date() && booking.status !== 'pending' && booking.status !== 'approved')
+    new Date(booking.event_date) < today || booking.status === 'completed'
   );
 
-  const renderBookingCard = (booking: Booking, showPaymentInterface: boolean = false) => (
-    <div key={booking.id} className="border rounded-lg p-4 bg-card space-y-3">
-      <div className="flex items-start justify-between">
-        <div className="space-y-3 flex-1">
-          <div className="flex items-center gap-2">
-            <span className="text-lg">{getEventTypeIcon(booking.event_type)}</span>
-            <h3 className="font-semibold capitalize">
-              {booking.event_type} {booking.is_gig_opportunity ? 'Gig' : 'Event'}
-            </h3>
-            <Badge className={getStatusColor(booking.status)}>
-              {getStatusIcon(booking.status)}
-              <span className="ml-1">{booking.status}</span>
-            </Badge>
-            {booking.is_gig_opportunity && (
-              <Badge className="bg-purple-500/20 text-purple-700 border-purple-500/20">
-                <Sparkles className="h-3 w-3 mr-1" />
-                Gig
-              </Badge>
-            )}
-          </div>
-          
-          {booking.talent_profiles && (
-            <div className="bg-muted/30 p-3 rounded-lg">
-              <div className="font-medium text-foreground mb-2 flex items-center gap-2">
-                <User className="h-4 w-4" />
-                Talent: {booking.talent_profiles.artist_name}
-              </div>
-              {booking.status === 'approved' && (
-                <div className="text-sm text-green-700 dark:text-green-300 flex items-center gap-1">
-                  <CheckCircle className="h-4 w-4" />
-                  Approved! Payment required to confirm booking.
-                </div>
-              )}
-              {booking.status === 'confirmed' && (
-                <div className="text-sm text-blue-700 dark:text-blue-300 flex items-center gap-1">
-                  <CheckCircle className="h-4 w-4" />
-                  Confirmed and paid!
-                </div>
-              )}
-            </div>
-          )}
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-3 text-xs sm:text-sm">
-            <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4" />
-              <span>{format(new Date(booking.event_date), 'PPP')}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Clock className="h-4 w-4" />
-              <span>{booking.event_duration} hours</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <MapPin className="h-4 w-4" />
-              <span className="font-medium">{booking.event_location}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Mail className="h-4 w-4" />
-              <span>Created {format(new Date(booking.created_at), 'MMM d, yyyy')}</span>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <div className="text-sm">
-              <span className="font-medium text-foreground">Full Address:</span>
-              <p className="text-muted-foreground mt-1">{booking.event_address}</p>
-            </div>
-            {booking.description && (
-              <div className="text-sm">
-                <span className="font-medium text-foreground">Event Description:</span>
-                <p className="text-muted-foreground mt-1">{booking.description}</p>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Chat and View Talent Buttons */}
-      <div className="flex flex-wrap gap-2 pt-2 border-t">
-        <ChatButton booking={booking} variant="outline" size="sm" />
-        {booking.talent_id && (
-          <Button
-            onClick={() => navigate(`/talent/${booking.talent_id}`)}
-            variant="outline"
-            size="sm"
-            className="flex-shrink-0"
-          >
-            <User className="h-4 w-4 mr-2" />
-            <span className="hidden sm:inline">View Talent</span>
-            <span className="sm:hidden">Profile</span>
-          </Button>
-        )}
-      </div>
-
-      {/* Payment Interface for approved bookings */}
-      {showPaymentInterface && bookingPayments[booking.id] && (
-        <div className="mt-4 pt-4 border-t space-y-3">
-          <BookerInvoiceCard
-            booking={booking}
-            payment={bookingPayments[booking.id]}
-            onPaymentUpdate={fetchUnifiedBookings}
-          />
-        </div>
-      )}
-    </div>
-  );
+  const renderBookingCard = (booking: Booking, showPaymentInterface: boolean = false) => {
+    const payment = bookingPayments[booking.id];
+    
+    return (
+      <BookingCard
+        key={booking.id}
+        booking={booking}
+        mode="booker"
+        showActions={false}
+        showPaymentInterface={showPaymentInterface && !!payment}
+        payment={payment}
+        onUpdate={fetchUnifiedBookings}
+      />
+    );
+  };
 
   if (loading) {
     return (
@@ -343,26 +260,33 @@ export const BookerDashboardTabs = ({ userId }: BookerDashboardTabsProps) => {
   return (
     <>
       {/* MASTER TASK 2: Unified Dashboard - No more separate tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <Tabs value={activeTab} onValueChange={(tab) => {
+          setActiveTab(tab);
+          setHasViewedTab(prev => ({ ...prev, [tab]: true }));
+        }} className="w-full">
           <TabsList className="grid w-full grid-cols-4 mb-6">
-            <TabsTrigger value="awaiting" className="flex items-center gap-2">
+            <TabsTrigger value="awaiting" className="flex items-center gap-2 relative">
               <Clock3 className="h-4 w-4" />
               <span className="hidden sm:inline">Awaiting Response</span>
               <span className="sm:hidden">Awaiting</span>
-              {awaitingBookings.length > 0 && (
-                <Badge variant="secondary" className="ml-1">
-                  {awaitingBookings.length}
-                </Badge>
+              {awaitingBookings.length > 0 && !hasViewedTab.awaiting && (
+                <div className="absolute -top-1 -right-1 w-5 h-5 bg-destructive rounded-full flex items-center justify-center">
+                  <span className="text-xs text-white font-bold">
+                    {awaitingBookings.length > 99 ? '99+' : awaitingBookings.length}
+                  </span>
+                </div>
               )}
             </TabsTrigger>
-            <TabsTrigger value="action" className="flex items-center gap-2">
+            <TabsTrigger value="pending" className="flex items-center gap-2 relative">
               <AlertCircle className="h-4 w-4" />
-              <span className="hidden sm:inline">Action Required</span>
-              <span className="sm:hidden">Action</span>
-              {actionRequiredBookings.length > 0 && (
-                <Badge variant="secondary" className="ml-1">
-                  {actionRequiredBookings.length}
-                </Badge>
+              <span className="hidden sm:inline">Pending Approval</span>
+              <span className="sm:hidden">Pending</span>
+              {pendingApprovalBookings.length > 0 && !hasViewedTab.pending && (
+                <div className="absolute -top-1 -right-1 w-5 h-5 bg-destructive rounded-full flex items-center justify-center">
+                  <span className="text-xs text-white font-bold">
+                    {pendingApprovalBookings.length > 99 ? '99+' : pendingApprovalBookings.length}
+                  </span>
+                </div>
               )}
             </TabsTrigger>
             <TabsTrigger value="upcoming" className="flex items-center gap-2">
@@ -414,28 +338,28 @@ export const BookerDashboardTabs = ({ userId }: BookerDashboardTabsProps) => {
           </Card>
         </TabsContent>
         
-        <TabsContent value="action">
-          <Card className="glass-card border-green-500/20">
+        <TabsContent value="pending">
+          <Card className="glass-card border-orange-500/20">
             <CardHeader>
-              <CardTitle className="flex items-center text-green-700">
+              <CardTitle className="flex items-center text-orange-700">
                 <AlertCircle className="h-5 w-5 mr-2" />
-                Action Required ({actionRequiredBookings.length})
+                Pending Approval ({pendingApprovalBookings.length})
               </CardTitle>
               <CardDescription>
-                Approved bookings that require payment to confirm
+                Invoices sent by talents awaiting your approval and payment
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {actionRequiredBookings.length === 0 ? (
+              {pendingApprovalBookings.length === 0 ? (
                 <div className="text-center py-8">
                   <CreditCard className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <h3 className="font-medium mb-2">No Payments Required</h3>
+                  <h3 className="font-medium mb-2">No Pending Approvals</h3>
                   <p className="text-sm text-muted-foreground">
-                    Approved bookings requiring payment will appear here
+                    Invoices from talents will appear here for your review and payment
                   </p>
                 </div>
               ) : (
-                actionRequiredBookings.map((booking) => renderBookingCard(booking, true))
+                pendingApprovalBookings.map((booking) => renderBookingCard(booking, true))
               )}
             </CardContent>
           </Card>

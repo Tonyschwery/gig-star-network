@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Calendar, Clock, MapPin, Mail, User, Check, X, MessageCircle, Crown, Sparkles } from "lucide-react";
 import { ManualInvoiceModal } from "./ManualInvoiceModal";
 import { TalentChatModal } from "./TalentChatModal";
+import { BookingCard } from "./BookingCard";
 import { format } from "date-fns";
 import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 import { useUnreadNotifications } from "@/hooks/useUnreadNotifications";
@@ -448,56 +449,40 @@ export function GigOpportunitiesIntegrated({ isProSubscriber, onUpgrade, talentI
     </div>
   );
 
-  const renderGigApplicationCard = (gigApplication: GigApplication, showActions: boolean = true) => (
-    <div key={gigApplication.id} className="border rounded-lg p-3 sm:p-4 bg-card space-y-3 sm:space-y-4">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <span className="text-xl sm:text-2xl">{getEventTypeIcon(gigApplication.gig.event_type)}</span>
-          <div>
-            <h3 className="font-semibold text-base sm:text-lg capitalize">
-              {gigApplication.gig.event_type} Event
-            </h3>
-            <p className="text-xs sm:text-sm text-muted-foreground">
-              Applied {format(new Date(gigApplication.created_at), 'MMM d, yyyy')}
-            </p>
-          </div>
-        </div>
-        <Badge className={
-          gigApplication.status === 'interested' ? "bg-blue-500/20 text-blue-700 border-blue-500/20" :
-          gigApplication.status === 'invoice_sent' ? "bg-yellow-500/20 text-yellow-700 border-yellow-500/20" :
-          gigApplication.status === 'confirmed' ? "bg-green-500/20 text-green-700 border-green-500/20" :
-          "bg-gray-500/20 text-gray-700 border-gray-500/20"
-        }>
-          {gigApplication.status === 'interested' ? 'Applied' : 
-           gigApplication.status === 'invoice_sent' ? 'Invoice Sent' :
-           gigApplication.status === 'confirmed' ? 'Confirmed' :
-           gigApplication.status === 'completed' ? 'Completed' : gigApplication.status}
-        </Badge>
-      </div>
-
-      {/* Event Details */}
-      <div className={`grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 bg-muted/30 p-3 rounded-lg text-sm ${!showActions ? 'md:grid-cols-4' : ''}`}>
-        <div className="flex items-center gap-2">
-          <Calendar className="h-4 w-4 text-muted-foreground" />
-          <span className="font-medium">{format(new Date(gigApplication.gig.event_date), 'PPP')}</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <Clock className="h-4 w-4 text-muted-foreground" />
-          <span>{gigApplication.gig.event_duration} hours</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <MapPin className="h-4 w-4 text-muted-foreground" />
-          <span>{gigApplication.gig.event_location}</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <User className="h-4 w-4 text-muted-foreground" />
-          <span>{gigApplication.gig.booker_name}</span>
-        </div>
-      </div>
-
-      {/* Additional Details - Show less for confirmed gigs */}
-      {showActions && (
+  const renderGigApplicationCard = (gigApplication: GigApplication, showActions: boolean = true) => {
+    // Convert gig application to booking format for BookingCard
+    const bookingData = {
+      id: gigApplication.gig.id,
+      booker_name: gigApplication.gig.booker_name,
+      booker_email: gigApplication.gig.booker_email,
+      event_date: gigApplication.gig.event_date,
+      event_duration: gigApplication.gig.event_duration,
+      event_location: gigApplication.gig.event_location,
+      event_address: gigApplication.gig.event_address,
+      event_type: gigApplication.gig.event_type,
+      description: gigApplication.gig.description,
+      status: gigApplication.status,
+      created_at: gigApplication.created_at,
+      user_id: gigApplication.gig.user_id,
+      budget: gigApplication.gig.budget,
+      budget_currency: gigApplication.gig.budget_currency,
+      is_gig_opportunity: true,
+      is_public_request: true,
+    };
+    
+    return (
+      <BookingCard
+        key={gigApplication.id}
+        booking={bookingData}
+        mode="talent"
+        showActions={showActions}
+        onUpdate={fetchAllGigData}
+        isProSubscriber={isProSubscriber}
+        talentId={talentId}
+        gigApplicationId={gigApplication.id}
+      />
+    );
+  };
         <div className="space-y-2 sm:space-y-3">
           <div>
             <span className="font-medium text-xs sm:text-sm">Full Address:</span>
