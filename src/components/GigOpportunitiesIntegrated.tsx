@@ -524,6 +524,18 @@ export function GigOpportunitiesIntegrated({ isProSubscriber, onUpgrade, talentI
         </div>
       )}
 
+      {/* MASTER TASK 1: Instructional Message for Talents */}
+      {showActions && gigApplication.status === 'interested' && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
+          <div className="flex items-center gap-2">
+            <MessageCircle className="h-4 w-4 text-blue-600" />
+            <p className="text-sm text-blue-800 font-medium">
+              Please send an invoice to open the chat with the Booker.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Action Buttons */}
       <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 pt-3 sm:pt-4 border-t">
         <GigChatButtonWithNotifications gigApplication={gigApplication} />

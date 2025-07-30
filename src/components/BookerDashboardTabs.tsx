@@ -25,7 +25,6 @@ import { BookerInvoiceCard } from "@/components/BookerInvoiceCard";
 import { ChatModal } from "@/components/ChatModal";
 import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 import { useUnreadNotifications } from "@/hooks/useUnreadNotifications";
-import { BookerGigDashboard } from "@/components/BookerGigDashboard";
 
 interface Booking {
   id: string;
@@ -39,6 +38,9 @@ interface Booking {
   status: string;
   created_at: string;
   talent_id: string;
+  is_gig_opportunity?: boolean;
+  is_public_request?: boolean;
+  payment_id?: string;
   talent_profiles?: {
     artist_name: string;
     picture_url?: string;
@@ -52,7 +54,6 @@ interface BookerDashboardTabsProps {
 }
 
 export const BookerDashboardTabs = ({ userId }: BookerDashboardTabsProps) => {
-  const [activeMainTab, setActiveMainTab] = useState("bookings");
   const [activeTab, setActiveTab] = useState("awaiting");
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
@@ -63,7 +64,7 @@ export const BookerDashboardTabs = ({ userId }: BookerDashboardTabsProps) => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetchBookings();
+    fetchUnifiedBookings();
     
     // Set up real-time subscription for booking updates
     const channel = supabase
@@ -78,7 +79,7 @@ export const BookerDashboardTabs = ({ userId }: BookerDashboardTabsProps) => {
         },
         () => {
           // Refresh bookings when status changes
-          fetchBookings();
+          fetchUnifiedBookings();
         }
       )
       .subscribe();
@@ -88,8 +89,10 @@ export const BookerDashboardTabs = ({ userId }: BookerDashboardTabsProps) => {
     };
   }, [userId]);
 
-  const fetchBookings = async () => {
+  // MASTER TASK 2: Unified booking list - fetch both direct bookings and gigs
+  const fetchUnifiedBookings = async () => {
     try {
+      // Fetch both direct bookings and gig bookings in one call
       const { data, error } = await supabase
         .from('bookings')
         .select(`
@@ -102,7 +105,7 @@ export const BookerDashboardTabs = ({ userId }: BookerDashboardTabsProps) => {
           )
         `)
         .eq('user_id', userId)
-        .neq('status', 'declined') // Hide declined bookings
+        .neq('status', 'declined')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -128,7 +131,7 @@ export const BookerDashboardTabs = ({ userId }: BookerDashboardTabsProps) => {
         }
       }
     } catch (error) {
-      console.error('Error fetching bookings:', error);
+      console.error('Error fetching unified bookings:', error);
       toast({
         title: "Error",
         description: "Failed to load your bookings",
@@ -231,12 +234,18 @@ export const BookerDashboardTabs = ({ userId }: BookerDashboardTabsProps) => {
           <div className="flex items-center gap-2">
             <span className="text-lg">{getEventTypeIcon(booking.event_type)}</span>
             <h3 className="font-semibold capitalize">
-              {booking.event_type} Event
+              {booking.event_type} {booking.is_gig_opportunity ? 'Gig' : 'Event'}
             </h3>
             <Badge className={getStatusColor(booking.status)}>
               {getStatusIcon(booking.status)}
               <span className="ml-1">{booking.status}</span>
             </Badge>
+            {booking.is_gig_opportunity && (
+              <Badge className="bg-purple-500/20 text-purple-700 border-purple-500/20">
+                <Sparkles className="h-3 w-3 mr-1" />
+                Gig
+              </Badge>
+            )}
           </div>
           
           {booking.talent_profiles && (
@@ -311,13 +320,16 @@ export const BookerDashboardTabs = ({ userId }: BookerDashboardTabsProps) => {
         )}
       </div>
 
-      {/* Payment Interface for approved bookings */}
+      {/* MASTER TASK 3: Payment Interface for approved bookings with Chat button */}
       {showPaymentInterface && bookingPayments[booking.id] && (
-        <div className="mt-4 pt-4 border-t">
+        <div className="mt-4 pt-4 border-t space-y-3">
+          <div className="flex flex-wrap gap-2">
+            <ChatButton booking={booking} variant="outline" size="sm" />
+          </div>
           <BookerInvoiceCard
             booking={booking}
             payment={bookingPayments[booking.id]}
-            onPaymentUpdate={fetchBookings}
+            onPaymentUpdate={fetchUnifiedBookings}
           />
         </div>
       )}
@@ -334,32 +346,7 @@ export const BookerDashboardTabs = ({ userId }: BookerDashboardTabsProps) => {
 
   return (
     <>
-      {/* MASTER TASK 3: Main Tab Selection - Bookings vs Gigs */}
-      <div className="mb-6">
-        <div className="flex flex-wrap gap-2">
-          <Button
-            variant={activeMainTab === 'bookings' ? 'default' : 'outline'}
-            onClick={() => setActiveMainTab('bookings')}
-            className="flex items-center gap-2"
-          >
-            <User className="h-4 w-4" />
-            Direct Bookings
-          </Button>
-          <Button
-            variant={activeMainTab === 'gigs' ? 'default' : 'outline'}
-            onClick={() => setActiveMainTab('gigs')}
-            className="flex items-center gap-2"
-          >
-            <Sparkles className="h-4 w-4" />
-            Gig Opportunities
-          </Button>
-        </div>
-      </div>
-
-      {/* MASTER TASK 3: Show appropriate dashboard based on selection */}
-      {activeMainTab === 'gigs' ? (
-        <BookerGigDashboard userId={userId} />
-      ) : (
+      {/* MASTER TASK 2: Unified Dashboard - No more separate tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-4 mb-6">
             <TabsTrigger value="awaiting" className="flex items-center gap-2">
@@ -512,7 +499,6 @@ export const BookerDashboardTabs = ({ userId }: BookerDashboardTabsProps) => {
           </Card>
         </TabsContent>
       </Tabs>
-      )}
 
       {/* Chat Modal */}
       {showChatModal && chatBooking && (
