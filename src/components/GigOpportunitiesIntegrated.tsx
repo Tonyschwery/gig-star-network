@@ -11,6 +11,33 @@ import { format } from "date-fns";
 import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 import { useUnreadNotifications } from "@/hooks/useUnreadNotifications";
 
+interface GigApplication {
+  id: string;
+  gig_id: string;
+  talent_id: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+  gig: {
+    id: string;
+    booker_name: string;
+    booker_email: string;
+    event_date: string;
+    event_duration: number;
+    event_location: string;
+    event_address: string;
+    event_type: string;
+    description?: string;
+    status: string;
+    created_at: string;
+    user_id: string;
+    budget?: number;
+    budget_currency?: string;
+    is_public_request: boolean;
+    is_gig_opportunity: boolean;
+  };
+}
+
 interface GigOpportunity {
   id: string;
   booker_name: string;
@@ -76,45 +103,140 @@ const mockGigs: GigOpportunity[] = [
   }
 ];
 
+// Chat Button Component with unread indicator
+const GigChatButtonWithNotifications = ({ gigApplication }: { gigApplication: GigApplication }) => {
+  const { hasUnread } = useUnreadMessages(gigApplication.gig.id);
+  const { unreadCount } = useUnreadNotifications();
+  
+  const handleOpenChat = (gigApplication: GigApplication) => {
+    const event = new CustomEvent('openGigChat', { detail: gigApplication });
+    window.dispatchEvent(event);
+  };
+  
+  return (
+    <Button
+      onClick={() => handleOpenChat(gigApplication)}
+      variant="outline"
+      className="border-blue-200 text-blue-600 hover:bg-blue-50 w-full sm:w-auto relative"
+      size="sm"
+    >
+      <MessageCircle className="h-4 w-4 mr-2" />
+      <span className="hidden sm:inline">Chat with Booker</span>
+      <span className="sm:hidden">Chat</span>
+      {(hasUnread || unreadCount > 0) && (
+        <div className="absolute -top-1 -right-1 w-5 h-5 bg-destructive rounded-full flex items-center justify-center">
+          <span className="text-xs text-white font-bold">
+            {unreadCount > 99 ? '99+' : unreadCount}
+          </span>
+        </div>
+      )}
+    </Button>
+  );
+};
+
 export function GigOpportunitiesIntegrated({ isProSubscriber, onUpgrade, talentId }: GigOpportunitiesIntegratedProps) {
-  const [realGigs, setRealGigs] = useState<GigOpportunity[]>([]);
+  const [availableGigs, setAvailableGigs] = useState<GigOpportunity[]>([]);
+  const [pendingApplications, setPendingApplications] = useState<GigApplication[]>([]);
+  const [confirmedApplications, setConfirmedApplications] = useState<GigApplication[]>([]);
+  const [pastApplications, setPastApplications] = useState<GigApplication[]>([]);
+  const [activeTab, setActiveTab] = useState<'available' | 'pending' | 'confirmed' | 'past'>('available');
   const [loading, setLoading] = useState(true);
   const [selectedGig, setSelectedGig] = useState<GigOpportunity | null>(null);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [showChatModal, setShowChatModal] = useState(false);
-  const [chatGig, setChatGig] = useState<GigOpportunity | null>(null);
+  const [chatGigApplication, setChatGigApplication] = useState<GigApplication | null>(null);
   const [gigApplicationId, setGigApplicationId] = useState<string | null>(null);
   const { toast } = useToast();
 
-  // Use real gigs for pro users, mock gigs for free users
-  const gigs = isProSubscriber ? realGigs : mockGigs;
-
   useEffect(() => {
     if (isProSubscriber) {
-      fetchGigOpportunities();
+      fetchAllGigData();
     } else {
       setLoading(false);
     }
-  }, [isProSubscriber]);
+    
+    // Listen for openGigChat events from chat buttons
+    const handleOpenGigChatEvent = (event: any) => {
+      const gigApplication = event.detail;
+      setChatGigApplication(gigApplication);
+      setGigApplicationId(gigApplication.id);
+      setShowChatModal(true);
+    };
+    
+    window.addEventListener('openGigChat', handleOpenGigChatEvent);
+    
+    return () => {
+      window.removeEventListener('openGigChat', handleOpenGigChatEvent);
+    };
+  }, [isProSubscriber, talentId]);
 
-  const fetchGigOpportunities = async () => {
+  const fetchAllGigData = async () => {
     try {
-      const { data, error } = await supabase
+      // Fetch available gig opportunities
+      const { data: availableData, error: availableError } = await supabase
         .from('bookings')
         .select('*')
         .eq('is_public_request', true)
         .eq('is_gig_opportunity', true)
         .eq('status', 'pending')
-        .is('talent_id', null) // Only unassigned gigs
+        .is('talent_id', null)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      setRealGigs(data || []);
+      if (availableError) throw availableError;
+      setAvailableGigs(availableData || []);
+
+      // Fetch gig applications for this talent
+      const { data: applicationsData, error: applicationsError } = await supabase
+        .from('gig_applications')
+        .select(`
+          *,
+          gig:bookings!gig_applications_gig_id_fkey (
+            id,
+            booker_name,
+            booker_email,
+            event_date,
+            event_duration,
+            event_location,
+            event_address,
+            event_type,
+            description,
+            status,
+            created_at,
+            user_id,
+            budget,
+            budget_currency,
+            is_public_request,
+            is_gig_opportunity
+          )
+        `)
+        .eq('talent_id', talentId)
+        .order('created_at', { ascending: false });
+
+      if (applicationsError) throw applicationsError;
+      
+      const applications = applicationsData || [];
+      const now = new Date();
+      
+      // Filter applications by status and date
+      setPendingApplications(applications.filter(app => 
+        app.status === 'interested' || app.status === 'invoice_sent'
+      ));
+      
+      setConfirmedApplications(applications.filter(app => 
+        app.status === 'confirmed' && 
+        new Date(app.gig.event_date) >= now
+      ));
+      
+      setPastApplications(applications.filter(app => 
+        app.status === 'completed' || 
+        (new Date(app.gig.event_date) < now && app.status !== 'interested' && app.status !== 'invoice_sent')
+      ));
+
     } catch (error) {
-      console.error('Error fetching gig opportunities:', error);
+      console.error('Error fetching gig data:', error);
       toast({
         title: "Error",
-        description: "Failed to load gig opportunities",
+        description: "Failed to load gig data",
         variant: "destructive",
       });
     } finally {
@@ -203,7 +325,19 @@ export function GigOpportunitiesIntegrated({ isProSubscriber, onUpgrade, talentI
     try {
       const applicationId = await createOrGetGigApplication(gig.id);
       setGigApplicationId(applicationId);
-      setChatGig(gig);
+      
+      // Create a mock gig application object for chat
+      const mockGigApplication: GigApplication = {
+        id: applicationId,
+        gig_id: gig.id,
+        talent_id: talentId,
+        status: 'interested',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        gig: gig
+      };
+      
+      setChatGigApplication(mockGigApplication);
       setShowChatModal(true);
     } catch (error) {
       toast({
@@ -215,7 +349,7 @@ export function GigOpportunitiesIntegrated({ isProSubscriber, onUpgrade, talentI
   };
 
   const handleInvoiceSuccess = () => {
-    fetchGigOpportunities(); // Refresh to remove accepted gigs
+    fetchAllGigData(); // Refresh all data
     setShowInvoiceModal(false);
     setSelectedGig(null);
     setGigApplicationId(null);
@@ -234,7 +368,7 @@ export function GigOpportunitiesIntegrated({ isProSubscriber, onUpgrade, talentI
     return icons[type] || "🎵";
   };
 
-  const renderGigCard = (gig: GigOpportunity) => (
+  const renderAvailableGigCard = (gig: GigOpportunity) => (
     <div 
       key={gig.id} 
       className={`border rounded-lg p-3 sm:p-4 bg-card space-y-3 sm:space-y-4 relative ${
@@ -330,6 +464,124 @@ export function GigOpportunitiesIntegrated({ isProSubscriber, onUpgrade, talentI
     </div>
   );
 
+  const renderGigApplicationCard = (gigApplication: GigApplication, showActions: boolean = true) => (
+    <div key={gigApplication.id} className="border rounded-lg p-3 sm:p-4 bg-card space-y-3 sm:space-y-4">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <span className="text-xl sm:text-2xl">{getEventTypeIcon(gigApplication.gig.event_type)}</span>
+          <div>
+            <h3 className="font-semibold text-base sm:text-lg capitalize">
+              {gigApplication.gig.event_type} Event
+            </h3>
+            <p className="text-xs sm:text-sm text-muted-foreground">
+              Applied {format(new Date(gigApplication.created_at), 'MMM d, yyyy')}
+            </p>
+          </div>
+        </div>
+        <Badge className={
+          gigApplication.status === 'interested' ? "bg-blue-500/20 text-blue-700 border-blue-500/20" :
+          gigApplication.status === 'invoice_sent' ? "bg-yellow-500/20 text-yellow-700 border-yellow-500/20" :
+          gigApplication.status === 'confirmed' ? "bg-green-500/20 text-green-700 border-green-500/20" :
+          "bg-gray-500/20 text-gray-700 border-gray-500/20"
+        }>
+          {gigApplication.status === 'interested' ? 'Applied' : 
+           gigApplication.status === 'invoice_sent' ? 'Invoice Sent' :
+           gigApplication.status === 'confirmed' ? 'Confirmed' :
+           gigApplication.status === 'completed' ? 'Completed' : gigApplication.status}
+        </Badge>
+      </div>
+
+      {/* Event Details */}
+      <div className={`grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 bg-muted/30 p-3 rounded-lg text-sm ${!showActions ? 'md:grid-cols-4' : ''}`}>
+        <div className="flex items-center gap-2">
+          <Calendar className="h-4 w-4 text-muted-foreground" />
+          <span className="font-medium">{format(new Date(gigApplication.gig.event_date), 'PPP')}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <Clock className="h-4 w-4 text-muted-foreground" />
+          <span>{gigApplication.gig.event_duration} hours</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <MapPin className="h-4 w-4 text-muted-foreground" />
+          <span>{gigApplication.gig.event_location}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <User className="h-4 w-4 text-muted-foreground" />
+          <span>{gigApplication.gig.booker_name}</span>
+        </div>
+      </div>
+
+      {/* Additional Details - Show less for confirmed gigs */}
+      {showActions && (
+        <div className="space-y-2 sm:space-y-3">
+          <div>
+            <span className="font-medium text-xs sm:text-sm">Full Address:</span>
+            <p className="text-muted-foreground mt-1 text-xs sm:text-sm">{gigApplication.gig.event_address}</p>
+          </div>
+          <div>
+            <span className="font-medium text-xs sm:text-sm">Contact Email:</span>
+            <p className="text-muted-foreground mt-1 text-xs sm:text-sm break-all">{gigApplication.gig.booker_email}</p>
+          </div>
+          {gigApplication.gig.description && (
+            <div>
+              <span className="font-medium text-xs sm:text-sm">Event Description:</span>
+              <p className="text-muted-foreground mt-1 text-xs sm:text-sm">{gigApplication.gig.description}</p>
+            </div>
+          )}
+          {gigApplication.gig.budget && (
+            <div>
+              <span className="font-medium text-xs sm:text-sm">Client Budget:</span>
+              <p className="text-muted-foreground mt-1 text-xs sm:text-sm">
+                {gigApplication.gig.budget} {gigApplication.gig.budget_currency || 'USD'}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Action Buttons */}
+      <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 pt-3 sm:pt-4 border-t">
+        <GigChatButtonWithNotifications gigApplication={gigApplication} />
+        {showActions && gigApplication.status === 'interested' && (
+          <Button
+            onClick={() => {
+              setSelectedGig(gigApplication.gig);
+              setGigApplicationId(gigApplication.id);
+              setShowInvoiceModal(true);
+            }}
+            className="bg-green-600 hover:bg-green-700 text-white w-full sm:w-auto"
+            size="sm"
+          >
+            <Check className="h-4 w-4 mr-2" />
+            <span className="hidden sm:inline">Send Invoice</span>
+            <span className="sm:hidden">Invoice</span>
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+
+  const renderEmptyState = (tab: string) => (
+    <Card className="glass-card">
+      <CardContent className="text-center py-8">
+        <Sparkles className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+        <h3 className="font-medium mb-2">
+          {tab === 'available' ? 'No Available Gigs' :
+           tab === 'pending' ? 'No Pending Applications' :
+           tab === 'confirmed' ? 'No Upcoming Gigs' :
+           'No Past Gigs'}
+        </h3>
+        <p className="text-sm text-muted-foreground">
+          {tab === 'available' ? 'New gig opportunities will appear here when available' :
+           tab === 'pending' ? 'Your gig applications awaiting approval will appear here' :
+           tab === 'confirmed' ? 'Your confirmed gigs will appear here' :
+           'Your completed gigs will appear here'}
+        </p>
+      </CardContent>
+    </Card>
+  );
+
   if (loading && isProSubscriber) {
     return (
       <Card className="glass-card">
@@ -344,60 +596,149 @@ export function GigOpportunitiesIntegrated({ isProSubscriber, onUpgrade, talentI
 
   return (
     <>
-      <Card className={`glass-card ${isProSubscriber ? 'border-purple-500/20' : 'border-gray-500/20'}`}>
-        <CardHeader>
-          <CardTitle className={`flex items-center ${isProSubscriber ? 'text-purple-700' : 'text-gray-600'}`}>
-            <Sparkles className="h-5 w-5 mr-2" />
-            Gig Opportunities ({gigs.length})
-            {!isProSubscriber && (
-              <Crown className="h-4 w-4 ml-2 text-yellow-500" />
-            )}
-          </CardTitle>
-          <CardDescription>
-            {isProSubscriber 
-              ? "Public gig opportunities available for pro subscribers"
-              : "Upgrade to Pro to access exclusive gig opportunities"
-            }
-          </CardDescription>
-          {!isProSubscriber && (
-            <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-lg p-4">
-              <div className="flex items-center gap-3">
-                <Crown className="h-6 w-6 text-yellow-600" />
-                <div className="flex-1">
-                  <h4 className="font-semibold text-yellow-800">Pro Feature</h4>
-                  <p className="text-sm text-yellow-700">
-                    Access exclusive gig opportunities and earn more with Pro subscription
-                  </p>
+      <div className="space-y-4">
+        {/* Tab Navigation */}
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant={activeTab === 'available' ? 'default' : 'outline'}
+            onClick={() => setActiveTab('available')}
+            className="flex items-center gap-2"
+          >
+            <Sparkles className="h-4 w-4" />
+            Available Gigs ({isProSubscriber ? availableGigs.length : mockGigs.length})
+          </Button>
+          <Button
+            variant={activeTab === 'pending' ? 'default' : 'outline'}
+            onClick={() => setActiveTab('pending')}
+            className="flex items-center gap-2"
+          >
+            <Mail className="h-4 w-4" />
+            Pending Approval ({pendingApplications.length})
+          </Button>
+          <Button
+            variant={activeTab === 'confirmed' ? 'default' : 'outline'}
+            onClick={() => setActiveTab('confirmed')}
+            className="flex items-center gap-2"
+          >
+            <Check className="h-4 w-4" />
+            Upcoming / Confirmed ({confirmedApplications.length})
+          </Button>
+          <Button
+            variant={activeTab === 'past' ? 'default' : 'outline'}
+            onClick={() => setActiveTab('past')}
+            className="flex items-center gap-2"
+          >
+            <Calendar className="h-4 w-4" />
+            Past Events ({pastApplications.length})
+          </Button>
+        </div>
+
+        {/* Tab Content */}
+        {activeTab === 'available' && (
+          <Card className={`glass-card ${isProSubscriber ? 'border-purple-500/20' : 'border-gray-500/20'}`}>
+            <CardHeader>
+              <CardTitle className={`flex items-center ${isProSubscriber ? 'text-purple-700' : 'text-gray-600'}`}>
+                <Sparkles className="h-5 w-5 mr-2" />
+                Available Gig Opportunities ({isProSubscriber ? availableGigs.length : mockGigs.length})
+                {!isProSubscriber && (
+                  <Crown className="h-4 w-4 ml-2 text-yellow-500" />
+                )}
+              </CardTitle>
+              <CardDescription>
+                {isProSubscriber 
+                  ? "Public gig opportunities available for pro subscribers"
+                  : "Upgrade to Pro to access exclusive gig opportunities"
+                }
+              </CardDescription>
+              {!isProSubscriber && (
+                <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-lg p-4">
+                  <div className="flex items-center gap-3">
+                    <Crown className="h-6 w-6 text-yellow-600" />
+                    <div className="flex-1">
+                      <h4 className="font-semibold text-yellow-800">Pro Feature</h4>
+                      <p className="text-sm text-yellow-700">
+                        Access exclusive gig opportunities and earn more with Pro subscription
+                      </p>
+                    </div>
+                    <Button 
+                      onClick={onUpgrade}
+                      className="bg-yellow-600 hover:bg-yellow-700 text-white"
+                    >
+                      <Crown className="h-4 w-4 mr-2" />
+                      Upgrade to Pro
+                    </Button>
+                  </div>
                 </div>
-                <Button 
-                  onClick={onUpgrade}
-                  className="bg-yellow-600 hover:bg-yellow-700 text-white"
-                >
-                  <Crown className="h-4 w-4 mr-2" />
-                  Upgrade to Pro
-                </Button>
-              </div>
-            </div>
-          )}
-        </CardHeader>
-        
-        {gigs.length === 0 ? (
-          <CardContent className="text-center py-8">
-            <Sparkles className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="font-medium mb-2">No Gig Opportunities</h3>
-            <p className="text-sm text-muted-foreground">
-              {isProSubscriber 
-                ? "New gig opportunities will appear here when available"
-                : "Upgrade to Pro to see available gig opportunities"
-              }
-            </p>
-          </CardContent>
-        ) : (
-          <CardContent className="space-y-3 sm:space-y-4">
-            {gigs.map((gig) => renderGigCard(gig))}
-          </CardContent>
+              )}
+            </CardHeader>
+            
+            {(isProSubscriber ? availableGigs : mockGigs).length === 0 ? (
+              renderEmptyState('available')
+            ) : (
+              <CardContent className="space-y-3 sm:space-y-4">
+                {(isProSubscriber ? availableGigs : mockGigs).map((gig) => renderAvailableGigCard(gig))}
+              </CardContent>
+            )}
+          </Card>
         )}
-      </Card>
+
+        {activeTab === 'pending' && (
+          pendingApplications.length === 0 ? renderEmptyState('pending') : (
+            <Card className="glass-card border-yellow-500/20">
+              <CardHeader>
+                <CardTitle className="flex items-center text-yellow-700">
+                  <Mail className="h-5 w-5 mr-2" />
+                  Pending Approval ({pendingApplications.length})
+                </CardTitle>
+                <CardDescription>
+                  Your gig applications that are pending approval
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3 sm:space-y-4">
+                {pendingApplications.map((gigApp) => renderGigApplicationCard(gigApp, true))}
+              </CardContent>
+            </Card>
+          )
+        )}
+
+        {activeTab === 'confirmed' && (
+          confirmedApplications.length === 0 ? renderEmptyState('confirmed') : (
+            <Card className="glass-card border-green-500/20">
+              <CardHeader>
+                <CardTitle className="flex items-center text-green-700">
+                  <Check className="h-5 w-5 mr-2" />
+                  Upcoming / Confirmed Gigs ({confirmedApplications.length})
+                </CardTitle>
+                <CardDescription>
+                  Your confirmed upcoming gigs
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3 sm:space-y-4">
+                {confirmedApplications.map((gigApp) => renderGigApplicationCard(gigApp, false))}
+              </CardContent>
+            </Card>
+          )
+        )}
+
+        {activeTab === 'past' && (
+          pastApplications.length === 0 ? renderEmptyState('past') : (
+            <Card className="glass-card border-gray-500/20">
+              <CardHeader>
+                <CardTitle className="flex items-center text-gray-700">
+                  <Calendar className="h-5 w-5 mr-2" />
+                  Past Events ({pastApplications.length})
+                </CardTitle>
+                <CardDescription>
+                  Your completed gigs
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3 sm:space-y-4">
+                {pastApplications.map((gigApp) => renderGigApplicationCard(gigApp, false))}
+              </CardContent>
+            </Card>
+          )
+        )}
+      </div>
 
       {/* Manual Invoice Modal */}
       {selectedGig && isProSubscriber && gigApplicationId && (
@@ -416,14 +757,14 @@ export function GigOpportunitiesIntegrated({ isProSubscriber, onUpgrade, talentI
       )}
 
       {/* Chat Modal */}
-      {chatGig && isProSubscriber && gigApplicationId && (
+      {chatGigApplication && isProSubscriber && gigApplicationId && (
         <TalentChatModal
           open={showChatModal}
           onOpenChange={setShowChatModal}
           gigApplicationId={gigApplicationId}
-          talentName={chatGig.booker_name}
-          eventType={chatGig.event_type}
-          eventDate={chatGig.event_date}
+          talentName={chatGigApplication.gig.booker_name}
+          eventType={chatGigApplication.gig.event_type}
+          eventDate={chatGigApplication.gig.event_date}
         />
       )}
     </>
