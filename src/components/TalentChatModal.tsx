@@ -94,7 +94,7 @@ export function TalentChatModal({
 
   const loadOrCreateConversation = async () => {
     try {
-      // Try to find existing conversation for this gig application
+      // TASK 1: Try to find existing conversation for this gig application
       let { data: conversation, error } = await supabase
         .from('conversations')
         .select('id')
@@ -105,8 +105,11 @@ export function TalentChatModal({
         throw error;
       }
 
-      // Create conversation if it doesn't exist
+      // TASK 1: Conversation should already exist at this point (created by handleChatGig)
+      // If for some reason it doesn't exist, create one
       if (!conversation) {
+        console.warn('TalentChatModal: Conversation should have been created by handleChatGig, creating fallback');
+        
         // Get gig details first
         const { data: gigApp, error: gigError } = await supabase
           .from('gig_applications')
@@ -143,6 +146,7 @@ export function TalentChatModal({
 
   const loadMessages = async (convId: string) => {
     try {
+      // TASK 1: Only retrieve messages where conversation_id exactly matches the passed ID
       const { data, error } = await supabase
         .from('messages')
         .select('*')
@@ -150,6 +154,8 @@ export function TalentChatModal({
         .order('created_at', { ascending: true });
 
       if (error) throw error;
+      
+      // TASK 1: Set only messages for this specific conversation
       setMessages((data as Message[]) || []);
 
       // Mark all messages as read
