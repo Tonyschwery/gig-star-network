@@ -18,6 +18,8 @@ const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
 async function sendPaymentConfirmationEmails(payment: any) {
   try {
+    console.log('EMAIL FUNCTION - Starting sendPaymentConfirmationEmails for payment:', payment.id);
+    
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
@@ -34,6 +36,12 @@ async function sendPaymentConfirmationEmails(payment: any) {
     const bookerEmail = bookerResponse.data.user?.email;
     const talentEmail = talentResponse.data.user?.email;
     const appUrl = Deno.env.get("SUPABASE_URL")?.replace('/auth/v1', '') || 'https://gcctalents.com';
+    
+    console.log('EMAIL FUNCTION - Retrieved email addresses:', {
+      bookerEmail: bookerEmail ? 'present' : 'missing',
+      talentEmail: talentEmail ? 'present' : 'missing',
+      appUrl
+    });
 
     // Format date from booking
     const eventDate = new Date(payment.bookings.event_date || payment.bookings.created_at).toLocaleDateString('en-US', {
@@ -47,6 +55,7 @@ async function sendPaymentConfirmationEmails(payment: any) {
 
     // Send email to booker
     if (bookerEmail) {
+      console.log('EMAIL FUNCTION - Preparing booker email for:', bookerEmail);
       const bookerHtml = await renderAsync(
         React.createElement(PaymentNotificationEmail, {
           recipientName: bookerResponse.data.user?.user_metadata?.first_name || 'Valued Customer',
@@ -66,12 +75,19 @@ async function sendPaymentConfirmationEmails(payment: any) {
           to: [bookerEmail],
           subject: "Your Booking is Confirmed!",
           html: bookerHtml,
+        }).then(result => {
+          console.log('EMAIL FUNCTION - Booker email sent successfully:', result);
+          return result;
+        }).catch(error => {
+          console.error('CRITICAL ERROR - Booker email failed:', error);
+          throw error;
         })
       );
     }
 
     // Send email to talent
     if (talentEmail && payment.bookings.talent_profiles) {
+      console.log('EMAIL FUNCTION - Preparing talent email for:', talentEmail);
       const talentHtml = await renderAsync(
         React.createElement(PaymentNotificationEmail, {
           recipientName: payment.bookings.talent_profiles.artist_name || 'Talented Artist',
@@ -93,12 +109,19 @@ async function sendPaymentConfirmationEmails(payment: any) {
           to: [talentEmail],
           subject: "You Have a New Confirmed Booking!",
           html: talentHtml,
+        }).then(result => {
+          console.log('EMAIL FUNCTION - Talent email sent successfully:', result);
+          return result;
+        }).catch(error => {
+          console.error('CRITICAL ERROR - Talent email failed:', error);
+          throw error;
         })
       );
     }
 
+    console.log('EMAIL FUNCTION - Sending all emails...');
     await Promise.all(emailPromises);
-    console.log('Payment confirmation emails sent successfully');
+    console.log('EMAIL FUNCTION - All payment confirmation emails sent successfully');
 
   } catch (error) {
     console.error('Error sending payment confirmation emails:', error);
@@ -123,7 +146,8 @@ serve(async (req) => {
       throw new Error('Payment ID is required');
     }
 
-    console.log('Processing payment:', paymentId);
+    console.log('PAYMENT PROCESSING START - Payment ID:', paymentId);
+    console.log('PAYMENT PROCESSING - Request received at:', new Date().toISOString());
 
     // Get payment and related booking details
     const { data: payment, error: paymentError } = await supabase
@@ -145,9 +169,17 @@ serve(async (req) => {
       .single();
 
     if (paymentError || !payment) {
-      console.error('Payment fetch error:', paymentError);
+      console.error('CRITICAL ERROR - Payment fetch failed:', paymentError);
+      console.error('CRITICAL ERROR - Payment ID that failed:', paymentId);
       throw new Error('Payment not found');
     }
+
+    console.log('PAYMENT PROCESSING - Payment found:', {
+      id: payment.id,
+      status: payment.payment_status,
+      booking_id: payment.booking_id,
+      talent_id: payment.bookings?.talent_id
+    });
 
     if (payment.payment_status === 'completed') {
       return new Response(
@@ -169,20 +201,26 @@ serve(async (req) => {
       .eq('id', paymentId);
 
     if (paymentUpdateError) {
-      console.error('Payment update error:', paymentUpdateError);
+      console.error('CRITICAL ERROR - Payment update failed:', paymentUpdateError);
+      console.error('CRITICAL ERROR - Payment ID that failed to update:', paymentId);
       throw new Error(`Failed to update payment: ${paymentUpdateError.message}`);
     }
 
-    // Update booking status to completed
+    console.log('PAYMENT PROCESSING - Payment status updated to completed for payment ID:', paymentId);
+
+    // Update booking status to confirmed (not completed - that happens later)
     const { error: bookingUpdateError } = await supabase
       .from('bookings')
       .update({
-        status: 'completed'
+        status: 'confirmed'
       })
       .eq('id', payment.booking_id);
 
+    console.log('Booking status updated to confirmed for booking ID:', payment.booking_id);
+
     if (bookingUpdateError) {
-      console.error('Booking update error:', bookingUpdateError);
+      console.error('CRITICAL ERROR - Booking update failed:', bookingUpdateError);
+      console.error('CRITICAL ERROR - Booking ID that failed to update:', payment.booking_id);
       throw new Error(`Failed to update booking: ${bookingUpdateError.message}`);
     }
 
@@ -210,13 +248,27 @@ serve(async (req) => {
     }
 
     if (notifications.length > 0) {
-      await supabase
+      console.log('NOTIFICATION PROCESSING - Creating notifications:', notifications.length);
+      const { error: notificationError } = await supabase
         .from('notifications')
         .insert(notifications);
+      
+      if (notificationError) {
+        console.error('CRITICAL ERROR - Notification creation failed:', notificationError);
+      } else {
+        console.log('NOTIFICATION PROCESSING - Notifications created successfully');
+      }
     }
 
     // Send email notifications after successful payment processing
-    await sendPaymentConfirmationEmails(payment);
+    console.log('EMAIL PROCESSING - Attempting to send payment confirmation emails');
+    try {
+      await sendPaymentConfirmationEmails(payment);
+      console.log('EMAIL PROCESSING - Email notifications sent successfully');
+    } catch (emailError) {
+      console.error('CRITICAL ERROR - Email sending failed:', emailError);
+      // Don't throw here - payment is still successful even if email fails
+    }
 
     console.log('Payment processed successfully:', paymentId);
 
