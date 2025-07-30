@@ -207,14 +207,7 @@ export function Header() {
                 <div className="flex items-center space-x-4">
                   {/* Mode switch and notifications */}
                   {talentName && <ModeSwitch />}
-                  <div className="relative">
-                    <NotificationCenter />
-                    {user && unreadCount > 0 && (
-                      <div className="absolute -top-1 -right-1 w-3 h-3 bg-destructive rounded-full flex items-center justify-center">
-                        <span className="sr-only">{unreadCount} unread notifications</span>
-                      </div>
-                    )}
-                  </div>
+                  <NotificationCenter />
                   
                   {user && !talentName && user.user_metadata?.user_type === 'talent' && (
                     <Button 
