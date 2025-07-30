@@ -326,6 +326,32 @@ export function GigOpportunitiesIntegrated({ isProSubscriber, onUpgrade, talentI
       const applicationId = await createOrGetGigApplication(gig.id);
       setGigApplicationId(applicationId);
       
+      // Create or get conversation record for this gig application
+      const { data: existingConversation, error: conversationCheckError } = await supabase
+        .from('conversations')
+        .select('id')
+        .eq('gig_application_id', applicationId)
+        .maybeSingle();
+
+      if (conversationCheckError) {
+        console.error('Error checking for existing conversation:', conversationCheckError);
+      }
+
+      // If no conversation exists, create one
+      if (!existingConversation) {
+        const { error: createConversationError } = await supabase
+          .from('conversations')
+          .insert({
+            booking_id: gig.id,
+            gig_application_id: applicationId
+          });
+
+        if (createConversationError) {
+          console.error('Error creating conversation:', createConversationError);
+          throw new Error('Failed to create conversation');
+        }
+      }
+      
       // Create a mock gig application object for chat
       const mockGigApplication: GigApplication = {
         id: applicationId,
