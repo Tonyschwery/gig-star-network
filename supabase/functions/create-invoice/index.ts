@@ -92,10 +92,11 @@ serve(async (req) => {
 
       recordData = booking;
     } else if (recordType === 'gig') {
-      // For gigs, the id is a gig_application_id, not the booking id
+      // Step 1: First query gig_applications to get gig_id and talent_id
+      console.log("Step 1: Fetching gig application data for ID:", recordId);
       const { data: gigApplication, error: gigAppError } = await supabaseService
         .from("gig_applications")
-        .select("*, gig_id, talent_id")
+        .select("gig_id, talent_id, id")
         .eq("id", recordId)
         .single();
 
@@ -104,10 +105,22 @@ serve(async (req) => {
         throw new Error("Failed to fetch gig application details");
       }
 
-      // Get the actual gig data from bookings table
+      if (!gigApplication) {
+        console.error("No gig application found for ID:", recordId);
+        throw new Error("Gig application not found");
+      }
+
+      console.log("Found gig application:", {
+        gig_id: gigApplication.gig_id,
+        talent_id: gigApplication.talent_id,
+        application_id: gigApplication.id
+      });
+
+      // Step 2: Query the bookings table using gig_id to get booker_id and budget
+      console.log("Step 2: Fetching gig data for gig_id:", gigApplication.gig_id);
       const { data: gig, error: gigFetchError } = await supabaseService
         .from("bookings")
-        .select("*")
+        .select("id, user_id, event_type, budget, budget_currency, event_date, event_location, description")
         .eq("id", gigApplication.gig_id)
         .eq("is_gig_opportunity", true)
         .eq("is_public_request", true)
@@ -118,12 +131,31 @@ serve(async (req) => {
         throw new Error("Failed to fetch gig details");
       }
 
-      // Combine gig data with application data
+      if (!gig) {
+        console.error("No gig found for ID:", gigApplication.gig_id);
+        throw new Error("Gig not found");
+      }
+
+      console.log("Found gig data:", {
+        gig_id: gig.id,
+        booker_id: gig.user_id,
+        budget: gig.budget,
+        currency: gig.budget_currency
+      });
+
+      // Step 3: Combine all the data for payment creation
       recordData = { 
         ...gig, 
         talent_id: gigApplication.talent_id,
-        gig_application_id: gigApplication.id
+        gig_application_id: gigApplication.id,
+        gig_id: gigApplication.gig_id
       };
+
+      console.log("Combined record data prepared:", {
+        booking_id: recordData.gig_id,
+        booker_id: recordData.user_id,
+        talent_id: recordData.talent_id
+      });
     } else {
       throw new Error("Invalid type. Must be 'booking' or 'gig'");
     }
@@ -131,6 +163,14 @@ serve(async (req) => {
     console.log(`Found ${recordType} with talent_id:`, recordData.talent_id);
 
     // Step B: Insert payment record with correct talent_id
+    console.log("Step B: Creating payment record with data:", {
+      booking_id: recordType === 'gig' ? recordData.gig_id : recordId,
+      booker_id: recordData.user_id,
+      talent_id: recordData.talent_id,
+      total_amount: total_amount,
+      currency: currency || "USD"
+    });
+
     const { data: payment, error: paymentError } = await supabaseService
       .from("payments")
       .insert({
