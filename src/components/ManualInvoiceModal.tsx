@@ -30,6 +30,8 @@ interface Booking {
   event_type: string;
   description?: string;
   user_id: string;
+  is_gig_opportunity?: boolean;
+  is_public_request?: boolean;
 }
 
 interface ManualInvoiceModalProps {
@@ -71,16 +73,20 @@ export function ManualInvoiceModal({
 
     try {
       // Call the secure create-invoice Edge Function
+      const isGig = booking.is_gig_opportunity && booking.is_public_request;
       const { data, error } = await supabase.functions.invoke('create-invoice', {
         body: {
-          booking_id: booking.id,
+          id: booking.id,
+          type: isGig ? 'gig' : 'booking',
           total_amount: price,
           currency: currency,
           platform_commission: platformCommission,
           talent_earnings: talentEarnings,
           commission_rate: platformCommissionRate,
           hourly_rate: price / booking.event_duration,
-          hours_booked: booking.event_duration
+          hours_booked: booking.event_duration,
+          // Keep for backward compatibility
+          booking_id: booking.id
         }
       });
 

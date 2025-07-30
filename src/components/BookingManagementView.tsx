@@ -49,11 +49,13 @@ interface TalentProfile {
 interface BookingManagementViewProps {
   title: string;
   subtitle?: string;
+  showGigOpportunities?: boolean;
 }
 
 export const BookingManagementView = ({ 
   title, 
-  subtitle = "Manage your talent profile"
+  subtitle = "Manage your talent profile",
+  showGigOpportunities = false
 }: BookingManagementViewProps) => {
   const { user, session, signOut } = useAuth();
   const navigate = useNavigate();
@@ -240,7 +242,7 @@ export const BookingManagementView = ({
           </div>
         </div>
 
-        {/* Gig Opportunities Section */}
+        {/* Gig Opportunities Section - Show for Gigs page only when showGigOpportunities=true, or always show for talent dashboard */}
         {profile && (
           <div className="mb-6 md:mb-8">
             <GigOpportunities 
@@ -250,8 +252,8 @@ export const BookingManagementView = ({
           </div>
         )}
 
-        {/* Booking Requests Section */}
-        {profile && (
+        {/* Booking Requests Section - Only show for Talent Dashboard (when showGigOpportunities=false) */}
+        {profile && !showGigOpportunities && (
           <div className="mb-6 md:mb-8">
             <BookingRequests 
               talentId={profile.id} 
@@ -260,7 +262,10 @@ export const BookingManagementView = ({
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 lg:gap-6">
+        {/* Hide profile cards on Gigs page to focus on opportunities */}
+        {!showGigOpportunities && (
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 lg:gap-6">
           {/* Profile Picture Card */}
           <Card className="glass-card">
             <CardHeader>
@@ -411,7 +416,8 @@ export const BookingManagementView = ({
               </div>
             </CardContent>
           </Card>
-        </div>
+          </div>
+        )}
 
         {/* Pro Subscription Dialog */}
         <ProSubscriptionDialog

@@ -7,7 +7,8 @@ const corsHeaders = {
 };
 
 interface InvoiceRequest {
-  booking_id: string;
+  id: string; // Can be booking_id or gig_id
+  type: 'booking' | 'gig'; // Type to determine data source
   total_amount: number;
   currency: string;
   platform_commission: number;
@@ -15,6 +16,8 @@ interface InvoiceRequest {
   commission_rate: number;
   hourly_rate: number;
   hours_booked: number;
+  // Legacy field for backward compatibility
+  booking_id?: string;
 }
 
 serve(async (req) => {
@@ -56,40 +59,71 @@ serve(async (req) => {
 
     // Parse request body
     const invoiceData: InvoiceRequest = await req.json();
-    const { booking_id, total_amount, currency, platform_commission, talent_earnings, commission_rate, hourly_rate, hours_booked } = invoiceData;
+    const { id, type, total_amount, currency, platform_commission, talent_earnings, commission_rate, hourly_rate, hours_booked, booking_id } = invoiceData;
+
+    // Handle backward compatibility - if booking_id is provided but not id/type
+    const recordId = id || booking_id;
+    const recordType = type || 'booking';
 
     // Validate required fields
-    if (!booking_id || !total_amount || total_amount <= 0) {
+    if (!recordId || !total_amount || total_amount <= 0) {
       throw new Error("Missing or invalid required fields");
     }
 
-    console.log("Creating invoice for booking:", booking_id);
+    console.log(`Creating invoice for ${recordType}:`, recordId);
 
-    // Step A: Get booking details and talent_id
-    const { data: booking, error: bookingFetchError } = await supabaseService
-      .from("bookings")
-      .select("*, talent_id")
-      .eq("id", booking_id)
-      .single();
+    // Step A: Get record details based on type
+    let recordData;
+    if (recordType === 'booking') {
+      const { data: booking, error: bookingFetchError } = await supabaseService
+        .from("bookings")
+        .select("*, talent_id")
+        .eq("id", recordId)
+        .single();
 
-    if (bookingFetchError) {
-      console.error("Error fetching booking:", bookingFetchError);
-      throw new Error("Failed to fetch booking details");
+      if (bookingFetchError) {
+        console.error("Error fetching booking:", bookingFetchError);
+        throw new Error("Failed to fetch booking details");
+      }
+
+      if (!booking.talent_id) {
+        throw new Error("No talent assigned to this booking");
+      }
+
+      recordData = booking;
+    } else if (recordType === 'gig') {
+      // For gigs, the record is still in the bookings table but marked as gig opportunity
+      const { data: gig, error: gigFetchError } = await supabaseService
+        .from("bookings")
+        .select("*, talent_id")
+        .eq("id", recordId)
+        .eq("is_gig_opportunity", true)
+        .eq("is_public_request", true)
+        .single();
+
+      if (gigFetchError) {
+        console.error("Error fetching gig:", gigFetchError);
+        throw new Error("Failed to fetch gig details");
+      }
+
+      if (!gig.talent_id) {
+        throw new Error("No talent assigned to this gig");
+      }
+
+      recordData = gig;
+    } else {
+      throw new Error("Invalid type. Must be 'booking' or 'gig'");
     }
 
-    if (!booking.talent_id) {
-      throw new Error("No talent assigned to this booking");
-    }
-
-    console.log("Found booking with talent_id:", booking.talent_id);
+    console.log(`Found ${recordType} with talent_id:`, recordData.talent_id);
 
     // Step B: Insert payment record with correct talent_id
     const { data: payment, error: paymentError } = await supabaseService
       .from("payments")
       .insert({
-        booking_id: booking_id,
-        booker_id: booking.user_id,
-        talent_id: booking.talent_id, // ✅ FIXED: Use actual talent_id from booking
+        booking_id: recordId,
+        booker_id: recordData.user_id,
+        talent_id: recordData.talent_id, // Use actual talent_id from record
         total_amount: total_amount,
         platform_commission: platform_commission,
         talent_earnings: talent_earnings,
@@ -110,31 +144,31 @@ serve(async (req) => {
 
     console.log("Created payment record:", payment.id);
 
-    // Step C: Update booking status and link payment
-    const { error: bookingUpdateError } = await supabaseService
+    // Step C: Update record status and link payment
+    const { error: recordUpdateError } = await supabaseService
       .from("bookings")
       .update({
         status: "approved",
         payment_id: payment.id
       })
-      .eq("id", booking_id);
+      .eq("id", recordId);
 
-    if (bookingUpdateError) {
-      console.error("Error updating booking:", bookingUpdateError);
-      throw new Error("Failed to update booking status");
+    if (recordUpdateError) {
+      console.error(`Error updating ${recordType}:`, recordUpdateError);
+      throw new Error(`Failed to update ${recordType} status`);
     }
 
-    console.log("Updated booking status to approved");
+    console.log(`Updated ${recordType} status to approved`);
 
     // Step D: Create notification for booker
     const { error: notificationError } = await supabaseService
       .from("notifications")
       .insert({
-        user_id: booking.user_id,
+        user_id: recordData.user_id,
         type: "invoice_received",
         title: "Invoice Received",
-        message: `You have received an invoice for your ${booking.event_type} event. Please review and complete payment.`,
-        booking_id: booking_id
+        message: `You have received an invoice for your ${recordData.event_type} ${recordType === 'gig' ? 'gig' : 'event'}. Please review and complete payment.`,
+        booking_id: recordId
       });
 
     if (notificationError) {
