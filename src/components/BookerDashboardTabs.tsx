@@ -63,32 +63,6 @@ export const BookerDashboardTabs = ({ userId }: BookerDashboardTabsProps) => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    fetchUnifiedBookings();
-    
-    // Set up real-time subscription for booking updates
-    const channel = supabase
-      .channel('booker-booking-updates')
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'bookings',
-          filter: `user_id=eq.${userId}`
-        },
-        () => {
-          // Refresh bookings when status changes
-          fetchUnifiedBookings();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [userId]);
-
   // MASTER TASK 2: Unified booking list - fetch both direct bookings and gigs
   const fetchUnifiedBookings = async () => {
     try {
@@ -142,6 +116,31 @@ export const BookerDashboardTabs = ({ userId }: BookerDashboardTabsProps) => {
     }
   };
 
+  useEffect(() => {
+    fetchUnifiedBookings();
+    
+    // Set up real-time subscription for booking updates
+    const channel = supabase
+      .channel('booker-booking-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'bookings',
+          filter: `user_id=eq.${userId}`
+        },
+        () => {
+          // Refresh bookings when status changes
+          fetchUnifiedBookings();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [userId]);
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'pending':
