@@ -46,16 +46,35 @@ interface TalentProfile {
   subscription_started_at?: string;
 }
 
+// Unified display format for both bookings and gigs
+interface DisplayItem {
+  id: string;
+  title: string;
+  status: string;
+  bookerId: string;
+  talentId?: string;
+  eventDate?: string;
+  eventType?: string;
+  location?: string;
+  budget?: number;
+  currency?: string;
+  description?: string;
+  isGigOpportunity?: boolean;
+  originalData: any; // Keep reference to original data for specific operations
+}
+
 interface BookingManagementViewProps {
   title: string;
   subtitle?: string;
   showGigOpportunities?: boolean;
+  items?: any[]; // Array of bookings or gigs to be processed
 }
 
 export const BookingManagementView = ({ 
   title, 
   subtitle = "Manage your talent profile",
-  showGigOpportunities = false
+  showGigOpportunities = false,
+  items = []
 }: BookingManagementViewProps) => {
   const { user, session, signOut } = useAuth();
   const navigate = useNavigate();
@@ -63,6 +82,65 @@ export const BookingManagementView = ({
   const [profile, setProfile] = useState<TalentProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [showProDialog, setShowProDialog] = useState(false);
+  const [displayItems, setDisplayItems] = useState<DisplayItem[]>([]);
+
+  // Data adapter function to normalize booking and gig objects
+  const mapItemToDisplayFormat = (item: any): DisplayItem => {
+    // Handle booking objects
+    if (item.event_type || item.booker_name || item.event_date) {
+      return {
+        id: item.id,
+        title: item.event_type || 'Unknown Event',
+        status: item.status || 'pending',
+        bookerId: item.user_id,
+        talentId: item.talent_id,
+        eventDate: item.event_date,
+        eventType: item.event_type,
+        location: item.event_location || item.event_address,
+        budget: item.budget,
+        currency: item.budget_currency || 'USD',
+        description: item.description,
+        isGigOpportunity: item.is_gig_opportunity || false,
+        originalData: item
+      };
+    }
+    
+    // Handle gig objects (assuming different structure)
+    if (item.gig_title || item.gig_type) {
+      return {
+        id: item.id,
+        title: item.gig_title || item.gig_type || 'Unknown Gig',
+        status: item.gig_status || item.status || 'available',
+        bookerId: item.booker_id || item.created_by,
+        talentId: item.talent_id,
+        eventDate: item.gig_date || item.event_date,
+        eventType: item.gig_type || item.event_type,
+        location: item.gig_location || item.location,
+        budget: item.gig_budget || item.budget,
+        currency: item.currency || 'USD',
+        description: item.gig_description || item.description,
+        isGigOpportunity: true,
+        originalData: item
+      };
+    }
+
+    // Fallback for unknown formats
+    return {
+      id: item.id || String(Math.random()),
+      title: item.title || item.name || 'Unknown Item',
+      status: item.status || 'unknown',
+      bookerId: item.user_id || item.booker_id || item.created_by || '',
+      talentId: item.talent_id,
+      eventDate: item.date || item.event_date || item.gig_date,
+      eventType: item.type || item.event_type || item.gig_type,
+      location: item.location || item.event_location || item.gig_location,
+      budget: item.budget || item.gig_budget,
+      currency: item.currency || 'USD',
+      description: item.description || item.gig_description,
+      isGigOpportunity: item.is_gig_opportunity || false,
+      originalData: item
+    };
+  };
 
   useEffect(() => {
     if (!user) {
@@ -71,6 +149,16 @@ export const BookingManagementView = ({
     }
     fetchTalentProfile();
   }, [user, navigate]);
+
+  // Map incoming items through the adapter whenever items prop changes
+  useEffect(() => {
+    if (items && items.length > 0) {
+      const mappedItems = items.map(mapItemToDisplayFormat);
+      setDisplayItems(mappedItems);
+    } else {
+      setDisplayItems([]);
+    }
+  }, [items]);
 
   const fetchTalentProfile = async () => {
     if (!user) return;
