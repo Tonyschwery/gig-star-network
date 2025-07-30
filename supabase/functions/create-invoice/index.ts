@@ -261,6 +261,42 @@ serve(async (req) => {
 
     console.log("Created notification for booker");
 
+    // MASTER TASK 1: Create conversation for gig applications after successful invoice creation
+    if (recordType === 'gig') {
+      console.log("TASK 1: Creating conversation for gig application:", recordId);
+      
+      // Check if conversation already exists
+      const { data: existingConversation, error: conversationCheckError } = await supabaseService
+        .from('conversations')
+        .select('id')
+        .eq('gig_application_id', recordId)
+        .maybeSingle();
+
+      if (conversationCheckError) {
+        console.error("Error checking for existing conversation:", conversationCheckError);
+        // Don't throw here as main process succeeded
+      } else if (!existingConversation) {
+        // Create new conversation
+        const { data: newConversation, error: createConversationError } = await supabaseService
+          .from('conversations')
+          .insert({
+            booking_id: recordData.gig_id,
+            gig_application_id: recordId
+          })
+          .select('id')
+          .single();
+
+        if (createConversationError) {
+          console.error("Error creating conversation:", createConversationError);
+          // Don't throw here as main process succeeded
+        } else {
+          console.log("TASK 1 SUCCESS: Created conversation for gig application:", newConversation.id);
+        }
+      } else {
+        console.log("TASK 1: Conversation already exists for gig application");
+      }
+    }
+
     // Return success response
     return new Response(
       JSON.stringify({

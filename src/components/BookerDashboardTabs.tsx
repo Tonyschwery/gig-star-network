@@ -16,7 +16,8 @@ import {
   XCircle,
   Clock3,
   AlertCircle,
-  CreditCard
+  CreditCard,
+  Sparkles
 } from "lucide-react";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
@@ -24,6 +25,7 @@ import { BookerInvoiceCard } from "@/components/BookerInvoiceCard";
 import { ChatModal } from "@/components/ChatModal";
 import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 import { useUnreadNotifications } from "@/hooks/useUnreadNotifications";
+import { BookerGigDashboard } from "@/components/BookerGigDashboard";
 
 interface Booking {
   id: string;
@@ -50,6 +52,7 @@ interface BookerDashboardTabsProps {
 }
 
 export const BookerDashboardTabs = ({ userId }: BookerDashboardTabsProps) => {
+  const [activeMainTab, setActiveMainTab] = useState("bookings");
   const [activeTab, setActiveTab] = useState("awaiting");
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
@@ -331,49 +334,75 @@ export const BookerDashboardTabs = ({ userId }: BookerDashboardTabsProps) => {
 
   return (
     <>
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4 mb-6">
-          <TabsTrigger value="awaiting" className="flex items-center gap-2">
-            <Clock3 className="h-4 w-4" />
-            <span className="hidden sm:inline">Awaiting Response</span>
-            <span className="sm:hidden">Awaiting</span>
-            {awaitingBookings.length > 0 && (
-              <Badge variant="secondary" className="ml-1">
-                {awaitingBookings.length}
-              </Badge>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="action" className="flex items-center gap-2">
-            <AlertCircle className="h-4 w-4" />
-            <span className="hidden sm:inline">Action Required</span>
-            <span className="sm:hidden">Action</span>
-            {actionRequiredBookings.length > 0 && (
-              <Badge variant="secondary" className="ml-1">
-                {actionRequiredBookings.length}
-              </Badge>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="upcoming" className="flex items-center gap-2">
-            <CheckCircle className="h-4 w-4" />
-            <span className="hidden sm:inline">Upcoming</span>
-            <span className="sm:hidden">Upcoming</span>
-            {upcomingBookings.length > 0 && (
-              <Badge variant="secondary" className="ml-1">
-                {upcomingBookings.length}
-              </Badge>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="past" className="flex items-center gap-2">
-            <Calendar className="h-4 w-4" />
-            <span className="hidden sm:inline">Past Events</span>
-            <span className="sm:hidden">Past</span>
-            {pastBookings.length > 0 && (
-              <Badge variant="secondary" className="ml-1">
-                {pastBookings.length}
-              </Badge>
-            )}
-          </TabsTrigger>
-        </TabsList>
+      {/* MASTER TASK 3: Main Tab Selection - Bookings vs Gigs */}
+      <div className="mb-6">
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant={activeMainTab === 'bookings' ? 'default' : 'outline'}
+            onClick={() => setActiveMainTab('bookings')}
+            className="flex items-center gap-2"
+          >
+            <User className="h-4 w-4" />
+            Direct Bookings
+          </Button>
+          <Button
+            variant={activeMainTab === 'gigs' ? 'default' : 'outline'}
+            onClick={() => setActiveMainTab('gigs')}
+            className="flex items-center gap-2"
+          >
+            <Sparkles className="h-4 w-4" />
+            Gig Opportunities
+          </Button>
+        </div>
+      </div>
+
+      {/* MASTER TASK 3: Show appropriate dashboard based on selection */}
+      {activeMainTab === 'gigs' ? (
+        <BookerGigDashboard userId={userId} />
+      ) : (
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-4 mb-6">
+            <TabsTrigger value="awaiting" className="flex items-center gap-2">
+              <Clock3 className="h-4 w-4" />
+              <span className="hidden sm:inline">Awaiting Response</span>
+              <span className="sm:hidden">Awaiting</span>
+              {awaitingBookings.length > 0 && (
+                <Badge variant="secondary" className="ml-1">
+                  {awaitingBookings.length}
+                </Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="action" className="flex items-center gap-2">
+              <AlertCircle className="h-4 w-4" />
+              <span className="hidden sm:inline">Action Required</span>
+              <span className="sm:hidden">Action</span>
+              {actionRequiredBookings.length > 0 && (
+                <Badge variant="secondary" className="ml-1">
+                  {actionRequiredBookings.length}
+                </Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="upcoming" className="flex items-center gap-2">
+              <CheckCircle className="h-4 w-4" />
+              <span className="hidden sm:inline">Upcoming</span>
+              <span className="sm:hidden">Upcoming</span>
+              {upcomingBookings.length > 0 && (
+                <Badge variant="secondary" className="ml-1">
+                  {upcomingBookings.length}
+                </Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="past" className="flex items-center gap-2">
+              <Calendar className="h-4 w-4" />
+              <span className="hidden sm:inline">Past Events</span>
+              <span className="sm:hidden">Past</span>
+              {pastBookings.length > 0 && (
+                <Badge variant="secondary" className="ml-1">
+                  {pastBookings.length}
+                </Badge>
+              )}
+            </TabsTrigger>
+          </TabsList>
         
         <TabsContent value="awaiting">
           <Card className="glass-card border-yellow-500/20">
@@ -483,9 +512,10 @@ export const BookerDashboardTabs = ({ userId }: BookerDashboardTabsProps) => {
           </Card>
         </TabsContent>
       </Tabs>
+      )}
 
       {/* Chat Modal */}
-      {chatBooking && (
+      {showChatModal && chatBooking && (
         <ChatModal
           open={showChatModal}
           onOpenChange={setShowChatModal}

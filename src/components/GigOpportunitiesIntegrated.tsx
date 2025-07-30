@@ -103,15 +103,42 @@ const mockGigs: GigOpportunity[] = [
   }
 ];
 
-// Chat Button Component with unread indicator
+// MASTER TASK 1: Chat Button Component - Only show for gig applications with conversations
 const GigChatButtonWithNotifications = ({ gigApplication }: { gigApplication: GigApplication }) => {
   const { hasUnread } = useUnreadMessages(gigApplication.gig.id);
   const { unreadCount } = useUnreadNotifications();
+  const [hasConversation, setHasConversation] = useState(false);
+  
+  // Check if conversation exists for this gig application
+  useEffect(() => {
+    const checkConversation = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('conversations')
+          .select('id')
+          .eq('gig_application_id', gigApplication.id)
+          .maybeSingle();
+          
+        if (!error) {
+          setHasConversation(!!data);
+        }
+      } catch (error) {
+        console.error('Error checking conversation:', error);
+      }
+    };
+    
+    checkConversation();
+  }, [gigApplication.id, gigApplication.status]);
   
   const handleOpenChat = (gigApplication: GigApplication) => {
     const event = new CustomEvent('openGigChat', { detail: gigApplication });
     window.dispatchEvent(event);
   };
+  
+  // MASTER TASK 1: Only show chat button if conversation exists (after invoice sent)
+  if (!hasConversation) {
+    return null;
+  }
   
   return (
     <Button
@@ -316,72 +343,7 @@ export function GigOpportunitiesIntegrated({ isProSubscriber, onUpgrade, talentI
     }
   };
 
-  const handleChatGig = async (gig: GigOpportunity) => {
-    if (!isProSubscriber) {
-      onUpgrade();
-      return;
-    }
-
-    try {
-      const applicationId = await createOrGetGigApplication(gig.id);
-      setGigApplicationId(applicationId);
-      
-      // TASK 1: Check for existing conversation for this gig application
-      const { data: existingConversation, error: conversationCheckError } = await supabase
-        .from('conversations')
-        .select('id')
-        .eq('gig_application_id', applicationId)
-        .maybeSingle();
-
-      if (conversationCheckError) {
-        console.error('Error checking for existing conversation:', conversationCheckError);
-        throw new Error('Failed to check for existing conversation');
-      }
-
-      let conversationId: string;
-
-      // TASK 1: If no conversation exists, create one first
-      if (!existingConversation) {
-        const { data: newConversation, error: createConversationError } = await supabase
-          .from('conversations')
-          .insert({
-            booking_id: gig.id,
-            gig_application_id: applicationId
-          })
-          .select('id')
-          .single();
-
-        if (createConversationError) {
-          console.error('Error creating conversation:', createConversationError);
-          throw new Error('Failed to create conversation');
-        }
-        
-        conversationId = newConversation.id;
-      } else {
-        conversationId = existingConversation.id;
-      }
-      
-      // Create a mock gig application object for chat
-      const mockGigApplication: GigApplication = {
-        id: applicationId,
-        gig_id: gig.id,
-        talent_id: talentId,
-        status: 'interested',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        gig: gig
-      };
-      
-      setChatGigApplication(mockGigApplication);
-      setShowChatModal(true);
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to start chat",
-        variant: "destructive",
-      });
-    }
-  };
+  // MASTER TASK 1: Remove handleChatGig function - chat is only available after invoice sent
 
   const handleInvoiceSuccess = () => {
     fetchAllGigData(); // Refresh all data
@@ -468,21 +430,8 @@ export function GigOpportunitiesIntegrated({ isProSubscriber, onUpgrade, talentI
         </div>
       )}
 
-      {/* Action Buttons */}
+      {/* MASTER TASK 1: Action Buttons - Remove Chat, Change Accept to "Accept & Send Invoice" */}
       <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 pt-3 sm:pt-4 border-t">
-        <Button
-          onClick={() => handleChatGig(gig)}
-          variant="outline"
-          className={`border-blue-200 text-blue-600 hover:bg-blue-50 w-full sm:w-auto ${
-            !isProSubscriber ? 'opacity-50 cursor-not-allowed' : ''
-          }`}
-          size="sm"
-          disabled={!isProSubscriber}
-        >
-          <MessageCircle className="h-4 w-4 mr-2" />
-          <span className="hidden sm:inline">Contact Client</span>
-          <span className="sm:hidden">Contact</span>
-        </Button>
         <Button
           onClick={() => handleAcceptGig(gig)}
           className={`w-full sm:w-auto ${
@@ -493,7 +442,7 @@ export function GigOpportunitiesIntegrated({ isProSubscriber, onUpgrade, talentI
           size="sm"
         >
           <Check className="h-4 w-4 mr-2" />
-          {isProSubscriber ? 'Accept Gig' : 'Upgrade to Accept'}
+          {isProSubscriber ? 'Accept & Send Invoice' : 'Upgrade to Accept'}
         </Button>
       </div>
     </div>
