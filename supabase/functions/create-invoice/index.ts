@@ -27,6 +27,23 @@ serve(async (req) => {
   }
 
   try {
+    // CRITICAL DEBUG: Log all incoming request data
+    console.log("=== CREATE-INVOICE FUNCTION CALLED ===");
+    console.log("Request method:", req.method);
+    console.log("Request headers:", Object.fromEntries(req.headers.entries()));
+    
+    // Parse and log the request body first
+    const requestBody = await req.text();
+    console.log("Raw request body:", requestBody);
+    
+    let invoiceData: InvoiceRequest;
+    try {
+      invoiceData = JSON.parse(requestBody);
+      console.log("Parsed invoice data:", invoiceData);
+    } catch (parseError) {
+      console.error("CRITICAL ERROR: Failed to parse request body as JSON:", parseError);
+      throw new Error("Invalid JSON in request body");
+    }
     // Create Supabase client with service role key for elevated privileges
     const supabaseService = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
@@ -57,8 +74,7 @@ serve(async (req) => {
       throw new Error("Invalid authentication");
     }
 
-    // Parse request body
-    const invoiceData: InvoiceRequest = await req.json();
+    // Extract data from already parsed request body
     const { id, type, total_amount, currency, platform_commission, talent_earnings, commission_rate, hourly_rate, hours_booked, booking_id } = invoiceData;
 
     // Handle backward compatibility - if booking_id is provided but not id/type
@@ -216,7 +232,7 @@ serve(async (req) => {
       const { error: gigUpdateError } = await supabaseService
         .from("bookings")
         .update({
-          status: "approved",
+          status: "pending_approval",
           payment_id: payment.id,
           talent_id: recordData.talent_id // Assign talent to the gig
         })
@@ -230,7 +246,7 @@ serve(async (req) => {
       const { error: recordUpdateError } = await supabaseService
         .from("bookings")
         .update({
-          status: "approved",
+          status: "pending_approval",
           payment_id: payment.id
         })
         .eq("id", recordId);
@@ -241,7 +257,7 @@ serve(async (req) => {
       }
     }
 
-    console.log(`Updated ${recordType} status to approved`);
+    console.log(`Updated ${recordType} status to pending_approval`);
 
     // Step D: Create notification for booker
     const { error: notificationError } = await supabaseService
@@ -311,7 +327,11 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error("Error in create-invoice function:", error);
+    // CRITICAL ERROR LOGGING as requested
+    console.error('CRITICAL ERROR in create-invoice:', error);
+    console.error('Error stack:', error.stack);
+    console.error('Error message:', error.message);
+    console.error('Error details:', JSON.stringify(error, null, 2));
     
     return new Response(
       JSON.stringify({
