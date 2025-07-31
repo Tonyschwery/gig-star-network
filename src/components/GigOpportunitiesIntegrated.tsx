@@ -483,65 +483,6 @@ export function GigOpportunitiesIntegrated({ isProSubscriber, onUpgrade, talentI
       />
     );
   };
-        <div className="space-y-2 sm:space-y-3">
-          <div>
-            <span className="font-medium text-xs sm:text-sm">Full Address:</span>
-            <p className="text-muted-foreground mt-1 text-xs sm:text-sm">{gigApplication.gig.event_address}</p>
-          </div>
-          <div>
-            <span className="font-medium text-xs sm:text-sm">Contact Email:</span>
-            <p className="text-muted-foreground mt-1 text-xs sm:text-sm break-all">{gigApplication.gig.booker_email}</p>
-          </div>
-          {gigApplication.gig.description && (
-            <div>
-              <span className="font-medium text-xs sm:text-sm">Event Description:</span>
-              <p className="text-muted-foreground mt-1 text-xs sm:text-sm">{gigApplication.gig.description}</p>
-            </div>
-          )}
-          {gigApplication.gig.budget && (
-            <div>
-              <span className="font-medium text-xs sm:text-sm">Client Budget:</span>
-              <p className="text-muted-foreground mt-1 text-xs sm:text-sm">
-                {gigApplication.gig.budget} {gigApplication.gig.budget_currency || 'USD'}
-              </p>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* MASTER TASK 1: Instructional Message for Talents */}
-      {showActions && gigApplication.status === 'interested' && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
-          <div className="flex items-center gap-2">
-            <MessageCircle className="h-4 w-4 text-blue-600" />
-            <p className="text-sm text-blue-800 font-medium">
-              Please send an invoice to open the chat with the Booker.
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* Action Buttons */}
-      <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 pt-3 sm:pt-4 border-t">
-        <GigChatButtonWithNotifications gigApplication={gigApplication} />
-        {showActions && gigApplication.status === 'interested' && (
-          <Button
-            onClick={() => {
-              setSelectedGig(gigApplication.gig);
-              setGigApplicationId(gigApplication.id);
-              setShowInvoiceModal(true);
-            }}
-            className="bg-green-600 hover:bg-green-700 text-white w-full sm:w-auto"
-            size="sm"
-          >
-            <Check className="h-4 w-4 mr-2" />
-            <span className="hidden sm:inline">Send Invoice</span>
-            <span className="sm:hidden">Invoice</span>
-          </Button>
-        )}
-      </div>
-    </div>
-  );
 
   const renderEmptyState = (tab: string) => (
     <Card className="glass-card">
