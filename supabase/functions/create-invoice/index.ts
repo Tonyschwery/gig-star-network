@@ -188,22 +188,26 @@ serve(async (req) => {
       currency: currency || "USD"
     });
 
+    const paymentData = {
+      booking_id: recordType === 'gig' ? recordData.gig_id : recordId, // Use gig_id for gigs, booking_id for bookings
+      booker_id: recordData.user_id,
+      talent_id: recordData.talent_id, // Use actual talent_id from record
+      total_amount: total_amount,
+      platform_commission: platform_commission,
+      talent_earnings: talent_earnings,
+      commission_rate: commission_rate,
+      hourly_rate: hourly_rate,
+      hours_booked: hours_booked,
+      currency: currency || "USD",
+      payment_status: "pending",
+      payment_method: "manual_invoice"
+    };
+
+    console.log("DEBUG: Data for payments insert:", paymentData);
+
     const { data: payment, error: paymentError } = await supabaseService
       .from("payments")
-      .insert({
-        booking_id: recordType === 'gig' ? recordData.gig_id : recordId, // Use gig_id for gigs, booking_id for bookings
-        booker_id: recordData.user_id,
-        talent_id: recordData.talent_id, // Use actual talent_id from record
-        total_amount: total_amount,
-        platform_commission: platform_commission,
-        talent_earnings: talent_earnings,
-        commission_rate: commission_rate,
-        hourly_rate: hourly_rate,
-        hours_booked: hours_booked,
-        currency: currency || "USD",
-        payment_status: "pending",
-        payment_method: "manual_invoice"
-      })
+      .insert(paymentData)
       .select()
       .single();
 
