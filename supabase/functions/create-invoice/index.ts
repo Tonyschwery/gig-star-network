@@ -207,7 +207,7 @@ serve(async (req) => {
 
     const { data: payment, error: paymentError } = await supabaseService
       .from("payments")
-      .insert(paymentData)
+      .upsert(paymentData, { onConflict: 'booking_id,payment_method' })
       .select()
       .single();
 
