@@ -123,7 +123,7 @@ export const BookerDashboardTabs = ({ userId }: BookerDashboardTabsProps) => {
   useEffect(() => {
     fetchUnifiedBookings();
     
-    // Set up real-time subscription for booking updates
+    // TASK 2: Real-time subscription for booking updates (including pending_approval status)
     const channel = supabase
       .channel('booker-booking-updates')
       .on(
@@ -134,7 +134,13 @@ export const BookerDashboardTabs = ({ userId }: BookerDashboardTabsProps) => {
           table: 'bookings',
           filter: `user_id=eq.${userId}`
         },
-        () => {
+        (payload) => {
+          console.log('Booking updated for booker:', userId, payload);
+          // Check if status changed to pending_approval
+          if (payload.new?.status === 'pending_approval') {
+            console.log('Booking moved to pending_approval, triggering notification');
+            // Trigger global notification (handled by NotificationCenter real-time)
+          }
           // Refresh bookings when status changes
           fetchUnifiedBookings();
         }
@@ -225,8 +231,9 @@ export const BookerDashboardTabs = ({ userId }: BookerDashboardTabsProps) => {
   
   const awaitingBookings = bookings.filter(booking => booking.status === 'pending');
   const pendingApprovalBookings = bookings.filter(booking => booking.status === 'pending_approval');
+  // TASK 4: Fix post-payment booking logic - only show 'confirmed' status in upcoming
   const upcomingBookings = bookings.filter(booking => 
-    (booking.status === 'confirmed' || booking.status === 'approved') && 
+    booking.status === 'confirmed' && 
     new Date(booking.event_date) >= today
   );
   const pastBookings = bookings.filter(booking => 

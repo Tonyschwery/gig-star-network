@@ -85,6 +85,24 @@ export function BookingRequests({ talentId, isProSubscriber = false }: BookingRe
   useEffect(() => {
     fetchAllBookings();
     
+    // TASK 1: Real-time subscription for new direct bookings
+    const bookingChannel = supabase
+      .channel('talent-booking-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'bookings',
+          filter: `talent_id=eq.${talentId}`
+        },
+        () => {
+          console.log('New booking received for talent:', talentId);
+          fetchAllBookings(); // Refresh bookings when new booking is created
+        }
+      )
+      .subscribe();
+    
     // Listen for openChat events from chat buttons
     const handleOpenChatEvent = (event: any) => {
       const booking = event.detail;
@@ -95,6 +113,7 @@ export function BookingRequests({ talentId, isProSubscriber = false }: BookingRe
     window.addEventListener('openChat', handleOpenChatEvent);
     
     return () => {
+      supabase.removeChannel(bookingChannel);
       window.removeEventListener('openChat', handleOpenChatEvent);
     };
   }, [talentId]);
@@ -116,8 +135,9 @@ export function BookingRequests({ talentId, isProSubscriber = false }: BookingRe
       
       setPendingBookings(bookings.filter(b => b.status === 'pending'));
       setPendingApprovalBookings(bookings.filter(b => b.status === 'pending_approval'));
+      // TASK 4: Fix post-payment booking logic - only show 'confirmed' status in upcoming
       setConfirmedBookings(bookings.filter(b => 
-        (b.status === 'approved' || b.status === 'confirmed') && 
+        b.status === 'confirmed' && 
         new Date(b.event_date) >= today
       ));
       setPastBookings(bookings.filter(b => 
