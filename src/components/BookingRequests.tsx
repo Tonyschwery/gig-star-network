@@ -85,7 +85,7 @@ export function BookingRequests({ talentId, isProSubscriber = false }: BookingRe
   useEffect(() => {
     fetchAllBookings();
     
-    // TASK 1: Real-time subscription for new direct bookings
+    // TASK 3: Real-time subscription for new direct bookings and status updates
     const bookingChannel = supabase
       .channel('talent-booking-updates')
       .on(
@@ -96,9 +96,26 @@ export function BookingRequests({ talentId, isProSubscriber = false }: BookingRe
           table: 'bookings',
           filter: `talent_id=eq.${talentId}`
         },
-        () => {
-          console.log('New booking received for talent:', talentId);
+        (payload) => {
+          console.log('New booking received for talent:', talentId, payload);
           fetchAllBookings(); // Refresh bookings when new booking is created
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'bookings',
+          filter: `talent_id=eq.${talentId}`
+        },
+        (payload) => {
+          console.log('Booking updated for talent:', talentId, payload);
+          // Check if status changed to confirmed (post-payment)
+          if (payload.new?.status === 'confirmed') {
+            console.log('Booking confirmed after payment, refreshing bookings');
+          }
+          fetchAllBookings(); // Refresh bookings when status changes
         }
       )
       .subscribe();
