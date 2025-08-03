@@ -239,13 +239,8 @@ export function BookingCard({
 
   // Chat Button Component
   const ChatButton = ({ variant = "outline", size = "sm" }: { variant?: any, size?: any }) => {
-    // Only show chat if conversation exists or if it's pending_approval/confirmed status
-    const canChat = hasConversation || 
-                   booking.status === 'pending_approval' || 
-                   booking.status === 'confirmed' ||
-                   booking.status === 'completed';
-    
-    if (!canChat) return null;
+    // Chat is always available - conversations will be created on demand
+    const canChat = true;
     
     return (
       <Button
@@ -442,10 +437,11 @@ export function BookingCard({
             eventDate={booking.event_date}
           />
         ) : (
-          <TalentChatModal
+          <ChatModal
             open={showChatModal}
             onOpenChange={setShowChatModal}
-            gigApplicationId={booking.id}
+            bookingId={booking.id}
+            talentName={booking.booker_name}
             eventType={booking.event_type}
             eventDate={booking.event_date}
           />

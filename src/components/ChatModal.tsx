@@ -146,14 +146,19 @@ export function ChatModal({
         .maybeSingle();
 
       if (!conversation) {
+        console.log('Creating new conversation for booking:', bookingId);
         const { data: newConversation, error: createError } = await supabase
           .from('conversations')
-          .upsert({ booking_id: bookingId }, { onConflict: 'booking_id' })
+          .insert({ booking_id: bookingId })
           .select()
           .single();
 
-        if (createError) throw createError;
+        if (createError) {
+          console.error('Error creating conversation:', createError);
+          throw createError;
+        }
         conversation = newConversation;
+        console.log('Created conversation:', conversation);
       }
 
       setConversationId(conversation.id);

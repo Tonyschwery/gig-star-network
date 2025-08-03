@@ -286,8 +286,8 @@ export const BookerDashboardTabs = ({ userId }: BookerDashboardTabsProps) => {
             </TabsTrigger>
             <TabsTrigger value="pending" className="flex items-center gap-2 relative">
               <AlertCircle className="h-4 w-4" />
-              <span className="hidden sm:inline">Pending Approval</span>
-              <span className="sm:hidden">Pending</span>
+              <span className="hidden sm:inline">Invoices / Awaiting Payment</span>
+              <span className="sm:hidden">Invoices</span>
               {pendingApprovalBookings.length > 0 && !hasViewedTab.pending && (
                 <div className="absolute -top-1 -right-1 w-5 h-5 bg-destructive rounded-full flex items-center justify-center">
                   <span className="text-xs text-white font-bold">
@@ -350,7 +350,7 @@ export const BookerDashboardTabs = ({ userId }: BookerDashboardTabsProps) => {
             <CardHeader>
               <CardTitle className="flex items-center text-orange-700">
                 <AlertCircle className="h-5 w-5 mr-2" />
-                Pending Approval ({pendingApprovalBookings.length})
+                Invoices / Awaiting Payment ({pendingApprovalBookings.length})
               </CardTitle>
               <CardDescription>
                 Invoices sent by talents awaiting your approval and payment
@@ -360,7 +360,7 @@ export const BookerDashboardTabs = ({ userId }: BookerDashboardTabsProps) => {
               {pendingApprovalBookings.length === 0 ? (
                 <div className="text-center py-8">
                   <CreditCard className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <h3 className="font-medium mb-2">No Pending Approvals</h3>
+                  <h3 className="font-medium mb-2">No Invoices / Awaiting Payment</h3>
                   <p className="text-sm text-muted-foreground">
                     Invoices from talents will appear here for your review and payment
                   </p>
