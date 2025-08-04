@@ -169,7 +169,7 @@ export function NotificationCenter() {
     }
   };
 
-  // Handle notification click to navigate to relevant page
+  // TASK 2: Handle notification click to navigate to relevant page and open specific chat
   const handleNotificationClick = async (notification: Notification) => {
     // Mark as read when clicked
     if (!notification.is_read) {
@@ -184,13 +184,13 @@ export function NotificationCenter() {
           .from('talent_profiles')
           .select('id')
           .eq('user_id', user?.id)
-          .single();
+          .maybeSingle();
 
         if (talentProfile) {
           // User is a talent, go to talent dashboard
           navigate('/talent-dashboard');
         } else {
-          // User is a booker, go to booker dashboard
+          // User is a booker, go to booker dashboard - they can access chat from there
           navigate('/booker-dashboard');
         }
       } catch {
@@ -198,8 +198,22 @@ export function NotificationCenter() {
         navigate('/booker-dashboard');
       }
     } else {
-      // For general notifications, just stay on current page or go to appropriate dashboard
-      // The notification is already marked as read, so no further action needed
+      // For general notifications, navigate to appropriate dashboard
+      try {
+        const { data: talentProfile } = await supabase
+          .from('talent_profiles')
+          .select('id')
+          .eq('user_id', user?.id)
+          .maybeSingle();
+
+        if (talentProfile) {
+          navigate('/talent-dashboard');
+        } else {
+          navigate('/booker-dashboard');
+        }
+      } catch {
+        navigate('/booker-dashboard');
+      }
     }
   };
 

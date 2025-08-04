@@ -225,17 +225,19 @@ export const BookerDashboardTabs = ({ userId }: BookerDashboardTabsProps) => {
     );
   };
 
-  // MASTER TASK 1: Fix booking status logic - filter by event_date, not payment status
+  // TASK 1: Fix booking status logic - ensure confirmed bookings appear in upcoming tab
   const today = new Date();
   today.setHours(0, 0, 0, 0); // Start of today
   
   const awaitingBookings = bookings.filter(booking => booking.status === 'pending');
   const pendingApprovalBookings = bookings.filter(booking => booking.status === 'pending_approval');
-  // MASTER TASK 1: Fix post-payment booking logic - only show 'confirmed' status in upcoming
-  const upcomingBookings = bookings.filter(booking => 
-    booking.status === 'confirmed' && 
-    new Date(booking.event_date) >= today
-  );
+  
+  // TASK 1: Show confirmed bookings with future event dates in upcoming tab
+  const upcomingBookings = bookings.filter(booking => {
+    const eventDate = new Date(booking.event_date);
+    console.log(`Booking ${booking.id}: status=${booking.status}, event_date=${booking.event_date}, eventDate=${eventDate}, today=${today}, passes filter=${booking.status === 'confirmed' && eventDate >= today}`);
+    return booking.status === 'confirmed' && eventDate >= today;
+  });
   // MASTER TASK 1: Past events should only show bookings where event_date is in the past, regardless of status
   const pastBookings = bookings.filter(booking => 
     new Date(booking.event_date) < today
