@@ -344,6 +344,68 @@ export function GigOpportunitiesIntegrated({ isProSubscriber, onUpgrade, talentI
     }
   };
 
+  // TASK 1: Add chat functionality for available gigs
+  const handleChatWithBooker = async (gig: GigOpportunity) => {
+    if (!isProSubscriber) {
+      onUpgrade();
+      return;
+    }
+
+    try {
+      // Create or get existing gig application to enable chat
+      const applicationId = await createOrGetGigApplication(gig.id);
+      
+      // Create or get conversation for this gig application
+      const { data: existingConversation, error: conversationError } = await supabase
+        .from('conversations')
+        .select('id')
+        .eq('gig_application_id', applicationId)
+        .maybeSingle();
+
+      if (conversationError) throw conversationError;
+
+      let conversationId = existingConversation?.id;
+
+      if (!conversationId) {
+        // Create new conversation for this gig application
+        const { data: newConversation, error: createError } = await supabase
+          .from('conversations')
+          .insert({
+            booking_id: gig.id,
+            gig_application_id: applicationId,
+            created_at: new Date().toISOString()
+          })
+          .select('id')
+          .single();
+
+        if (createError) throw createError;
+        conversationId = newConversation.id;
+      }
+
+      // Open chat modal with this gig application
+      const gigApplication = {
+        id: applicationId,
+        gig_id: gig.id,
+        talent_id: talentId,
+        status: 'interested',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        gig: gig
+      };
+
+      setChatGigApplication(gigApplication);
+      setGigApplicationId(applicationId);
+      setShowChatModal(true);
+    } catch (error) {
+      console.error('Error starting chat:', error);
+      toast({
+        title: "Error",
+        description: "Failed to start chat",
+        variant: "destructive",
+      });
+    }
+  };
+
   // MASTER TASK 1: Remove handleChatGig function - chat is only available after invoice sent
 
   const handleInvoiceSuccess = () => {
@@ -430,8 +492,17 @@ export function GigOpportunitiesIntegrated({ isProSubscriber, onUpgrade, talentI
         </div>
       )}
 
-      {/* MASTER TASK 1: Action Buttons - Remove Chat, Change Accept to "Accept & Send Invoice" */}
+      {/* TASK 1: Action Buttons - Add Chat with Booker functionality */}
       <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 pt-3 sm:pt-4 border-t">
+        <Button
+          onClick={() => handleChatWithBooker(gig)}
+          variant="outline"
+          className="w-full sm:w-auto border-blue-200 text-blue-600 hover:bg-blue-50"
+          size="sm"
+        >
+          <MessageCircle className="h-4 w-4 mr-2" />
+          Chat with Booker
+        </Button>
         <Button
           onClick={() => handleAcceptGig(gig)}
           className={`w-full sm:w-auto ${

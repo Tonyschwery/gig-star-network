@@ -389,7 +389,7 @@ export function BookingCard({
             </Button>
           )}
 
-          {mode === 'talent' && showActions && (
+          {mode === 'talent' && showActions && booking.status === 'pending' && (
             <>
               <Button
                 onClick={handleDecline}

@@ -157,8 +157,9 @@ export function BookingRequests({ talentId, isProSubscriber = false }: BookingRe
         b.status === 'confirmed' && 
         new Date(b.event_date) >= today
       ));
+      // TASK 3: Past events should only show bookings where event_date is in the past, regardless of status
       setPastBookings(bookings.filter(b => 
-        new Date(b.event_date) < today || b.status === 'completed'
+        new Date(b.event_date) < today
       ));
     } catch (error) {
       console.error('Error fetching bookings:', error);
