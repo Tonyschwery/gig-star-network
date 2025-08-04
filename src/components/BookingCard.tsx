@@ -319,8 +319,7 @@ export function BookingCard({
                 <span>{format(new Date(booking.event_date), 'PPP')}</span>
               </div>
               <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4" />
-                <span>{booking.event_duration} hours</span>
+                <span className="font-medium">Duration: {booking.event_duration} hours</span>
               </div>
               <div className="flex items-center gap-2">
                 <MapPin className="h-4 w-4" />
@@ -331,6 +330,16 @@ export function BookingCard({
                 <span>Created {format(new Date(booking.created_at), 'MMM d, yyyy')}</span>
               </div>
             </div>
+
+            {/* MASTER TASK 3: Display paid amount for confirmed/paid bookings */}
+            {(booking.status === 'confirmed' || booking.status === 'paid') && payment && (
+              <div className="mt-3 p-3 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-800">
+                <div className="flex items-center gap-2 text-green-700 dark:text-green-300">
+                  <Check className="h-4 w-4" />
+                  <span className="font-semibold">Amount Paid: ${payment.total_amount} {payment.currency?.toUpperCase() || 'USD'}</span>
+                </div>
+              </div>
+            )}
 
             {showActions && (
               <div className="space-y-2">

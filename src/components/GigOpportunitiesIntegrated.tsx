@@ -255,9 +255,9 @@ export function GigOpportunitiesIntegrated({ isProSubscriber, onUpgrade, talentI
         new Date(app.gig.event_date) >= now
       ));
       
+      // MASTER TASK 1: Past events should only show gigs where event_date is in the past, regardless of status
       setPastApplications(applications.filter(app => 
-        app.status === 'completed' || 
-        (new Date(app.gig.event_date) < now && app.status !== 'interested' && app.status !== 'invoice_sent')
+        new Date(app.gig.event_date) < now
       ));
 
     } catch (error) {
@@ -410,8 +410,7 @@ export function GigOpportunitiesIntegrated({ isProSubscriber, onUpgrade, talentI
           <span className="font-medium">{format(new Date(gig.event_date), 'PPP')}</span>
         </div>
         <div className="flex items-center gap-2">
-          <Clock className="h-4 w-4 text-muted-foreground" />
-          <span>{gig.event_duration} hours</span>
+          <span className="font-medium">Duration: {gig.event_duration} hours</span>
         </div>
         <div className="flex items-center gap-2">
           <MapPin className="h-4 w-4 text-muted-foreground" />

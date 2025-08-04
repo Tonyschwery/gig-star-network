@@ -231,13 +231,14 @@ export const BookerDashboardTabs = ({ userId }: BookerDashboardTabsProps) => {
   
   const awaitingBookings = bookings.filter(booking => booking.status === 'pending');
   const pendingApprovalBookings = bookings.filter(booking => booking.status === 'pending_approval');
-  // TASK 4: Fix post-payment booking logic - only show 'confirmed' status in upcoming
+  // MASTER TASK 1: Fix post-payment booking logic - only show 'confirmed' status in upcoming
   const upcomingBookings = bookings.filter(booking => 
     booking.status === 'confirmed' && 
     new Date(booking.event_date) >= today
   );
+  // MASTER TASK 1: Past events should only show bookings where event_date is in the past, regardless of status
   const pastBookings = bookings.filter(booking => 
-    new Date(booking.event_date) < today || booking.status === 'completed'
+    new Date(booking.event_date) < today
   );
 
   const renderBookingCard = (booking: Booking, showPaymentInterface: boolean = false) => {
