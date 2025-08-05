@@ -109,10 +109,10 @@ export function BookerInvoiceCard({ booking, payment, onPaymentUpdate }: BookerI
 
       if (error) throw error;
 
-      // Update booking status to completed
+      // Update booking status to confirmed
       const { error: bookingError } = await supabase
         .from('bookings')
-        .update({ status: 'completed' })
+        .update({ status: 'confirmed' })
         .eq('id', booking.id);
 
       if (bookingError) throw bookingError;
