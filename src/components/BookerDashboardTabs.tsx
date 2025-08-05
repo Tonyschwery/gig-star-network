@@ -234,9 +234,7 @@ export const BookerDashboardTabs = ({ userId }: BookerDashboardTabsProps) => {
   
   // TASK 1: Show confirmed bookings with future event dates in upcoming tab
   const upcomingBookings = bookings.filter(booking => {
-    const eventDate = new Date(booking.event_date);
-    console.log(`Booking ${booking.id}: status=${booking.status}, event_date=${booking.event_date}, eventDate=${eventDate}, today=${today}, passes filter=${booking.status === 'confirmed' && eventDate >= today}`);
-    return booking.status === 'confirmed' && eventDate >= today;
+    return booking.status === 'confirmed' && new Date(booking.event_date) >= new Date();
   });
   // MASTER TASK 1: Past events should only show bookings where event_date is in the past, regardless of status
   const pastBookings = bookings.filter(booking => 

@@ -154,9 +154,7 @@ export function BookingRequests({ talentId, isProSubscriber = false }: BookingRe
       setPendingApprovalBookings(bookings.filter(b => b.status === 'pending_approval'));
       // TASK 1: Show confirmed bookings with future event dates in upcoming tab  
       const confirmedFilteredBookings = bookings.filter(b => {
-        const eventDate = new Date(b.event_date);
-        console.log(`Talent Booking ${b.id}: status=${b.status}, event_date=${b.event_date}, eventDate=${eventDate}, today=${today}, passes filter=${b.status === 'confirmed' && eventDate >= today}`);
-        return b.status === 'confirmed' && eventDate >= today;
+        return b.status === 'confirmed' && new Date(b.event_date) >= new Date();
       });
       setConfirmedBookings(confirmedFilteredBookings);
       // TASK 3: Past events should only show bookings where event_date is in the past, regardless of status
