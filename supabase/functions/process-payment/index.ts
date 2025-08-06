@@ -155,18 +155,18 @@ serve(async (req) => {
     console.log('PAYMENT PROCESSING START - Payment ID:', paymentId);
     console.log('PAYMENT PROCESSING - Request received at:', new Date().toISOString());
 
-    // Get payment and related booking details
+    // Get payment and related booking details - fix the ambiguous relationship
     const { data: payment, error: paymentError } = await supabase
       .from('payments')
       .select(`
         *,
-        bookings!payments_booking_id_fkey(
+        bookings!booking_id(
           id,
           user_id,
           talent_id,
           event_type,
           event_date,
-          talent_profiles!talent_profiles_id_fkey(
+          talent_profiles!talent_id(
             artist_name,
             user_id
           )
