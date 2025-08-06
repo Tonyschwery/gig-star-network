@@ -12,6 +12,8 @@ const corsHeaders = {
 
 interface PaymentRequest {
   paymentId: string;
+  bookingId?: string;
+  totalAmount?: number;
 }
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
@@ -135,12 +137,16 @@ serve(async (req) => {
   }
 
   try {
+    // Add logging to debug the incoming request
+    const requestBody = await req.json();
+    console.log('PAYMENT PROCESSING - Full request body received:', JSON.stringify(requestBody, null, 2));
+
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const { paymentId }: PaymentRequest = await req.json();
+    const { paymentId, bookingId, totalAmount } = requestBody;
 
     if (!paymentId) {
       throw new Error('Payment ID is required');
@@ -154,12 +160,13 @@ serve(async (req) => {
       .from('payments')
       .select(`
         *,
-        bookings!inner(
+        bookings!payments_booking_id_fkey(
           id,
           user_id,
           talent_id,
           event_type,
-          talent_profiles!inner(
+          event_date,
+          talent_profiles!talent_profiles_id_fkey(
             artist_name,
             user_id
           )

@@ -30,10 +30,10 @@ serve(async (req) => {
     const { booking_id } = await req.json();
     if (!booking_id) throw new Error("booking_id is required");
 
-    // Update booking status to declined
+    // Update booking status back to pending (not declined)
     const { error: bookingError } = await supabaseClient
       .from('bookings')
-      .update({ status: 'declined' })
+      .update({ status: 'pending' })
       .eq('id', booking_id)
       .eq('user_id', user.id); // Ensure only booking owner can decline
 
@@ -65,7 +65,7 @@ serve(async (req) => {
           user_id: booking.talent_profiles.user_id,
           type: 'invoice_declined',
           title: 'Invoice Declined',
-          message: `Your invoice for the ${booking.event_type} event has been declined by the booker.`,
+          message: `Your invoice for the ${booking.event_type} event has been declined by the booker. The booking has been moved back to pending status.`,
           booking_id: booking_id
         });
 
