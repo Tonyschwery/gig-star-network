@@ -98,24 +98,19 @@ export function BookerInvoiceCard({ booking, payment, onPaymentUpdate }: BookerI
       // Simulate payment processing delay
       await new Promise(resolve => setTimeout(resolve, 2000));
 
-      // Update payment status to completed
-      const { error } = await supabase
-        .from('payments')
-        .update({ 
-          payment_status: 'completed',
-          processed_at: new Date().toISOString()
-        })
-        .eq('id', payment.id);
+      // Call the process-payment Edge Function
+      const { data, error } = await supabase.functions.invoke('process-payment', {
+        body: { 
+          paymentId: payment.id,
+          bookingId: booking.id,
+          totalAmount: payment.total_amount
+        },
+        headers: {
+          Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+        },
+      });
 
       if (error) throw error;
-
-      // Update booking status to confirmed
-      const { error: bookingError } = await supabase
-        .from('bookings')
-        .update({ status: 'confirmed' })
-        .eq('id', booking.id);
-
-      if (bookingError) throw bookingError;
 
       toast({
         title: "Payment Successful!",
