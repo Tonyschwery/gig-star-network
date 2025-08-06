@@ -60,7 +60,6 @@ export type Database = {
           is_gig_opportunity: boolean | null
           is_public_request: boolean | null
           needs_equipment: boolean | null
-          payment_id: string | null
           status: string
           talent_id: string | null
           updated_at: string
@@ -84,7 +83,6 @@ export type Database = {
           is_gig_opportunity?: boolean | null
           is_public_request?: boolean | null
           needs_equipment?: boolean | null
-          payment_id?: string | null
           status?: string
           talent_id?: string | null
           updated_at?: string
@@ -108,20 +106,12 @@ export type Database = {
           is_gig_opportunity?: boolean | null
           is_public_request?: boolean | null
           needs_equipment?: boolean | null
-          payment_id?: string | null
           status?: string
           talent_id?: string | null
           updated_at?: string
           user_id?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "bookings_payment_id_fkey"
-            columns: ["payment_id"]
-            isOneToOne: false
-            referencedRelation: "payments"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "bookings_talent_id_fkey"
             columns: ["talent_id"]
