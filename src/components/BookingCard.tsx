@@ -1,11 +1,12 @@
-// PASTE THIS ENTIRE CODE BLOCK INTO src/components/BookingCard.tsx
+// PASTE THIS ENTIRE CODE BLOCK - With the corrected icon import.
 
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Calendar, User, Check, X, MessageCircle, Clock3 } from "lucide-react";
+// *** BUG FIX: Added the missing 'MapPin' icon to the import list ***
+import { Calendar, User, Check, X, MessageCircle, Clock3, MapPin } from "lucide-react";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { ManualInvoiceModal } from "./ManualInvoiceModal";
@@ -15,7 +16,7 @@ import { ChatModal } from "./ChatModal";
 export interface Booking {
   id: string;
   booker_name: string;
-  event_date: string | Date; // Can be string or Date object
+  event_date: string | Date; 
   event_duration: number;
   event_location: string;
   event_address: string;
@@ -29,6 +30,7 @@ export interface Booking {
   description?: string;
   booker_email?: string;
   budget?: number;
+  payment?: { total_amount: number; currency: string }[];
 }
 
 interface BookingCardProps {
@@ -45,11 +47,9 @@ export const BookingCard = ({ booking, mode, onUpdate, isProSubscriber, gigAppli
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // *** BUG FIX: Create a safe date formatting function to prevent crashes ***
   const safeFormatDate = (date: string | Date | null | undefined, dateFormat: string) => {
     try {
-      if (!date) return "Not available";
-      // Ensure the date is a valid Date object before formatting
+      if (!date) return "N/A";
       const dateObj = typeof date === 'string' ? new Date(date) : date;
       if (isNaN(dateObj.getTime())) return "Invalid Date";
       return format(dateObj, dateFormat);
@@ -76,6 +76,9 @@ export const BookingCard = ({ booking, mode, onUpdate, isProSubscriber, gigAppli
     }
   };
 
+  const paymentAmount = booking.payment?.[0]?.total_amount;
+  const paymentCurrency = booking.payment?.[0]?.currency || 'USD';
+
   return (
     <>
       <div className="border rounded-lg p-4 bg-card space-y-3">
@@ -90,6 +93,8 @@ export const BookingCard = ({ booking, mode, onUpdate, isProSubscriber, gigAppli
             <div><Clock3 className="inline h-4 w-4 mr-2" />Duration: {booking.event_duration} hours</div>
             <div><MapPin className="inline h-4 w-4 mr-2" />{booking.event_location}</div>
         </div>
+
+        {paymentAmount && <div className="font-semibold text-green-600">Amount Paid: ${paymentAmount} {paymentCurrency}</div>}
 
         <div className="flex flex-wrap gap-2 pt-2 border-t mt-2">
             <Button onClick={() => onOpenChat(booking.id, gigApplicationId)} variant="outline" size="sm"><MessageCircle className="h-4 w-4 mr-2" />Chat</Button>
