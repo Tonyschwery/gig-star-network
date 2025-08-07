@@ -12,7 +12,7 @@ export const BookerDashboardTabs = ({ userId }: { userId: string }) => {
     const [bookings, setBookings] = useState<Booking[]>([]);
     const [loading, setLoading] = useState(true);
     const [isChatOpen, setIsChatOpen] = useState(false);
-    const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
+    const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
 
     const fetchBookings = useCallback(async () => {
         if (!userId) return;
@@ -31,12 +31,12 @@ export const BookerDashboardTabs = ({ userId }: { userId: string }) => {
     const handleOpenChat = async (bookingId: string) => {
         const { data: convo } = await supabase.from('conversations').select('id').eq('booking_id', bookingId).maybeSingle();
         if (convo) {
-            setCurrentConversationId(convo.id);
+            setActiveConversationId(convo.id);
             setIsChatOpen(true);
         } else {
             const { data: newConvo } = await supabase.from('conversations').insert({ booking_id: bookingId }).select().single();
             if (newConvo) {
-                setCurrentConversationId(newConvo.id);
+                setActiveConversationId(newConvo.id);
                 setIsChatOpen(true);
             }
         }
@@ -79,8 +79,8 @@ export const BookerDashboardTabs = ({ userId }: { userId: string }) => {
                 <TabsContent value="upcoming">{renderBookingList(upcomingBookings)}</TabsContent>
                 <TabsContent value="past">{renderBookingList(pastBookings)}</TabsContent>
             </Tabs>
-            {isChatOpen && currentConversationId && (
-                <ChatModal conversationId={currentConversationId} onClose={() => setIsChatOpen(false)} />
+            {isChatOpen && activeConversationId && (
+                <ChatModal conversationId={activeConversationId} open={isChatOpen} onOpenChange={setIsChatOpen} />
             )}
         </>
     );
