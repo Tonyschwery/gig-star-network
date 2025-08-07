@@ -1,72 +1,54 @@
-// PASTE THIS SAFE, REVERTED CODE BLOCK
+// PASTE THIS ENTIRE CODE BLOCK INTO src/pages/TalentDashboard.tsx
 
-import React, { useState } from "react";
+import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BookingRequests } from "@/components/BookingRequests";
-import { GigOpportunitiesIntegrated } from "@/components/GigOpportunitiesIntegrated";
-import { Calendar, Sparkles } from "lucide-react";
+import { GigOpportunitiesIntegrated } from "@/components/GigOpportunitiesIntegrated"; 
+import { useAuth } from '@/hooks/useAuth';
+import { Button } from '@/components/ui/button';
 
-// Assuming these notification hooks exist from previous versions
-import { useDirectBookingNotifications } from "@/hooks/useDirectBookingNotifications";
-import { useGigOpportunityNotifications } from "@/hooks/useGigOpportunityNotifications";
+export const TalentDashboard = () => {
+  const { profile, loading } = useAuth();
 
-interface TalentDashboardProps {
-  talentId: string;
-  isProSubscriber: boolean;
-  onUpgrade: () => void;
-}
-
-export const TalentDashboard = ({ talentId, isProSubscriber, onUpgrade }: TalentDashboardProps) => {
-  const [activeTab, setActiveTab] = useState("bookings");
+  if (loading) {
+    return <div>Loading dashboard...</div>;
+  }
   
-  // Using simplified placeholders for notifications to ensure no crashes
-  const directBookingUnread = useDirectBookingNotifications(talentId)?.unreadCount || 0;
-  const gigOpportunityUnread = useGigOpportunityNotifications(talentId)?.unreadCount || 0;
-
+  // This is a placeholder for the subscription upgrade logic
+  const handleUpgrade = () => {
+    // Navigate to pricing page or open Stripe checkout
+    console.log("Upgrade to Pro clicked!");
+    // You would typically navigate('/pricing') here
+  };
+  
   return (
-    <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-      <TabsList className="grid w-full grid-cols-2 mb-6">
-        <TabsTrigger value="bookings" className="relative">
-          <Calendar className="h-4 w-4 mr-2" />
-          Direct Bookings
-          {directBookingUnread > 0 && (
-            <div className="absolute -top-1 -right-1 w-5 h-5 bg-destructive rounded-full flex items-center justify-center">
-              <span className="text-xs text-white font-bold">{directBookingUnread}</span>
-            </div>
-          )}
-        </TabsTrigger>
-        <TabsTrigger value="gigs" className="relative">
-          <Sparkles className="h-4 w-4 mr-2" />
-          Gig Opportunities
-          {gigOpportunityUnread > 0 && (
-            <div className="absolute -top-1 -right-1 w-5 h-5 bg-destructive rounded-full flex items-center justify-center">
-              <span className="text-xs text-white font-bold">{gigOpportunityUnread}</span>
-            </div>
-          )}
-        </TabsTrigger>
-      </TabsList>
-      
-      <TabsContent value="bookings">
-        <BookingRequests 
-          talentId={talentId} 
-          isProSubscriber={isProSubscriber}
-        />
-      </TabsContent>
-      
-      <TabsContent value="gigs">
-        {isProSubscriber ? (
-          <GigOpportunitiesIntegrated />
-        ) : (
-          <div className="text-center p-8 border rounded-lg">
-              <h3 className="font-bold">This is a Pro Feature</h3>
-              <p>Upgrade to Pro to view and apply for exclusive gig opportunities.</p>
-              <button onClick={onUpgrade} className="mt-4 bg-primary text-primary-foreground p-2 rounded">Upgrade Now</button>
-          </div>
-        )}
-      </TabsContent>
-    </Tabs>
+    <div className="container mx-auto p-4">
+        <Tabs defaultValue="bookings" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="bookings">Direct Bookings</TabsTrigger>
+                <TabsTrigger value="gigs">Gig Opportunities</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="bookings">
+                {/* This component will now correctly receive talentId from the profile */}
+                {profile?.id && <BookingRequests talentId={profile.id} />}
+            </TabsContent>
+            
+            <TabsContent value="gigs">
+                {profile?.is_pro_subscriber ? (
+                    // This is the component we've been fixing. It will now work.
+                    <GigOpportunitiesIntegrated />
+                ) : (
+                    <div className="text-center p-8 border rounded-lg bg-card">
+                        <h3 className="font-bold text-xl mb-2">This is a Pro Feature</h3>
+                        <p className="text-muted-foreground mb-4">Upgrade to Pro to view and apply for exclusive gig opportunities.</p>
+                        <Button onClick={handleUpgrade}>Upgrade to Pro</Button>
+                    </div>
+                )}
+            </TabsContent>
+        </Tabs>
+    </div>
   );
 };
 
-// You might need to add "export default TalentDashboard;" at the end
-// if the original file had it.
+export default TalentDashboard;
