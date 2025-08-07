@@ -12,24 +12,30 @@ import { Calendar, Sparkles } from "lucide-react";
 
 export const TalentDashboardTabs = () => {
     const { profile } = useAuth();
-    const [directBookings, setDirectBookings] = useState<Booking[]>([]);
+    const [allBookings, setAllBookings] = useState<Booking[]>([]);
     const [loading, setLoading] = useState(true);
     const [isChatOpen, setIsChatOpen] = useState(false);
     const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
 
-    const fetchDirectBookings = useCallback(async () => {
+    const fetchAllBookings = useCallback(async () => {
         if (!profile?.id) return;
-        const { data, error } = await supabase.from('bookings').select(`*, payments(*), gig_applications(id)`).eq('talent_id', profile.id).eq('is_gig_opportunity', false).order('event_date', { ascending: false });
-        if (error) console.error("Error fetching direct bookings:", error);
-        else setDirectBookings(data || []);
+        // Fetch all bookings and gig applications related to this talent
+        const { data, error } = await supabase
+            .from('bookings')
+            .select(`*, payments(*), gig_applications!inner(id)`)
+            .eq('talent_id', profile.id);
+
+        if (error) console.error("Error fetching bookings:", error);
+        else setAllBookings(data || []);
         setLoading(false);
     }, [profile]);
 
     useEffect(() => {
-        fetchDirectBookings();
-        const channel = supabase.channel(`public:bookings:talent_id=eq.${profile?.id}`).on('postgres_changes', { event: '*', schema: 'public', table: 'bookings' }, fetchDirectBookings).subscribe();
+        fetchAllBookings();
+        // Setup a single channel to listen for all changes related to this talent
+        const channel = supabase.channel(`talent-dashboard:${profile?.id}`).on('postgres_changes', { event: '*', schema: 'public' }, fetchAllBookings).subscribe();
         return () => { supabase.removeChannel(channel); };
-    }, [profile, fetchDirectBookings]);
+    }, [profile, fetchAllBookings]);
 
     const handleOpenChat = async (bookingId: string, gigApplicationId?: string) => {
         const isGig = !!gigApplicationId;
@@ -37,19 +43,27 @@ export const TalentDashboardTabs = () => {
         const queryVal = isGig ? gigApplicationId : bookingId;
 
         const { data: convo } = await supabase.from('conversations').select('id').eq(queryCol, queryVal).maybeSingle();
+        
         if (convo) {
             setActiveConversationId(convo.id);
             setIsChatOpen(true);
         } else {
+            // Create conversation if it doesn't exist
             const insertData = { booking_id: bookingId, ...(isGig && { gig_application_id: gigApplicationId }) };
-            const { data: newConvo } = await supabase.from('conversations').insert(insertData).select().single();
+            const { data: newConvo, error } = await supabase.from('conversations').insert(insertData).select().single();
             if (newConvo) {
                 setActiveConversationId(newConvo.id);
                 setIsChatOpen(true);
+            } else {
+                console.error("Failed to create conversation:", error);
             }
         }
     };
 
+    if (loading) return <div>Loading...</div>;
+    
+    // Filter bookings for Direct Bookings tabs
+    const directBookings = allBookings.filter(b => !b.is_gig_opportunity);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -60,11 +74,9 @@ export const TalentDashboardTabs = () => {
 
     const renderBookings = (list: Booking[]) => (
         list.length > 0
-            ? list..map(b => <BookingCard key={b.id} booking={b} mode="talent" onUpdate={fetchDirectBookings} isProSubscriber={profile?.is_pro_subscriber} onOpenChat={handleOpenChat} />)
+            ? list.map(b => <BookingCard key={b.id} booking={b} mode="talent" onUpdate={fetchAllBookings} isProSubscriber={profile?.is_pro_subscriber} onOpenChat={handleOpenChat} />)
             : <p className="text-muted-foreground text-center py-4">No bookings in this category.</p>
     );
-
-    if (loading) return <div>Loading...</div>
 
     return (
         <>
@@ -73,6 +85,7 @@ export const TalentDashboardTabs = () => {
                     <TabsTrigger value="bookings">Direct Bookings</TabsTrigger>
                     <TabsTrigger value="gigs">Gig Opportunities</TabsTrigger>
                 </TabsList>
+
                 <TabsContent value="bookings">
                     <Tabs defaultValue="pending" className="w-full">
                         <TabsList className="grid w-full grid-cols-4">
@@ -87,9 +100,10 @@ export const TalentDashboardTabs = () => {
                         <TabsContent value="past">{renderBookings(pastBookings)}</TabsContent>
                     </Tabs>
                 </TabsContent>
+                
                 <TabsContent value="gigs">
                     {profile?.is_pro_subscriber ? (
-                        <GigOpportunitiesIntegrated />
+                        <GigOpportunitiesIntegrated onOpenChat={handleOpenChat} />
                     ) : (
                         <div className="text-center p-8 border rounded-lg">
                             <h3 className="font-bold">This is a Pro Feature</h3>
@@ -99,6 +113,7 @@ export const TalentDashboardTabs = () => {
                     )}
                 </TabsContent>
             </Tabs>
+            
             {isChatOpen && activeConversationId && (
                 <ChatModal conversationId={activeConversationId} open={isChatOpen} onOpenChange={setIsChatOpen} />
             )}
