@@ -15,7 +15,7 @@ export const TalentDashboardTabs = () => {
     const [directBookings, setDirectBookings] = useState<Booking[]>([]);
     const [loading, setLoading] = useState(true);
     const [isChatOpen, setIsChatOpen] = useState(false);
-    const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
+    const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
 
     const fetchDirectBookings = useCallback(async () => {
         if (!profile?.id) return;
@@ -38,13 +38,13 @@ export const TalentDashboardTabs = () => {
 
         const { data: convo } = await supabase.from('conversations').select('id').eq(queryCol, queryVal).maybeSingle();
         if (convo) {
-            setCurrentConversationId(convo.id);
+            setActiveConversationId(convo.id);
             setIsChatOpen(true);
         } else {
             const insertData = { booking_id: bookingId, ...(isGig && { gig_application_id: gigApplicationId }) };
             const { data: newConvo } = await supabase.from('conversations').insert(insertData).select().single();
             if (newConvo) {
-                setCurrentConversationId(newConvo.id);
+                setActiveConversationId(newConvo.id);
                 setIsChatOpen(true);
             }
         }
@@ -60,11 +60,11 @@ export const TalentDashboardTabs = () => {
 
     const renderBookings = (list: Booking[]) => (
         list.length > 0
-            ? list.map(b => <BookingCard key={b.id} booking={b} mode="talent" onUpdate={fetchDirectBookings} isProSubscriber={profile?.is_pro_subscriber} onOpenChat={handleOpenChat} />)
+            ? list..map(b => <BookingCard key={b.id} booking={b} mode="talent" onUpdate={fetchDirectBookings} isProSubscriber={profile?.is_pro_subscriber} onOpenChat={handleOpenChat} />)
             : <p className="text-muted-foreground text-center py-4">No bookings in this category.</p>
     );
 
-    if (loading) return <div>Loading...</div>;
+    if (loading) return <div>Loading...</div>
 
     return (
         <>
@@ -99,8 +99,8 @@ export const TalentDashboardTabs = () => {
                     )}
                 </TabsContent>
             </Tabs>
-            {isChatOpen && currentConversationId && (
-                <ChatModal conversationId={currentConversationId} open={isChatOpen} onOpenChange={setIsChatOpen} />
+            {isChatOpen && activeConversationId && (
+                <ChatModal conversationId={activeConversationId} open={isChatOpen} onOpenChange={setIsChatOpen} />
             )}
         </>
     );
