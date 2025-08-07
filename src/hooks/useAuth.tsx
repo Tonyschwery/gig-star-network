@@ -1,4 +1,3 @@
-// PASTE THIS INTO src/hooks/useAuth.ts
 import { useState, useEffect, createContext, useContext } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -18,14 +17,55 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+      async (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
+        
+        // Handle successful sign in - check user type and existing profiles
+        if (event === 'SIGNED_IN' && session?.user) {
+          const currentPath = window.location.pathname;
+          
+          // Small delay to ensure state is updated
+          setTimeout(async () => {
+            try {
+              // Check user type from metadata
+              const userType = session.user.user_metadata?.user_type;
+              
+              if (userType === 'talent') {
+                // Check if talent has completed profile
+                const { data: profile } = await supabase
+                  .from('talent_profiles')
+                  .select('id')
+                  .eq('user_id', session.user.id)
+                  .maybeSingle();
+                  
+                if (!profile && currentPath !== '/talent-onboarding') {
+                  // New talent without profile - redirect to onboarding
+                  window.location.href = '/talent-onboarding';
+                } else if (profile && currentPath !== '/talent-dashboard') {
+                  // Existing talent with profile - always redirect to talent dashboard unless already there
+                  window.location.href = '/talent-dashboard';
+                }
+              } else if (currentPath === '/auth' || currentPath === '/talent-onboarding') {
+                // Non-talent users only redirect if coming from auth pages
+                window.location.href = '/';
+              }
+            } catch (error) {
+              console.error('Error checking user profile:', error);
+              // Fallback: redirect based on current path
+              if (currentPath === '/auth') {
+                window.location.href = '/';
+              }
+            }
+          }, 100);
+        }
       }
     );
 
+    // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
@@ -37,12 +77,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     await supabase.auth.signOut();
+    // Redirect to homepage after sign out
     window.location.href = '/';
   };
 
-  const value = { user, session, loading, signOut };
+  const value = {
+    user,
+    session,
+    loading,
+    signOut,
+  };
 
-  return <AuthContext.Provider value={value}>{children}</Auth.Provider>;
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
