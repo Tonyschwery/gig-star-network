@@ -11,6 +11,7 @@ import { BookingCard } from "./BookingCard";
 import { format } from "date-fns";
 import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 import { useUnreadNotifications } from "@/hooks/useUnreadNotifications";
+import { GigWorkflowManager } from "@/components/GigWorkflowManager";
 
 interface GigApplication {
   id: string;
@@ -588,6 +589,9 @@ export function GigOpportunitiesIntegrated({ isProSubscriber, onUpgrade, talentI
 
   return (
     <>
+      {/* MASTER TASK 4: Gig Workflow Manager */}
+      <GigWorkflowManager userId={talentId} onGigUpdate={fetchAllGigData} />
+      
       <div className="space-y-4">
         {/* Tab Navigation */}
         <div className="flex flex-wrap gap-2">

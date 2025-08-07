@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { UnifiedNotificationBell } from "@/components/UnifiedNotificationBell";
 import { NotificationCenter } from "@/components/NotificationCenter";
 import { QtalentLogo } from "@/components/QtalentLogo";
 import { MobileMenu } from "@/components/ui/mobile-menu";

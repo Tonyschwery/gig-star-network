@@ -12,6 +12,7 @@ import { BookingCard } from "./BookingCard";
 import { format } from "date-fns";
 import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 import { useUnreadNotifications } from "@/hooks/useUnreadNotifications";
+import { BookingWorkflowManager } from "@/components/BookingWorkflowManager";
 
 interface Booking {
   id: string;
@@ -274,6 +275,9 @@ export function BookingRequests({ talentId, isProSubscriber = false }: BookingRe
 
   return (
     <>
+      {/* MASTER TASK 2: Booking Workflow Manager */}
+      <BookingWorkflowManager userId={talentId} onBookingUpdate={fetchAllBookings} />
+      
       <div className="space-y-4">
         {/* Tab Navigation */}
         <div className="flex flex-wrap gap-2">

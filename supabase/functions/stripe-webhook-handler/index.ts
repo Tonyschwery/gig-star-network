@@ -214,14 +214,37 @@ serve(async (req) => {
 
             console.log('STRIPE WEBHOOK - process-payment function completed successfully:', data);
 
-            // MASTER TASK 2: Update booking/gig status to "confirmed" after successful payment
-            console.log('STRIPE WEBHOOK - TASK 2: Updating booking/gig status to confirmed');
+            // MASTER TASK 2: Update booking status to confirmed and payment status to paid
+            console.log('STRIPE WEBHOOK - TASK 2: Updating booking status to confirmed and payment to paid');
             
-            // Check if this is a gig opportunity
+            // Update booking status to confirmed
+            const { error: bookingUpdateError } = await supabase
+              .from('bookings')
+              .update({ status: 'confirmed' })
+              .eq('id', paymentData.booking_id);
+
+            if (bookingUpdateError) {
+              console.error('STRIPE WEBHOOK - TASK 2 ERROR: Failed to update booking status:', bookingUpdateError);
+            } else {
+              console.log('STRIPE WEBHOOK - TASK 2 SUCCESS: Booking status updated to confirmed');
+            }
+
+            // Update payment status to 'paid' as per schema fix
+            const { error: paymentUpdateError } = await supabase
+              .from('payments')
+              .update({ payment_status: 'paid' })
+              .eq('id', paymentData.id);
+
+            if (paymentUpdateError) {
+              console.error('STRIPE WEBHOOK - TASK 2 ERROR: Failed to update payment status:', paymentUpdateError);
+            } else {
+              console.log('STRIPE WEBHOOK - TASK 2 SUCCESS: Payment status updated to paid');
+            }
+
+            // If this is a gig opportunity, also update gig application status
             if (bookingData.is_gig_opportunity) {
               console.log('STRIPE WEBHOOK - TASK 2: Updating gig application status to confirmed');
               
-              // Update gig application status to confirmed
               const { error: gigUpdateError } = await supabase
                 .from('gig_applications')
                 .update({ status: 'confirmed' })
@@ -231,20 +254,6 @@ serve(async (req) => {
                 console.error('STRIPE WEBHOOK - TASK 2 ERROR: Failed to update gig application status:', gigUpdateError);
               } else {
                 console.log('STRIPE WEBHOOK - TASK 2 SUCCESS: Gig application status updated to confirmed');
-              }
-            } else {
-              console.log('STRIPE WEBHOOK - TASK 2: Updating booking status to confirmed');
-              
-              // Update booking status to confirmed
-              const { error: bookingUpdateError } = await supabase
-                .from('bookings')
-                .update({ status: 'confirmed' })
-                .eq('id', paymentData.booking_id);
-
-              if (bookingUpdateError) {
-                console.error('STRIPE WEBHOOK - TASK 2 ERROR: Failed to update booking status:', bookingUpdateError);
-              } else {
-                console.log('STRIPE WEBHOOK - TASK 2 SUCCESS: Booking status updated to confirmed');
               }
             }
           } catch (processError) {

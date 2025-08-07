@@ -26,6 +26,7 @@ import { ChatModal } from "@/components/ChatModal";
 import { BookingCard } from "@/components/BookingCard";
 import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 import { useUnreadNotifications } from "@/hooks/useUnreadNotifications";
+import { BookingWorkflowManager } from "@/components/BookingWorkflowManager";
 
 interface Booking {
   id: string;
@@ -43,7 +44,7 @@ interface Booking {
   talent_id?: string;
   is_gig_opportunity?: boolean;
   is_public_request?: boolean;
-  payment_id?: string;
+  
   talent_profiles?: {
     artist_name: string;
     picture_url?: string;
@@ -89,16 +90,16 @@ export const BookerDashboardTabs = ({ userId }: BookerDashboardTabsProps) => {
       if (error) throw error;
       setBookings(data || []);
       
-      // Fetch payment details for approved and pending_approval bookings
-      const approvedBookingIds = (data || [])
-        .filter(booking => (booking.status === 'approved' || booking.status === 'pending_approval') && booking.payment_id)
-        .map(booking => booking.payment_id);
+      // Fetch payment details for pending_approval bookings based on booking_id
+      const pendingApprovalBookingIds = (data || [])
+        .filter(booking => booking.status === 'pending_approval')
+        .map(booking => booking.id);
         
-      if (approvedBookingIds.length > 0) {
+      if (pendingApprovalBookingIds.length > 0) {
         const { data: payments, error: paymentsError } = await supabase
           .from('payments')
           .select('*')
-          .in('id', approvedBookingIds);
+          .in('booking_id', pendingApprovalBookingIds);
           
         if (!paymentsError && payments) {
           const paymentsMap = payments.reduce((acc, payment) => {
@@ -267,6 +268,9 @@ export const BookerDashboardTabs = ({ userId }: BookerDashboardTabsProps) => {
 
   return (
     <>
+      {/* MASTER TASK 2: Booking Workflow Manager */}
+      <BookingWorkflowManager userId={userId} onBookingUpdate={fetchUnifiedBookings} />
+      
       {/* MASTER TASK 2: Unified Dashboard - No more separate tabs */}
         <Tabs value={activeTab} onValueChange={(tab) => {
           setActiveTab(tab);

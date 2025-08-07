@@ -1,50 +1,53 @@
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const supabaseClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-      { auth: { persistSession: false } }
+    // Create Supabase client with service role key
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      {
+        auth: {
+          persistSession: false,
+          autoRefreshToken: false
+        }
+      }
     );
 
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) throw new Error("No authorization header provided");
+    // Get authenticated user
+    const authHeader = req.headers.get('Authorization')!;
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
 
-    const token = authHeader.replace("Bearer ", "");
-    const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
-    if (userError) throw new Error(`Authentication error: ${userError.message}`);
-    const user = userData.user;
-    if (!user) throw new Error("User not authenticated");
+    if (authError || !user) {
+      throw new Error('Unauthorized');
+    }
 
     const { booking_id } = await req.json();
-    if (!booking_id) throw new Error("booking_id is required");
 
-    // Update booking status back to pending (not declined)
-    const { error: bookingError } = await supabaseClient
+    if (!booking_id) {
+      throw new Error('Booking ID is required');
+    }
+
+    console.log('Declining invoice for booking:', booking_id, 'by user:', user.id);
+
+    // MASTER TASK 2: Reset booking status to 'pending' when invoice is declined
+    const { data: booking, error: updateError } = await supabaseAdmin
       .from('bookings')
       .update({ status: 'pending' })
       .eq('id', booking_id)
-      .eq('user_id', user.id); // Ensure only booking owner can decline
-
-    if (bookingError) throw bookingError;
-
-    // Update payment status to declined if exists - skip this as it violates constraints
-    // Payment status constraint only allows: pending, completed, failed, cancelled
-
-    // Get booking details to find talent and create notification
-    const { data: booking, error: fetchError } = await supabaseClient
-      .from('bookings')
+      .eq('user_id', user.id) // Ensure user owns this booking
       .select(`
         *,
         talent_profiles (
@@ -52,36 +55,57 @@ serve(async (req) => {
           artist_name
         )
       `)
-      .eq('id', booking_id)
       .single();
 
-    if (fetchError) throw fetchError;
+    if (updateError) {
+      console.error('Error updating booking status:', updateError);
+      throw new Error('Failed to decline invoice');
+    }
 
-    // Create notification for talent if assigned
+    if (!booking) {
+      throw new Error('Booking not found or unauthorized');
+    }
+
+    console.log('Booking status reset to pending:', booking);
+
+    // Create notification for talent
     if (booking.talent_profiles?.user_id) {
-      const { error: notificationError } = await supabaseClient
+      await supabaseAdmin
         .from('notifications')
         .insert({
           user_id: booking.talent_profiles.user_id,
           type: 'invoice_declined',
           title: 'Invoice Declined',
-          message: `Your invoice for the ${booking.event_type} event has been declined by the booker. The booking has been moved back to pending status.`,
-          booking_id: booking_id
+          message: `The booker has declined your invoice for the ${booking.event_type} event. You can send a new invoice.`,
+          booking_id: booking.id
         });
 
-      if (notificationError) console.warn('Notification creation failed:', notificationError);
+      console.log('Notification sent to talent about declined invoice');
     }
 
-    return new Response(JSON.stringify({ success: true }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 200,
-    });
+    return new Response(
+      JSON.stringify({ 
+        success: true, 
+        message: 'Invoice declined successfully',
+        booking_id: booking.id 
+      }),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
+      }
+    );
+
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    console.error('Error in decline-invoice:', errorMessage);
-    return new Response(JSON.stringify({ error: errorMessage }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
-    });
+    console.error('Error in decline-invoice function:', error);
+    
+    return new Response(
+      JSON.stringify({ 
+        error: error instanceof Error ? error.message : 'Unknown error occurred' 
+      }),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500,
+      }
+    );
   }
 });
