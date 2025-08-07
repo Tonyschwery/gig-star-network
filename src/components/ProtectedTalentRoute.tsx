@@ -1,104 +1,36 @@
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { AlertTriangle } from 'lucide-react';
+// PASTE THIS ENTIRE CODE BLOCK INTO src/components/ProtectedTalentRoute.tsx
+
+import { useAuth } from "@/hooks/useAuth";
+import { Navigate, useLocation } from "react-router-dom";
 
 interface ProtectedTalentRouteProps {
-  children: React.ReactNode;
+  children: JSX.Element;
   requireProfile?: boolean;
 }
 
-export function ProtectedTalentRoute({ 
-  children, 
-  requireProfile = true 
-}: ProtectedTalentRouteProps) {
-  const { user, loading: authLoading } = useAuth();
-  const navigate = useNavigate();
-  const [profileExists, setProfileExists] = useState<boolean | null>(null);
-  const [loading, setLoading] = useState(true);
+export const ProtectedTalentRoute = ({ children, requireProfile = true }: ProtectedTalentRouteProps) => {
+  const { user, profile, loading } = useAuth();
+  const location = useLocation();
 
-  useEffect(() => {
-    const checkProfile = async () => {
-      if (authLoading) return;
-      
-      if (!user) {
-        navigate('/auth');
-        return;
-      }
-
-      if (!requireProfile) {
-        setLoading(false);
-        return;
-      }
-
-      try {
-        const { data: profile } = await supabase
-          .from('talent_profiles')
-          .select('id')
-          .eq('user_id', user.id)
-          .maybeSingle();
-
-        setProfileExists(!!profile);
-      } catch (error) {
-        console.error('Error checking profile:', error);
-        setProfileExists(false);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    checkProfile();
-  }, [user, authLoading, requireProfile, navigate]);
-
-  if (authLoading || loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-pulse text-muted-foreground">Loading...</div>
-      </div>
-    );
+  if (loading) {
+    return <div>Loading...</div>; // Or a spinner component
   }
 
   if (!user) {
-    return null; // Will redirect to auth
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+  
+  // If this route requires a profile, but the user doesn't have one,
+  // redirect them to the onboarding page.
+  if (requireProfile && !profile) {
+    return <Navigate to="/talent-onboarding" replace />;
+  }
+  
+  // If this route is for onboarding (requireProfile=false), but the user
+  // already has a profile, redirect them to their dashboard.
+  if (!requireProfile && profile) {
+      return <Navigate to="/talent-dashboard/bookings" replace />;
   }
 
-  if (requireProfile && profileExists === false) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <Card className="w-full max-w-md glass-card">
-          <CardHeader className="text-center">
-            <CardTitle className="flex items-center justify-center gap-2 text-destructive">
-              <AlertTriangle className="h-6 w-6" />
-              Profile Required
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="text-center space-y-4">
-            <p className="text-muted-foreground">
-              You need to complete your talent profile to access this page.
-            </p>
-            <div className="space-y-2">
-              <Button 
-                onClick={() => navigate('/talent-onboarding')} 
-                className="w-full hero-button"
-              >
-                Complete Profile
-              </Button>
-              <Button 
-                onClick={() => navigate('/auth')} 
-                variant="outline" 
-                className="w-full"
-              >
-                Sign Out
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  return <>{children}</>;
-}
+  return children;
+};
