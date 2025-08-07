@@ -1,8 +1,8 @@
-// PASTE THIS ENTIRE CODE BLOCK - Using a direct relative path to force resolution.
+// PASTE THIS ENTIRE CODE BLOCK - Using the definitive path we just found.
 
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase'; // Using direct relative path
-import { useAuth } from '../hooks/useAuth'; // Using direct relative path
+import { supabase } from '@/lib/utils'; // Using the confirmed correct path from your file list
+import { useAuth } from '@/hooks/useAuth';
 import { BookingCard } from './BookingCard';
 
 // Define a type for the data we expect
