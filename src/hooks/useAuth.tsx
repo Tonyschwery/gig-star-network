@@ -1,18 +1,11 @@
-// PASTE THIS ENTIRE CODE BLOCK INTO src/hooks/useAuth.ts
-
-import { useState, useEffect, createContext, useContext, useCallback } from 'react';
+// PASTE THIS INTO src/hooks/useAuth.ts
+import { useState, useEffect, createContext, useContext } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-
-export interface UserProfile {
-  id: string; // talent_profile id
-  // Add other profile fields if needed
-}
 
 interface AuthContextType {
   user: User | null;
   session: Session | null;
-  profile: UserProfile | null;
   loading: boolean;
   signOut: () => Promise<void>;
 }
@@ -20,43 +13,34 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
-  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        setLoading(true);
-        const currentUser = session?.user ?? null;
+      (_event, session) => {
         setSession(session);
-        setUser(currentUser);
-        
-        if (currentUser) {
-          const { data: talentProfile } = await supabase
-            .from('talent_profiles')
-            .select('id')
-            .eq('user_id', currentUser.id)
-            .single();
-          setProfile(talentProfile as UserProfile | null);
-        } else {
-          setProfile(null);
-        }
-        
+        setUser(session?.user ?? null);
         setLoading(false);
       }
     );
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
 
     return () => subscription.unsubscribe();
   }, []);
 
   const signOut = async () => {
     await supabase.auth.signOut();
-    window.location.href = '/'; // Redirect to homepage on sign out
+    window.location.href = '/';
   };
 
-  const value = { user, session, profile, loading, signOut };
+  const value = { user, session, loading, signOut };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
