@@ -1,20 +1,127 @@
-// Safe placeholder code to restore the dashboard.
-import React from 'react';
-import { Button } from "@/components/ui/button"; // Keep a common import
+// PASTE THIS ENTIRE CODE BLOCK, REPLACING THE OLD FILE
 
-// A minimal version of the props to prevent errors
-interface BookingCardProps {
-  booking: { id: string; event_type: string; };
-  mode: 'talent' | 'booker';
+import React, { useState } from 'react';
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { Calendar, User, Check, X, MessageCircle, Clock3, CheckCircle, Clock, Sparkles, MapPin } from "lucide-react";
+import { format } from "date-fns";
+import { useNavigate } from "react-router-dom";
+import { ManualInvoiceModal } from "./ManualInvoiceModal";
+import { ChatModal } from "./ChatModal";
+import { BookerInvoiceCard } from "./BookerInvoiceCard";
+
+// Define a more robust booking type
+export interface Booking {
+  id: string;
+  booker_name: string;
+  event_date: string | Date; // Can be string or Date object
+  event_duration: number;
+  event_location: string;
+  event_address: string;
+  event_type: string;
+  status: string;
+  created_at: string | Date;
+  user_id: string; // Booker's user_id
+  talent_id?: string;
+  payment?: { total_amount: number; currency: string }[]; // Handle payment as an array
+  is_gig_opportunity?: boolean;
+  talent_profiles?: { artist_name: string; picture_url?: string; };
+  description?: string;
+  booker_email?: string;
+  budget?: number;
 }
 
-export const BookingCard = ({ booking, mode }: BookingCardProps) => {
+interface BookingCardProps {
+  booking: Booking;
+  mode: 'talent' | 'booker';
+  onUpdate: () => void;
+  isProSubscriber?: boolean;
+  gigApplicationId?: string;
+  onOpenChat: (bookingId: string, gigApplicationId?: string) => void;
+}
+
+export const BookingCard = ({ booking, mode, onUpdate, isProSubscriber, gigApplicationId, onOpenChat }: BookingCardProps) => {
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+  const { toast } = useToast();
+  const navigate = useNavigate();
+
+  // *** BUG FIX: Create a safe date formatting function to prevent crashes ***
+  const safeFormatDate = (date: string | Date, dateFormat: string) => {
+    try {
+      if (!date) return "N/A";
+      return format(new Date(date), dateFormat);
+    } catch (error) {
+      console.error("Invalid date value for formatting:", date);
+      return "Invalid Date";
+    }
+  };
+
+  const handleAccept = () => setShowInvoiceModal(true);
+
+  const handleDecline = async () => {
+    const isGig = !!gigApplicationId;
+    const table = isGig ? 'gig_applications' : 'bookings';
+    const id = isGig ? gigApplicationId : booking.id;
+
+    try {
+      const { error } = await supabase.from(table).update({ status: 'declined' }).eq('id', id);
+      if (error) throw error;
+      toast({ title: "Success", description: "Request declined" });
+      onUpdate?.();
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to decline request", variant: "destructive" });
+    }
+  };
+
+  const paymentAmount = booking.payment?.[0]?.total_amount;
+  const paymentCurrency = booking.payment?.[0]?.currency || 'USD';
+
   return (
-    <div style={{ padding: '20px', border: '1px solid #ccc', borderRadius: '8px', marginBottom: '10px' }}>
-      <p>Booking ID: {booking.id}</p>
-      <p>Event Type: {booking.event_type}</p>
-      <p>Mode: {mode}</p>
-      <Button variant="outline">Details</Button>
-    </div>
+    <>
+      <div className="border rounded-lg p-4 bg-card space-y-3">
+        {/* Card Header */}
+        <div className="flex items-center gap-2">
+            <h3 className="font-semibold capitalize">{booking.event_type} {booking.is_gig_opportunity ? 'Gig' : 'Event'}</h3>
+            <Badge>{booking.status}</Badge>
+        </div>
+
+        {/* Card Body */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+            <div><strong>{mode === 'talent' ? 'Booker:' : 'Talent:'}</strong> {mode === 'talent' ? booking.booker_name : booking.talent_profiles?.artist_name || 'N/A'}</div>
+            <div><Calendar className="inline h-4 w-4 mr-2" />{safeFormatDate(booking.event_date, 'PPP')}</div>
+            <div><Clock3 className="inline h-4 w-4 mr-2" />Duration: {booking.event_duration} hours</div>
+            <div><MapPin className="inline h-4 w-4 mr-2" />{booking.event_location}</div>
+        </div>
+
+        {/* Paid Amount Display */}
+        {paymentAmount && <div className="font-semibold text-green-600">Amount Paid: ${paymentAmount} {paymentCurrency}</div>}
+
+        {/* Action Buttons */}
+        <div className="flex flex-wrap gap-2 pt-2 border-t">
+            <Button onClick={() => onOpenChat(booking.id, gigApplicationId)} variant="outline" size="sm"><MessageCircle className="h-4 w-4 mr-2" />Chat</Button>
+            {mode === 'booker' && booking.talent_id && <Button onClick={() => navigate(`/talent/${booking.talent_id}`)} variant="outline" size="sm"><User className="h-4 w-4 mr-2" />View Talent</Button>}
+            
+            {/* *** BUG FIX: "Accept" button only shows for 'pending' status *** */}
+            {mode === 'talent' && booking.status === 'pending' && (
+                <>
+                    <Button onClick={handleDecline} variant="outline" size="sm" className="border-red-200 text-red-600"><X className="h-4 w-4 mr-2" />Decline</Button>
+                    <Button onClick={handleAccept} size="sm"><Check className="h-4 w-4 mr-2" />Accept & Send Invoice</Button>
+                </>
+            )}
+        </div>
+      </div>
+
+      {/* Modals */}
+      <ManualInvoiceModal
+        isOpen={showInvoiceModal}
+        onClose={() => setShowInvoiceModal(false)}
+        booking={booking}
+        isProSubscriber={isProSubscriber}
+        onSuccess={() => { setShowInvoiceModal(false); onUpdate?.(); }}
+        gigApplicationId={gigApplicationId}
+      />
+    </>
   );
-};
+}
