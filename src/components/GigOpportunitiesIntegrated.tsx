@@ -1,15 +1,15 @@
-// PASTE THIS ENTIRE CODE BLOCK - Using the definitive path from tsconfig.json
+// PASTE THIS ENTIRE CODE BLOCK - Using a direct relative path to force resolution.
 
 import React, { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase'; // Using the confirmed correct path
-import { useAuth } from '@/hooks/useAuth';
-import { BookingCard } from './BookingCard'; // Ensure this path is also correct
+import { supabase } from '../lib/supabase'; // Using direct relative path
+import { useAuth } from '../hooks/useAuth'; // Using direct relative path
+import { BookingCard } from './BookingCard';
 
 // Define a type for the data we expect
 interface GigApplication {
   id: string; 
   status: string;
-  bookings: { // This is the joined gig data
+  bookings: { 
     id: string; 
     event_type: string;
     event_date: string;
@@ -43,13 +43,11 @@ export const GigOpportunitiesIntegrated = () => {
             description
           )
         `)
-        // Ensure you have RLS policies that allow this query
         .eq('status', 'pending'); 
 
       if (error) {
         console.error('Error fetching available gigs:', error);
       } else if (data) {
-        // Filter out any entries where the nested bookings data is null
         const validGigs = data.filter(app => app.bookings);
         setAvailableGigs(validGigs as GigApplication[]);
       }
