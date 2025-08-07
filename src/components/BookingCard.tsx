@@ -22,6 +22,7 @@ export interface Booking {
   is_gig_opportunity?: boolean;
   talent_profiles?: { artist_name: string; };
   payments?: { total_amount: number; currency: string }[];
+  gig_applications?: { id: string }[];
 }
 
 interface BookingCardProps {
@@ -29,22 +30,18 @@ interface BookingCardProps {
   mode: 'talent' | 'booker';
   onUpdate?: () => void;
   isProSubscriber?: boolean;
-  gigApplicationId?: string;
   onOpenChat: (bookingId: string, gigApplicationId?: string) => void;
 }
 
-export const BookingCard = ({ booking, mode, onUpdate, isProSubscriber, gigApplicationId, onOpenChat }: BookingCardProps) => {
+export const BookingCard = ({ booking, mode, onUpdate, isProSubscriber, onOpenChat }: BookingCardProps) => {
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const navigate = useNavigate();
+  const gigApplicationId = booking.gig_applications?.[0]?.id;
 
-  const safeFormatDate = (date: string | Date, dateFormat: string) => {
-    try {
-      if (!date) return "N/A";
-      return format(new Date(date), dateFormat);
-    } catch (error) { return "Invalid Date"; }
+  const safeFormatDate = (date: string | Date) => {
+    try { return format(new Date(date), 'PPP'); }
+    catch { return "Invalid Date"; }
   };
-
-  const handleAccept = () => setShowInvoiceModal(true);
 
   const handleDecline = async () => {
     const table = gigApplicationId ? 'gig_applications' : 'bookings';
@@ -64,7 +61,7 @@ export const BookingCard = ({ booking, mode, onUpdate, isProSubscriber, gigAppli
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
             <div><strong>{mode === 'talent' ? 'Booker:' : 'Talent:'}</strong> {mode === 'talent' ? booking.booker_name : booking.talent_profiles?.artist_name || 'N/A'}</div>
-            <div><Calendar className="inline h-4 w-4 mr-2" />{safeFormatDate(booking.event_date, 'PPP')}</div>
+            <div><Calendar className="inline h-4 w-4 mr-2" />{safeFormatDate(booking.event_date)}</div>
             <div><Clock3 className="inline h-4 w-4 mr-2" />Duration: {booking.event_duration} hours</div>
             <div><MapPin className="inline h-4 w-4 mr-2" />{booking.event_location}</div>
         </div>
@@ -75,7 +72,7 @@ export const BookingCard = ({ booking, mode, onUpdate, isProSubscriber, gigAppli
             {mode === 'talent' && booking.status === 'pending' && (
                 <>
                     <Button onClick={handleDecline} variant="outline" size="sm" className="border-red-200 text-red-600"><X className="h-4 w-4 mr-2" />Decline</Button>
-                    <Button onClick={handleAccept} size="sm"><Check className="h-4 w-4 mr-2" />Accept & Send Invoice</Button>
+                    <Button onClick={() => setShowInvoiceModal(true)} size="sm"><Check className="h-4 w-4 mr-2" />Accept & Send Invoice</Button>
                 </>
             )}
         </div>
