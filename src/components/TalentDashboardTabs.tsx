@@ -1,71 +1,112 @@
-import { useState, useEffect } from "react";
+// PASTE THIS ENTIRE CODE BLOCK, REPLACING THE OLD FILE
+
+import React, { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BookingRequests } from "@/components/BookingRequests";
-import { GigOpportunitiesIntegrated } from "@/components/GigOpportunitiesIntegrated";
-import { Calendar, Sparkles } from "lucide-react";
-import { useDirectBookingNotifications } from "@/hooks/useDirectBookingNotifications";
-import { useGigOpportunityNotifications } from "@/hooks/useGigOpportunityNotifications";
+import { BookingCard, Booking } from "@/components/BookingCard"; 
+import { ChatModal } from "@/components/ChatModal";
+import { GigOpportunitiesIntegrated } from '@/components/GigOpportunitiesIntegrated'; // For the Pro view
 
-interface TalentDashboardTabsProps {
-  talentId: string;
-  isProSubscriber: boolean;
-  onUpgrade: () => void;
-}
+export const TalentDashboard = () => {
+  const { user, profile } = useAuth(); // Assuming profile has isProSubscriber status
+  const [directBookings, setDirectBookings] = useState<Booking[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
 
-export const TalentDashboardTabs = ({ 
-  talentId, 
-  isProSubscriber, 
-  onUpgrade 
-}: TalentDashboardTabsProps) => {
-  const [activeTab, setActiveTab] = useState("bookings");
-  
-  // TASK 3: Real-time notification counts for each tab
-  const { unreadCount: directBookingUnread } = useDirectBookingNotifications(talentId);
-  const { unreadCount: gigOpportunityUnread } = useGigOpportunityNotifications(talentId);
+  const fetchDirectBookings = async () => {
+    if (!profile?.id) return;
+    const { data, error } = await supabase
+      .from('bookings')
+      .select(`*, payment:payments(*)`)
+      .eq('talent_id', profile.id)
+      .eq('is_gig_opportunity', false)
+      .order('event_date', { ascending: false });
+
+    if (error) console.error("Error fetching direct bookings:", error);
+    else setDirectBookings(data || []);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    setLoading(true);
+    fetchDirectBookings();
+
+    const channel = supabase.channel(`public:bookings:talent_id=eq.${profile?.id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings' }, fetchDirectBookings)
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [profile]);
+
+  const handleOpenChat = async (bookingId: string, gigApplicationId?: string) => {
+    const queryCol = gigApplicationId ? 'gig_application_id' : 'booking_id';
+    const queryVal = gigApplicationId || bookingId;
+
+    const { data, error } = await supabase.from('conversations').select('id').eq(queryCol, queryVal).single();
+    if (data) {
+      setCurrentConversationId(data.id);
+      setIsChatOpen(true);
+    } else {
+      console.error("Could not find conversation", error);
+    }
+  };
+
+  // *** BUG FIX: Corrected and simplified filtering logic for TALENT ***
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const newRequests = directBookings.filter(b => b.status === 'pending');
+  const pendingApproval = directBookings.filter(b => b.status === 'pending_approval');
+  const upcomingBookings = directBookings.filter(b => b.status === 'confirmed' && new Date(b.event_date) >= today);
+  const pastBookings = directBookings.filter(b => new Date(b.event_date) < today);
+
+  const renderBookings = (list: Booking[]) => (
+    list.length > 0
+      ? list.map(b => <BookingCard key={b.id} booking={b} mode="talent" onUpdate={fetchDirectBookings} isProSubscriber={profile?.is_pro_subscriber} onOpenChat={handleOpenChat} />)
+      : <p className="text-muted-foreground text-center py-4">No bookings in this category.</p>
+  );
 
   return (
-    <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-      <TabsList className="grid w-full grid-cols-2 mb-6">
-        <TabsTrigger value="bookings" className="flex items-center gap-2 relative">
-          <Calendar className="h-4 w-4" />
-          Direct Bookings
-          {/* TASK 3: Red dot indicator for Direct Bookings */}
-          {directBookingUnread > 0 && (
-            <div className="absolute -top-1 -right-1 w-5 h-5 bg-destructive rounded-full flex items-center justify-center">
-              <span className="text-xs text-white font-bold">
-                {directBookingUnread > 99 ? '99+' : directBookingUnread}
-              </span>
-            </div>
-          )}
-        </TabsTrigger>
-        <TabsTrigger value="gigs" className="flex items-center gap-2 relative">
-          <Sparkles className="h-4 w-4" />
-          Gig Opportunities
-          {/* TASK 3: Red dot indicator for Gig Opportunities */}
-          {gigOpportunityUnread > 0 && (
-            <div className="absolute -top-1 -right-1 w-5 h-5 bg-destructive rounded-full flex items-center justify-center">
-              <span className="text-xs text-white font-bold">
-                {gigOpportunityUnread > 99 ? '99+' : gigOpportunityUnread}
-              </span>
-            </div>
-          )}
-        </TabsTrigger>
-      </TabsList>
+    <>
+      <Tabs defaultValue="new_requests" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="new_requests">Direct Bookings</TabsTrigger>
+          <TabsTrigger value="gigs">Gig Opportunities</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="new_requests">
+          <Tabs defaultValue="pending" className="w-full">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="pending">New Requests ({newRequests.length})</TabsTrigger>
+              <TabsTrigger value="pending_approval">Pending Approval ({pendingApproval.length})</TabsTrigger>
+              <TabsTrigger value="upcoming">Upcoming/Confirmed ({upcomingBookings.length})</TabsTrigger>
+              <TabsTrigger value="past">Past Events ({pastBookings.length})</TabsTrigger>
+            </TabsList>
+            <TabsContent value="pending">{renderBookings(newRequests)}</TabsContent>
+            <TabsContent value="pending_approval">{renderBookings(pendingApproval)}</TabsContent>
+            <TabsContent value="upcoming">{renderBookings(upcomingBookings)}</TabsContent>
+            <TabsContent value="past">{renderBookings(pastBookings)}</TabsContent>
+          </Tabs>
+        </TabsContent>
+        
+        <TabsContent value="gigs">
+            {profile?.is_pro_subscriber ? (
+                <GigOpportunitiesIntegrated />
+            ) : (
+                <div className="text-center p-8 border rounded-lg">
+                    <h3 className="font-bold">This is a Pro Feature</h3>
+                    <p>Upgrade to Pro to view and apply for exclusive gig opportunities.</p>
+                    {/* Add your <SubscriptionButton /> here */}
+                </div>
+            )}
+        </TabsContent>
+      </Tabs>
       
-      <TabsContent value="bookings">
-        <BookingRequests 
-          talentId={talentId} 
-          isProSubscriber={isProSubscriber}
-        />
-      </TabsContent>
-      
-      <TabsContent value="gigs">
-        <GigOpportunitiesIntegrated 
-          isProSubscriber={isProSubscriber}
-          onUpgrade={onUpgrade}
-          talentId={talentId}
-        />
-      </TabsContent>
-    </Tabs>
+      {isChatOpen && currentConversationId && (
+        <ChatModal conversationId={currentConversationId} onClose={() => setIsChatOpen(false)} />
+      )}
+    </>
   );
 };
