@@ -1,16 +1,18 @@
+// PASTE THIS ENTIRE CODE BLOCK - With the definitive fix for the date error.
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { 
-  Calendar, 
-  Clock, 
-  MapPin, 
-  Mail, 
-  User, 
-  Check, 
-  X, 
+import {
+  Calendar,
+  Clock,
+  MapPin,
+  Mail,
+  User,
+  Check,
+  X,
   MessageCircle,
   CheckCircle,
   Clock3,
@@ -62,10 +64,10 @@ interface BookingCardProps {
   gigApplicationId?: string;
 }
 
-export function BookingCard({ 
-  booking, 
-  mode, 
-  showActions = true, 
+export function BookingCard({
+  booking,
+  mode,
+  showActions = true,
   showPaymentInterface = false,
   onUpdate,
   payment,
@@ -316,7 +318,8 @@ export function BookingCard({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-3 text-xs sm:text-sm">
               <div className="flex items-center gap-2">
                 <Calendar className="h-4 w-4" />
-                <span>{format(new Date(booking.event_date), 'PPP')}</span>
+                {/* BUG FIX #1: Added "new Date()" to prevent crash */}
+                <span>{booking.event_date ? format(new Date(booking.event_date), 'PPP') : 'No date'}</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="font-medium">Duration: {booking.event_duration} hours</span>
@@ -327,7 +330,8 @@ export function BookingCard({
               </div>
               <div className="flex items-center gap-2">
                 <Mail className="h-4 w-4" />
-                <span>Created {format(new Date(booking.created_at), 'MMM d, yyyy')}</span>
+                {/* BUG FIX #2: Added "new Date()" to prevent crash */}
+                <span>Created {booking.created_at ? format(new Date(booking.created_at), 'MMM d, yyyy') : 'No date'}</span>
               </div>
             </div>
 
