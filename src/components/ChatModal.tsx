@@ -1,13 +1,13 @@
 // PASTE THIS ENTIRE CODE BLOCK, REPLACING THE OLD FILE
 
-import { useState, useEffect, useRef } from "react";
-import { Send, X } from "lucide-react";
+import React, { useState, useEffect, useRef } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
+import { Send } from "lucide-react";
 
 interface Message {
   id: string;
@@ -22,7 +22,7 @@ interface ChatModalProps {
   conversationId: string;
 }
 
-export function ChatModal({ open, onOpenChange, conversationId }: ChatModalProps) {
+export const ChatModal = ({ open, onOpenChange, conversationId }: ChatModalProps) => {
   const { user } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
@@ -36,15 +36,36 @@ export function ChatModal({ open, onOpenChange, conversationId }: ChatModalProps
   useEffect(() => {
     const fetchMessages = async () => {
       if (!conversationId) return;
-      const { data } = await supabase.from('messages').select('*').eq('conversation_id', conversationId).order('created_at');
-      setMessages(data || []);
+      setMessages([]); // Clear previous messages
+      const { data, error } = await supabase
+        .from('messages')
+        .select('*')
+        .eq('conversation_id', conversationId)
+        .order('created_at', { ascending: true });
+
+      if (error) console.error("Error fetching messages:", error);
+      else setMessages(data || []);
     };
-    fetchMessages();
+
+    if (open) {
+      fetchMessages();
+    }
+  }, [conversationId, open]);
+
+  // *** BUG FIX: Corrected and simplified real-time logic ***
+  useEffect(() => {
+    if (!conversationId) return;
 
     const channel = supabase.channel(`chat:${conversationId}`)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `conversation_id=eq.${conversationId}` },
+      .on('postgres_changes', 
+        { event: 'INSERT', schema: 'public', table: 'messages', filter: `conversation_id=eq.${conversationId}` },
         (payload) => {
-          setMessages(prev => [...prev, payload.new as Message]);
+          // Add the new message to the state, but only if it's not already there
+          setMessages(prevMessages => 
+            prevMessages.some(msg => msg.id === (payload.new as Message).id) 
+            ? prevMessages 
+            : [...prevMessages, payload.new as Message]
+          );
         }
       ).subscribe();
     
@@ -56,19 +77,26 @@ export function ChatModal({ open, onOpenChange, conversationId }: ChatModalProps
   const sendMessage = async () => {
     if (!newMessage.trim() || !conversationId || !user) return;
     setIsSending(true);
-    await supabase.from('messages').insert({
+
+    const content = newMessage.trim();
+    setNewMessage(""); // Clear input immediately for better UX
+
+    const { error } = await supabase.from('messages').insert({
         conversation_id: conversationId,
-        content: newMessage.trim(),
+        content: content,
         user_id: user.id,
-        // sender_type will be handled by RLS or triggers if needed
     });
-    setNewMessage("");
+
+    if (error) {
+      console.error("Error sending message:", error);
+      setNewMessage(content); // Restore message on error
+    }
     setIsSending(false);
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="h-[600px] flex flex-col p-0">
+      <DialogContent className="h-[70vh] flex flex-col p-0">
         <DialogHeader className="p-4 border-b">
           <DialogTitle>Chat</DialogTitle>
         </DialogHeader>
@@ -77,7 +105,7 @@ export function ChatModal({ open, onOpenChange, conversationId }: ChatModalProps
             {messages.map((message) => (
               <div key={message.id} className={`flex ${message.user_id === user?.id ? 'justify-end' : 'justify-start'}`}>
                 <div className={`max-w-[80%] rounded-lg px-3 py-2 ${message.user_id === user?.id ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
-                  <p className="text-sm">{message.content}</p>
+                  <p className="text-sm whitespace-pre-wrap">{message.content}</p>
                 </div>
               </div>
             ))}
@@ -86,7 +114,7 @@ export function ChatModal({ open, onOpenChange, conversationId }: ChatModalProps
         </ScrollArea>
         <div className="p-4 border-t">
           <div className="flex space-x-2">
-            <Textarea value={newMessage} onChange={(e) => setNewMessage(e.target.value)} placeholder="Type your message..." disabled={isSending} />
+            <Textarea value={newMessage} onChange={(e) => setNewMessage(e.target.value)} onKeyDown={(e) => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }}} placeholder="Type your message..." disabled={isSending} />
             <Button onClick={sendMessage} disabled={!newMessage.trim() || isSending} size="icon"><Send className="h-4 w-4" /></Button>
           </div>
         </div>
