@@ -1,8 +1,9 @@
-// PASTE THIS ENTIRE CODE BLOCK
+// PASTE THIS ENTIRE CODE BLOCK - Using a different relative path for the import.
 
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
-import { useAuth } from '../hooks/useAuth';
+// *** BUG FIX: Trying another standard import path for the Supabase client ***
+import { supabase } from '../../lib/supabase'; 
+import { useAuth } from '../../hooks/useAuth';
 // We will use the BookingCard in the next step, but we import it now.
 // import { BookingCard } from './BookingCard'; 
 
@@ -34,8 +35,13 @@ export const GigOpportunitiesIntegrated = () => {
     const fetchGigs = async () => {
       setLoading(true);
       
-      // Fetches gig applications for the logged-in talent
-      // that are still open for application.
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        console.error("No active session, cannot fetch gigs.");
+        setLoading(false);
+        return;
+      }
+      
       const { data, error } = await supabase
         .from('gig_applications')
         .select(`
@@ -48,10 +54,7 @@ export const GigOpportunitiesIntegrated = () => {
             description
           )
         `)
-        // This assumes a talent is associated via the user_id on the talent_profiles table
-        // This may need to be adjusted based on your exact schema for linking talents to applications
-        .eq('talent_id', user.id) // Or however talent is linked
-        .eq('status', 'pending'); // Or 'available' - the status for an open gig
+        .eq('status', 'pending');
 
       if (error) {
         console.error('Error fetching available gigs:', error);
@@ -73,7 +76,6 @@ export const GigOpportunitiesIntegrated = () => {
       <h2>Available Gig Opportunities</h2>
       {availableGigs.length > 0 ? (
         <div>
-          {/* In the next step, we will map over availableGigs and render BookingCard components here */}
           <p>{availableGigs.length} gig(s) found. UI will be built in the next step.</p>
           <pre>{JSON.stringify(availableGigs, null, 2)}</pre>
         </div>
