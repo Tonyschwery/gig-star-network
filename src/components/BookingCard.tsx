@@ -16,13 +16,15 @@ export interface Booking {
   event_duration: number;
   event_location: string;
   status: string;
-  created_at: string | Date;
   user_id: string;
   talent_id?: string;
   is_gig_opportunity?: boolean;
   talent_profiles?: { artist_name: string; };
   payments?: { total_amount: number; currency: string }[];
   gig_applications?: { id: string }[];
+  // Adding other fields for display
+  event_type?: string;
+  created_at?: string | Date;
 }
 
 interface BookingCardProps {
@@ -36,11 +38,11 @@ interface BookingCardProps {
 export const BookingCard = ({ booking, mode, onUpdate, isProSubscriber, onOpenChat }: BookingCardProps) => {
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const navigate = useNavigate();
-  const gigApplicationId = booking.gig_applications?.[0]?.id;
+  // Simplified way to get the gig application ID if it exists
+  const gigApplicationId = booking.is_gig_opportunity ? booking.gig_applications?.[0]?.id : undefined;
 
-  const safeFormatDate = (date: string | Date) => {
-    try { return format(new Date(date), 'PPP'); }
-    catch { return "Invalid Date"; }
+  const safeFormatDate = (date: any, dateFormat: string) => {
+    try { return format(new Date(date), dateFormat); } catch { return "Invalid Date"; }
   };
 
   const handleDecline = async () => {
@@ -61,7 +63,7 @@ export const BookingCard = ({ booking, mode, onUpdate, isProSubscriber, onOpenCh
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
             <div><strong>{mode === 'talent' ? 'Booker:' : 'Talent:'}</strong> {mode === 'talent' ? booking.booker_name : booking.talent_profiles?.artist_name || 'N/A'}</div>
-            <div><Calendar className="inline h-4 w-4 mr-2" />{safeFormatDate(booking.event_date)}</div>
+            <div><Calendar className="inline h-4 w-4 mr-2" />{safeFormatDate(booking.event_date, 'PPP')}</div>
             <div><Clock3 className="inline h-4 w-4 mr-2" />Duration: {booking.event_duration} hours</div>
             <div><MapPin className="inline h-4 w-4 mr-2" />{booking.event_location}</div>
         </div>
