@@ -85,6 +85,7 @@ export const ChatModal = ({ open, onOpenChange, conversationId }: ChatModalProps
         conversation_id: conversationId,
         content: content,
         user_id: user.id,
+        sender_type: 'booker',
     });
 
     if (error) {

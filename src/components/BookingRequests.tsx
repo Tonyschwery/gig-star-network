@@ -39,7 +39,7 @@ export const BookingRequests = ({ talentId, isProSubscriber }: BookingRequestsPr
 
     const renderBookings = (list: Booking[]) => (
         list.length > 0
-            ? list.map(b => <BookingCard key={b.id} booking={b} mode="talent" onUpdate={fetchBookings} isProSubscriber={isProSubscriber} onOpenChat={handleOpenChat} />)
+            ? list.map(b => <BookingCard key={b.id} booking={b} mode="talent" onUpdate={fetchBookings} isProSubscriber={isProSubscriber} />)
             : <p className="text-muted-foreground text-center py-4">No bookings in this category.</p>
     );
 
@@ -59,9 +59,6 @@ export const BookingRequests = ({ talentId, isProSubscriber }: BookingRequestsPr
                 <TabsContent value="upcoming">{renderBookings(upcomingBookings)}</TabsContent>
                 <TabsContent value="past">{renderBookings(pastBookings)}</TabsContent>
             </Tabs>
-            {isChatOpen && currentConversationId && (
-                <ChatModal conversationId={currentConversationId} onClose={() => setIsChatOpen(false)} />
-            )}
         </>
     );
 };

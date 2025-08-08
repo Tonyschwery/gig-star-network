@@ -5,60 +5,49 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BookingCard, Booking } from "./BookingCard";
-import { ChatModal } from "./ChatModal";
+
 import { GigOpportunitiesIntegrated } from './GigOpportunitiesIntegrated';
 import { Button } from "./ui/button";
 import { Calendar, Sparkles } from "lucide-react";
 
 export const TalentDashboardTabs = () => {
-    const { profile } = useAuth();
+    const { user } = useAuth();
+    const [talentProfile, setTalentProfile] = useState<any>(null);
     const [allBookings, setAllBookings] = useState<Booking[]>([]);
     const [loading, setLoading] = useState(true);
-    const [isChatOpen, setIsChatOpen] = useState(false);
-    const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
 
     const fetchAllBookings = useCallback(async () => {
-        if (!profile?.id) return;
-        // Fetch all bookings and gig applications related to this talent
+        if (!user?.id) return;
+        // Ensure we have the talent profile
+        let profileId = talentProfile?.id as string | undefined;
+        if (!profileId) {
+            const { data: tp, error: tpError } = await supabase
+                .from('talent_profiles')
+                .select('id,is_pro_subscriber')
+                .eq('user_id', user.id)
+                .maybeSingle();
+            if (tpError) console.error("Error fetching talent profile:", tpError);
+            if (!tp) { setLoading(false); return; }
+            setTalentProfile(tp);
+            profileId = tp.id;
+        }
         const { data, error } = await supabase
             .from('bookings')
-            .select(`*, payments(*), gig_applications!inner(id)`)
-            .eq('talent_id', profile.id);
+            .select(`*, payments(*)`)
+            .eq('talent_id', profileId);
 
         if (error) console.error("Error fetching bookings:", error);
         else setAllBookings(data || []);
         setLoading(false);
-    }, [profile]);
+    }, [user, talentProfile]);
 
     useEffect(() => {
         fetchAllBookings();
         // Setup a single channel to listen for all changes related to this talent
-        const channel = supabase.channel(`talent-dashboard:${profile?.id}`).on('postgres_changes', { event: '*', schema: 'public' }, fetchAllBookings).subscribe();
+        const channel = supabase.channel(`talent-dashboard:${talentProfile?.id || user?.id || 'unknown'}`).on('postgres_changes', { event: '*', schema: 'public' }, fetchAllBookings).subscribe();
         return () => { supabase.removeChannel(channel); };
-    }, [profile, fetchAllBookings]);
+    }, [talentProfile, user, fetchAllBookings]);
 
-    const handleOpenChat = async (bookingId: string, gigApplicationId?: string) => {
-        const isGig = !!gigApplicationId;
-        const queryCol = isGig ? 'gig_application_id' : 'booking_id';
-        const queryVal = isGig ? gigApplicationId : bookingId;
-
-        const { data: convo } = await supabase.from('conversations').select('id').eq(queryCol, queryVal).maybeSingle();
-        
-        if (convo) {
-            setActiveConversationId(convo.id);
-            setIsChatOpen(true);
-        } else {
-            // Create conversation if it doesn't exist
-            const insertData = { booking_id: bookingId, ...(isGig && { gig_application_id: gigApplicationId }) };
-            const { data: newConvo, error } = await supabase.from('conversations').insert(insertData).select().single();
-            if (newConvo) {
-                setActiveConversationId(newConvo.id);
-                setIsChatOpen(true);
-            } else {
-                console.error("Failed to create conversation:", error);
-            }
-        }
-    };
 
     if (loading) return <div>Loading...</div>;
     
@@ -74,7 +63,7 @@ export const TalentDashboardTabs = () => {
 
     const renderBookings = (list: Booking[]) => (
         list.length > 0
-            ? list.map(b => <BookingCard key={b.id} booking={b} mode="talent" onUpdate={fetchAllBookings} isProSubscriber={profile?.is_pro_subscriber} onOpenChat={handleOpenChat} />)
+            ? list.map(b => <BookingCard key={b.id} booking={b} mode="talent" onUpdate={fetchAllBookings} isProSubscriber={talentProfile?.is_pro_subscriber} />)
             : <p className="text-muted-foreground text-center py-4">No bookings in this category.</p>
     );
 
@@ -102,8 +91,12 @@ export const TalentDashboardTabs = () => {
                 </TabsContent>
                 
                 <TabsContent value="gigs">
-                    {profile?.is_pro_subscriber ? (
-                        <GigOpportunitiesIntegrated onOpenChat={handleOpenChat} />
+                    {talentProfile?.is_pro_subscriber ? (
+                        <GigOpportunitiesIntegrated 
+                            isProSubscriber={!!talentProfile?.is_pro_subscriber}
+                            onUpgrade={() => {}}
+                            talentId={talentProfile?.id || ''}
+                        />
                     ) : (
                         <div className="text-center p-8 border rounded-lg">
                             <h3 className="font-bold">This is a Pro Feature</h3>
@@ -114,9 +107,6 @@ export const TalentDashboardTabs = () => {
                 </TabsContent>
             </Tabs>
             
-            {isChatOpen && activeConversationId && (
-                <ChatModal conversationId={activeConversationId} open={isChatOpen} onOpenChange={setIsChatOpen} />
-            )}
         </>
     );
 };

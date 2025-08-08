@@ -6,7 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Calendar, Clock, MapPin, Mail, User, Check, X, MessageCircle, Crown, Sparkles } from "lucide-react";
 import { ManualInvoiceModal } from "./ManualInvoiceModal";
-import { ChatModal } from "./ChatModal";
+
 import { format } from "date-fns";
 import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 import { useUnreadNotifications } from "@/hooks/useUnreadNotifications";
@@ -370,17 +370,6 @@ export function GigOpportunities({ isProSubscriber, onUpgrade }: GigOpportunitie
         />
       )}
 
-      {/* Chat Modal */}
-      {chatGig && isProSubscriber && (
-        <ChatModal
-          open={showChatModal}
-          onOpenChange={setShowChatModal}
-          bookingId={chatGig.id}
-          talentName={chatGig.booker_name}
-          eventType={chatGig.event_type}
-          eventDate={chatGig.event_date}
-        />
-      )}
     </>
   );
 }
