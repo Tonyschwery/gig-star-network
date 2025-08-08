@@ -5,14 +5,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BookingCard, Booking } from "./BookingCard";
-import { ChatModal } from "./ChatModal";
+
 import { BookerInvoiceCard } from './BookerInvoiceCard';
 
 export const BookerDashboardTabs = ({ userId }: { userId: string }) => {
     const [bookings, setBookings] = useState<Booking[]>([]);
     const [loading, setLoading] = useState(true);
-    const [isChatOpen, setIsChatOpen] = useState(false);
-    const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
 
     const fetchBookings = useCallback(async () => {
         if (!userId) return;
@@ -28,19 +26,6 @@ export const BookerDashboardTabs = ({ userId }: { userId: string }) => {
         return () => { supabase.removeChannel(channel); };
     }, [userId, fetchBookings]);
 
-    const handleOpenChat = async (bookingId: string) => {
-        const { data: convo } = await supabase.from('conversations').select('id').eq('booking_id', bookingId).maybeSingle();
-        if (convo) {
-            setActiveConversationId(convo.id);
-            setIsChatOpen(true);
-        } else {
-            const { data: newConvo } = await supabase.from('conversations').insert({ booking_id: bookingId }).select().single();
-            if (newConvo) {
-                setActiveConversationId(newConvo.id);
-                setIsChatOpen(true);
-            }
-        }
-    };
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -54,9 +39,9 @@ export const BookerDashboardTabs = ({ userId }: { userId: string }) => {
         list.length > 0
             ? list.map(booking => (
                 <div key={booking.id} className="mb-4">
-                    <BookingCard booking={booking} mode="booker" onUpdate={fetchBookings} onOpenChat={handleOpenChat} />
+                    <BookingCard booking={booking} mode="booker" onUpdate={fetchBookings} />
                     {booking.status === 'pending_approval' && booking.payments && booking.payments.length > 0 && (
-                        <BookerInvoiceCard booking={booking} payment={booking.payments[0]} onPaymentUpdate={fetchBookings} />
+                        <BookerInvoiceCard booking={booking as any} payment={booking.payments[0] as any} onPaymentUpdate={fetchBookings} />
                     )}
                 </div>
             ))
@@ -79,9 +64,6 @@ export const BookerDashboardTabs = ({ userId }: { userId: string }) => {
                 <TabsContent value="upcoming">{renderBookingList(upcomingBookings)}</TabsContent>
                 <TabsContent value="past">{renderBookingList(pastBookings)}</TabsContent>
             </Tabs>
-            {isChatOpen && activeConversationId && (
-                <ChatModal conversationId={activeConversationId} open={isChatOpen} onOpenChange={setIsChatOpen} />
-            )}
         </>
     );
 };

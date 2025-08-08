@@ -9,18 +9,39 @@ import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { ManualInvoiceModal } from "./ManualInvoiceModal";
 
+export interface Payment {
+  id: string;
+  booking_id: string;
+  booker_id: string;
+  talent_id: string;
+  total_amount: number;
+  platform_commission: number;
+  talent_earnings: number;
+  commission_rate: number;
+  hourly_rate: number;
+  hours_booked: number;
+  currency: string;
+  payment_status: string;
+  payment_method?: string | null;
+  payment_reference?: string | null;
+  created_at?: string | Date;
+  processed_at?: string | Date | null;
+}
+
 export interface Booking {
   id: string;
   booker_name: string;
+  booker_email: string;
   event_date: string | Date;
   event_duration: number;
   event_location: string;
+  event_address: string;
   status: string;
   user_id: string;
   talent_id?: string;
   is_gig_opportunity?: boolean;
-  talent_profiles?: { artist_name: string; };
-  payments?: { total_amount: number; currency: string }[];
+  talent_profiles?: { artist_name: string };
+  payments?: Payment[];
   gig_applications?: { id: string }[];
   // Adding other fields for display
   event_type?: string;
@@ -32,10 +53,9 @@ interface BookingCardProps {
   mode: 'talent' | 'booker';
   onUpdate?: () => void;
   isProSubscriber?: boolean;
-  onOpenChat: (bookingId: string, gigApplicationId?: string) => void;
 }
 
-export const BookingCard = ({ booking, mode, onUpdate, isProSubscriber, onOpenChat }: BookingCardProps) => {
+export const BookingCard = ({ booking, mode, onUpdate, isProSubscriber }: BookingCardProps) => {
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const navigate = useNavigate();
   // Simplified way to get the gig application ID if it exists
@@ -69,7 +89,7 @@ export const BookingCard = ({ booking, mode, onUpdate, isProSubscriber, onOpenCh
         </div>
         {paymentAmount && <div className="font-semibold text-green-600">Amount Paid: ${paymentAmount} {booking.payments?.[0].currency}</div>}
         <div className="flex flex-wrap gap-2 pt-2 border-t mt-2">
-            <Button onClick={() => onOpenChat(booking.id, gigApplicationId)} variant="outline" size="sm"><MessageCircle className="h-4 w-4 mr-2" />Chat</Button>
+            <Button onClick={() => navigate('/messages')} variant="outline" size="sm"><MessageCircle className="h-4 w-4 mr-2" />Chat</Button>
             {mode === 'booker' && booking.talent_id && <Button onClick={() => navigate(`/talent/${booking.talent_id}`)} variant="outline" size="sm"><User className="h-4 w-4 mr-2" />View Talent</Button>}
             {mode === 'talent' && booking.status === 'pending' && (
                 <>

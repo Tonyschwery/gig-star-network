@@ -4,7 +4,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BookingCard, Booking } from "./BookingCard";
-import { ChatModal } from "./ChatModal";
 
 interface BookingRequestsProps {
     talentId: string;
@@ -14,8 +13,6 @@ interface BookingRequestsProps {
 export const BookingRequests = ({ talentId, isProSubscriber }: BookingRequestsProps) => {
     const [bookings, setBookings] = useState<Booking[]>([]);
     const [loading, setLoading] = useState(true);
-    const [isChatOpen, setIsChatOpen] = useState(false);
-    const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
 
     const fetchBookings = useCallback(async () => {
         if (!talentId) return;
@@ -31,17 +28,6 @@ export const BookingRequests = ({ talentId, isProSubscriber }: BookingRequestsPr
         return () => { supabase.removeChannel(channel); };
     }, [talentId, fetchBookings]);
 
-    const handleOpenChat = async (bookingId: string) => {
-        const { data: convo } = await supabase.from('conversations').select('id').eq('booking_id', bookingId).maybeSingle();
-        if (convo) {
-            setCurrentConversationId(convo.id);
-            setIsChatOpen(true);
-        } else {
-            const { data: newConvo } = await supabase.from('conversations').insert({ booking_id: bookingId }).select().single();
-            if (newConvo) setCurrentConversationId(newConvo.id);
-            setIsChatOpen(true);
-        }
-    };
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
