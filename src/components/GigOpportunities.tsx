@@ -270,7 +270,6 @@ export function GigOpportunities({ isProSubscriber, onUpgrade }: GigOpportunitie
 
       {/* Action Buttons */}
       <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 pt-3 sm:pt-4 border-t">
-        <ChatButtonWithNotifications gig={gig} disabled={!isProSubscriber} />
         <Button
           onClick={() => handleAcceptGig(gig)}
           className={`w-full sm:w-auto ${

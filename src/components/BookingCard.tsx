@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
-import { Calendar, User, Check, X, MessageCircle, Clock3, MapPin } from "lucide-react";
+import { Calendar, User, Check, X, Clock3, MapPin } from "lucide-react";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { ManualInvoiceModal } from "./ManualInvoiceModal";
@@ -32,7 +32,7 @@ export interface Booking {
   id: string;
   booker_name: string;
   booker_email: string;
-  event_date: string | Date;
+  event_date: string;
   event_duration: number;
   event_location: string;
   event_address: string;
@@ -44,7 +44,7 @@ export interface Booking {
   payments?: Payment[];
   gig_applications?: { id: string }[];
   // Adding other fields for display
-  event_type?: string;
+  event_type: string;
   created_at?: string | Date;
 }
 
@@ -89,7 +89,7 @@ export const BookingCard = ({ booking, mode, onUpdate, isProSubscriber }: Bookin
         </div>
         {paymentAmount && <div className="font-semibold text-green-600">Amount Paid: ${paymentAmount} {booking.payments?.[0].currency}</div>}
         <div className="flex flex-wrap gap-2 pt-2 border-t mt-2">
-            <Button onClick={() => navigate('/messages')} variant="outline" size="sm"><MessageCircle className="h-4 w-4 mr-2" />Chat</Button>
+            
             {mode === 'booker' && booking.talent_id && <Button onClick={() => navigate(`/talent/${booking.talent_id}`)} variant="outline" size="sm"><User className="h-4 w-4 mr-2" />View Talent</Button>}
             {mode === 'talent' && booking.status === 'pending' && (
                 <>

@@ -495,15 +495,6 @@ export function GigOpportunitiesIntegrated({ isProSubscriber, onUpgrade, talentI
       {/* TASK 1: Action Buttons - Add Chat with Booker functionality */}
       <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 pt-3 sm:pt-4 border-t">
         <Button
-          onClick={() => handleChatWithBooker(gig)}
-          variant="outline"
-          className="w-full sm:w-auto border-blue-200 text-blue-600 hover:bg-blue-50"
-          size="sm"
-        >
-          <MessageCircle className="h-4 w-4 mr-2" />
-          Chat with Booker
-        </Button>
-        <Button
           onClick={() => handleAcceptGig(gig)}
           className={`w-full sm:w-auto ${
             isProSubscriber 
@@ -545,11 +536,8 @@ export function GigOpportunitiesIntegrated({ isProSubscriber, onUpgrade, talentI
         key={gigApplication.id}
         booking={bookingData}
         mode="talent"
-        showActions={showActions}
         onUpdate={fetchAllGigData}
         isProSubscriber={isProSubscriber}
-        talentId={talentId}
-        gigApplicationId={gigApplication.id}
       />
     );
   };
