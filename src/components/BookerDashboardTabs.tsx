@@ -53,11 +53,11 @@ export const BookerDashboardTabs = ({ userId }: { userId: string }) => {
     return (
         <>
             <Tabs defaultValue="awaiting_response" className="w-full">
-                <TabsList className="grid w-full grid-cols-4">
-                    <TabsTrigger value="awaiting_response">Awaiting Response ({awaitingResponse.length})</TabsTrigger>
-                    <TabsTrigger value="awaiting_payment">Invoices ({awaitingPayment.length})</TabsTrigger>
-                    <TabsTrigger value="upcoming">Upcoming ({upcomingBookings.length})</TabsTrigger>
-                    <TabsTrigger value="past">Past Events ({pastBookings.length})</TabsTrigger>
+                <TabsList className="w-full flex gap-2 overflow-x-auto whitespace-nowrap md:grid md:grid-cols-4">
+                    <TabsTrigger value="awaiting_response" className="shrink-0">Awaiting Response ({awaitingResponse.length})</TabsTrigger>
+                    <TabsTrigger value="awaiting_payment" className="shrink-0">Invoices ({awaitingPayment.length})</TabsTrigger>
+                    <TabsTrigger value="upcoming" className="shrink-0">Upcoming ({upcomingBookings.length})</TabsTrigger>
+                    <TabsTrigger value="past" className="shrink-0">Past Events ({pastBookings.length})</TabsTrigger>
                 </TabsList>
                 <TabsContent value="awaiting_response">{renderBookingList(awaitingResponse)}</TabsContent>
                 <TabsContent value="awaiting_payment">{renderBookingList(awaitingPayment)}</TabsContent>
