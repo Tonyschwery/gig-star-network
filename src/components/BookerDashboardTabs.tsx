@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BookingCard, Booking } from "./BookingCard";
 
 import { BookerInvoiceCard } from './BookerInvoiceCard';
+import { UniversalChatWidget } from "@/components/UniversalChatWidget";
 
 export const BookerDashboardTabs = ({ userId }: { userId: string }) => {
     const [bookings, setBookings] = useState<Booking[]>([]);
@@ -64,6 +65,7 @@ export const BookerDashboardTabs = ({ userId }: { userId: string }) => {
                 <TabsContent value="upcoming">{renderBookingList(upcomingBookings)}</TabsContent>
                 <TabsContent value="past">{renderBookingList(pastBookings)}</TabsContent>
             </Tabs>
+            <UniversalChatWidget />
         </>
     );
 };

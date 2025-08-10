@@ -9,6 +9,7 @@ import { BookingCard, Booking } from "./BookingCard";
 import { GigOpportunitiesIntegrated } from './GigOpportunitiesIntegrated';
 import { Button } from "./ui/button";
 import { Calendar, Sparkles } from "lucide-react";
+import { UniversalChatWidget } from "@/components/UniversalChatWidget";
 
 export const TalentDashboardTabs = () => {
     const { user } = useAuth();
@@ -106,6 +107,7 @@ export const TalentDashboardTabs = () => {
                     )}
                 </TabsContent>
             </Tabs>
+            <UniversalChatWidget />
             
         </>
     );
