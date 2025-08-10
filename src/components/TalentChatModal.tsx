@@ -1,43 +1,56 @@
-import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabaseClient";
+// PASTE THIS ENTIRE CODE BLOCK, REPLACING THE OLD FILE
+
+import React, { useState, useEffect, useRef } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Send } from "lucide-react";
 
-export default function TalentChatModal({ conversationId, userId, onClose }) {
-  const [messages, setMessages] = useState([]);
+interface Message {
+  id: string;
+  content: string;
+  user_id: string;
+  created_at: string;
+}
+
+interface TalentChatModalProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  conversationId: string;
+}
+
+export const TalentChatModal = ({ open, onOpenChange, conversationId }: TalentChatModalProps) => {
+  const { user } = useAuth();
+  const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [isSending, setIsSending] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Fetch existing messages
   useEffect(() => {
     if (!conversationId) return;
 
-    const fetchMessages = async () => {
-      setLoading(true);
+    // Load existing messages
+    const loadMessages = async () => {
       const { data, error } = await supabase
         .from("messages")
         .select("*")
         .eq("conversation_id", conversationId)
         .order("created_at", { ascending: true });
 
-      if (error) {
-        console.error("Error fetching messages:", error);
-      } else {
-        setMessages(data || []);
+      if (!error && data) {
+        setMessages(data);
+        scrollToBottom();
       }
-      setLoading(false);
     };
 
-    fetchMessages();
-  }, [conversationId]);
+    loadMessages();
 
-  // Subscribe to new messages in real time
-  useEffect(() => {
-    if (!conversationId) return;
-
+    // Subscribe to realtime messages for this conversation
     const channel = supabase
-      .channel(`chat-${conversationId}`)
+      .channel(`room:conversation:${conversationId}`)
       .on(
         "postgres_changes",
         {
@@ -47,7 +60,8 @@ export default function TalentChatModal({ conversationId, userId, onClose }) {
           filter: `conversation_id=eq.${conversationId}`,
         },
         (payload) => {
-          setMessages((prev) => [...prev, payload.new]);
+          setMessages((prev) => [...prev, payload.new as Message]);
+          scrollToBottom();
         }
       )
       .subscribe();
@@ -57,72 +71,64 @@ export default function TalentChatModal({ conversationId, userId, onClose }) {
     };
   }, [conversationId]);
 
-  // Send message
-  const sendMessage = async () => {
-    if (!newMessage.trim()) return;
+  const scrollToBottom = () => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  };
 
+  const handleSend = async () => {
+    if (!newMessage.trim() || !conversationId) return;
+
+    setIsSending(true);
     const { error } = await supabase.from("messages").insert([
       {
         conversation_id: conversationId,
-        user_id: userId,
+        user_id: user?.id,
         content: newMessage.trim(),
-        sender_type: "talent", // Identifies this user type
-        is_read: false,
+        created_at: new Date().toISOString(),
       },
     ]);
+    setIsSending(false);
 
-    if (error) {
-      console.error("Error sending message:", error);
-    } else {
+    if (!error) {
       setNewMessage("");
     }
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex justify-center items-center">
-      <div className="bg-white rounded-lg shadow-lg w-full max-w-lg p-4">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold">Chat</h2>
-          <Button variant="ghost" onClick={onClose}>
-            Close
-          </Button>
-        </div>
-
-        <ScrollArea className="h-64 border rounded p-2 mb-4">
-          {loading ? (
-            <p className="text-gray-500">Loading...</p>
-          ) : (
-            messages.map((msg) => (
-              <div
-                key={msg.id}
-                className={`mb-2 ${
-                  msg.user_id === userId ? "text-right" : "text-left"
-                }`}
-              >
-                <span
-                  className={`inline-block px-3 py-1 rounded-lg ${
-                    msg.user_id === userId
-                      ? "bg-blue-500 text-white"
-                      : "bg-gray-200 text-black"
-                  }`}
-                >
-                  {msg.content}
-                </span>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Talent Chat</DialogTitle>
+        </DialogHeader>
+        <ScrollArea ref={scrollRef} className="h-96 p-4 border rounded-md mb-4">
+          {messages.map((msg) => (
+            <div
+              key={msg.id}
+              className={`mb-2 p-2 rounded-md ${
+                msg.user_id === user?.id ? "bg-blue-500 text-white ml-auto" : "bg-gray-200"
+              } max-w-xs`}
+            >
+              {msg.content}
+              <div className="text-xs opacity-70">
+                {new Date(msg.created_at).toLocaleTimeString()}
               </div>
-            ))
-          )}
+            </div>
+          ))}
         </ScrollArea>
-
-        <div className="flex gap-2">
-          <Input
+        <div className="flex space-x-2">
+          <Textarea
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
             placeholder="Type your message..."
-            onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+            disabled={isSending}
           />
-          <Button onClick={sendMessage}>Send</Button>
+          <Button onClick={handleSend} disabled={isSending || !newMessage.trim()}>
+            <Send className="w-4 h-4" />
+          </Button>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
-}
+};
