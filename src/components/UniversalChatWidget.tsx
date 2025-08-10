@@ -44,37 +44,65 @@ export const UniversalChatWidget: React.FC = () => {
 
     const load = async () => {
       setLoadingList(true);
-      const { data, error } = await supabase
-        .from("conversations")
-        .select(`
-          id,
-          created_at,
-          booking:bookings!conversations_booking_id_fkey (
-            id, user_id, event_type, event_date, booker_name, talent_id,
-            talent_profiles:talent_id ( id, artist_name, user_id )
-          )
-        `)
-        .order("updated_at", { ascending: false });
 
-      if (error) {
-        console.error("Failed to load conversations", error);
+      // 1) Fetch conversations basic fields first (avoid broken FK alias)
+      const { data: convs, error: convErr } = await supabase
+        .from("conversations")
+        .select("id, created_at, booking_id")
+        .order("created_at", { ascending: false });
+
+      if (convErr) {
+        console.error("Failed to load conversations", convErr);
         setLoadingList(false);
         return;
       }
 
-      const base: ConversationItem[] = [];
-      for (const c of (data || []) as any[]) {
-        const b = (c as any).booking;
-        const isBooker = b?.user_id === user.id;
+      if (!convs || convs.length === 0) {
+        setConversations([]);
+        setLoadingList(false);
+        setActiveId(null);
+        return;
+      }
+
+      // 2) Fetch related bookings in a single query
+      const bookingIds = convs.map(c => c.booking_id).filter(Boolean);
+      const { data: bookingsData, error: bookingsErr } = await supabase
+        .from("bookings")
+        .select(`
+          id, user_id, event_type, event_date, booker_name, talent_id,
+          talent_profiles:talent_id ( id, artist_name, user_id )
+        `)
+        .in("id", bookingIds as string[]);
+
+      if (bookingsErr) {
+        console.error("Failed to load bookings for conversations", bookingsErr);
+        setLoadingList(false);
+        return;
+      }
+
+      const bookingMap = new Map<string, any>();
+      (bookingsData || []).forEach(b => bookingMap.set(b.id, b));
+
+      // 3) Build conversation list items filtered to current user
+      const results: ConversationItem[] = [];
+      for (const c of convs) {
+        const b = bookingMap.get(c.booking_id);
+        if (!b) continue;
+
+        const isBooker = b.user_id === user.id;
+        const isTalent = b?.talent_profiles?.user_id === user.id;
+        if (!isBooker && !isTalent) continue; // only show user's conversations
+
         const otherName = isBooker ? (b?.talent_profiles?.artist_name || "Talent") : (b?.booker_name || "Booker");
         const eventTitle = b?.event_type ? `${b.event_type} event` : "Conversation";
         const eventDate = b?.event_date ? new Date(b.event_date).toLocaleDateString() : undefined;
-        base.push({ id: c.id, otherName, eventTitle, eventDate, hasUnread: false });
+
+        results.push({ id: c.id, otherName, eventTitle, eventDate, hasUnread: false });
       }
 
-      // compute unread per conversation (simple approach)
-      const results: ConversationItem[] = [];
-      for (const item of base) {
+      // 4) Compute unread per conversation (keep simple for now)
+      const withUnread: ConversationItem[] = [];
+      for (const item of results) {
         const { data: unread } = await supabase
           .from("messages")
           .select("id")
@@ -82,12 +110,12 @@ export const UniversalChatWidget: React.FC = () => {
           .eq("is_read", false)
           .neq("user_id", user.id)
           .limit(1);
-        results.push({ ...item, hasUnread: !!(unread && unread.length > 0) });
+        withUnread.push({ ...item, hasUnread: !!(unread && unread.length > 0) });
       }
 
-      setConversations(results);
+      setConversations(withUnread);
       setLoadingList(false);
-      if (results.length && !activeId) setActiveId(results[0].id);
+      if (withUnread.length && !activeId) setActiveId(withUnread[0].id);
     };
 
     load();
@@ -169,14 +197,22 @@ export const UniversalChatWidget: React.FC = () => {
     if (!user || !activeId || !input.trim() || sending) return;
     setSending(true);
 
-    const { data: convWithBooking } = await supabase
+    // Resolve sender type without relying on FK aliasing
+    const { data: conv } = await supabase
       .from("conversations")
-      .select(`id, booking:bookings!conversations_booking_id_fkey ( id, user_id )`)
+      .select("id, booking_id")
       .eq("id", activeId)
       .maybeSingle();
 
-    const isBooker = (convWithBooking as any)?.booking?.user_id === user.id;
-    const sender_type: "talent" | "booker" = isBooker ? "booker" : "talent";
+    let sender_type: "talent" | "booker" = "talent";
+    if (conv?.booking_id) {
+      const { data: booking } = await supabase
+        .from("bookings")
+        .select("id, user_id")
+        .eq("id", conv.booking_id)
+        .maybeSingle();
+      if (booking?.user_id === user.id) sender_type = "booker";
+    }
 
     const { error } = await supabase.from("messages").insert({
       conversation_id: activeId,
