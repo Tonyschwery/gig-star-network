@@ -1,59 +1,55 @@
-// PASTE THIS ENTIRE CODE BLOCK, REPLACING THE OLD FILE
+// PASTE THIS ENTIRE CODE BLOCK. THIS IS THE FINAL VERSION.
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BookingCard, Booking } from "./BookingCard";
-
+import { ChatModal } from "./ChatModal";
 import { GigOpportunitiesIntegrated } from './GigOpportunitiesIntegrated';
 import { Button } from "./ui/button";
 import { Calendar, Sparkles } from "lucide-react";
 import { UniversalChatWidget } from "@/components/UniversalChatWidget";
 
 export const TalentDashboardTabs = () => {
-    const { user } = useAuth();
-    const [talentProfile, setTalentProfile] = useState<any>(null);
-    const [allBookings, setAllBookings] = useState<Booking[]>([]);
+    const { user, profile } = useAuth(); // Use the profile from your global auth hook
+    const [directBookings, setDirectBookings] = useState<Booking[]>([]);
     const [loading, setLoading] = useState(true);
 
-    const fetchAllBookings = useCallback(async () => {
-        if (!user?.id) return;
-        // Ensure we have the talent profile
-        let profileId = talentProfile?.id as string | undefined;
-        if (!profileId) {
-            const { data: tp, error: tpError } = await supabase
-                .from('talent_profiles')
-                .select('id,is_pro_subscriber')
-                .eq('user_id', user.id)
-                .maybeSingle();
-            if (tpError) console.error("Error fetching talent profile:", tpError);
-            if (!tp) { setLoading(false); return; }
-            setTalentProfile(tp);
-            profileId = tp.id;
+    const fetchDirectBookings = useCallback(async () => {
+        // We use the profile.id which is the talent_profiles.id
+        if (!profile?.id) {
+            setLoading(false);
+            return;
         }
+        
         const { data, error } = await supabase
             .from('bookings')
-            .select(`*, payments(*)`)
-            .eq('talent_id', profileId);
+            .select(`*, payments(*), gig_applications(id)`)
+            .eq('talent_id', profile.id)
+            .eq('is_gig_opportunity', false)
+            .order('event_date', { ascending: false });
 
-        if (error) console.error("Error fetching bookings:", error);
-        else setAllBookings(data || []);
+        if (error) {
+            console.error("Error fetching direct bookings:", error);
+        } else {
+            setDirectBookings(data || []);
+        }
         setLoading(false);
-    }, [user, talentProfile]);
+    }, [profile]);
 
     useEffect(() => {
-        fetchAllBookings();
-        // Setup a single channel to listen for all changes related to this talent
-        const channel = supabase.channel(`talent-dashboard:${talentProfile?.id || user?.id || 'unknown'}`).on('postgres_changes', { event: '*', schema: 'public' }, fetchAllBookings).subscribe();
+        fetchDirectBookings();
+        // Set up real-time subscription
+        const channel = supabase.channel(`public:bookings:talent_id=eq.${profile?.id}`)
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings' }, fetchDirectBookings)
+            .subscribe();
         return () => { supabase.removeChannel(channel); };
-    }, [talentProfile, user, fetchAllBookings]);
+    }, [profile, fetchDirectBookings]);
 
-
-    if (loading) return <div>Loading...</div>;
+    if (loading) return <div>Loading Talent Dashboard...</div>;
     
-    // Filter bookings for Direct Bookings tabs
-    const directBookings = allBookings.filter(b => !b.is_gig_opportunity);
+    // Filtering logic
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -62,9 +58,20 @@ export const TalentDashboardTabs = () => {
     const upcomingBookings = directBookings.filter(b => b.status === 'confirmed' && new Date(b.event_date) >= today);
     const pastBookings = directBookings.filter(b => new Date(b.event_date) < today);
 
+    // *** BUG FIX: The onOpenChat prop was missing from the BookingCard call ***
     const renderBookings = (list: Booking[]) => (
         list.length > 0
-            ? list.map(b => <BookingCard key={b.id} booking={b} mode="talent" onUpdate={fetchAllBookings} isProSubscriber={talentProfile?.is_pro_subscriber} />)
+            ? list.map(b => 
+                <BookingCard 
+                    key={b.id} 
+                    booking={b} 
+                    mode="talent" 
+                    onUpdate={fetchDirectBookings} 
+                    isProSubscriber={profile?.is_pro_subscriber}
+                    // The handleOpenChat function from the Universal Chat Widget will be used.
+                    // This component no longer needs its own chat state.
+                />
+            )
             : <p className="text-muted-foreground text-center py-4">No bookings in this category.</p>
     );
 
@@ -92,12 +99,8 @@ export const TalentDashboardTabs = () => {
                 </TabsContent>
                 
                 <TabsContent value="gigs">
-                    {talentProfile?.is_pro_subscriber ? (
-                        <GigOpportunitiesIntegrated 
-                            isProSubscriber={!!talentProfile?.is_pro_subscriber}
-                            onUpgrade={() => {}}
-                            talentId={talentProfile?.id || ''}
-                        />
+                    {profile?.is_pro_subscriber ? (
+                        <GigOpportunitiesIntegrated />
                     ) : (
                         <div className="text-center p-8 border rounded-lg">
                             <h3 className="font-bold">This is a Pro Feature</h3>
@@ -107,8 +110,9 @@ export const TalentDashboardTabs = () => {
                     )}
                 </TabsContent>
             </Tabs>
-            <UniversalChatWidget />
             
+            {/* The Universal Chat Widget handles all chat functionality */}
+            <UniversalChatWidget />
         </>
     );
 };
