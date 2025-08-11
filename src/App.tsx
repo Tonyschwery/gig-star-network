@@ -1,65 +1,90 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { AuthProvider } from './hooks/useAuth';
-import { UserModeProvider } from './contexts/UserModeContext';
-import { Toaster } from "./components/ui/toaster"
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { Routes, Route } from "react-router-dom";
+import { AuthProvider } from "./hooks/useAuth";
+import { UserModeProvider } from "./contexts/UserModeContext";
+import Index from "./pages/Index";
+import Auth from "./pages/Auth";
+import Login from "./pages/Login";
+import BookerDashboard from "./pages/BookerDashboard";
+import TalentOnboarding from "./pages/TalentOnboarding";
+import TalentProfile from "./pages/TalentProfile";
+import TalentDashboard from "./pages/TalentDashboard";
+import TalentDashboardBookings from "./pages/TalentDashboardBookings";
+import TalentDashboardGigs from "./pages/TalentDashboardGigs";
+import TalentProfileEdit from "./pages/TalentProfileEdit";
+import YourEvent from "./pages/YourEvent";
 
-// Import Pages
-import Index from './pages/Index';
-import Login from './pages/Login';
-import Auth from './pages/Auth';
-import TalentDashboard from './pages/TalentDashboard';
-import BookerDashboard from './pages/BookerDashboard';
-import TalentProfile from './pages/TalentProfile';
-import TalentProfileEdit from './pages/TalentProfileEdit';
-import TalentOnboarding from './pages/TalentOnboarding';
-import HowItWorks from './pages/HowItWorks';
-import Pricing from './pages/Pricing';
-import TrustSafety from './pages/TrustSafety';
-import PrivacyPolicy from './pages/PrivacyPolicy';
-import TermsOfService from './pages/TermsOfService';
-import YourEvent from './pages/YourEvent';
-import NotFound from './pages/NotFound';
-import Messages from './pages/Messages';
 
-// Import Components
-import ProtectedRoute from './components/ProtectedRoute';
-import ProtectedTalentRoute from './components/ProtectedTalentRoute';
-import { UniversalChatWidget } from './components/UniversalChatWidget';
+import Pricing from "./pages/Pricing";
+import HowItWorks from "./pages/HowItWorks";
+import TrustSafety from "./pages/TrustSafety";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsOfService from "./pages/TermsOfService";
+import NotFound from "./pages/NotFound";
+import { ProtectedTalentRoute } from "./components/ProtectedTalentRoute";
+import { ProtectedRoute } from "./components/ProtectedRoute";
+import Messages from "./pages/Messages";
 
-function App() {
-  return (
-    <Router>
-      <AuthProvider>
-        <UserModeProvider>
-          <Routes>
-            {/* Public Routes */}
+const App = () => (
+  <AuthProvider>
+    <UserModeProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <Routes>
             <Route path="/" element={<Index />} />
-            <Route path="/login" element={<Login />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/booker-dashboard" element={
+              <ProtectedRoute>
+                <BookerDashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/talent-onboarding" element={
+              <ProtectedTalentRoute requireProfile={false}>
+                <TalentOnboarding />
+              </ProtectedTalentRoute>
+            } />
             <Route path="/talent/:id" element={<TalentProfile />} />
-            <Route path="/how-it-works" element={<HowItWorks />} />
+            <Route path="/talent-dashboard" element={
+              <ProtectedTalentRoute>
+                <TalentDashboard />
+              </ProtectedTalentRoute>
+            } />
+            <Route path="/talent-dashboard/bookings" element={
+              <ProtectedTalentRoute>
+                <TalentDashboardBookings />
+              </ProtectedTalentRoute>
+            } />
+            <Route path="/talent-dashboard/gigs" element={
+              <ProtectedTalentRoute>
+                <TalentDashboardGigs />
+              </ProtectedTalentRoute>
+            } />
+            <Route path="/talent-profile-edit" element={
+              <ProtectedTalentRoute>
+                <TalentProfileEdit />
+              </ProtectedTalentRoute>
+            } />
+            <Route path="/your-event" element={<YourEvent />} />
             <Route path="/pricing" element={<Pricing />} />
+            <Route path="/how-it-works" element={<HowItWorks />} />
             <Route path="/trust-safety" element={<TrustSafety />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/terms-of-service" element={<TermsOfService />} />
-            <Route path="/your-event" element={<YourEvent />} />
-
-            {/* Protected Routes */}
-            <Route path="/talent-dashboard/*" element={<ProtectedTalentRoute><TalentDashboard /></ProtectedTalentRoute>} />
-            <Route path="/booker-dashboard" element={<ProtectedRoute><BookerDashboard /></ProtectedRoute>} />
-            <Route path="/talent-profile-edit" element={<ProtectedTalentRoute><TalentProfileEdit /></ProtectedTalentRoute>} />
-            <Route path="/talent-onboarding" element={<ProtectedRoute><TalentOnboarding /></ProtectedRoute>} />
-            <Route path="/messages" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
-            
-            {/* 404 Not Found Route */}
+            <Route path="/messages" element={
+              <ProtectedRoute>
+                <Messages />
+              </ProtectedRoute>
+            } />
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
-          </Routes>
-          <UniversalChatWidget />
-          <Toaster />
-        </UserModeProvider>
-      </AuthProvider>
-    </Router>
-  );
-}
+        </Routes>
+      </TooltipProvider>
+    </UserModeProvider>
+  </AuthProvider>
+);
 
 export default App;
