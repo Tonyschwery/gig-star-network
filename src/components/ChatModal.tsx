@@ -7,17 +7,18 @@ import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Send } from "lucide-react";
 
-// Corrected Message interface to match the database schema
+// Interface for a message object, matching the database schema
 interface Message {
   id: string;
   content: string;
-  sender_id: string; // Corrected from user_id to sender_id
+  sender_id: string; // Corrected to match the 'messages' table schema
   created_at: string;
 }
 
+// Props for the ChatModal component
 interface ChatModalProps {
-  isOpen: boolean; // Changed from 'open' to 'isOpen' for clarity
-  onClose: () => void; // Changed to a simpler onClose function
+  isOpen: boolean;
+  onClose: () => void;
   conversationId: string;
 }
 
@@ -28,7 +29,7 @@ export const ChatModal = ({ isOpen, onClose, conversationId }: ChatModalProps) =
   const [isSending, setIsSending] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Function to scroll to the bottom of the chat window
+  // Function to automatically scroll to the latest message
   const scrollToBottom = () => {
     setTimeout(() => {
         if (scrollRef.current) {
@@ -40,7 +41,7 @@ export const ChatModal = ({ isOpen, onClose, conversationId }: ChatModalProps) =
   useEffect(() => {
     if (!conversationId) return;
 
-    // Load existing messages
+    // Fetches the initial list of messages for the conversation
     const loadMessages = async () => {
       const { data, error } = await supabase
         .from("messages")
@@ -58,7 +59,7 @@ export const ChatModal = ({ isOpen, onClose, conversationId }: ChatModalProps) =
 
     loadMessages();
 
-    // Subscribe to realtime messages for this conversation
+    // Subscribes to real-time updates for new messages in this conversation
     const channel = supabase
       .channel(`messages:conversation:${conversationId}`)
       .on(
@@ -76,20 +77,23 @@ export const ChatModal = ({ isOpen, onClose, conversationId }: ChatModalProps) =
       )
       .subscribe();
 
+    // Unsubscribes from the channel when the component is unmounted
     return () => {
       supabase.removeChannel(channel);
     };
   }, [conversationId]);
 
+  // Handles sending a new message
   const handleSend = async () => {
     if (!newMessage.trim() || !conversationId || !user) return;
 
     setIsSending(true);
     
-    // Corrected the insert payload to match the database schema
+    // **FIXED**: The payload now uses the correct column names ('sender_id')
+    // and does not include columns that don't exist.
     const payload = {
       conversation_id: conversationId,
-      sender_id: user.id, // Corrected to sender_id
+      sender_id: user.id,
       content: newMessage.trim(),
     };
 
