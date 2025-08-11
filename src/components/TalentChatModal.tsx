@@ -1,5 +1,3 @@
-// PASTE THIS ENTIRE CODE BLOCK, REPLACING THE OLD FILE
-
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -26,68 +24,85 @@ interface TalentChatModalProps {
   eventDate?: string;
 }
 
-export const TalentChatModal = ({ open, onOpenChange, conversationId, gigApplicationId }: TalentChatModalProps) => {
+export const TalentChatModal = ({
+  open,
+  onOpenChange,
+  conversationId,
+  gigApplicationId
+}: TalentChatModalProps) => {
   const { user } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-useEffect(() => {
-  const init = async () => {
-    let activeConversationId = conversationId;
+  useEffect(() => {
+    const init = async () => {
+      let activeConversationId = conversationId;
 
-    // If we only have a gigApplicationId, resolve conversation from it
-    if (!activeConversationId && gigApplicationId) {
-      const { data: conv, error: convErr } = await supabase
-        .from('conversations')
-        .select('id')
-        .eq('gig_application_id', gigApplicationId)
-        .maybeSingle();
-      if (!convErr && conv) {
-        activeConversationId = conv.id;
-      }
-    }
-
-    if (!activeConversationId) return;
-
-    // Load existing messages
-    const { data, error } = await supabase
-      .from("messages")
-      .select("*")
-      .eq("conversation_id", activeConversationId)
-      .order("created_at", { ascending: true });
-
-    if (!error && data) {
-      setMessages(data);
-      scrollToBottom();
-    }
-
-    // Subscribe to realtime messages for this conversation
-    const channel = supabase
-      .channel(`room:conversation:${activeConversationId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "messages",
-          filter: `conversation_id=eq.${activeConversationId}`,
-        },
-        (payload) => {
-          setMessages((prev) => [...prev, payload.new as Message]);
-          scrollToBottom();
+      // 🔹 Fallback 1: get from gigApplicationId
+      if (!activeConversationId && gigApplicationId) {
+        const { data: conv, error: convErr } = await supabase
+          .from('conversations')
+          .select('id')
+          .eq('gig_application_id', gigApplicationId)
+          .maybeSingle();
+        if (!convErr && conv) {
+          activeConversationId = conv.id;
         }
-      )
-      .subscribe();
+      }
 
-    return () => {
-      supabase.removeChannel(channel);
+      // 🔹 Fallback 2: get from participant IDs
+      if (!activeConversationId && user?.id) {
+        const { data: conv2, error: convErr2 } = await supabase
+          .from('conversations')
+          .select('id')
+          .or(`talent_id.eq.${user.id},booker_id.eq.${user.id}`)
+          .maybeSingle();
+        if (!convErr2 && conv2) {
+          activeConversationId = conv2.id;
+        }
+      }
+
+      if (!activeConversationId) return;
+
+      // Load existing messages
+      const { data, error } = await supabase
+        .from("messages")
+        .select("*")
+        .eq("conversation_id", activeConversationId)
+        .order("created_at", { ascending: true });
+
+      if (!error && data) {
+        setMessages(data);
+        scrollToBottom();
+      }
+
+      // Subscribe to realtime messages
+      const channel = supabase
+        .channel(`room:conversation:${activeConversationId}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "INSERT",
+            schema: "public",
+            table: "messages",
+            filter: `conversation_id=eq.${activeConversationId}`,
+          },
+          (payload) => {
+            setMessages((prev) => [...prev, payload.new as Message]);
+            scrollToBottom();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
     };
-  };
 
-  init();
-}, [conversationId, gigApplicationId]);
+    init();
+  }, [conversationId, gigApplicationId, user?.id]);
 
   const scrollToBottom = () => {
     if (scrollRef.current) {
@@ -96,10 +111,9 @@ useEffect(() => {
   };
 
   const handleSend = async () => {
-    // Prefer conversationId, but allow gigApplicationId flow
-    if (!newMessage.trim() || (!conversationId && !gigApplicationId)) return;
+    if (!newMessage.trim()) return;
 
-    // Resolve conversation id if needed
+    // Resolve conversation ID again before sending
     let targetConversationId = conversationId;
     if (!targetConversationId && gigApplicationId) {
       const { data: conv } = await supabase
@@ -108,6 +122,14 @@ useEffect(() => {
         .eq('gig_application_id', gigApplicationId)
         .maybeSingle();
       targetConversationId = conv?.id;
+    }
+    if (!targetConversationId && user?.id) {
+      const { data: conv2 } = await supabase
+        .from('conversations')
+        .select('id')
+        .or(`talent_id.eq.${user.id},booker_id.eq.${user.id}`)
+        .maybeSingle();
+      targetConversationId = conv2?.id;
     }
 
     if (!targetConversationId) return;
@@ -140,7 +162,9 @@ useEffect(() => {
             <div
               key={msg.id}
               className={`mb-2 p-2 rounded-md ${
-                msg.user_id === user?.id ? "bg-blue-500 text-white ml-auto" : "bg-gray-200"
+                msg.user_id === user?.id
+                  ? "bg-blue-500 text-white ml-auto"
+                  : "bg-gray-200"
               } max-w-xs`}
             >
               {msg.content}
