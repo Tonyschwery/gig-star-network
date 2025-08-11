@@ -22,8 +22,8 @@ import NotFound from './pages/NotFound';
 import Messages from './pages/Messages';
 
 // Import Components
-import { ProtectedRoute } from './components/ProtectedRoute';
-import { ProtectedTalentRoute } from './components/ProtectedTalentRoute';
+import ProtectedRoute from './components/ProtectedRoute';
+import ProtectedTalentRoute from './components/ProtectedTalentRoute';
 import { UniversalChatWidget } from './components/UniversalChatWidget';
 
 function App() {
