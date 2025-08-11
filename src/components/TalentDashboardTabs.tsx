@@ -102,7 +102,7 @@ export const TalentDashboardTabs = () => {
             </TabsContent>
 
             <TabsContent value="messages">
-                <UniversalChatWidget />
+                <UniversalChatWidget isTabContent={true} />
             </TabsContent>
       </Tabs>
     );
