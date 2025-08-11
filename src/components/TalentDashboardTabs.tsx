@@ -9,12 +9,15 @@ import { BookingCard, Booking } from "./BookingCard";
 import { GigOpportunitiesIntegrated } from './GigOpportunitiesIntegrated';
 import { Button } from "./ui/button";
 import { Calendar, Sparkles } from "lucide-react";
+import UniversalChatWidget from './UniversalChatWidget';
+import { ChatNotificationBell } from './ChatNotificationBell';
 
 export const TalentDashboardTabs = () => {
     const { user } = useAuth();
     const [talentProfile, setTalentProfile] = useState<any>(null);
-    const [allBookings, setAllBookings] = useState<Booking[]>([]);
-    const [loading, setLoading] = useState(true);
+const [allBookings, setAllBookings] = useState<Booking[]>([]);
+const [loading, setLoading] = useState(true);
+const [chatOpen, setChatOpen] = useState(false);
 
     const fetchAllBookings = useCallback(async () => {
         if (!user?.id) return;
@@ -105,10 +108,15 @@ export const TalentDashboardTabs = () => {
                         </div>
                     )}
                 </TabsContent>
-            </Tabs>
-            
-        </>
-    );
+      </Tabs>
+
+      {/* Floating Chat */}
+      <div className="fixed bottom-4 right-4 z-50">
+        <ChatNotificationBell onClick={() => setChatOpen(true)} />
+      </div>
+      <UniversalChatWidget open={chatOpen} onOpenChange={setChatOpen} />
+    </>
+  );
 };
 
 export default TalentDashboardTabs;

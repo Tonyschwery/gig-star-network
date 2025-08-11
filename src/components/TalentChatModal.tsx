@@ -19,45 +19,60 @@ interface Message {
 interface TalentChatModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  conversationId: string;
+  conversationId?: string;
+  gigApplicationId?: string;
+  talentName?: string;
+  eventType?: string;
+  eventDate?: string;
 }
 
-export const TalentChatModal = ({ open, onOpenChange, conversationId }: TalentChatModalProps) => {
+export const TalentChatModal = ({ open, onOpenChange, conversationId, gigApplicationId }: TalentChatModalProps) => {
   const { user } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (!conversationId) return;
+useEffect(() => {
+  const init = async () => {
+    let activeConversationId = conversationId;
+
+    // If we only have a gigApplicationId, resolve conversation from it
+    if (!activeConversationId && gigApplicationId) {
+      const { data: conv, error: convErr } = await supabase
+        .from('conversations')
+        .select('id')
+        .eq('gig_application_id', gigApplicationId)
+        .maybeSingle();
+      if (!convErr && conv) {
+        activeConversationId = conv.id;
+      }
+    }
+
+    if (!activeConversationId) return;
 
     // Load existing messages
-    const loadMessages = async () => {
-      const { data, error } = await supabase
-        .from("messages")
-        .select("*")
-        .eq("conversation_id", conversationId)
-        .order("created_at", { ascending: true });
+    const { data, error } = await supabase
+      .from("messages")
+      .select("*")
+      .eq("conversation_id", activeConversationId)
+      .order("created_at", { ascending: true });
 
-      if (!error && data) {
-        setMessages(data);
-        scrollToBottom();
-      }
-    };
-
-    loadMessages();
+    if (!error && data) {
+      setMessages(data);
+      scrollToBottom();
+    }
 
     // Subscribe to realtime messages for this conversation
     const channel = supabase
-      .channel(`room:conversation:${conversationId}`)
+      .channel(`room:conversation:${activeConversationId}`)
       .on(
         "postgres_changes",
         {
           event: "INSERT",
           schema: "public",
           table: "messages",
-          filter: `conversation_id=eq.${conversationId}`,
+          filter: `conversation_id=eq.${activeConversationId}`,
         },
         (payload) => {
           setMessages((prev) => [...prev, payload.new as Message]);
@@ -69,7 +84,10 @@ export const TalentChatModal = ({ open, onOpenChange, conversationId }: TalentCh
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [conversationId]);
+  };
+
+  init();
+}, [conversationId, gigApplicationId]);
 
   const scrollToBottom = () => {
     if (scrollRef.current) {
@@ -78,14 +96,29 @@ export const TalentChatModal = ({ open, onOpenChange, conversationId }: TalentCh
   };
 
   const handleSend = async () => {
-    if (!newMessage.trim() || !conversationId) return;
+    // Prefer conversationId, but allow gigApplicationId flow
+    if (!newMessage.trim() || (!conversationId && !gigApplicationId)) return;
+
+    // Resolve conversation id if needed
+    let targetConversationId = conversationId;
+    if (!targetConversationId && gigApplicationId) {
+      const { data: conv } = await supabase
+        .from('conversations')
+        .select('id')
+        .eq('gig_application_id', gigApplicationId)
+        .maybeSingle();
+      targetConversationId = conv?.id;
+    }
+
+    if (!targetConversationId) return;
 
     setIsSending(true);
     const { error } = await supabase.from("messages").insert([
       {
-        conversation_id: conversationId,
-        user_id: user?.id,
+        conversation_id: targetConversationId,
+        user_id: user?.id as string,
         content: newMessage.trim(),
+        sender_type: 'talent',
         created_at: new Date().toISOString(),
       },
     ]);

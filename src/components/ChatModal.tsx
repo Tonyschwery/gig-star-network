@@ -84,8 +84,9 @@ export const ChatModal = ({ open, onOpenChange, conversationId }: ChatModalProps
     const { error } = await supabase.from("messages").insert([
       {
         conversation_id: conversationId,
-        user_id: user?.id,
+        user_id: user?.id as string,
         content: newMessage.trim(),
+        sender_type: 'booker',
         created_at: new Date().toISOString(),
       },
     ]);
