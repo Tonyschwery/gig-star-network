@@ -7,10 +7,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BookingCard, Booking } from "./BookingCard";
 
 import { BookerInvoiceCard } from './BookerInvoiceCard';
+import UniversalChatWidget from './UniversalChatWidget';
+import { Button } from "./ui/button";
+import { MessageSquare } from "lucide-react";
 
 export const BookerDashboardTabs = ({ userId }: { userId: string }) => {
-    const [bookings, setBookings] = useState<Booking[]>([]);
-    const [loading, setLoading] = useState(true);
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [chatOpen, setChatOpen] = useState(false);
 
     const fetchBookings = useCallback(async () => {
         if (!userId) return;
@@ -64,6 +68,20 @@ export const BookerDashboardTabs = ({ userId }: { userId: string }) => {
                 <TabsContent value="upcoming">{renderBookingList(upcomingBookings)}</TabsContent>
                 <TabsContent value="past">{renderBookingList(pastBookings)}</TabsContent>
             </Tabs>
+
+            {/* Floating Chat */}
+            <div className="fixed bottom-4 right-4 z-50">
+                <Button 
+                  size="icon" 
+                  variant="default" 
+                  className="h-14 w-14 rounded-full shadow-lg"
+                  onClick={() => setChatOpen(true)}
+                  aria-label="Open messages"
+                >
+                  <MessageSquare className="h-7 w-7" />
+                </Button>
+            </div>
+            <UniversalChatWidget open={chatOpen} onOpenChange={setChatOpen} />
         </>
     );
 };
