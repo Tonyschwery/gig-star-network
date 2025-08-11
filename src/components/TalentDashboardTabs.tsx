@@ -10,7 +10,7 @@ import { GigOpportunitiesIntegrated } from './GigOpportunitiesIntegrated';
 import { Button } from "./ui/button";
 import { Calendar, Sparkles } from "lucide-react";
 import UniversalChatWidget from './UniversalChatWidget';
-import { ChatNotificationBell } from './ChatNotificationBell';
+import { MessageSquare } from "lucide-react";
 
 export const TalentDashboardTabs = () => {
     const { user } = useAuth();
@@ -112,7 +112,15 @@ const [chatOpen, setChatOpen] = useState(false);
 
       {/* Floating Chat */}
       <div className="fixed bottom-4 right-4 z-50">
-        <ChatNotificationBell onClick={() => setChatOpen(true)} />
+        <Button 
+          size="icon" 
+          variant="default" 
+          className="h-14 w-14 rounded-full shadow-lg"
+          onClick={() => setChatOpen(true)}
+          aria-label="Open messages"
+        >
+          <MessageSquare className="h-7 w-7" />
+        </Button>
       </div>
       <UniversalChatWidget open={chatOpen} onOpenChange={setChatOpen} />
     </>

@@ -8,7 +8,8 @@ import { BookingCard, Booking } from "./BookingCard";
 
 import { BookerInvoiceCard } from './BookerInvoiceCard';
 import UniversalChatWidget from './UniversalChatWidget';
-import { ChatNotificationBell } from './ChatNotificationBell';
+import { Button } from "./ui/button";
+import { MessageSquare } from "lucide-react";
 
 export const BookerDashboardTabs = ({ userId }: { userId: string }) => {
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -70,7 +71,15 @@ export const BookerDashboardTabs = ({ userId }: { userId: string }) => {
 
             {/* Floating Chat */}
             <div className="fixed bottom-4 right-4 z-50">
-                <ChatNotificationBell onClick={() => setChatOpen(true)} />
+                <Button 
+                  size="icon" 
+                  variant="default" 
+                  className="h-14 w-14 rounded-full shadow-lg"
+                  onClick={() => setChatOpen(true)}
+                  aria-label="Open messages"
+                >
+                  <MessageSquare className="h-7 w-7" />
+                </Button>
             </div>
             <UniversalChatWidget open={chatOpen} onOpenChange={setChatOpen} />
         </>
