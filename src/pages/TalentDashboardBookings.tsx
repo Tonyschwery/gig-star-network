@@ -1,252 +1,175 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Label } from "@/components/ui/label";
-import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
-import { 
-  User, 
-  Edit3, 
-  MapPin, 
-  DollarSign, 
-  LogOut,
-  Camera,
-  Crown
-} from "lucide-react";
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { TalentChatModal } from '@/components/TalentChatModal';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Skeleton } from '@/components/ui/skeleton';
 
-import { ProSubscriptionDialog } from "@/components/ProSubscriptionDialog";
-import { NotificationCenter } from "@/components/NotificationCenter";
-import { ModeSwitch } from "@/components/ModeSwitch";
-import { BookingRequests } from "@/components/BookingRequests";
-import { Header } from "@/components/Header";
-
-interface TalentProfile {
-  id: string;
-  artist_name: string;
-  act: string;
-  gender: string;
-  age: string;
-  location?: string;
-  rate_per_hour?: number;
-  currency: string;
-  music_genres: string[];
-  custom_genre?: string;
-  picture_url?: string;
-  gallery_images?: string[];
-  soundcloud_link?: string;
-  youtube_link?: string;
-  biography: string;
-  nationality: string;
-  created_at: string;
-  is_pro_subscriber?: boolean;
-  subscription_started_at?: string;
-}
-
+/**
+ * Renders the bookings view for a talent user.
+ * It fetches and displays a list of bookings, allowing the talent
+ * to communicate with bookers via a chat modal.
+ */
 const TalentDashboardBookings = () => {
-  const { user, session, signOut } = useAuth();
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  const [profile, setProfile] = useState<TalentProfile | null>(null);
+  const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showProDialog, setShowProDialog] = useState(false);
+  const { session, user } = useAuth();
+  const [selectedBookerId, setSelectedBookerId] = useState<string | null>(null);
+  const [isChatModalOpen, setChatModalOpen] = useState(false);
 
   useEffect(() => {
-    if (!user) {
-      navigate('/auth');
-      return;
-    }
-    fetchTalentProfile();
-  }, [user, navigate]);
+    /**
+     * Fetches the bookings for the currently authenticated talent user.
+     * It first retrieves the talent's profile to get their talent ID,
+     * then fetches the associated bookings along with the booker's profile information.
+     */
+    const fetchBookings = async () => {
+      if (session?.user?.id) {
+        setLoading(true);
 
-  const fetchTalentProfile = async () => {
-    if (!user) return;
+        // First, get the talent_profile for the current user to find their talent-specific ID.
+        const { data: talentProfile, error: talentProfileError } = await supabase
+          .from('talent_profiles')
+          .select('id')
+          .eq('user_id', session.user.id)
+          .single();
 
-    try {
-      const { data, error } = await supabase
-        .from('talent_profiles')
-        .select('*')
-        .eq('user_id', user.id)
-        .maybeSingle();
+        if (talentProfileError) {
+          console.error('Error fetching talent profile:', talentProfileError.message);
+          setLoading(false);
+          return;
+        }
+        
+        if (!talentProfile) {
+            // This case handles users who are not registered as talent.
+            console.log("No talent profile found for this user.");
+            setLoading(false);
+            return;
+        }
 
-      if (error) {
-        console.error('Error fetching profile:', error);
-        return;
-      }
+        const talentId = talentProfile.id;
 
-      if (!data) {
-        navigate('/talent-onboarding');
-        return;
-      }
+        // Then, fetch all bookings for this talent, joining with the booker's profile info.
+        const { data, error } = await supabase
+          .from('bookings')
+          .select(
+            `
+            id,
+            event_name,
+            event_date,
+            status,
+            booker_id,
+            talent_id,
+            profiles (
+              id,
+              full_name,
+              avatar_url
+            )
+          `
+          )
+          .eq('talent_id', talentId)
+          .order('event_date', { ascending: true });
 
-      setProfile(data);
-    } catch (error) {
-      console.error('Error:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSignOut = async () => {
-    await signOut();
-    navigate('/');
-  };
-
-  const handleCancelSubscription = async () => {
-    if (!user || !session) return;
-
-    try {
-      const { data, error } = await supabase.functions.invoke('customer-portal', {
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json'
-        },
-      });
-
-      if (error) {
-        console.error('Supabase function error:', error);
-        throw new Error(error.message || 'Failed to open customer portal');
-      }
-
-      if (data?.url) {
-        window.open(data.url, '_blank');
+        if (error) {
+          console.error('Error fetching bookings:', error.message);
+        } else if (data) {
+          // With the corrected query, the profile data is already in the 'profiles' property.
+          setBookings(data);
+        }
+        setLoading(false);
       } else {
-        throw new Error('No portal URL returned');
+        setLoading(false);
       }
-    } catch (error) {
-      console.error('Error opening customer portal:', error);
-      toast({
-        title: "Error",
-        description: "Failed to open subscription management portal. Please try again.",
-        variant: "destructive",
-      });
-    }
+    };
+
+    fetchBookings();
+  }, [session]);
+
+  /**
+   * Opens the chat modal for a specific booker.
+   * @param bookerId The ID of the booker to chat with.
+   */
+  const handleOpenChat = (bookerId: string) => {
+    setSelectedBookerId(bookerId);
+    setChatModalOpen(true);
   };
 
+  /**
+   * Closes the chat modal.
+   */
+  const handleCloseChat = () => {
+    setChatModalOpen(false);
+    setSelectedBookerId(null);
+  };
+
+  // Display a loading state while bookings are being fetched.
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-
-  if (!profile) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Profile not found</h1>
-          <Button onClick={() => navigate('/talent-onboarding')}>
-            Complete Your Profile
-          </Button>
+        <div className="p-4 md:p-6 space-y-4">
+            <h1 className="text-2xl font-bold mb-4">Your Bookings</h1>
+            <Skeleton className="h-28 w-full rounded-lg" />
+            <Skeleton className="h-28 w-full rounded-lg" />
+            <Skeleton className="h-28 w-full rounded-lg" />
         </div>
-      </div>
-    );
+    )
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="flex flex-col gap-4 mb-6">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div>
-              <div className="flex items-center gap-3">
-                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold gradient-text">
-                  Direct Bookings - {profile.artist_name}
-                </h1>
-                {profile.is_pro_subscriber && (
-                  <Badge className="pro-badge">
-                    <Crown className="h-3 w-3 mr-1" />
-                    PRO
-                  </Badge>
-                )}
-              </div>
-              <p className="text-muted-foreground text-sm sm:text-base">Manage your direct booking requests</p>
-            </div>
-          </div>
-          
-          {/* Action Buttons */}
-          <div className="flex flex-wrap gap-2">
-            <ModeSwitch size="sm" />
-            
-            <Button
-              onClick={() => navigate('/talent-dashboard/gigs')}
-              variant="outline"
-              size="sm"
-            >
-              Gig Opportunities
-            </Button>
-            
-            <Button
-              onClick={() => navigate('/talent-profile-edit')}
-              className="flex-shrink-0"
-              size="sm"
-            >
-              <Edit3 className="h-4 w-4 mr-2" />
-              <span className="hidden sm:inline">Edit Profile</span>
-              <span className="sm:hidden">Edit</span>
-            </Button>
-            
-            {!profile.is_pro_subscriber ? (
-              <Button 
-                onClick={() => setShowProDialog(true)}
-                className="hero-button flex-shrink-0"
-                size="sm"
-              >
-                <Crown className="h-4 w-4 mr-2" />
-                <span className="hidden sm:inline">Subscribe to Pro</span>
-                <span className="sm:hidden">Pro</span>
-              </Button>
-            ) : (
-              <Button 
-                onClick={handleCancelSubscription}
-                variant="outline"
-                className="border-red-200 text-red-600 hover:bg-red-50 flex-shrink-0"
-                size="sm"
-              >
-                <span className="hidden sm:inline">Cancel Pro</span>
-                <span className="sm:hidden">Cancel</span>
-              </Button>
-            )}
-            
-            <Button 
-              variant="outline" 
-              onClick={handleSignOut}
-              className="flex-shrink-0"
-              size="sm"
-            >
-              <LogOut className="h-4 w-4 mr-2" />
-              <span className="hidden sm:inline">Sign Out</span>
-              <span className="sm:hidden">Logout</span>
-            </Button>
-          </div>
+    <div className="p-4 md:p-6">
+      <h1 className="text-2xl font-bold mb-4">Your Bookings</h1>
+      {bookings.length === 0 ? (
+        <Card>
+            <CardContent className="pt-6">
+                <p>You have no bookings yet. When a booker hires you, your bookings will appear here.</p>
+            </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-4">
+          {bookings.map((booking) => (
+            <Card key={booking.id}>
+              <CardHeader>
+                <CardTitle>{booking.event_name}</CardTitle>
+                <CardDescription>
+                    {new Date(booking.event_date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex flex-col sm:flex-row items-start sm:items-center justify-between">
+                <div className="flex items-center mb-4 sm:mb-0">
+                    <Avatar className="h-12 w-12">
+                      <AvatarImage src={booking.profiles?.avatar_url} alt={booking.profiles?.full_name || 'Booker'} />
+                      <AvatarFallback>{booking.profiles?.full_name?.[0].toUpperCase() || 'B'}</AvatarFallback>
+                    </Avatar>
+                    <div className="ml-4">
+                        <p className="font-semibold">{booking.profiles?.full_name}</p>
+                        <p className="text-sm text-muted-foreground">Booker</p>
+                    </div>
+                </div>
+                <div className="flex items-center space-x-4">
+                    <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                        booking.status === 'confirmed' ? 'bg-green-100 text-green-800' :
+                        booking.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                        'bg-gray-100 text-gray-800'
+                    }`}>
+                        {booking.status}
+                    </span>
+                    <Button variant="outline" onClick={() => handleOpenChat(booking.booker_id)}>Message Booker</Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
-
-        {/* Notification Center */}
-        <div className="mb-6">
-          <NotificationCenter />
-        </div>
-
-        {/* Direct Bookings Component */}
-        <BookingRequests 
-          talentId={profile.id}
-          isProSubscriber={profile.is_pro_subscriber || false}
+      )}
+      {/* The Chat Modal is rendered here when a booker is selected */}
+      {selectedBookerId && user?.id && (
+        <TalentChatModal
+          isOpen={isChatModalOpen}
+          onClose={handleCloseChat}
+          bookerId={selectedBookerId}
+          talentId={user.id}
         />
-
-        {/* Pro Subscription Dialog */}
-        <ProSubscriptionDialog
-          open={showProDialog}
-          onOpenChange={setShowProDialog}
-          onSubscribe={() => {
-            fetchTalentProfile();
-          }}
-          profileId={profile.id}
-        />
-      </div>
+      )}
     </div>
   );
 };
