@@ -1,5 +1,3 @@
-// PASTE THIS ENTIRE CODE BLOCK, REPLACING THE OLD FILE
-
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -9,25 +7,35 @@ import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Send } from "lucide-react";
 
+// Corrected Message interface to match the database schema
 interface Message {
   id: string;
   content: string;
-  user_id: string;
+  sender_id: string; // Corrected from user_id to sender_id
   created_at: string;
 }
 
 interface ChatModalProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+  isOpen: boolean; // Changed from 'open' to 'isOpen' for clarity
+  onClose: () => void; // Changed to a simpler onClose function
   conversationId: string;
 }
 
-export const ChatModal = ({ open, onOpenChange, conversationId }: ChatModalProps) => {
+export const ChatModal = ({ isOpen, onClose, conversationId }: ChatModalProps) => {
   const { user } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Function to scroll to the bottom of the chat window
+  const scrollToBottom = () => {
+    setTimeout(() => {
+        if (scrollRef.current) {
+            scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+        }
+    }, 100);
+  };
 
   useEffect(() => {
     if (!conversationId) return;
@@ -41,8 +49,10 @@ export const ChatModal = ({ open, onOpenChange, conversationId }: ChatModalProps
         .order("created_at", { ascending: true });
 
       if (!error && data) {
-        setMessages(data);
+        setMessages(data as Message[]);
         scrollToBottom();
+      } else if (error) {
+        console.error("Error loading messages:", error);
       }
     };
 
@@ -50,7 +60,7 @@ export const ChatModal = ({ open, onOpenChange, conversationId }: ChatModalProps
 
     // Subscribe to realtime messages for this conversation
     const channel = supabase
-      .channel(`room:conversation:${conversationId}`)
+      .channel(`messages:conversation:${conversationId}`)
       .on(
         "postgres_changes",
         {
@@ -71,49 +81,47 @@ export const ChatModal = ({ open, onOpenChange, conversationId }: ChatModalProps
     };
   }, [conversationId]);
 
-  const scrollToBottom = () => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  };
-
   const handleSend = async () => {
-    if (!newMessage.trim() || !conversationId) return;
+    if (!newMessage.trim() || !conversationId || !user) return;
 
     setIsSending(true);
-    const { error } = await supabase.from("messages").insert([
-      {
-        conversation_id: conversationId,
-        user_id: user?.id as string,
-        content: newMessage.trim(),
-        sender_type: 'booker',
-        created_at: new Date().toISOString(),
-      },
-    ]);
-    setIsSending(false);
+    
+    // Corrected the insert payload to match the database schema
+    const payload = {
+      conversation_id: conversationId,
+      sender_id: user.id, // Corrected to sender_id
+      content: newMessage.trim(),
+    };
 
-    if (!error) {
+    const { error } = await supabase.from("messages").insert([payload]);
+    
+    if (error) {
+      console.error("Error sending message:", error);
+    } else {
       setNewMessage("");
     }
+    setIsSending(false);
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-lg flex flex-col h-[80vh]">
         <DialogHeader>
           <DialogTitle>Chat</DialogTitle>
         </DialogHeader>
-        <ScrollArea ref={scrollRef} className="h-96 p-4 border rounded-md mb-4">
+        <ScrollArea className="flex-grow p-4 border rounded-md mb-4" ref={scrollRef}>
           {messages.map((msg) => (
             <div
               key={msg.id}
-              className={`mb-2 p-2 rounded-md ${
-                msg.user_id === user?.id ? "bg-blue-500 text-white ml-auto" : "bg-gray-200"
+              className={`mb-2 p-3 rounded-lg flex flex-col ${
+                msg.sender_id === user?.id 
+                  ? "bg-primary text-primary-foreground self-end items-end ml-auto" 
+                  : "bg-muted self-start items-start"
               } max-w-xs`}
             >
-              {msg.content}
-              <div className="text-xs opacity-70">
-                {new Date(msg.created_at).toLocaleTimeString()}
+              <span>{msg.content}</span>
+              <div className="text-xs opacity-70 mt-1">
+                {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </div>
             </div>
           ))}
@@ -124,6 +132,12 @@ export const ChatModal = ({ open, onOpenChange, conversationId }: ChatModalProps
             onChange={(e) => setNewMessage(e.target.value)}
             placeholder="Type your message..."
             disabled={isSending}
+            onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSend();
+                }
+            }}
           />
           <Button onClick={handleSend} disabled={isSending || !newMessage.trim()}>
             <Send className="w-4 h-4" />
