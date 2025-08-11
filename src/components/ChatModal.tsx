@@ -27,109 +27,99 @@ export const ChatModal = ({ open, onOpenChange, conversationId }: ChatModalProps
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    const fetchMessages = async () => {
+      if (!conversationId) return;
+      setMessages([]); // Clear previous messages
+      const { data, error } = await supabase
+        .from('messages')
+        .select('*')
+        .eq('conversation_id', conversationId)
+        .order('created_at', { ascending: true });
+
+      if (error) console.error("Error fetching messages:", error);
+      else setMessages(data || []);
+    };
+
+    if (open) {
+      fetchMessages();
+    }
+  }, [conversationId, open]);
+
+  // *** BUG FIX: Corrected and simplified real-time logic ***
   useEffect(() => {
     if (!conversationId) return;
 
-    // Load existing messages
-    const loadMessages = async () => {
-      const { data, error } = await supabase
-        .from("messages")
-        .select("*")
-        .eq("conversation_id", conversationId)
-        .order("created_at", { ascending: true });
-
-      if (!error && data) {
-        setMessages(data);
-        scrollToBottom();
-      }
-    };
-
-    loadMessages();
-
-    // Subscribe to realtime messages for this conversation
-    const channel = supabase
-      .channel(`room:conversation:${conversationId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "messages",
-          filter: `conversation_id=eq.${conversationId}`,
-        },
+    const channel = supabase.channel(`chat:${conversationId}`)
+      .on('postgres_changes', 
+        { event: 'INSERT', schema: 'public', table: 'messages', filter: `conversation_id=eq.${conversationId}` },
         (payload) => {
-          setMessages((prev) => [...prev, payload.new as Message]);
-          scrollToBottom();
+          // Add the new message to the state, but only if it's not already there
+          setMessages(prevMessages => 
+            prevMessages.some(msg => msg.id === (payload.new as Message).id) 
+            ? prevMessages 
+            : [...prevMessages, payload.new as Message]
+          );
         }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
+      ).subscribe();
+    
+    return () => { supabase.removeChannel(channel); };
   }, [conversationId]);
+  
+  useEffect(scrollToBottom, [messages]);
 
-  const scrollToBottom = () => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  };
-
-  const handleSend = async () => {
-    if (!newMessage.trim() || !conversationId) return;
-
+  const sendMessage = async () => {
+    if (!newMessage.trim() || !conversationId || !user) return;
     setIsSending(true);
-    const { error } = await supabase.from("messages").insert([
-      {
-        conversation_id: conversationId,
-        user_id: user?.id as string,
-        content: newMessage.trim(),
-        sender_type: 'booker',
-        created_at: new Date().toISOString(),
-      },
-    ]);
-    setIsSending(false);
 
-    if (!error) {
-      setNewMessage("");
+    const content = newMessage.trim();
+    setNewMessage(""); // Clear input immediately for better UX
+
+    const { error } = await supabase.from('messages').insert({
+        conversation_id: conversationId,
+        content: content,
+        user_id: user.id,
+        sender_type: 'booker',
+    });
+
+    if (error) {
+      console.error("Error sending message:", error);
+      setNewMessage(content); // Restore message on error
     }
+    setIsSending(false);
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
+      <DialogContent className="h-[70vh] flex flex-col p-0">
+        <DialogHeader className="p-4 border-b">
           <DialogTitle>Chat</DialogTitle>
         </DialogHeader>
-        <ScrollArea ref={scrollRef} className="h-96 p-4 border rounded-md mb-4">
-          {messages.map((msg) => (
-            <div
-              key={msg.id}
-              className={`mb-2 p-2 rounded-md ${
-                msg.user_id === user?.id ? "bg-blue-500 text-white ml-auto" : "bg-gray-200"
-              } max-w-xs`}
-            >
-              {msg.content}
-              <div className="text-xs opacity-70">
-                {new Date(msg.created_at).toLocaleTimeString()}
+        <ScrollArea className="flex-1 p-4">
+          <div className="space-y-4">
+            {messages.map((message) => (
+              <div key={message.id} className={`flex ${message.user_id === user?.id ? 'justify-end' : 'justify-start'}`}>
+                <div className={`max-w-[80%] rounded-lg px-3 py-2 ${message.user_id === user?.id ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
+                  <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+            <div ref={messagesEndRef} />
+          </div>
         </ScrollArea>
-        <div className="flex space-x-2">
-          <Textarea
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            placeholder="Type your message..."
-            disabled={isSending}
-          />
-          <Button onClick={handleSend} disabled={isSending || !newMessage.trim()}>
-            <Send className="w-4 h-4" />
-          </Button>
+        <div className="p-4 border-t">
+          <div className="flex space-x-2">
+            <Textarea value={newMessage} onChange={(e) => setNewMessage(e.target.value)} onKeyDown={(e) => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }}} placeholder="Type your message..." disabled={isSending} />
+            <Button onClick={sendMessage} disabled={!newMessage.trim() || isSending} size="icon"><Send className="h-4 w-4" /></Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
   );
-};
+}

@@ -9,15 +9,12 @@ import { BookingCard, Booking } from "./BookingCard";
 import { GigOpportunitiesIntegrated } from './GigOpportunitiesIntegrated';
 import { Button } from "./ui/button";
 import { Calendar, Sparkles } from "lucide-react";
-import UniversalChatWidget from './UniversalChatWidget';
-import { MessageSquare } from "lucide-react";
 
 export const TalentDashboardTabs = () => {
     const { user } = useAuth();
     const [talentProfile, setTalentProfile] = useState<any>(null);
-const [allBookings, setAllBookings] = useState<Booking[]>([]);
-const [loading, setLoading] = useState(true);
-const [chatOpen, setChatOpen] = useState(false);
+    const [allBookings, setAllBookings] = useState<Booking[]>([]);
+    const [loading, setLoading] = useState(true);
 
     const fetchAllBookings = useCallback(async () => {
         if (!user?.id) return;
@@ -108,23 +105,10 @@ const [chatOpen, setChatOpen] = useState(false);
                         </div>
                     )}
                 </TabsContent>
-      </Tabs>
-
-      {/* Floating Chat */}
-      <div className="fixed bottom-4 right-4 z-50">
-        <Button 
-          size="icon" 
-          variant="default" 
-          className="h-14 w-14 rounded-full shadow-lg"
-          onClick={() => setChatOpen(true)}
-          aria-label="Open messages"
-        >
-          <MessageSquare className="h-7 w-7" />
-        </Button>
-      </div>
-      <UniversalChatWidget open={chatOpen} onOpenChange={setChatOpen} />
-    </>
-  );
+            </Tabs>
+            
+        </>
+    );
 };
 
 export default TalentDashboardTabs;
