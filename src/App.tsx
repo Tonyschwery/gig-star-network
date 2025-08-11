@@ -1,30 +1,30 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { AuthProvider } from '@/hooks/useAuth';
-import { UserModeProvider } from '@/contexts/UserModeContext';
-import { Toaster } from "@/components/ui/toaster"
+import { AuthProvider } from './hooks/useAuth';
+import { UserModeProvider } from './contexts/UserModeContext';
+import { Toaster } from "./components/ui/toaster"
 
 // Import Pages
-import Index from '@/pages/Index';
-import Login from '@/pages/Login';
-import Auth from '@/pages/Auth';
-import TalentDashboard from '@/pages/TalentDashboard';
-import BookerDashboard from '@/pages/BookerDashboard';
-import TalentProfile from '@/pages/TalentProfile';
-import TalentProfileEdit from '@/pages/TalentProfileEdit';
-import TalentOnboarding from '@/pages/TalentOnboarding';
-import HowItWorks from '@/pages/HowItWorks';
-import Pricing from '@/pages/Pricing';
-import TrustSafety from '@/pages/TrustSafety';
-import PrivacyPolicy from '@/pages/PrivacyPolicy';
-import TermsOfService from '@/pages/TermsOfService';
-import YourEvent from '@/pages/YourEvent';
-import NotFound from '@/pages/NotFound';
-import Messages from '@/pages/Messages';
+import Index from './pages/Index';
+import Login from './pages/Login';
+import Auth from './pages/Auth';
+import TalentDashboard from './pages/TalentDashboard';
+import BookerDashboard from './pages/BookerDashboard';
+import TalentProfile from './pages/TalentProfile';
+import TalentProfileEdit from './pages/TalentProfileEdit';
+import TalentOnboarding from './pages/TalentOnboarding';
+import HowItWorks from './pages/HowItWorks';
+import Pricing from './pages/Pricing';
+import TrustSafety from './pages/TrustSafety';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import TermsOfService from './pages/TermsOfService';
+import YourEvent from './pages/YourEvent';
+import NotFound from './pages/NotFound';
+import Messages from './pages/Messages';
 
 // Import Components
-import ProtectedRoute from '@/components/ProtectedRoute';
-import ProtectedTalentRoute from '@/components/ProtectedTalentRoute';
-import { UniversalChatWidget } from '@/components/UniversalChatWidget';
+import ProtectedRoute from './components/ProtectedRoute';
+import ProtectedTalentRoute from './components/ProtectedTalentRoute';
+import { UniversalChatWidget } from './components/UniversalChatWidget';
 
 function App() {
   return (
