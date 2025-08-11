@@ -1,27 +1,21 @@
-// PASTE THIS ENTIRE CODE BLOCK, REPLACING THE OLD FILE
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BookingCard, Booking } from "./BookingCard";
-
 import { GigOpportunitiesIntegrated } from './GigOpportunitiesIntegrated';
 import { Button } from "./ui/button";
-import { Calendar, Sparkles } from "lucide-react";
 import UniversalChatWidget from './UniversalChatWidget';
-import { MessageSquare } from "lucide-react";
 
 export const TalentDashboardTabs = () => {
     const { user } = useAuth();
     const [talentProfile, setTalentProfile] = useState<any>(null);
-const [allBookings, setAllBookings] = useState<Booking[]>([]);
-const [loading, setLoading] = useState(true);
-const [chatOpen, setChatOpen] = useState(false);
+    const [allBookings, setAllBookings] = useState<Booking[]>([]);
+    const [loading, setLoading] = useState(true);
 
     const fetchAllBookings = useCallback(async () => {
         if (!user?.id) return;
-        // Ensure we have the talent profile
+        
         let profileId = talentProfile?.id as string | undefined;
         if (!profileId) {
             const { data: tp, error: tpError } = await supabase
@@ -34,6 +28,7 @@ const [chatOpen, setChatOpen] = useState(false);
             setTalentProfile(tp);
             profileId = tp.id;
         }
+
         const { data, error } = await supabase
             .from('bookings')
             .select(`*, payments(*)`)
@@ -46,15 +41,12 @@ const [chatOpen, setChatOpen] = useState(false);
 
     useEffect(() => {
         fetchAllBookings();
-        // Setup a single channel to listen for all changes related to this talent
         const channel = supabase.channel(`talent-dashboard:${talentProfile?.id || user?.id || 'unknown'}`).on('postgres_changes', { event: '*', schema: 'public' }, fetchAllBookings).subscribe();
         return () => { supabase.removeChannel(channel); };
     }, [talentProfile, user, fetchAllBookings]);
 
-
     if (loading) return <div>Loading...</div>;
     
-    // Filter bookings for Direct Bookings tabs
     const directBookings = allBookings.filter(b => !b.is_gig_opportunity);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -71,60 +63,49 @@ const [chatOpen, setChatOpen] = useState(false);
     );
 
     return (
-        <>
-            <Tabs defaultValue="bookings" className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="bookings">Direct Bookings</TabsTrigger>
-                    <TabsTrigger value="gigs">Gig Opportunities</TabsTrigger>
-                </TabsList>
+        <Tabs defaultValue="bookings" className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="bookings">Direct Bookings</TabsTrigger>
+                <TabsTrigger value="gigs">Gig Opportunities</TabsTrigger>
+                <TabsTrigger value="messages">Messages</TabsTrigger>
+            </TabsList>
 
-                <TabsContent value="bookings">
-                    <Tabs defaultValue="pending" className="w-full">
-                        <TabsList className="grid w-full grid-cols-4">
-                            <TabsTrigger value="pending">New ({newRequests.length})</TabsTrigger>
-                            <TabsTrigger value="pending_approval">Pending ({pendingApproval.length})</TabsTrigger>
-                            <TabsTrigger value="upcoming">Upcoming ({upcomingBookings.length})</TabsTrigger>
-                            <TabsTrigger value="past">Past ({pastBookings.length})</TabsTrigger>
-                        </TabsList>
-                        <TabsContent value="pending">{renderBookings(newRequests)}</TabsContent>
-                        <TabsContent value="pending_approval">{renderBookings(pendingApproval)}</TabsContent>
-                        <TabsContent value="upcoming">{renderBookings(upcomingBookings)}</TabsContent>
-                        <TabsContent value="past">{renderBookings(pastBookings)}</TabsContent>
-                    </Tabs>
-                </TabsContent>
-                
-                <TabsContent value="gigs">
-                    {talentProfile?.is_pro_subscriber ? (
-                        <GigOpportunitiesIntegrated 
-                            isProSubscriber={!!talentProfile?.is_pro_subscriber}
-                            onUpgrade={() => {}}
-                            talentId={talentProfile?.id || ''}
-                        />
-                    ) : (
-                        <div className="text-center p-8 border rounded-lg">
-                            <h3 className="font-bold">This is a Pro Feature</h3>
-                            <p>Upgrade to Pro to view and apply for exclusive gig opportunities.</p>
-                            <Button>Upgrade to Pro</Button>
-                        </div>
-                    )}
-                </TabsContent>
+            <TabsContent value="bookings">
+                <Tabs defaultValue="pending" className="w-full">
+                    <TabsList className="grid w-full grid-cols-4">
+                        <TabsTrigger value="pending">New ({newRequests.length})</TabsTrigger>
+                        <TabsTrigger value="pending_approval">Pending ({pendingApproval.length})</TabsTrigger>
+                        <TabsTrigger value="upcoming">Upcoming ({upcomingBookings.length})</TabsTrigger>
+                        <TabsTrigger value="past">Past ({pastBookings.length})</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="pending">{renderBookings(newRequests)}</TabsContent>
+                    <TabsContent value="pending_approval">{renderBookings(pendingApproval)}</TabsContent>
+                    <TabsContent value="upcoming">{renderBookings(upcomingBookings)}</TabsContent>
+                    <TabsContent value="past">{renderBookings(pastBookings)}</TabsContent>
+                </Tabs>
+            </TabsContent>
+            
+            <TabsContent value="gigs">
+                {talentProfile?.is_pro_subscriber ? (
+                    <GigOpportunitiesIntegrated 
+                        isProSubscriber={!!talentProfile?.is_pro_subscriber}
+                        onUpgrade={() => {}}
+                        talentId={talentProfile?.id || ''}
+                    />
+                ) : (
+                    <div className="text-center p-8 border rounded-lg">
+                        <h3 className="font-bold">This is a Pro Feature</h3>
+                        <p>Upgrade to Pro to view and apply for exclusive gig opportunities.</p>
+                        <Button>Upgrade to Pro</Button>
+                    </div>
+                )}
+            </TabsContent>
+
+            <TabsContent value="messages">
+                <UniversalChatWidget />
+            </TabsContent>
       </Tabs>
-
-      {/* Floating Chat */}
-      <div className="fixed bottom-4 right-4 z-50">
-        <Button 
-          size="icon" 
-          variant="default" 
-          className="h-14 w-14 rounded-full shadow-lg"
-          onClick={() => setChatOpen(true)}
-          aria-label="Open messages"
-        >
-          <MessageSquare className="h-7 w-7" />
-        </Button>
-      </div>
-      <UniversalChatWidget open={chatOpen} onOpenChange={setChatOpen} />
-    </>
-  );
+    );
 };
 
 export default TalentDashboardTabs;
