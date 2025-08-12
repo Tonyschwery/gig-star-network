@@ -27,10 +27,35 @@ export const ChatModal = ({ open, onOpenChange, conversationId }: ChatModalProps
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
+  const [senderType, setSenderType] = useState<'booker' | 'talent' | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  // Determine sender type based on booking ownership
+  useEffect(() => {
+    const fetchSenderType = async () => {
+      if (!conversationId || !user?.id) return;
+      const { data } = await supabase
+        .from('conversations')
+        .select(`id, booking:bookings!conversations_booking_id_fkey ( user_id )`)
+        .eq('id', conversationId)
+        .maybeSingle();
+
+      const isBooker = (data as any)?.booking?.user_id === user.id;
+      setSenderType(isBooker ? 'booker' : 'talent');
+    };
+    if (open) fetchSenderType();
+  }, [conversationId, open, user?.id]);
+
+  const markAllMessagesAsRead = async () => {
+    if (!conversationId || !user?.id) return;
+    await supabase.rpc('mark_conversation_messages_read', {
+      conversation_id_param: conversationId,
+      user_id_param: user.id,
+    });
   };
 
   useEffect(() => {
@@ -45,6 +70,7 @@ export const ChatModal = ({ open, onOpenChange, conversationId }: ChatModalProps
 
       if (error) console.error("Error fetching messages:", error);
       else setMessages(data || []);
+      await markAllMessagesAsRead();
     };
 
     if (open) {
@@ -52,25 +78,28 @@ export const ChatModal = ({ open, onOpenChange, conversationId }: ChatModalProps
     }
   }, [conversationId, open]);
 
-  // *** BUG FIX: Corrected and simplified real-time logic ***
+  // Real-time new message subscription
   useEffect(() => {
     if (!conversationId) return;
 
     const channel = supabase.channel(`chat:${conversationId}`)
       .on('postgres_changes', 
         { event: 'INSERT', schema: 'public', table: 'messages', filter: `conversation_id=eq.${conversationId}` },
-        (payload) => {
-          // Add the new message to the state, but only if it's not already there
+        async (payload) => {
+          const newMsg = payload.new as Message;
           setMessages(prevMessages => 
-            prevMessages.some(msg => msg.id === (payload.new as Message).id) 
+            prevMessages.some(msg => msg.id === newMsg.id) 
             ? prevMessages 
-            : [...prevMessages, payload.new as Message]
+            : [...prevMessages, newMsg]
           );
+          if (newMsg.user_id !== user?.id) {
+            await markAllMessagesAsRead();
+          }
         }
       ).subscribe();
     
     return () => { supabase.removeChannel(channel); };
-  }, [conversationId]);
+  }, [conversationId, user?.id]);
   
   useEffect(scrollToBottom, [messages]);
 
@@ -85,7 +114,7 @@ export const ChatModal = ({ open, onOpenChange, conversationId }: ChatModalProps
         conversation_id: conversationId,
         content: content,
         user_id: user.id,
-        sender_type: 'booker',
+        sender_type: senderType ?? 'booker',
     });
 
     if (error) {
@@ -97,9 +126,10 @@ export const ChatModal = ({ open, onOpenChange, conversationId }: ChatModalProps
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="h-[70vh] flex flex-col p-0">
+      <DialogContent className="h-[70vh] flex flex-col p-0" aria-describedby="chat-desc">
         <DialogHeader className="p-4 border-b">
           <DialogTitle>Chat</DialogTitle>
+          <p id="chat-desc" className="sr-only">Conversation between booker and talent</p>
         </DialogHeader>
         <ScrollArea className="flex-1 p-4">
           <div className="space-y-4">
