@@ -1,3 +1,5 @@
+// PASTE THIS ENTIRE CODE BLOCK, REPLACING THE OLD FILE
+
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -7,147 +9,117 @@ import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Send } from "lucide-react";
 
-// Interface for a message object, matching the database schema
 interface Message {
   id: string;
   content: string;
-  sender_id: string; // Corrected to match the 'messages' table schema
+  user_id: string;
   created_at: string;
 }
 
-// Props for the ChatModal component
 interface ChatModalProps {
-  isOpen: boolean;
-  onClose: () => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   conversationId: string;
 }
 
-export const ChatModal = ({ isOpen, onClose, conversationId }: ChatModalProps) => {
+export const ChatModal = ({ open, onOpenChange, conversationId }: ChatModalProps) => {
   const { user } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Function to automatically scroll to the latest message
   const scrollToBottom = () => {
-    setTimeout(() => {
-        if (scrollRef.current) {
-            scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-        }
-    }, 100);
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   useEffect(() => {
+    const fetchMessages = async () => {
+      if (!conversationId) return;
+      setMessages([]); // Clear previous messages
+      const { data, error } = await supabase
+        .from('messages')
+        .select('*')
+        .eq('conversation_id', conversationId)
+        .order('created_at', { ascending: true });
+
+      if (error) console.error("Error fetching messages:", error);
+      else setMessages(data || []);
+    };
+
+    if (open) {
+      fetchMessages();
+    }
+  }, [conversationId, open]);
+
+  // *** BUG FIX: Corrected and simplified real-time logic ***
+  useEffect(() => {
     if (!conversationId) return;
 
-    // Fetches the initial list of messages for the conversation
-    const loadMessages = async () => {
-      const { data, error } = await supabase
-        .from("messages")
-        .select("*")
-        .eq("conversation_id", conversationId)
-        .order("created_at", { ascending: true });
-
-      if (!error && data) {
-        setMessages(data as Message[]);
-        scrollToBottom();
-      } else if (error) {
-        console.error("Error loading messages:", error);
-      }
-    };
-
-    loadMessages();
-
-    // Subscribes to real-time updates for new messages in this conversation
-    const channel = supabase
-      .channel(`messages:conversation:${conversationId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "messages",
-          filter: `conversation_id=eq.${conversationId}`,
-        },
+    const channel = supabase.channel(`chat:${conversationId}`)
+      .on('postgres_changes', 
+        { event: 'INSERT', schema: 'public', table: 'messages', filter: `conversation_id=eq.${conversationId}` },
         (payload) => {
-          setMessages((prev) => [...prev, payload.new as Message]);
-          scrollToBottom();
+          // Add the new message to the state, but only if it's not already there
+          setMessages(prevMessages => 
+            prevMessages.some(msg => msg.id === (payload.new as Message).id) 
+            ? prevMessages 
+            : [...prevMessages, payload.new as Message]
+          );
         }
-      )
-      .subscribe();
-
-    // Unsubscribes from the channel when the component is unmounted
-    return () => {
-      supabase.removeChannel(channel);
-    };
+      ).subscribe();
+    
+    return () => { supabase.removeChannel(channel); };
   }, [conversationId]);
+  
+  useEffect(scrollToBottom, [messages]);
 
-  // Handles sending a new message
-  const handleSend = async () => {
+  const sendMessage = async () => {
     if (!newMessage.trim() || !conversationId || !user) return;
-
     setIsSending(true);
-    
-    // **FIXED**: The payload now uses the correct column names ('sender_id')
-    // and does not include columns that don't exist.
-    const payload = {
-      conversation_id: conversationId,
-      sender_id: user.id,
-      content: newMessage.trim(),
-    };
 
-    const { error } = await supabase.from("messages").insert([payload]);
-    
+    const content = newMessage.trim();
+    setNewMessage(""); // Clear input immediately for better UX
+
+    const { error } = await supabase.from('messages').insert({
+        conversation_id: conversationId,
+        content: content,
+        user_id: user.id,
+        sender_type: 'booker',
+    });
+
     if (error) {
       console.error("Error sending message:", error);
-    } else {
-      setNewMessage("");
+      setNewMessage(content); // Restore message on error
     }
     setIsSending(false);
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-lg flex flex-col h-[80vh]">
-        <DialogHeader>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="h-[70vh] flex flex-col p-0">
+        <DialogHeader className="p-4 border-b">
           <DialogTitle>Chat</DialogTitle>
         </DialogHeader>
-        <ScrollArea className="flex-grow p-4 border rounded-md mb-4" ref={scrollRef}>
-          {messages.map((msg) => (
-            <div
-              key={msg.id}
-              className={`mb-2 p-3 rounded-lg flex flex-col ${
-                msg.sender_id === user?.id 
-                  ? "bg-primary text-primary-foreground self-end items-end ml-auto" 
-                  : "bg-muted self-start items-start"
-              } max-w-xs`}
-            >
-              <span>{msg.content}</span>
-              <div className="text-xs opacity-70 mt-1">
-                {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+        <ScrollArea className="flex-1 p-4">
+          <div className="space-y-4">
+            {messages.map((message) => (
+              <div key={message.id} className={`flex ${message.user_id === user?.id ? 'justify-end' : 'justify-start'}`}>
+                <div className={`max-w-[80%] rounded-lg px-3 py-2 ${message.user_id === user?.id ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
+                  <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+            <div ref={messagesEndRef} />
+          </div>
         </ScrollArea>
-        <div className="flex space-x-2">
-          <Textarea
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            placeholder="Type your message..."
-            disabled={isSending}
-            onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSend();
-                }
-            }}
-          />
-          <Button onClick={handleSend} disabled={isSending || !newMessage.trim()}>
-            <Send className="w-4 h-4" />
-          </Button>
+        <div className="p-4 border-t">
+          <div className="flex space-x-2">
+            <Textarea value={newMessage} onChange={(e) => setNewMessage(e.target.value)} onKeyDown={(e) => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }}} placeholder="Type your message..." disabled={isSending} />
+            <Button onClick={sendMessage} disabled={!newMessage.trim() || isSending} size="icon"><Send className="h-4 w-4" /></Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
   );
-};
+}
