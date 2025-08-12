@@ -23,6 +23,7 @@ interface MessageRow {
   created_at: string;
   is_read: boolean;
   content: string;
+  sender_type: string;
 }
 
 const Messages = () => {
@@ -123,11 +124,11 @@ const Messages = () => {
       setLoadingChat(true);
       const { data, error } = await supabase
         .from("messages")
-        .select("id, conversation_id, sender_id, created_at, is_read, content")
+        .select("id, conversation_id, sender_id, created_at, is_read, content, sender_type")
         .eq("conversation_id", activeId)
         .order("created_at", { ascending: true });
       if (!error) {
-        setMessages(data || []);
+        setMessages((data as any) || []);
         // Mark as read
         await supabase.rpc("mark_conversation_messages_read", {
           conversation_id_param: activeId,
@@ -170,10 +171,23 @@ const Messages = () => {
     if (!user || !activeId || !input.trim() || sending) return;
     setSending(true);
 
+    // Determine sender_type from booking context
+    const { data: convWithBooking } = await supabase
+      .from("conversations")
+      .select(
+        `id, booking:bookings!conversations_booking_id_fkey ( id, user_id )`
+      )
+      .eq("id", activeId)
+      .maybeSingle();
+
+    const isBooker = (convWithBooking as any)?.booking?.user_id === user.id;
+    const sender_type: "talent" | "booker" = isBooker ? "booker" : "talent";
+
     const { error } = await supabase.from("messages").insert({
       conversation_id: activeId,
       sender_id: user.id,
       content: input.trim(),
+      sender_type,
     });
 
     if (error) console.error("Failed to send message", error);
@@ -231,9 +245,9 @@ const Messages = () => {
             {!loadingChat && activeConversation && (
               <div className="space-y-2">
                 {messages.map((m) => (
-                  <div key={m.id} className={`flex ${m.user_id === user?.id ? "justify-end" : "justify-start"}`}>
+                  <div key={m.id} className={`flex ${m.sender_id === user?.id ? "justify-end" : "justify-start"}`}>
                     <div className={`px-3 py-2 rounded-lg max-w-[75%] text-sm ${
-                      m.user_id === user?.id ? "bg-primary text-primary-foreground" : "bg-muted"
+                      m.sender_id === user?.id ? "bg-primary text-primary-foreground" : "bg-muted"
                     }`}>
                       <div>{m.content}</div>
                       <div className="text-[10px] opacity-70 mt-1 text-right">

@@ -20,7 +20,7 @@ export const useUnreadMessages = (bookingId: string) => {
           .from('conversations')
           .select('id')
           .eq('booking_id', bookingId)
-          .maybeSingle();
+          .single();
 
         if (!conversation) {
           setHasUnread(false);
@@ -38,8 +38,6 @@ export const useUnreadMessages = (bookingId: string) => {
           .limit(1);
 
         if (messages && messages.length > 0) {
-          // For simplicity, we'll consider there are unread messages if there are any messages from others
-          // In a real app, you'd track last read timestamp per user
           setHasUnread(true);
         } else {
           setHasUnread(false);

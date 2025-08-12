@@ -17,6 +17,7 @@ import { supabase } from "@/integrations/supabase/client";
 interface Message {
   id: number;
   content: string;
+  sender_type: 'talent' | 'booker';
   sender_id: string;
   created_at: string;
 }
@@ -75,18 +76,12 @@ export function TalentChatModal({
           filter: `conversation_id=eq.${conversationId}`,
         },
         (payload) => {
-          const inserted = payload.new as any;
-          const mapped: Message = {
-            id: inserted.id,
-            content: inserted.content,
-            sender_id: inserted.sender_id,
-            created_at: inserted.created_at,
-          };
-          setMessages((prev) => [...prev, mapped]);
+          const newMessage = payload.new as Message;
+          setMessages((prev) => [...prev, newMessage]);
           
           // Mark message as read if it's not from current user
-          if (mapped.sender_id !== user?.id) {
-            markMessageAsRead(mapped.id);
+          if (newMessage.sender_id !== user?.id) {
+            markMessageAsRead(newMessage.id);
           }
         }
       )
@@ -99,7 +94,7 @@ export function TalentChatModal({
 
   const loadOrCreateConversation = async () => {
     try {
-      // TASK 1: Try to find existing conversation for this gig application
+      // Try to find existing conversation for this gig application
       let { data: conversation, error } = await supabase
         .from('conversations')
         .select('id')
@@ -110,11 +105,8 @@ export function TalentChatModal({
         throw error;
       }
 
-      // TASK 1: Conversation should already exist at this point (created by handleChatGig)
       // If for some reason it doesn't exist, create one
       if (!conversation) {
-        console.warn('TalentChatModal: Conversation should have been created by handleChatGig, creating fallback');
-        
         // Get gig details first
         const { data: gigApp, error: gigError } = await supabase
           .from('gig_applications')
@@ -151,17 +143,14 @@ export function TalentChatModal({
 
   const loadMessages = async (convId: string) => {
     try {
-      // TASK 1: Only retrieve messages where conversation_id exactly matches the passed ID
       const { data, error } = await supabase
         .from('messages')
-        .select('id, content, sender_id, created_at')
+        .select('*')
         .eq('conversation_id', convId)
         .order('created_at', { ascending: true });
 
       if (error) throw error;
-      
-      // TASK 1: Set only messages for this specific conversation
-      setMessages(((data as any[]) || []).map((m) => ({ id: m.id, content: m.content, sender_id: m.sender_id, created_at: m.created_at })));
+      setMessages((data as any) || []);
 
       // Mark all messages as read
       await markAllMessagesAsRead(convId);
@@ -170,22 +159,20 @@ export function TalentChatModal({
     }
   };
 
-const markMessageAsRead = async (messageId: number) => {
-  try {
-    await supabase
-      .from('messages')
-      .update({ is_read: true })
-      .eq('id', messageId);
-  } catch (error) {
-    console.error('Error marking message as read:', error);
-  }
-};
+  const markMessageAsRead = async (messageId: number) => {
+    try {
+      await supabase
+        .from('messages')
+        .update({ is_read: true })
+        .eq('id', messageId);
+    } catch (error) {
+      console.error('Error marking message as read:', error);
+    }
+  };
 
   const markAllMessagesAsRead = async (convId: string) => {
     try {
       if (!user?.id) return;
-      
-      // Use the RPC function to mark messages as read
       await supabase.rpc('mark_conversation_messages_read', {
         conversation_id_param: convId,
         user_id_param: user.id
@@ -206,6 +193,7 @@ const markMessageAsRead = async (messageId: number) => {
           conversation_id: conversationId,
           content: newMessage.trim(),
           sender_id: user.id,
+          sender_type: 'talent'
         });
 
       if (error) throw error;
@@ -233,7 +221,7 @@ const markMessageAsRead = async (messageId: number) => {
   const formatTime = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  };
+    };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -304,12 +292,12 @@ const markMessageAsRead = async (messageId: number) => {
                     )}
                     <div
                       className={`flex ${
-                        message.sender_id === user?.id ? 'justify-end' : 'justify-start'
+                        message.sender_type === 'talent' ? 'justify-end' : 'justify-start'
                       }`}
                     >
                       <div
                         className={`max-w-[80%] rounded-lg px-3 py-2 text-sm ${
-                          message.sender_id === user?.id
+                          message.sender_type === 'talent'
                             ? 'bg-primary text-primary-foreground ml-4'
                             : 'bg-muted mr-4'
                         }`}
@@ -317,7 +305,7 @@ const markMessageAsRead = async (messageId: number) => {
                         <p className="whitespace-pre-wrap break-words">{message.content}</p>
                         <p
                           className={`text-xs mt-1 ${
-                            message.sender_id === user?.id
+                            message.sender_type === 'talent'
                               ? 'text-primary-foreground/70'
                               : 'text-muted-foreground'
                           }`}

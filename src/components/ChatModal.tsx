@@ -10,7 +10,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Send } from "lucide-react";
 
 interface Message {
-  id: number;
+  id: string;
   content: string;
   sender_id: string;
   created_at: string;
@@ -27,11 +27,28 @@ export const ChatModal = ({ open, onOpenChange, conversationId }: ChatModalProps
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
+  const [senderType, setSenderType] = useState<'booker' | 'talent' | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
+
+  // Determine sender type based on booking ownership
+  useEffect(() => {
+    const fetchSenderType = async () => {
+      if (!conversationId || !user?.id) return;
+      const { data } = await supabase
+        .from('conversations')
+        .select(`id, booking:bookings!conversations_booking_id_fkey ( user_id )`)
+        .eq('id', conversationId)
+        .maybeSingle();
+
+      const isBooker = (data as any)?.booking?.user_id === user.id;
+      setSenderType(isBooker ? 'booker' : 'talent');
+    };
+    if (open) fetchSenderType();
+  }, [conversationId, open, user?.id]);
 
   const markAllMessagesAsRead = async () => {
     if (!conversationId || !user?.id) return;
@@ -44,20 +61,15 @@ export const ChatModal = ({ open, onOpenChange, conversationId }: ChatModalProps
   useEffect(() => {
     const fetchMessages = async () => {
       if (!conversationId) return;
-      setMessages([]);
+      setMessages([]); // Clear previous messages
       const { data, error } = await supabase
         .from('messages')
-        .select('id, content, sender_id, created_at')
+        .select('*')
         .eq('conversation_id', conversationId)
         .order('created_at', { ascending: true });
 
       if (error) console.error("Error fetching messages:", error);
-      else setMessages((data || []).map((m: any) => ({
-        id: m.id,
-        content: m.content,
-        sender_id: m.sender_id,
-        created_at: m.created_at,
-      })));
+      else setMessages((data as any) || []);
       await markAllMessagesAsRead();
     };
 
@@ -74,17 +86,11 @@ export const ChatModal = ({ open, onOpenChange, conversationId }: ChatModalProps
       .on('postgres_changes', 
         { event: 'INSERT', schema: 'public', table: 'messages', filter: `conversation_id=eq.${conversationId}` },
         async (payload) => {
-          const inserted = payload.new as any;
-          const newMsg: Message = {
-            id: inserted.id,
-            content: inserted.content,
-            sender_id: inserted.sender_id,
-            created_at: inserted.created_at,
-          };
+          const newMsg = payload.new as any;
           setMessages(prevMessages => 
             prevMessages.some(msg => msg.id === newMsg.id) 
             ? prevMessages 
-            : [...prevMessages, newMsg]
+            : [...prevMessages, newMsg as Message]
           );
           if (newMsg.sender_id !== user?.id) {
             await markAllMessagesAsRead();
@@ -102,17 +108,18 @@ export const ChatModal = ({ open, onOpenChange, conversationId }: ChatModalProps
     setIsSending(true);
 
     const content = newMessage.trim();
-    setNewMessage("");
+    setNewMessage(""); // Clear input immediately for better UX
 
     const { error } = await supabase.from('messages').insert({
-      conversation_id: conversationId,
-      content: content,
-      sender_id: user.id,
+        conversation_id: conversationId,
+        content: content,
+        sender_id: user.id,
+        sender_type: senderType ?? 'booker',
     });
 
     if (error) {
       console.error("Error sending message:", error);
-      setNewMessage(content);
+      setNewMessage(content); // Restore message on error
     }
     setIsSending(false);
   };
