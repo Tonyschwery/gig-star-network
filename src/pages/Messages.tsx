@@ -17,13 +17,12 @@ interface ConversationItem {
 }
 
 interface MessageRow {
-  id: string;
+  id: number;
   conversation_id: string;
-  user_id: string;
+  sender_id: string;
   created_at: string;
   is_read: boolean;
   content: string;
-  sender_type: string;
 }
 
 const Messages = () => {
@@ -85,7 +84,7 @@ const Messages = () => {
           .select("id")
           .eq("conversation_id", item.id)
           .eq("is_read", false)
-          .neq("user_id", user.id)
+          .neq("sender_id", user.id)
           .limit(1);
         results.push({ ...item, hasUnread: !!(unread && unread.length > 0) });
       }
@@ -124,7 +123,7 @@ const Messages = () => {
       setLoadingChat(true);
       const { data, error } = await supabase
         .from("messages")
-        .select("id, conversation_id, user_id, created_at, is_read, content, sender_type")
+        .select("id, conversation_id, sender_id, created_at, is_read, content")
         .eq("conversation_id", activeId)
         .order("created_at", { ascending: true });
       if (!error) {
@@ -150,7 +149,7 @@ const Messages = () => {
         async (payload) => {
           const m = payload.new as MessageRow;
           setMessages((prev) => [...prev, m]);
-          if (m.user_id !== user.id) {
+          if (m.sender_id !== user.id) {
             await supabase.rpc("mark_conversation_messages_read", {
               conversation_id_param: activeId,
               user_id_param: user.id,
@@ -171,23 +170,10 @@ const Messages = () => {
     if (!user || !activeId || !input.trim() || sending) return;
     setSending(true);
 
-    // Determine sender_type from booking context
-    const { data: convWithBooking } = await supabase
-      .from("conversations")
-      .select(
-        `id, booking:bookings!conversations_booking_id_fkey ( id, user_id )`
-      )
-      .eq("id", activeId)
-      .maybeSingle();
-
-    const isBooker = (convWithBooking as any)?.booking?.user_id === user.id;
-    const sender_type: "talent" | "booker" = isBooker ? "booker" : "talent";
-
     const { error } = await supabase.from("messages").insert({
       conversation_id: activeId,
-      user_id: user.id,
+      sender_id: user.id,
       content: input.trim(),
-      sender_type,
     });
 
     if (error) console.error("Failed to send message", error);

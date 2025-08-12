@@ -15,10 +15,9 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
 interface Message {
-  id: string;
+  id: number;
   content: string;
-  sender_type: 'talent' | 'booker';
-  user_id: string;
+  sender_id: string;
   created_at: string;
 }
 
@@ -76,12 +75,18 @@ export function TalentChatModal({
           filter: `conversation_id=eq.${conversationId}`,
         },
         (payload) => {
-          const newMessage = payload.new as Message;
-          setMessages((prev) => [...prev, newMessage]);
+          const inserted = payload.new as any;
+          const mapped: Message = {
+            id: inserted.id,
+            content: inserted.content,
+            sender_id: inserted.sender_id,
+            created_at: inserted.created_at,
+          };
+          setMessages((prev) => [...prev, mapped]);
           
           // Mark message as read if it's not from current user
-          if (newMessage.user_id !== user?.id) {
-            markMessageAsRead(newMessage.id);
+          if (mapped.sender_id !== user?.id) {
+            markMessageAsRead(mapped.id);
           }
         }
       )
@@ -149,14 +154,14 @@ export function TalentChatModal({
       // TASK 1: Only retrieve messages where conversation_id exactly matches the passed ID
       const { data, error } = await supabase
         .from('messages')
-        .select('*')
+        .select('id, content, sender_id, created_at')
         .eq('conversation_id', convId)
         .order('created_at', { ascending: true });
 
       if (error) throw error;
       
       // TASK 1: Set only messages for this specific conversation
-      setMessages((data as Message[]) || []);
+      setMessages(((data as any[]) || []).map((m) => ({ id: m.id, content: m.content, sender_id: m.sender_id, created_at: m.created_at })));
 
       // Mark all messages as read
       await markAllMessagesAsRead(convId);
@@ -165,16 +170,16 @@ export function TalentChatModal({
     }
   };
 
-  const markMessageAsRead = async (messageId: string) => {
-    try {
-      await supabase
-        .from('messages')
-        .update({ is_read: true })
-        .eq('id', messageId);
-    } catch (error) {
-      console.error('Error marking message as read:', error);
-    }
-  };
+const markMessageAsRead = async (messageId: number) => {
+  try {
+    await supabase
+      .from('messages')
+      .update({ is_read: true })
+      .eq('id', messageId);
+  } catch (error) {
+    console.error('Error marking message as read:', error);
+  }
+};
 
   const markAllMessagesAsRead = async (convId: string) => {
     try {
@@ -200,8 +205,7 @@ export function TalentChatModal({
         .insert({
           conversation_id: conversationId,
           content: newMessage.trim(),
-          user_id: user.id,
-          sender_type: 'talent'
+          sender_id: user.id,
         });
 
       if (error) throw error;
@@ -300,12 +304,12 @@ export function TalentChatModal({
                     )}
                     <div
                       className={`flex ${
-                        message.sender_type === 'talent' ? 'justify-end' : 'justify-start'
+                        message.sender_id === user?.id ? 'justify-end' : 'justify-start'
                       }`}
                     >
                       <div
                         className={`max-w-[80%] rounded-lg px-3 py-2 text-sm ${
-                          message.sender_type === 'talent'
+                          message.sender_id === user?.id
                             ? 'bg-primary text-primary-foreground ml-4'
                             : 'bg-muted mr-4'
                         }`}
@@ -313,7 +317,7 @@ export function TalentChatModal({
                         <p className="whitespace-pre-wrap break-words">{message.content}</p>
                         <p
                           className={`text-xs mt-1 ${
-                            message.sender_type === 'talent'
+                            message.sender_id === user?.id
                               ? 'text-primary-foreground/70'
                               : 'text-muted-foreground'
                           }`}

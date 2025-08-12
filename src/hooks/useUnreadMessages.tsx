@@ -20,7 +20,7 @@ export const useUnreadMessages = (bookingId: string) => {
           .from('conversations')
           .select('id')
           .eq('booking_id', bookingId)
-          .single();
+          .maybeSingle();
 
         if (!conversation) {
           setHasUnread(false);
@@ -31,9 +31,9 @@ export const useUnreadMessages = (bookingId: string) => {
         // Check for messages from other users (not from current user)
         const { data: messages } = await supabase
           .from('messages')
-          .select('id, user_id, created_at')
+          .select('id, sender_id, created_at')
           .eq('conversation_id', conversation.id)
-          .neq('user_id', user.id)
+          .neq('sender_id', user.id)
           .order('created_at', { ascending: false })
           .limit(1);
 
@@ -66,7 +66,7 @@ export const useUnreadMessages = (bookingId: string) => {
         },
         (payload) => {
           // If a new message is from someone else, mark as unread
-          if (payload.new.user_id !== user.id) {
+          if ((payload.new as any).sender_id !== user.id) {
             checkUnreadMessages();
           }
         }
