@@ -231,33 +231,27 @@ export type Database = {
       messages: {
         Row: {
           content: string
-          conversation_id: string
-          created_at: string
-          id: string
-          is_read: boolean
-          sender_type: string
-          updated_at: string
-          user_id: string
+          conversation_id: string | null
+          created_at: string | null
+          id: number
+          is_read: boolean | null
+          sender_id: string | null
         }
         Insert: {
           content: string
-          conversation_id: string
-          created_at?: string
-          id?: string
-          is_read?: boolean
-          sender_type: string
-          updated_at?: string
-          user_id: string
+          conversation_id?: string | null
+          created_at?: string | null
+          id?: never
+          is_read?: boolean | null
+          sender_id?: string | null
         }
         Update: {
           content?: string
-          conversation_id?: string
-          created_at?: string
-          id?: string
-          is_read?: boolean
-          sender_type?: string
-          updated_at?: string
-          user_id?: string
+          conversation_id?: string | null
+          created_at?: string | null
+          id?: never
+          is_read?: boolean | null
+          sender_id?: string | null
         }
         Relationships: [
           {
