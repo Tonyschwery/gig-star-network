@@ -7,8 +7,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { format } from "date-fns";
-import { X } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 
 interface ConversationItem {
   id: string;
@@ -30,7 +28,6 @@ interface MessageRow {
 
 const Messages = () => {
   const { user } = useAuth();
-  const navigate = useNavigate();
   const [conversations, setConversations] = useState<ConversationItem[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [messages, setMessages] = useState<MessageRow[]>([]);
@@ -43,7 +40,6 @@ const Messages = () => {
   useEffect(() => {
     document.title = "Messages | Qtalent";
   }, []);
-  // Ensure default active conversation after load
 
   useEffect(() => {
     if (!user) {
@@ -201,12 +197,7 @@ const Messages = () => {
 
   return (
     <main className="container mx-auto px-4 pt-24 pb-6">
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-2xl font-bold">Messages</h1>
-        <Button variant="ghost" size="icon" aria-label="Close messages" onClick={() => navigate(-1)}>
-          <X className="h-5 w-5" />
-        </Button>
-      </div>
+      <h1 className="text-2xl font-bold mb-4">Messages</h1>
       <section className="grid grid-cols-1 md:grid-cols-3 gap-4 min-h-[60vh]">
         {/* Conversations list */}
         <Card className="md:col-span-1 overflow-hidden">

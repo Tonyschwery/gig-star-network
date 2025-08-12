@@ -87,14 +87,7 @@ export const BookingCard = ({ booking, mode, onUpdate, isProSubscriber }: Bookin
             <div><Clock3 className="inline h-4 w-4 mr-2" />Duration: {booking.event_duration} hours</div>
             <div><MapPin className="inline h-4 w-4 mr-2" />{booking.event_location}</div>
         </div>
-        {paymentAmount && (
-          booking.status === 'pending_approval' ? (
-            <div className="font-semibold text-yellow-600">Invoice Sent: ${paymentAmount} {booking.payments?.[0].currency}</div>
-          ) : (booking.status === 'confirmed' || booking.status === 'completed') ? (
-            <div className="font-semibold text-green-600">Amount Paid: ${paymentAmount} {booking.payments?.[0].currency}</div>
-          ) : null
-        )}
-
+        {paymentAmount && <div className="font-semibold text-green-600">Amount Paid: ${paymentAmount} {booking.payments?.[0].currency}</div>}
         <div className="flex flex-wrap gap-2 pt-2 border-t mt-2">
             
             {mode === 'booker' && booking.talent_id && <Button onClick={() => navigate(`/talent/${booking.talent_id}`)} variant="outline" size="sm"><User className="h-4 w-4 mr-2" />View Talent</Button>}
