@@ -8,7 +8,6 @@ import { Calendar, Clock, MapPin, Mail, User, Check, X, MessageCircle, Crown, Sp
 import { ManualInvoiceModal } from "./ManualInvoiceModal";
 
 import { format } from "date-fns";
-import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 import { useUnreadNotifications } from "@/hooks/useUnreadNotifications";
 
 interface GigOpportunity {
@@ -75,54 +74,13 @@ const mockGigs: GigOpportunity[] = [
   }
 ];
 
-// Chat Button Component with unread indicator
-const ChatButtonWithNotifications = ({ 
-  gig, 
-  disabled = false 
-}: { 
-  gig: GigOpportunity; 
-  disabled?: boolean;
-}) => {
-  const { hasUnread } = useUnreadMessages(gig.id);
-  const { unreadCount } = useUnreadNotifications();
-  
-  const handleOpenChat = (gig: GigOpportunity) => {
-    if (disabled) return;
-    const event = new CustomEvent('openGigChat', { detail: gig });
-    window.dispatchEvent(event);
-  };
-  
-  return (
-    <Button
-      onClick={() => handleOpenChat(gig)}
-      variant="outline"
-      className={`border-blue-200 text-blue-600 hover:bg-blue-50 w-full sm:w-auto relative ${
-        disabled ? 'opacity-50 cursor-not-allowed' : ''
-      }`}
-      size="sm"
-      disabled={disabled}
-    >
-      <MessageCircle className="h-4 w-4 mr-2" />
-      <span className="hidden sm:inline">Contact Client</span>
-      <span className="sm:hidden">Contact</span>
-      {!disabled && (hasUnread || unreadCount > 0) && (
-        <div className="absolute -top-1 -right-1 w-5 h-5 bg-destructive rounded-full flex items-center justify-center">
-          <span className="text-xs text-white font-bold">
-            {unreadCount > 99 ? '99+' : unreadCount}
-          </span>
-        </div>
-      )}
-    </Button>
-  );
-};
+// Chat UI was removed as part of simplifying the system; gig chat is no longer available.
 
 export function GigOpportunities({ isProSubscriber, onUpgrade }: GigOpportunitiesProps) {
   const [realGigs, setRealGigs] = useState<GigOpportunity[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedGig, setSelectedGig] = useState<GigOpportunity | null>(null);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
-  const [showChatModal, setShowChatModal] = useState(false);
-  const [chatGig, setChatGig] = useState<GigOpportunity | null>(null);
   const { toast } = useToast();
 
   // Use real gigs for pro users, mock gigs for free users
@@ -134,20 +92,6 @@ export function GigOpportunities({ isProSubscriber, onUpgrade }: GigOpportunitie
     } else {
       setLoading(false);
     }
-    
-    // Listen for openGigChat events from chat buttons
-    const handleOpenChatEvent = (event: any) => {
-      if (!isProSubscriber) return;
-      const gig = event.detail;
-      setChatGig(gig);
-      setShowChatModal(true);
-    };
-    
-    window.addEventListener('openGigChat', handleOpenChatEvent);
-    
-    return () => {
-      window.removeEventListener('openGigChat', handleOpenChatEvent);
-    };
   }, [isProSubscriber]);
 
   const fetchGigOpportunities = async () => {

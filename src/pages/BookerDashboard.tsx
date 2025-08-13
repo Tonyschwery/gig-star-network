@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { LogOut } from "lucide-react";
 import { NotificationCenter } from "@/components/NotificationCenter";
 import { BookerDashboardTabs } from "@/components/BookerDashboardTabs";
+import { UniversalChat } from "@/components/UniversalChat";
 
 const BookerDashboard = () => {
   const { user, signOut } = useAuth();
@@ -67,13 +68,11 @@ const BookerDashboard = () => {
           </div>
         </div>
 
-        {/* Notification Center */}
-        <div className="mb-6">
-          <NotificationCenter />
-        </div>
-
         {/* Tabbed Dashboard */}
         <BookerDashboardTabs userId={user.id} />
+
+        {/* Universal Chat Floating Button */}
+        <UniversalChat />
       </div>
     </div>
   );

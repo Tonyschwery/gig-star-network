@@ -18,11 +18,9 @@ import {
   Crown
 } from "lucide-react";
 
-import { ProSubscriptionDialog } from "@/components/ProSubscriptionDialog";
 import { NotificationCenter } from "@/components/NotificationCenter";
-import { ModeSwitch } from "@/components/ModeSwitch";
 import { TalentDashboardTabs } from "@/components/TalentDashboardTabs";
-import { Header } from "@/components/Header";
+import { UniversalChat } from "@/components/UniversalChat";
 
 interface TalentProfile {
   id: string;
@@ -56,7 +54,11 @@ const TalentDashboard = () => {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <div className="container mx-auto px-4 py-8">
+        <NotificationCenter />
+        <TalentDashboardTabs />
+        <UniversalChat />
+      </div>
     </div>
   );
 };

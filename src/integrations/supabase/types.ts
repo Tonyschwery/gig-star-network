@@ -121,38 +121,6 @@ export type Database = {
           },
         ]
       }
-      conversations: {
-        Row: {
-          booking_id: string
-          created_at: string
-          gig_application_id: string | null
-          id: string
-          updated_at: string
-        }
-        Insert: {
-          booking_id: string
-          created_at?: string
-          gig_application_id?: string | null
-          id?: string
-          updated_at?: string
-        }
-        Update: {
-          booking_id?: string
-          created_at?: string
-          gig_application_id?: string | null
-          id?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "conversations_gig_application_id_fkey"
-            columns: ["gig_application_id"]
-            isOneToOne: false
-            referencedRelation: "gig_applications"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       email_preferences: {
         Row: {
           booking_notifications: boolean
@@ -224,41 +192,6 @@ export type Database = {
             columns: ["talent_id"]
             isOneToOne: false
             referencedRelation: "talent_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      messages: {
-        Row: {
-          content: string
-          conversation_id: string | null
-          created_at: string | null
-          id: number
-          is_read: boolean | null
-          sender_id: string | null
-        }
-        Insert: {
-          content: string
-          conversation_id?: string | null
-          created_at?: string | null
-          id?: never
-          is_read?: boolean | null
-          sender_id?: string | null
-        }
-        Update: {
-          content?: string
-          conversation_id?: string | null
-          created_at?: string | null
-          id?: never
-          is_read?: boolean | null
-          sender_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "messages_conversation_id_fkey"
-            columns: ["conversation_id"]
-            isOneToOne: false
-            referencedRelation: "conversations"
             referencedColumns: ["id"]
           },
         ]
@@ -472,21 +405,9 @@ export type Database = {
         Args: { payment_id_param: string }
         Returns: Json
       }
-      filter_message_content: {
-        Args: { content: string }
-        Returns: string
-      }
       get_payment_status: {
         Args: { booking_id_param: string }
         Returns: Json
-      }
-      get_unread_message_count: {
-        Args: { user_id_param: string }
-        Returns: number
-      }
-      mark_conversation_messages_read: {
-        Args: { conversation_id_param: string; user_id_param: string }
-        Returns: undefined
       }
     }
     Enums: {

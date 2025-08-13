@@ -114,14 +114,6 @@ export function Header() {
     }
   };
 
-  const handleChatNotificationClick = () => {
-    // Navigate to appropriate dashboard where messages can be accessed
-    if (talentName) {
-      navigate("/talent-dashboard");
-    } else if (user) {
-      navigate("/booker-dashboard");
-    }
-  };
 
   return (
     <>
@@ -207,13 +199,6 @@ export function Header() {
                 <div className="flex items-center space-x-4">
                   {/* Mode switch and notifications */}
                   {talentName && <ModeSwitch />}
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    onClick={() => navigate('/messages')}
-                  >
-                    Messages
-                  </Button>
                   <NotificationCenter />
                   
                   {user && !talentName && user.user_metadata?.user_type === 'talent' && (
@@ -392,17 +377,6 @@ export function Header() {
                         />
                       )}
 
-                      <Button 
-                        variant="ghost" 
-                        className="w-full mt-2"
-                        onClick={() => {
-                          navigate('/messages');
-                          const mobileMenuClose = document.querySelector('[data-mobile-menu-close]') as HTMLElement;
-                          if (mobileMenuClose) mobileMenuClose.click();
-                        }}
-                      >
-                        Messages
-                      </Button>
                       
                       <Button 
                         variant="outline" 

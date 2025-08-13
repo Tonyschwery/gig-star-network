@@ -8,7 +8,6 @@ import { Calendar, User, Check, X, Clock3, MapPin, MessageCircle } from "lucide-
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { ManualInvoiceModal } from "./ManualInvoiceModal";
-import { ChatModal } from "./ChatModal";
 
 export interface Payment {
   id: string;
@@ -58,8 +57,6 @@ interface BookingCardProps {
 
 export const BookingCard = ({ booking, mode, onUpdate, isProSubscriber }: BookingCardProps) => {
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
-  const [showChatModal, setShowChatModal] = useState(false);
-  const [conversationId, setConversationId] = useState<string | null>(null);
   const navigate = useNavigate();
   // Simplified way to get the gig application ID if it exists
   const gigApplicationId = booking.is_gig_opportunity ? booking.gig_applications?.[0]?.id : undefined;
@@ -77,35 +74,6 @@ export const BookingCard = ({ booking, mode, onUpdate, isProSubscriber }: Bookin
   
   const paymentAmount = booking.payments?.[0]?.total_amount;
 
-  const openChat = async () => {
-    try {
-      // Only support direct bookings here; gig chats are handled elsewhere
-      if (!booking.id) return;
-      // Find existing conversation for this booking
-      let { data: conv, error } = await supabase
-        .from('conversations')
-        .select('id')
-        .eq('booking_id', booking.id)
-        .maybeSingle();
-
-      if (error && error.code !== 'PGRST116') throw error;
-
-      if (!conv) {
-        // Create conversation if missing (allowed by RLS for booking participants)
-        const { data: created, error: createErr } = await supabase
-          .from('conversations')
-          .insert({ booking_id: booking.id })
-          .select('id')
-          .single();
-        if (createErr) throw createErr;
-        conv = created;
-      }
-      setConversationId(conv.id);
-      setShowChatModal(true);
-    } catch (e) {
-      console.error('Failed to open chat', e);
-    }
-  };
 
   return (
     <>
@@ -129,13 +97,6 @@ export const BookingCard = ({ booking, mode, onUpdate, isProSubscriber }: Bookin
                     <Button onClick={() => setShowInvoiceModal(true)} size="sm"><Check className="h-4 w-4 mr-2" />Accept & Send Invoice</Button>
                 </>
             )}
-            {/* Universal chat for direct bookings when a talent is assigned */}
-            {!booking.is_gig_opportunity && booking.talent_id && (
-              <Button onClick={openChat} variant="outline" size="sm">
-                <MessageCircle className="h-4 w-4 mr-2" />
-                {mode === 'booker' ? 'Message Talent' : 'Message Booker'}
-              </Button>
-            )}
         </div>
       </div>
       <ManualInvoiceModal
@@ -146,13 +107,6 @@ export const BookingCard = ({ booking, mode, onUpdate, isProSubscriber }: Bookin
         onSuccess={() => { setShowInvoiceModal(false); onUpdate?.(); }}
         gigApplicationId={gigApplicationId}
       />
-      {conversationId && (
-        <ChatModal
-          open={showChatModal}
-          onOpenChange={setShowChatModal}
-          conversationId={conversationId}
-        />
-      )}
     </>
   );
 }

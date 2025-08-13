@@ -6,10 +6,10 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Calendar, Clock, MapPin, Mail, User, Check, X, MessageCircle, Crown, Sparkles } from "lucide-react";
 import { ManualInvoiceModal } from "./ManualInvoiceModal";
-import { TalentChatModal } from "./TalentChatModal";
+
 import { BookingCard } from "./BookingCard";
 import { format } from "date-fns";
-import { useUnreadMessages } from "@/hooks/useUnreadMessages";
+
 import { useUnreadNotifications } from "@/hooks/useUnreadNotifications";
 
 interface GigApplication {
@@ -104,63 +104,7 @@ const mockGigs: GigOpportunity[] = [
   }
 ];
 
-// MASTER TASK 1: Chat Button Component - Only show for gig applications with conversations
-const GigChatButtonWithNotifications = ({ gigApplication }: { gigApplication: GigApplication }) => {
-  const { hasUnread } = useUnreadMessages(gigApplication.gig.id);
-  const { unreadCount } = useUnreadNotifications();
-  const [hasConversation, setHasConversation] = useState(false);
-  
-  // Check if conversation exists for this gig application
-  useEffect(() => {
-    const checkConversation = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('conversations')
-          .select('id')
-          .eq('gig_application_id', gigApplication.id)
-          .maybeSingle();
-          
-        if (!error) {
-          setHasConversation(!!data);
-        }
-      } catch (error) {
-        console.error('Error checking conversation:', error);
-      }
-    };
-    
-    checkConversation();
-  }, [gigApplication.id, gigApplication.status]);
-  
-  const handleOpenChat = (gigApplication: GigApplication) => {
-    const event = new CustomEvent('openGigChat', { detail: gigApplication });
-    window.dispatchEvent(event);
-  };
-  
-  // MASTER TASK 1: Only show chat button if conversation exists (after invoice sent)
-  if (!hasConversation) {
-    return null;
-  }
-  
-  return (
-    <Button
-      onClick={() => handleOpenChat(gigApplication)}
-      variant="outline"
-      className="border-blue-200 text-blue-600 hover:bg-blue-50 w-full sm:w-auto relative"
-      size="sm"
-    >
-      <MessageCircle className="h-4 w-4 mr-2" />
-      <span className="hidden sm:inline">Chat with Booker</span>
-      <span className="sm:hidden">Chat</span>
-      {(hasUnread || unreadCount > 0) && (
-        <div className="absolute -top-1 -right-1 w-5 h-5 bg-destructive rounded-full flex items-center justify-center">
-          <span className="text-xs text-white font-bold">
-            {unreadCount > 99 ? '99+' : unreadCount}
-          </span>
-        </div>
-      )}
-    </Button>
-  );
-};
+// Chat for gig applications has been removed with the new universal chat system.
 
 export function GigOpportunitiesIntegrated({ isProSubscriber, onUpgrade, talentId }: GigOpportunitiesIntegratedProps) {
   const [availableGigs, setAvailableGigs] = useState<GigOpportunity[]>([]);
@@ -171,8 +115,6 @@ export function GigOpportunitiesIntegrated({ isProSubscriber, onUpgrade, talentI
   const [loading, setLoading] = useState(true);
   const [selectedGig, setSelectedGig] = useState<GigOpportunity | null>(null);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
-  const [showChatModal, setShowChatModal] = useState(false);
-  const [chatGigApplication, setChatGigApplication] = useState<GigApplication | null>(null);
   const [gigApplicationId, setGigApplicationId] = useState<string | null>(null);
   const { toast } = useToast();
 
@@ -182,20 +124,6 @@ export function GigOpportunitiesIntegrated({ isProSubscriber, onUpgrade, talentI
     } else {
       setLoading(false);
     }
-    
-    // Listen for openGigChat events from chat buttons
-    const handleOpenGigChatEvent = (event: any) => {
-      const gigApplication = event.detail;
-      setChatGigApplication(gigApplication);
-      setGigApplicationId(gigApplication.id);
-      setShowChatModal(true);
-    };
-    
-    window.addEventListener('openGigChat', handleOpenGigChatEvent);
-    
-    return () => {
-      window.removeEventListener('openGigChat', handleOpenGigChatEvent);
-    };
   }, [isProSubscriber, talentId]);
 
   const fetchAllGigData = async () => {
@@ -344,67 +272,7 @@ export function GigOpportunitiesIntegrated({ isProSubscriber, onUpgrade, talentI
     }
   };
 
-  // TASK 1: Add chat functionality for available gigs
-  const handleChatWithBooker = async (gig: GigOpportunity) => {
-    if (!isProSubscriber) {
-      onUpgrade();
-      return;
-    }
-
-    try {
-      // Create or get existing gig application to enable chat
-      const applicationId = await createOrGetGigApplication(gig.id);
-      
-      // Create or get conversation for this gig application
-      const { data: existingConversation, error: conversationError } = await supabase
-        .from('conversations')
-        .select('id')
-        .eq('gig_application_id', applicationId)
-        .maybeSingle();
-
-      if (conversationError) throw conversationError;
-
-      let conversationId = existingConversation?.id;
-
-      if (!conversationId) {
-        // Create new conversation for this gig application
-        const { data: newConversation, error: createError } = await supabase
-          .from('conversations')
-          .insert({
-            booking_id: gig.id,
-            gig_application_id: applicationId,
-            created_at: new Date().toISOString()
-          })
-          .select('id')
-          .single();
-
-        if (createError) throw createError;
-        conversationId = newConversation.id;
-      }
-
-      // Open chat modal with this gig application
-      const gigApplication = {
-        id: applicationId,
-        gig_id: gig.id,
-        talent_id: talentId,
-        status: 'interested',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        gig: gig
-      };
-
-      setChatGigApplication(gigApplication);
-      setGigApplicationId(applicationId);
-      setShowChatModal(true);
-    } catch (error) {
-      console.error('Error starting chat:', error);
-      toast({
-        title: "Error",
-        description: "Failed to start chat",
-        variant: "destructive",
-      });
-    }
-  };
+// Chat via conversations has been removed in favor of the new universal chat.
 
   // MASTER TASK 1: Remove handleChatGig function - chat is only available after invoice sent
 
@@ -736,17 +604,6 @@ export function GigOpportunitiesIntegrated({ isProSubscriber, onUpgrade, talentI
         />
       )}
 
-      {/* Chat Modal */}
-      {chatGigApplication && isProSubscriber && gigApplicationId && (
-        <TalentChatModal
-          open={showChatModal}
-          onOpenChange={setShowChatModal}
-          gigApplicationId={gigApplicationId}
-          talentName={chatGigApplication.gig.booker_name}
-          eventType={chatGigApplication.gig.event_type}
-          eventDate={chatGigApplication.gig.event_date}
-        />
-      )}
     </>
   );
 }

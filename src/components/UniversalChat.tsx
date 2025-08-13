@@ -1,0 +1,151 @@
+import { useEffect, useMemo, useState } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { MessageCircle } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { useRealtimeChat, buildChannelId } from "@/hooks/useRealtimeChat";
+
+interface BookingLite {
+  id: string;
+  user_id: string;
+  talent_id: string | null;
+  event_type: string;
+  booker_name: string;
+}
+
+export function UniversalChat() {
+  const { user } = useAuth();
+  const [open, setOpen] = useState(false);
+  const [bookings, setBookings] = useState<BookingLite[]>([]);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [input, setInput] = useState("");
+
+  useEffect(() => {
+    const load = async () => {
+      if (!user) return;
+      // Fetch bookings where the user is the booker
+      const { data: asBooker } = await supabase
+        .from('bookings')
+        .select('id, user_id, talent_id, event_type, booker_name')
+        .eq('user_id', user.id)
+        .not('talent_id', 'is', null)
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      // Fetch bookings where the user is the talent
+      const { data: talentProfile } = await supabase
+        .from('talent_profiles')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      let asTalent: BookingLite[] = [];
+      if (talentProfile?.id) {
+        const { data } = await supabase
+          .from('bookings')
+          .select('id, user_id, talent_id, event_type, booker_name')
+          .eq('talent_id', talentProfile.id)
+          .order('created_at', { ascending: false })
+          .limit(20);
+        asTalent = (data as any) || [];
+      }
+
+      const merged = [...((asBooker as any) || []), ...asTalent];
+      setBookings(merged as BookingLite[]);
+      if (!selectedId && merged.length) setSelectedId(merged[0].id);
+    };
+    load();
+  }, [user?.id]);
+
+  const selectedBooking = useMemo(() => bookings.find(b => b.id === selectedId) || null, [bookings, selectedId]);
+  const channelId = useMemo(() => {
+    if (!user || !selectedBooking || !selectedBooking.talent_id) return undefined;
+    const bookerId = selectedBooking.user_id;
+    const talentId = selectedBooking.talent_id;
+    return buildChannelId(bookerId, talentId, selectedBooking.event_type);
+  }, [user?.id, selectedBooking]);
+
+  const { messages, sendMessage, isReady } = useRealtimeChat(channelId, user?.id);
+
+  const onSend = () => {
+    if (!input.trim()) return;
+    sendMessage(input);
+    setInput("");
+  };
+
+  return (
+    <>
+      <Button
+        className="fixed bottom-4 right-4 rounded-full shadow-lg"
+        size="icon"
+        onClick={() => setOpen(true)}
+        aria-label="Open chat"
+      >
+        <MessageCircle className="h-5 w-5" />
+      </Button>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="h-[70vh] w-[92vw] sm:w-[600px] flex flex-col p-0">
+          <DialogHeader className="p-4 border-b">
+            <DialogTitle>Chat</DialogTitle>
+          </DialogHeader>
+          <div className="p-4 border-b flex items-center gap-2">
+            <Select value={selectedId ?? undefined} onValueChange={(v) => setSelectedId(v)}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select a booking" />
+              </SelectTrigger>
+              <SelectContent>
+                {bookings.map((b) => (
+                  <SelectItem key={b.id} value={b.id}>
+                    {b.event_type} • {b.booker_name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <ScrollArea className="flex-1 p-4">
+            {!channelId ? (
+              <div className="text-sm text-muted-foreground">Select a booking to start chatting.</div>
+            ) : (
+              <div className="space-y-2">
+                {messages.map((m) => (
+                  <div key={m.id} className={`flex ${m.senderId === user?.id ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`px-3 py-2 rounded-lg max-w-[75%] text-sm ${m.senderId === user?.id ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
+                      <div>{m.content}</div>
+                      <div className="text-[10px] opacity-70 mt-1 text-right">
+                        {new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {!messages.length && (
+                  <div className="text-sm text-muted-foreground">No messages yet. Say hello!</div>
+                )}
+              </div>
+            )}
+          </ScrollArea>
+          <div className="p-4 border-t flex items-center gap-2">
+            <Textarea
+              placeholder={!channelId ? 'Select a booking to chat' : (isReady ? 'Type your message…' : 'Connecting…')}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  onSend();
+                }
+              }}
+              className="min-h-[44px] max-h-40"
+              disabled={!channelId || !isReady}
+            />
+            <Button onClick={onSend} disabled={!input.trim() || !channelId || !isReady}>Send</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}

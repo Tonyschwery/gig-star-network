@@ -25,14 +25,7 @@ export const useUnreadNotifications = () => {
 
         if (notificationError) throw notificationError;
 
-        // Count unread messages
-        const { data: messageCount, error: messageError } = await supabase.rpc('get_unread_message_count', {
-          user_id_param: user.id
-        });
-
-        if (messageError) throw messageError;
-
-        const totalUnread = (notifications?.length || 0) + (messageCount || 0);
+        const totalUnread = (notifications?.length || 0);
         setUnreadCount(totalUnread);
       } catch (error) {
         console.error('Error fetching unread count:', error);
@@ -73,42 +66,9 @@ export const useUnreadNotifications = () => {
       )
       .subscribe();
 
-    // Set up real-time subscription for messages
-    const messageChannel = supabase
-      .channel(`messages-${user.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'messages'
-        },
-        (payload) => {
-          // If a new message is from someone else, refresh count
-          if (payload.new.user_id !== user.id) {
-            fetchUnreadCount();
-          }
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'messages'
-        },
-        (payload) => {
-          // If messages are marked as read, refresh count
-          if (payload.new.is_read !== payload.old.is_read) {
-            fetchUnreadCount();
-          }
-        }
-      )
-      .subscribe();
 
     return () => {
       supabase.removeChannel(notificationChannel);
-      supabase.removeChannel(messageChannel);
     };
   }, [user]);
 
