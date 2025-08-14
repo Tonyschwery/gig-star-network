@@ -22,6 +22,7 @@ import { NotificationCenter } from "@/components/NotificationCenter";
 import { ModeSwitch } from "@/components/ModeSwitch";
 import { BookingRequests } from "@/components/BookingRequests";
 import { Header } from "@/components/Header";
+import { UniversalChat } from "@/components/UniversalChat";
 
 interface TalentProfile {
   id: string;
@@ -246,6 +247,9 @@ const TalentDashboardBookings = () => {
           }}
           profileId={profile.id}
         />
+
+        {/* Universal Chat */}
+        <UniversalChat />
       </div>
     </div>
   );

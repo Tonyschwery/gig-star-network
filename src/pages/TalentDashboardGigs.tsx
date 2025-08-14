@@ -19,6 +19,7 @@ import { NotificationCenter } from "@/components/NotificationCenter";
 import { ModeSwitch } from "@/components/ModeSwitch";
 import { GigOpportunitiesIntegrated } from "@/components/GigOpportunitiesIntegrated";
 import { Header } from "@/components/Header";
+import { UniversalChat } from "@/components/UniversalChat";
 
 interface TalentProfile {
   id: string;
@@ -283,6 +284,9 @@ const TalentDashboardGigs = () => {
           }}
           profileId={profile.id}
         />
+
+        {/* Universal Chat */}
+        <UniversalChat />
       </div>
     </div>
   );

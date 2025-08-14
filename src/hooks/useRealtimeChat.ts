@@ -22,8 +22,13 @@ export const useRealtimeChat = (channelId?: string, userId?: string) => {
   useEffect(() => {
     if (!channelId || !userId) {
       setIsReady(false);
+      setMessages([]); // Clear messages when no channel
       return;
     }
+
+    // Clear messages when switching channels
+    setMessages([]);
+    setIsReady(false);
 
     const channel = supabase.channel(channelId, {
       config: {
