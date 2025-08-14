@@ -11,7 +11,7 @@ interface TalentProfile {
   id: string;
   artist_name: string;
   act: string;
-  gender: string;
+  gender?: string; // Optional since public view might not include it
   age: string;
   location?: string;
   rate_per_hour?: number;
@@ -76,7 +76,7 @@ export function TalentGrid() {
   const fetchTalents = async () => {
     try {
       const { data, error } = await supabase
-        .from('talent_profiles')
+        .from('talent_profiles_public')
         .select('*')
         .order('is_pro_subscriber', { ascending: false }) // Pro users first
         .order('created_at', { ascending: false });

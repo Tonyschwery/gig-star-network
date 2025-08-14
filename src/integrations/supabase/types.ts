@@ -119,6 +119,13 @@ export type Database = {
             referencedRelation: "talent_profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "bookings_talent_id_fkey"
+            columns: ["talent_id"]
+            isOneToOne: false
+            referencedRelation: "talent_profiles_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       email_preferences: {
@@ -192,6 +199,13 @@ export type Database = {
             columns: ["talent_id"]
             isOneToOne: false
             referencedRelation: "talent_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gig_applications_talent_id_fkey"
+            columns: ["talent_id"]
+            isOneToOne: false
+            referencedRelation: "talent_profiles_public"
             referencedColumns: ["id"]
           },
         ]
@@ -316,6 +330,13 @@ export type Database = {
             referencedRelation: "talent_profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "payments_talent_id_fkey"
+            columns: ["talent_id"]
+            isOneToOne: false
+            referencedRelation: "talent_profiles_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       talent_profiles: {
@@ -398,7 +419,63 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      talent_profiles_public: {
+        Row: {
+          act: Database["public"]["Enums"]["talent_act"] | null
+          age: string | null
+          artist_name: string | null
+          biography: string | null
+          created_at: string | null
+          currency: string | null
+          custom_genre: string | null
+          gallery_images: string[] | null
+          id: string | null
+          location: string | null
+          music_genres: string[] | null
+          nationality: string | null
+          picture_url: string | null
+          rate_per_hour: number | null
+          soundcloud_link: string | null
+          youtube_link: string | null
+        }
+        Insert: {
+          act?: Database["public"]["Enums"]["talent_act"] | null
+          age?: string | null
+          artist_name?: string | null
+          biography?: string | null
+          created_at?: string | null
+          currency?: string | null
+          custom_genre?: string | null
+          gallery_images?: string[] | null
+          id?: string | null
+          location?: string | null
+          music_genres?: string[] | null
+          nationality?: string | null
+          picture_url?: string | null
+          rate_per_hour?: number | null
+          soundcloud_link?: string | null
+          youtube_link?: string | null
+        }
+        Update: {
+          act?: Database["public"]["Enums"]["talent_act"] | null
+          age?: string | null
+          artist_name?: string | null
+          biography?: string | null
+          created_at?: string | null
+          currency?: string | null
+          custom_genre?: string | null
+          gallery_images?: string[] | null
+          id?: string | null
+          location?: string | null
+          music_genres?: string[] | null
+          nationality?: string | null
+          picture_url?: string | null
+          rate_per_hour?: number | null
+          soundcloud_link?: string | null
+          youtube_link?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       complete_manual_payment: {

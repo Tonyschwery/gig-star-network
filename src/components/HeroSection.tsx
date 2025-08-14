@@ -28,7 +28,6 @@ interface TalentProfile {
   act: string;
   location?: string;
   picture_url?: string;
-  is_pro_subscriber?: boolean;
 }
 
 export function HeroSection() {
@@ -46,9 +45,8 @@ export function HeroSection() {
   const fetchFeaturedTalents = async () => {
     try {
       const { data, error } = await supabase
-        .from('talent_profiles')
-        .select('id, artist_name, act, location, picture_url, is_pro_subscriber')
-        .eq('is_pro_subscriber', true)
+        .from('talent_profiles_public')
+        .select('id, artist_name, act, location, picture_url')
         .limit(2)
         .order('created_at', { ascending: false });
 
@@ -233,7 +231,7 @@ export function HeroSection() {
                       location={talent.location || 'Location not specified'}
                       category={talent.act.charAt(0).toUpperCase() + talent.act.slice(1)}
                       image={talent.picture_url || "/placeholder.svg"}
-                      isPro={talent.is_pro_subscriber || false}
+                      isPro={false} // We'll handle this differently since not in public view
                     />
                   </div>
                 ))

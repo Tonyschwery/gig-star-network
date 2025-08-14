@@ -28,7 +28,7 @@ interface TalentProfile {
   id: string;
   artist_name: string;
   act: string;
-  gender: string;
+  gender?: string; // Optional since public view might not include it
   age: string;
   location?: string;
   rate_per_hour?: number;
@@ -63,7 +63,7 @@ export default function TalentProfile() {
   const fetchTalent = async (talentId: string) => {
     try {
       const { data, error } = await supabase
-        .from('talent_profiles')
+        .from('talent_profiles_public')
         .select('*')
         .eq('id', talentId)
         .maybeSingle();
@@ -393,10 +393,12 @@ export default function TalentProfile() {
                     <span className="text-muted-foreground">Age:</span>
                     <span>{talent.age} years old</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Gender:</span>
-                    <span>{talent.gender}</span>
-                  </div>
+                  {talent.gender && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Gender:</span>
+                      <span>{talent.gender}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Nationality:</span>
                     <span>{talent.nationality}</span>
