@@ -35,13 +35,15 @@ export function ProtectedTalentRoute({
       }
 
       try {
-        const { data: profile } = await supabase
-          .from('talent_profiles')
-          .select('id')
-          .eq('user_id', user.id)
-          .maybeSingle();
-
-        setProfileExists(!!profile);
+        // Use secure function to check if user has talent profile
+        const { data: hasProfile, error } = await supabase.rpc('user_has_talent_profile');
+        
+        if (error) {
+          console.error('Error checking profile:', error);
+          setProfileExists(false);
+        } else {
+          setProfileExists(hasProfile);
+        }
       } catch (error) {
         console.error('Error checking profile:', error);
         setProfileExists(false);

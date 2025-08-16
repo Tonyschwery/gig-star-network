@@ -429,6 +429,7 @@ export type Database = {
           currency: string | null
           custom_genre: string | null
           gallery_images: string[] | null
+          gender: Database["public"]["Enums"]["talent_gender"] | null
           id: string | null
           location: string | null
           music_genres: string[] | null
@@ -447,6 +448,7 @@ export type Database = {
           currency?: string | null
           custom_genre?: string | null
           gallery_images?: string[] | null
+          gender?: Database["public"]["Enums"]["talent_gender"] | null
           id?: string | null
           location?: string | null
           music_genres?: string[] | null
@@ -465,6 +467,7 @@ export type Database = {
           currency?: string | null
           custom_genre?: string | null
           gallery_images?: string[] | null
+          gender?: Database["public"]["Enums"]["talent_gender"] | null
           id?: string | null
           location?: string | null
           music_genres?: string[] | null
@@ -485,6 +488,22 @@ export type Database = {
       get_payment_status: {
         Args: { booking_id_param: string }
         Returns: Json
+      }
+      get_user_talent_profile: {
+        Args: { user_id_param?: string }
+        Returns: {
+          act: string
+          artist_name: string
+          currency: string
+          id: string
+          is_pro_subscriber: boolean
+          rate_per_hour: number
+          subscription_status: string
+        }[]
+      }
+      user_has_talent_profile: {
+        Args: { user_id_param?: string }
+        Returns: boolean
       }
     }
     Enums: {

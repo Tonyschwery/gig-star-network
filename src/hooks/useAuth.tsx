@@ -35,17 +35,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               const userType = session.user.user_metadata?.user_type;
               
               if (userType === 'talent') {
-                // Check if talent has completed profile
-                const { data: profile } = await supabase
-                  .from('talent_profiles')
-                  .select('id')
-                  .eq('user_id', session.user.id)
-                  .maybeSingle();
+                // Use secure function to check if talent has completed profile
+                const { data: hasProfile, error } = await supabase.rpc('user_has_talent_profile');
+                
+                if (error) {
+                  console.error('Error checking talent profile:', error);
+                  // On error, default to safe behavior (show onboarding)
+                  if (currentPath !== '/talent-onboarding') {
+                    window.location.href = '/talent-onboarding';
+                  }
+                  return;
+                }
                   
-                if (!profile && currentPath !== '/talent-onboarding') {
+                if (!hasProfile && currentPath !== '/talent-onboarding') {
                   // New talent without profile - redirect to onboarding
                   window.location.href = '/talent-onboarding';
-                } else if (profile && currentPath !== '/talent-dashboard') {
+                } else if (hasProfile && currentPath !== '/talent-dashboard') {
                   // Existing talent with profile - always redirect to talent dashboard unless already there
                   window.location.href = '/talent-dashboard';
                 }

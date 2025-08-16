@@ -26,16 +26,20 @@ export function UserModeProvider({ children }: { children: React.ReactNode }) {
       }
 
       try {
-        const { data: profile } = await supabase
-          .from('talent_profiles')
-          .select('id')
-          .eq('user_id', user.id)
-          .maybeSingle();
+        // Use secure function to check if user has talent profile
+        const { data: hasProfile, error } = await supabase.rpc('user_has_talent_profile');
+        
+        if (error) {
+          console.error('Error checking talent profile:', error);
+          setCanSwitchToArtist(false);
+          setMode('booking');
+          return;
+        }
 
-        setCanSwitchToArtist(!!profile);
+        setCanSwitchToArtist(hasProfile);
         
         // Auto-set mode based on user type if they have a talent profile
-        if (profile && user.user_metadata?.user_type === 'talent') {
+        if (hasProfile && user.user_metadata?.user_type === 'talent') {
           setMode('artist');
         } else {
           setMode('booking');
