@@ -230,10 +230,21 @@ export default function TalentOnboarding() {
         return;
       }
 
-      // Show pro subscription CTA
-      showProSubscriptionCTA();
+      // Show success toast
+      toast({
+        title: "Profile created successfully!",
+        description: "Welcome to our talent community",
+      });
 
-      navigate('/talent-dashboard');
+      // Trigger a re-check of auth state by refreshing the session
+      // This will cause useAuth to re-evaluate and redirect properly
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        // Manually trigger the auth state change to ensure redirect logic runs
+        window.location.href = '/talent-dashboard';
+      } else {
+        navigate('/auth');
+      }
     } catch (error) {
       console.error('Error creating profile:', error);
       toast({
