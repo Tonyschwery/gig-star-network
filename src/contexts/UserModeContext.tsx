@@ -39,7 +39,8 @@ export function UserModeProvider({ children }: { children: React.ReactNode }) {
         setCanSwitchToArtist(hasProfile);
         
         // Auto-set mode based on user type if they have a talent profile
-        if (hasProfile && user.user_metadata?.user_type === 'talent') {
+        if (hasProfile) {
+          // If user has talent profile, default to artist mode
           setMode('artist');
         } else {
           setMode('booking');

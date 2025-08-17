@@ -431,6 +431,7 @@ export type Database = {
           gallery_images: string[] | null
           gender: Database["public"]["Enums"]["talent_gender"] | null
           id: string | null
+          is_pro_subscriber: boolean | null
           location: string | null
           music_genres: string[] | null
           nationality: string | null
@@ -450,6 +451,7 @@ export type Database = {
           gallery_images?: string[] | null
           gender?: Database["public"]["Enums"]["talent_gender"] | null
           id?: string | null
+          is_pro_subscriber?: boolean | null
           location?: string | null
           music_genres?: string[] | null
           nationality?: string | null
@@ -469,6 +471,7 @@ export type Database = {
           gallery_images?: string[] | null
           gender?: Database["public"]["Enums"]["talent_gender"] | null
           id?: string | null
+          is_pro_subscriber?: boolean | null
           location?: string | null
           music_genres?: string[] | null
           nationality?: string | null

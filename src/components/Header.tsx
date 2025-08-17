@@ -43,16 +43,34 @@ export function Header() {
     if (!user) return;
 
     try {
-      const { data } = await supabase
-        .from('talent_profiles')
-        .select('id, artist_name, is_pro_subscriber, picture_url')
-        .eq('user_id', user.id)
-        .maybeSingle();
+      // Use the secure function to get talent profile data
+      const { data: profileData, error } = await supabase.rpc('get_user_talent_profile');
+      
+      if (error) {
+        console.error('Error fetching talent profile:', error);
+        return;
+      }
 
-      setTalentName(data?.artist_name || null);
-      setTalentId(data?.id || null);
-      setIsProTalent(data?.is_pro_subscriber || false);
-      setProfilePictureUrl(data?.picture_url || null);
+      if (profileData && profileData.length > 0) {
+        const profile = profileData[0];
+        setTalentName(profile.artist_name || null);
+        setTalentId(profile.id || null);
+        setIsProTalent(profile.is_pro_subscriber || false);
+        
+        // Get picture URL separately since it's not in the secure function
+        const { data: pictureData } = await supabase
+          .from('talent_profiles')
+          .select('picture_url')
+          .eq('user_id', user.id)
+          .maybeSingle();
+          
+        setProfilePictureUrl(pictureData?.picture_url || null);
+      } else {
+        setTalentName(null);
+        setTalentId(null);
+        setIsProTalent(false);
+        setProfilePictureUrl(null);
+      }
     } catch (error) {
       console.error('Error fetching talent profile:', error);
     }

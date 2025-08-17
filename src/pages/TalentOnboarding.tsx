@@ -236,15 +236,11 @@ export default function TalentOnboarding() {
         description: "Welcome to our talent community",
       });
 
-      // Trigger a re-check of auth state by refreshing the session
-      // This will cause useAuth to re-evaluate and redirect properly
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        // Manually trigger the auth state change to ensure redirect logic runs
+      // Force a page refresh to trigger auth state re-evaluation
+      // This ensures the UserModeContext picks up the new talent profile
+      setTimeout(() => {
         window.location.href = '/talent-dashboard';
-      } else {
-        navigate('/auth');
-      }
+      }, 1000);
     } catch (error) {
       console.error('Error creating profile:', error);
       toast({
