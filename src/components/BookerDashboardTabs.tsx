@@ -53,11 +53,27 @@ export const BookerDashboardTabs = ({ userId }: { userId: string }) => {
     return (
         <>
             <Tabs defaultValue="awaiting_response" className="w-full">
-                <TabsList className="grid w-full grid-cols-4">
-                    <TabsTrigger value="awaiting_response">Awaiting Response ({awaitingResponse.length})</TabsTrigger>
-                    <TabsTrigger value="awaiting_payment">Invoices ({awaitingPayment.length})</TabsTrigger>
-                    <TabsTrigger value="upcoming">Upcoming ({upcomingBookings.length})</TabsTrigger>
-                    <TabsTrigger value="past">Past Events ({pastBookings.length})</TabsTrigger>
+                <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 gap-1 h-auto p-1">
+                    <TabsTrigger value="awaiting_response" className="text-xs sm:text-sm px-2 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                        <span className="hidden sm:inline">Awaiting Response</span>
+                        <span className="sm:hidden">Awaiting</span>
+                        <span className="ml-1">({awaitingResponse.length})</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="awaiting_payment" className="text-xs sm:text-sm px-2 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                        <span className="hidden sm:inline">Invoices</span>
+                        <span className="sm:hidden">Invoices</span>
+                        <span className="ml-1">({awaitingPayment.length})</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="upcoming" className="text-xs sm:text-sm px-2 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                        <span className="hidden sm:inline">Upcoming</span>
+                        <span className="sm:hidden">Future</span>
+                        <span className="ml-1">({upcomingBookings.length})</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="past" className="text-xs sm:text-sm px-2 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                        <span className="hidden sm:inline">Past Events</span>
+                        <span className="sm:hidden">Past</span>
+                        <span className="ml-1">({pastBookings.length})</span>
+                    </TabsTrigger>
                 </TabsList>
                 <TabsContent value="awaiting_response">{renderBookingList(awaitingResponse)}</TabsContent>
                 <TabsContent value="awaiting_payment">{renderBookingList(awaitingPayment)}</TabsContent>

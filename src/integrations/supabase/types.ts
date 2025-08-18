@@ -128,6 +128,33 @@ export type Database = {
           },
         ]
       }
+      chat_messages: {
+        Row: {
+          booking_id: string
+          content: string
+          created_at: string
+          id: string
+          sender_id: string
+          updated_at: string
+        }
+        Insert: {
+          booking_id: string
+          content: string
+          created_at?: string
+          id?: string
+          sender_id: string
+          updated_at?: string
+        }
+        Update: {
+          booking_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+          sender_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       email_preferences: {
         Row: {
           booking_notifications: boolean

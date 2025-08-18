@@ -2,49 +2,79 @@ import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 export interface RealtimeMessage {
-  id: string; // unique id per message
+  id: string;
   content: string;
   senderId: string;
   createdAt: string;
 }
 
-export const buildChannelId = (bookerId: string, talentId: string, eventType: string) => {
-  const slug = (eventType || "").toLowerCase().replace(/\s+/g, "-");
-  return `chat:${bookerId}:${talentId}:${slug}`;
+// Convert booking to channel name for consistency
+export const buildChannelId = (bookingId: string) => {
+  return `booking-chat:${bookingId}`;
 };
 
-export const useRealtimeChat = (channelId?: string, userId?: string) => {
+export const useRealtimeChat = (bookingId?: string, userId?: string) => {
   const [messages, setMessages] = useState<RealtimeMessage[]>([]);
   const [isReady, setIsReady] = useState(false);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
-  // Connect to channel
+  // Load existing messages and set up real-time subscription
   useEffect(() => {
-    if (!channelId || !userId) {
+    if (!bookingId || !userId) {
       setIsReady(false);
-      setMessages([]); // Clear messages when no channel
+      setMessages([]);
       return;
     }
 
-    // Clear messages when switching channels
-    setMessages([]);
-    setIsReady(false);
+    const loadMessages = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('chat_messages')
+          .select('id, content, sender_id, created_at')
+          .eq('booking_id', bookingId)
+          .order('created_at', { ascending: true });
 
-    const channel = supabase.channel(channelId, {
-      config: {
-        broadcast: { ack: true },
-        presence: { key: userId }
+        if (error) throw error;
+
+        setMessages(data?.map(msg => ({
+          id: msg.id,
+          content: msg.content,
+          senderId: msg.sender_id,
+          createdAt: msg.created_at,
+        })) || []);
+      } catch (error) {
+        console.error('Error loading chat messages:', error);
       }
-    });
+    };
 
-    channel
-      .on('broadcast', { event: 'message' }, (payload) => {
-        const msg = payload.payload as RealtimeMessage;
-        setMessages((prev) => {
-          if (prev.some((m) => m.id === msg.id)) return prev;
-          return [...prev, msg];
-        });
-      })
+    loadMessages();
+
+    // Set up real-time subscription for new messages
+    const channel = supabase
+      .channel(`chat_messages:booking_id=eq.${bookingId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'chat_messages',
+          filter: `booking_id=eq.${bookingId}`
+        },
+        (payload) => {
+          const newMessage = payload.new;
+          const msg: RealtimeMessage = {
+            id: newMessage.id,
+            content: newMessage.content,
+            senderId: newMessage.sender_id,
+            createdAt: newMessage.created_at,
+          };
+          
+          setMessages((prev) => {
+            if (prev.some((m) => m.id === msg.id)) return prev;
+            return [...prev, msg];
+          });
+        }
+      )
       .subscribe((status) => {
         if (status === 'SUBSCRIBED') setIsReady(true);
       });
@@ -57,18 +87,24 @@ export const useRealtimeChat = (channelId?: string, userId?: string) => {
         channelRef.current = null;
       }
     };
-  }, [channelId, userId]);
+  }, [bookingId, userId]);
 
   const sendMessage = async (text: string) => {
-    if (!text.trim() || !channelRef.current || !userId) return;
-    const message: RealtimeMessage = {
-      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-      content: text.trim(),
-      senderId: userId,
-      createdAt: new Date().toISOString(),
-    };
-    setMessages((prev) => [...prev, message]);
-    await channelRef.current.send({ type: 'broadcast', event: 'message', payload: message });
+    if (!text.trim() || !bookingId || !userId) return;
+    
+    try {
+      const { error } = await supabase
+        .from('chat_messages')
+        .insert({
+          booking_id: bookingId,
+          sender_id: userId,
+          content: text.trim(),
+        });
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error sending message:', error);
+    }
   };
 
   return { messages, sendMessage, isReady };

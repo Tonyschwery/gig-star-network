@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { MessageCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { useRealtimeChat, buildChannelId } from "@/hooks/useRealtimeChat";
+import { useRealtimeChat } from "@/hooks/useRealtimeChat";
 
 interface BookingLite {
   id: string;
@@ -62,14 +62,8 @@ export function UniversalChat() {
   }, [user?.id]);
 
   const selectedBooking = useMemo(() => bookings.find(b => b.id === selectedId) || null, [bookings, selectedId]);
-  const channelId = useMemo(() => {
-    if (!user || !selectedBooking || !selectedBooking.talent_id) return undefined;
-    const bookerId = selectedBooking.user_id;
-    const talentId = selectedBooking.talent_id;
-    return buildChannelId(bookerId, talentId, selectedBooking.event_type);
-  }, [user?.id, selectedBooking]);
 
-  const { messages, sendMessage, isReady } = useRealtimeChat(channelId, user?.id);
+  const { messages, sendMessage, isReady } = useRealtimeChat(selectedId, user?.id);
 
   const onSend = () => {
     if (!input.trim()) return;
@@ -108,7 +102,7 @@ export function UniversalChat() {
             </Select>
           </div>
           <ScrollArea className="flex-1 p-4">
-            {!channelId ? (
+            {!selectedId ? (
               <div className="text-sm text-muted-foreground">Select a booking to start chatting.</div>
             ) : (
               <div className="space-y-2">
@@ -130,7 +124,7 @@ export function UniversalChat() {
           </ScrollArea>
           <div className="p-4 border-t flex items-center gap-2">
             <Textarea
-              placeholder={!channelId ? 'Select a booking to chat' : (isReady ? 'Type your message…' : 'Connecting…')}
+              placeholder={!selectedId ? 'Select a booking to chat' : (isReady ? 'Type your message…' : 'Connecting…')}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => {
@@ -140,9 +134,9 @@ export function UniversalChat() {
                 }
               }}
               className="min-h-[44px] max-h-40"
-              disabled={!channelId || !isReady}
+              disabled={!selectedId || !isReady}
             />
-            <Button onClick={onSend} disabled={!input.trim() || !channelId || !isReady}>Send</Button>
+            <Button onClick={onSend} disabled={!input.trim() || !selectedId || !isReady}>Send</Button>
           </div>
         </DialogContent>
       </Dialog>
