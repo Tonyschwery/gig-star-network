@@ -1,20 +1,16 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { 
-  User, 
   Edit3, 
-  MapPin, 
-  DollarSign, 
   ExternalLink,
   LogOut,
-  Camera,
   Crown,
   Calendar,
   Music
@@ -22,7 +18,6 @@ import {
 
 import { Header } from "@/components/Header";
 import { NotificationCenter } from "@/components/NotificationCenter";
-import { TalentDashboardTabs } from "@/components/TalentDashboardTabs";
 import { UniversalChat } from "@/components/UniversalChat";
 import { ProSubscriptionDialog } from "@/components/ProSubscriptionDialog";
 import { ModeSwitch } from "@/components/ModeSwitch";
@@ -257,19 +252,8 @@ const TalentDashboard = () => {
           <NotificationCenter />
         </div>
 
-        {/* Dashboard Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Profile Views</CardTitle>
-              <User className="h-4 w-4 muted" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">Coming Soon</div>
-              <p className="text-xs text-muted-foreground">Track profile engagement</p>
-            </CardContent>
-          </Card>
-          
+        {/* Dashboard Overview - Removed Profile Views */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Active Bookings</CardTitle>

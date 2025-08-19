@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -32,7 +33,8 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const redirectUrl = `${window.location.origin}/`;
+      // Use the correct redirect URL for the current environment
+      const redirectUrl = window.location.origin;
       
       const { error } = await supabase.auth.signUp({
         email,
@@ -85,11 +87,12 @@ const Login = () => {
 
     try {
       const { error } = await supabase.auth.signInWithPassword({
-        email,
+        email: email.trim(),
         password
       });
 
       if (error) {
+        console.error('Login error:', error);
         toast({
           title: "Error",
           description: error.message,
@@ -104,9 +107,10 @@ const Login = () => {
         navigate("/");
       }
     } catch (error) {
+      console.error('Unexpected login error:', error);
       toast({
         title: "Error",
-        description: "An unexpected error occurred",
+        description: "An unexpected error occurred during login",
         variant: "destructive"
       });
     } finally {

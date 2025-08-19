@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Bell, X, MessageCircle, CreditCard, CheckCircle, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -164,45 +165,75 @@ export function NotificationCenter() {
         return <CheckCircle className="h-4 w-4 text-green-500" />;
       case 'booking_declined':
         return <AlertCircle className="h-4 w-4 text-red-500" />;
+      case 'new_booking':
+        return <CheckCircle className="h-4 w-4 text-blue-500" />;
       default:
         return <Bell className="h-4 w-4 text-muted-foreground" />;
     }
   };
 
-  // Updated handleNotificationClick function
+  // Enhanced handleNotificationClick function with proper navigation
   const handleNotificationClick = async (notification: Notification) => {
     // Mark as read when clicked
     if (!notification.is_read) {
       await markAsRead(notification.id);
     }
 
-    // Navigate based on notification type and available data
-    if (notification.booking_id) {
-      // Check if user is a talent or booker by checking if they have a talent profile
-      try {
-        const { data: talentProfile } = await supabase
-          .from('talent_profiles')
-          .select('id')
-          .eq('user_id', user?.id)
-          .maybeSingle();
+    // Navigate based on notification type and user role
+    try {
+      // Check if user is a talent
+      const { data: talentProfile } = await supabase
+        .from('talent_profiles')
+        .select('id')
+        .eq('user_id', user?.id)
+        .maybeSingle();
 
-        if (talentProfile) {
-          // User is a talent, go to talent dashboard
+      if (talentProfile) {
+        // User is a talent
+        if (notification.type === 'new_booking' && notification.booking_id) {
+          // Navigate to talent bookings dashboard for new booking requests
+          navigate('/talent-dashboard/bookings');
+        } else if (notification.type === 'new_message' && notification.booking_id) {
+          // Navigate to talent dashboard and open chat
           navigate('/talent-dashboard');
-          
-          // If it's a message notification, trigger opening of chat
+          setTimeout(() => {
+            const chatButton = document.querySelector('[aria-label="Open chat"]') as HTMLElement;
+            if (chatButton) {
+              chatButton.click();
+              setTimeout(() => {
+                const selectTrigger = document.querySelector('[role="combobox"]') as HTMLElement;
+                if (selectTrigger) {
+                  selectTrigger.click();
+                  setTimeout(() => {
+                    const bookingOption = Array.from(document.querySelectorAll('[role="option"]')).find(
+                      (option) => option.getAttribute('data-value') === notification.booking_id
+                    ) as HTMLElement;
+                    if (bookingOption) {
+                      bookingOption.click();
+                    }
+                  }, 100);
+                }
+              }, 200);
+            }
+          }, 300);
+        } else {
+          // Default to talent dashboard
+          navigate('/talent-dashboard');
+        }
+      } else {
+        // User is a booker
+        if (notification.booking_id) {
           if (notification.type === 'new_message') {
-            // Small delay to ensure navigation completes, then trigger chat
+            // Navigate to booker dashboard and open chat
+            navigate('/booker-dashboard');
             setTimeout(() => {
               const chatButton = document.querySelector('[aria-label="Open chat"]') as HTMLElement;
               if (chatButton) {
                 chatButton.click();
-                // Additional delay to ensure dialog opens, then select the booking
                 setTimeout(() => {
                   const selectTrigger = document.querySelector('[role="combobox"]') as HTMLElement;
                   if (selectTrigger) {
                     selectTrigger.click();
-                    // Find and click the specific booking option
                     setTimeout(() => {
                       const bookingOption = Array.from(document.querySelectorAll('[role="option"]')).find(
                         (option) => option.getAttribute('data-value') === notification.booking_id
@@ -215,59 +246,19 @@ export function NotificationCenter() {
                 }, 200);
               }
             }, 300);
+          } else {
+            // For other booking-related notifications, go to booker dashboard
+            navigate('/booker-dashboard');
           }
         } else {
-          // User is a booker, go to booker dashboard
-          navigate('/booker-dashboard');
-          
-          // If it's a message notification, trigger opening of chat
-          if (notification.type === 'new_message') {
-            // Small delay to ensure navigation completes, then trigger chat
-            setTimeout(() => {
-              const chatButton = document.querySelector('[aria-label="Open chat"]') as HTMLElement;
-              if (chatButton) {
-                chatButton.click();
-                // Additional delay to ensure dialog opens, then select the booking
-                setTimeout(() => {
-                  const selectTrigger = document.querySelector('[role="combobox"]') as HTMLElement;
-                  if (selectTrigger) {
-                    selectTrigger.click();
-                    // Find and click the specific booking option
-                    setTimeout(() => {
-                      const bookingOption = Array.from(document.querySelectorAll('[role="option"]')).find(
-                        (option) => option.getAttribute('data-value') === notification.booking_id
-                      ) as HTMLElement;
-                      if (bookingOption) {
-                        bookingOption.click();
-                      }
-                    }, 100);
-                  }
-                }, 200);
-              }
-            }, 300);
-          }
-        }
-      } catch {
-        // Default to booker dashboard if can't determine
-        navigate('/booker-dashboard');
-      }
-    } else {
-      // For general notifications, navigate to appropriate dashboard
-      try {
-        const { data: talentProfile } = await supabase
-          .from('talent_profiles')
-          .select('id')
-          .eq('user_id', user?.id)
-          .maybeSingle();
-
-        if (talentProfile) {
-          navigate('/talent-dashboard');
-        } else {
+          // Default to booker dashboard
           navigate('/booker-dashboard');
         }
-      } catch {
-        navigate('/booker-dashboard');
       }
+    } catch (error) {
+      console.error('Error determining user role:', error);
+      // Default fallback
+      navigate('/booker-dashboard');
     }
   };
 
