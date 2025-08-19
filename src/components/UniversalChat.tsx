@@ -4,10 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import { MessageCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useRealtimeChat } from "@/hooks/useRealtimeChat";
+import { useChatFilter } from "@/hooks/useChatFilter";
+import { useUnreadMessages } from "@/hooks/useUnreadMessages";
+import { useToast } from "@/hooks/use-toast";
 
 interface BookingLite {
   id: string;
@@ -19,10 +23,13 @@ interface BookingLite {
 
 export function UniversalChat() {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [bookings, setBookings] = useState<BookingLite[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [input, setInput] = useState("");
+  const { filterMessage } = useChatFilter();
+  const { unreadCount } = useUnreadMessages();
 
   useEffect(() => {
     const load = async () => {
@@ -67,6 +74,19 @@ export function UniversalChat() {
 
   const onSend = () => {
     if (!input.trim()) return;
+    
+    // Filter the message before sending
+    const filterResult = filterMessage(input);
+    
+    if (filterResult.isBlocked) {
+      toast({
+        title: "Message Blocked",
+        description: filterResult.reason,
+        variant: "destructive",
+      });
+      return;
+    }
+
     sendMessage(input);
     setInput("");
   };
@@ -74,12 +94,20 @@ export function UniversalChat() {
   return (
     <>
       <Button
-        className="fixed bottom-4 right-4 rounded-full shadow-lg"
+        className="fixed bottom-4 right-4 rounded-full shadow-lg relative"
         size="icon"
         onClick={() => setOpen(true)}
         aria-label="Open chat"
       >
         <MessageCircle className="h-5 w-5" />
+        {unreadCount > 0 && (
+          <Badge 
+            variant="destructive" 
+            className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 text-xs flex items-center justify-center"
+          >
+            {unreadCount > 9 ? '9+' : unreadCount}
+          </Badge>
+        )}
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>

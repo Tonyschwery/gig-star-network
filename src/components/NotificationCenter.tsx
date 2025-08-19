@@ -169,7 +169,7 @@ export function NotificationCenter() {
     }
   };
 
-  // TASK 2: Handle notification click to navigate to relevant page and open specific chat
+  // Updated handleNotificationClick function
   const handleNotificationClick = async (notification: Notification) => {
     // Mark as read when clicked
     if (!notification.is_read) {
@@ -189,9 +189,63 @@ export function NotificationCenter() {
         if (talentProfile) {
           // User is a talent, go to talent dashboard
           navigate('/talent-dashboard');
+          
+          // If it's a message notification, trigger opening of chat
+          if (notification.type === 'new_message') {
+            // Small delay to ensure navigation completes, then trigger chat
+            setTimeout(() => {
+              const chatButton = document.querySelector('[aria-label="Open chat"]') as HTMLElement;
+              if (chatButton) {
+                chatButton.click();
+                // Additional delay to ensure dialog opens, then select the booking
+                setTimeout(() => {
+                  const selectTrigger = document.querySelector('[role="combobox"]') as HTMLElement;
+                  if (selectTrigger) {
+                    selectTrigger.click();
+                    // Find and click the specific booking option
+                    setTimeout(() => {
+                      const bookingOption = Array.from(document.querySelectorAll('[role="option"]')).find(
+                        (option) => option.getAttribute('data-value') === notification.booking_id
+                      ) as HTMLElement;
+                      if (bookingOption) {
+                        bookingOption.click();
+                      }
+                    }, 100);
+                  }
+                }, 200);
+              }
+            }, 300);
+          }
         } else {
-          // User is a booker, go to booker dashboard - they can access chat from there
+          // User is a booker, go to booker dashboard
           navigate('/booker-dashboard');
+          
+          // If it's a message notification, trigger opening of chat
+          if (notification.type === 'new_message') {
+            // Small delay to ensure navigation completes, then trigger chat
+            setTimeout(() => {
+              const chatButton = document.querySelector('[aria-label="Open chat"]') as HTMLElement;
+              if (chatButton) {
+                chatButton.click();
+                // Additional delay to ensure dialog opens, then select the booking
+                setTimeout(() => {
+                  const selectTrigger = document.querySelector('[role="combobox"]') as HTMLElement;
+                  if (selectTrigger) {
+                    selectTrigger.click();
+                    // Find and click the specific booking option
+                    setTimeout(() => {
+                      const bookingOption = Array.from(document.querySelectorAll('[role="option"]')).find(
+                        (option) => option.getAttribute('data-value') === notification.booking_id
+                      ) as HTMLElement;
+                      if (bookingOption) {
+                        bookingOption.click();
+                      }
+                    }, 100);
+                  }
+                }, 200);
+              }
+            }, 300);
+          }
         }
       } catch {
         // Default to booker dashboard if can't determine
