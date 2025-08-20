@@ -13,44 +13,53 @@ export default function Pricing() {
 
   const talentPlans = [
     {
-      name: "Standard",
-      description: "Perfect for getting started",
+      name: "Free",
+      description: "Start your talent journey",
       monthlyPrice: 0,
       yearlyPrice: 0,
       commission: "20%",
       features: [
         "Create professional profile",
-        "Receive booking requests",
-        "Basic messaging",
-        "Standard support",
-        "Profile visibility"
+        "Receive booking requests", 
+        "Basic messaging with clients",
+        "Standard support response",
+        "Up to 5 gallery photos",
+        "Basic profile visibility"
       ],
       limitations: [
-        "20% platform commission",
-        "Limited gig opportunities",
-        "No priority listing"
+        "20% platform commission on earnings",
+        "Limited access to premium gigs",
+        "Standard search ranking",
+        "No priority support",
+        "Basic profile features only"
       ],
       buttonText: "Get Started Free",
-      popular: false
+      popular: false,
+      badge: null
     },
     {
       name: "Pro",
-      description: "For serious performers",
+      description: "For serious performers who want to earn more",
       monthlyPrice: 29,
       yearlyPrice: 290,
       commission: "15%",
       features: [
-        "Everything in Standard",
-        "Reduced 15% commission",
-        "Priority listing in search",
-        "Access to premium gigs",
-        "Priority support",
-        "Verified badge",
-        "Custom booking requirements"
+        "Everything in Free",
+        "Reduced 15% commission (save 5%!)",
+        "Priority listing in search results",
+        "Access to exclusive premium gigs",
+        "Priority customer support",
+        "Verified Pro badge with crown",
+        "Unlimited gallery photos & videos",
+        "Custom booking requirements",
+        "Enhanced profile features",
+        "Advanced messaging tools"
       ],
       limitations: [],
       buttonText: "Upgrade to Pro",
-      popular: true
+      popular: true,
+      badge: "Most Popular",
+      savings: "Save $5 on every $100 earned!"
     }
   ];
 
@@ -83,7 +92,7 @@ export default function Pricing() {
       return;
     }
     
-    if (planName === 'Standard') {
+    if (planName === 'Free') {
       navigate('/talent-dashboard');
     } else {
       // Navigate to talent dashboard where the subscription button will handle the payment flow
@@ -165,7 +174,10 @@ export default function Pricing() {
               )}
               
               <CardHeader className="text-center pb-4 md:pb-8 px-4 md:px-6">
-                <CardTitle className="text-xl md:text-2xl">{plan.name}</CardTitle>
+                <CardTitle className="text-xl md:text-2xl flex items-center justify-center gap-2">
+                  {plan.name}
+                  {plan.name === 'Pro' && <Crown className="h-5 w-5 text-brand-warning" />}
+                </CardTitle>
                 <CardDescription className="text-sm md:text-base">{plan.description}</CardDescription>
                 
                 <div className="mt-3 md:mt-4">
@@ -175,9 +187,17 @@ export default function Pricing() {
                       /{billingCycle === 'monthly' ? 'month' : 'year'}
                     </span>
                   </div>
-                  <div className="text-xs md:text-sm text-accent font-semibold mt-2">
+                  <div className={`text-xs md:text-sm font-semibold mt-2 ${
+                    plan.name === 'Pro' ? 'text-brand-success' : 'text-muted-foreground'
+                  }`}>
                     {plan.commission} platform commission
+                    {plan.name === 'Pro' && <span className="block text-xs text-brand-success mt-1">Save 5% on every booking!</span>}
                   </div>
+                  {plan.savings && (
+                    <div className="text-xs text-brand-success font-medium mt-2 bg-brand-success/10 rounded-full px-3 py-1">
+                      {plan.savings}
+                    </div>
+                  )}
                 </div>
               </CardHeader>
               
@@ -251,9 +271,9 @@ export default function Pricing() {
         <div className="max-w-3xl mx-auto space-y-6">
           <Card className="glass-card">
             <CardContent className="pt-6">
-              <h3 className="font-semibold mb-2">How do payments work?</h3>
+              <h3 className="font-semibold mb-2">How much money will I save with Pro?</h3>
               <p className="text-muted-foreground">
-                Clients pay the agreed amount directly to the talent. We process secure payments and take our commission from the talent's earnings.
+                Pro users pay only 15% commission vs 20% for free users. This means you save $5 on every $100 you earn! For a $500 gig, you'd save $25 with Pro.
               </p>
             </CardContent>
           </Card>
@@ -262,7 +282,16 @@ export default function Pricing() {
             <CardContent className="pt-6">
               <h3 className="font-semibold mb-2">What's included in Pro membership?</h3>
               <p className="text-muted-foreground">
-                Pro members get reduced commission (15% vs 20%), priority listing, access to premium gigs, verified badge, and priority support.
+                Pro members get reduced commission (15% vs 20%), golden crown badge, priority in search results, access to exclusive premium gigs, unlimited gallery photos, and priority customer support.
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="glass-card">
+            <CardContent className="pt-6">
+              <h3 className="font-semibold mb-2">How do payments work?</h3>
+              <p className="text-muted-foreground">
+                Clients pay the agreed amount directly to you through our secure payment system. We process payments and take our commission automatically, so you receive your earnings minus the commission fee.
               </p>
             </CardContent>
           </Card>
@@ -271,7 +300,7 @@ export default function Pricing() {
             <CardContent className="pt-6">
               <h3 className="font-semibold mb-2">Can I cancel my Pro subscription?</h3>
               <p className="text-muted-foreground">
-                Yes, you can cancel anytime. You'll continue to have Pro benefits until the end of your billing period.
+                Yes, you can cancel anytime through your dashboard. You'll continue to have Pro benefits until the end of your billing period, then revert to the free plan.
               </p>
             </CardContent>
           </Card>
@@ -280,7 +309,16 @@ export default function Pricing() {
             <CardContent className="pt-6">
               <h3 className="font-semibold mb-2">Is there a setup fee for clients?</h3>
               <p className="text-muted-foreground">
-                No, creating an account and booking talent is completely free for event organizers and clients.
+                No, creating an account and booking talent is completely free for event organizers and clients. They only pay the agreed performance fee.
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="glass-card">
+            <CardContent className="pt-6">
+              <h3 className="font-semibold mb-2">What are premium gigs?</h3>
+              <p className="text-muted-foreground">
+                Premium gigs are exclusive, high-paying opportunities from corporate clients, luxury events, and premium venues that are only available to Pro subscribers.
               </p>
             </CardContent>
           </Card>

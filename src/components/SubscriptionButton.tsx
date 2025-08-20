@@ -135,11 +135,12 @@ export function SubscriptionButton({
       size={size}
       onClick={handleSubscriptionAction}
       disabled={isLoading}
-      className={`${className} gap-2 relative overflow-hidden`}
+      className={`${className} gap-2 relative overflow-hidden group`}
     >
-      <Crown className="h-4 w-4" />
+      <Crown className="h-4 w-4 text-brand-warning" />
       {isLoading ? "Loading..." : "Upgrade to Pro"}
-      <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-primary/40 opacity-50 animate-pulse" />
+      <div className="absolute inset-0 bg-gradient-to-r from-brand-primary/20 to-brand-accent/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
     </Button>
   );
 }

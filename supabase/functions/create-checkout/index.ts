@@ -68,7 +68,7 @@ serve(async (req) => {
               name: "Qtalent Pro Subscription",
               description: "Access to premium features including gig opportunities and priority support"
             },
-            unit_amount: 999, // $9.99
+            unit_amount: 2900, // $29.00
             recurring: { interval: "month" },
           },
           quantity: 1,

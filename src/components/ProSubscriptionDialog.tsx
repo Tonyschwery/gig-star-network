@@ -23,32 +23,32 @@ const benefits = [
   {
     icon: Crown,
     title: "Pro Artist Badge",
-    description: "Stand out with a premium golden badge on your profile"
+    description: "Stand out with a premium golden crown badge visible on your profile"
   },
   {
     icon: Zap,
-    title: "No Service Fee",
-    description: "Keep 100% of your earnings - no platform fees"
+    title: "Reduced Commission (15% vs 20%)",
+    description: "Keep more of your earnings with only 15% platform fee instead of 20%"
   },
   {
     icon: Search,
-    title: "Priority in Search Results",
-    description: "Appear at the top of search results for more visibility"
+    title: "Priority Search Ranking",
+    description: "Appear at the top of search results and get discovered first"
   },
   {
     icon: Star,
-    title: "Feature on Landing Page",
-    description: "Get showcased on our homepage to attract more bookings"
+    title: "Premium Gig Access",
+    description: "Get exclusive access to high-paying gigs and corporate events"
   },
   {
     icon: ExternalLink,
-    title: "Add Personal Links",
-    description: "Add your social media and website links to your profile"
+    title: "Enhanced Profile Features",
+    description: "Add unlimited photos, videos, social links, and custom branding"
   },
   {
     icon: MessageSquare,
-    title: "Direct Messaging",
-    description: "Communicate directly with bookers and organizers"
+    title: "Advanced Messaging & Support",
+    description: "Priority customer support and enhanced communication tools"
   }
 ];
 
@@ -64,46 +64,46 @@ export function ProSubscriptionDialog({
   const handleSubscribe = async () => {
     setLoading(true);
     try {
-      // Check if we have a valid profile ID
-      if (!profileId || profileId === 'temp-id') {
-        // During onboarding - just show success message
-        onSubscribe();
-        onOpenChange(false);
-        
-        toast({
-          title: "Pro Features Activated! 🎉",
-          description: "Your pro subscription will be activated when you complete your profile.",
-          duration: 5000,
+      // For existing profiles, use Stripe checkout
+      if (profileId && profileId !== 'temp-id') {
+        const { data, error } = await supabase.functions.invoke('create-checkout', {
+          headers: {
+            Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+          },
         });
+
+        if (error) throw error;
+
+        if (data?.url) {
+          // Open Stripe checkout in a new tab
+          window.open(data.url, '_blank');
+          onOpenChange(false);
+          
+          toast({
+            title: "Redirecting to checkout...",
+            description: "Complete your payment to activate Pro features.",
+            duration: 5000,
+          });
+        } else {
+          throw new Error("No checkout URL received");
+        }
         return;
       }
 
-      // Activate pro subscription for existing profile
-      const { error } = await supabase
-        .from('talent_profiles')
-        .update({ 
-          is_pro_subscriber: true,
-          subscription_started_at: new Date().toISOString()
-        })
-        .eq('id', profileId);
-
-      if (error) {
-        throw error;
-      }
-
+      // During onboarding - store intent to subscribe
       onSubscribe();
       onOpenChange(false);
       
       toast({
-        title: "Welcome to Pro! 🎉",
-        description: "Your pro subscription is now active. Enjoy all the premium benefits!",
+        title: "Pro subscription selected! 🎉",
+        description: "Complete your profile setup and your Pro subscription will be activated.",
         duration: 5000,
       });
     } catch (error) {
-      console.error('Error activating subscription:', error);
+      console.error('Error starting subscription:', error);
       toast({
         title: "Error",
-        description: "Failed to activate subscription. Please try again.",
+        description: "Failed to start subscription process. Please try again.",
         variant: "destructive"
       });
     } finally {
@@ -126,7 +126,7 @@ export function ProSubscriptionDialog({
 
         <div className="space-y-6 py-6">
           {/* Benefits Grid */}
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 mb-8">
             {benefits.map((benefit, index) => (
               <div key={index} className="flex items-start gap-3 p-3 sm:p-4 rounded-xl bg-muted/50 border border-border">
                 <div className="flex-shrink-0 w-10 h-10 rounded-full bg-brand-primary/20 flex items-center justify-center">
@@ -141,17 +141,66 @@ export function ProSubscriptionDialog({
             ))}
           </div>
 
+          {/* Feature Comparison Table */}
+          <div className="bg-muted/30 rounded-xl p-6 mb-8">
+            <h3 className="text-lg font-semibold mb-4 text-center">Feature Comparison</h3>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-border">
+                    <th className="text-left py-2 text-sm font-medium">Feature</th>
+                    <th className="text-center py-2 text-sm font-medium">Free</th>
+                    <th className="text-center py-2 text-sm font-medium text-brand-primary">Pro</th>
+                  </tr>
+                </thead>
+                <tbody className="text-sm">
+                  <tr className="border-b border-border/50">
+                    <td className="py-3">Platform Commission</td>
+                    <td className="text-center py-3 text-destructive font-semibold">20%</td>
+                    <td className="text-center py-3 text-brand-success font-semibold">15%</td>
+                  </tr>
+                  <tr className="border-b border-border/50">
+                    <td className="py-3">Profile Badge</td>
+                    <td className="text-center py-3">Standard</td>
+                    <td className="text-center py-3"><Crown className="h-4 w-4 text-brand-warning mx-auto" /></td>
+                  </tr>
+                  <tr className="border-b border-border/50">
+                    <td className="py-3">Search Priority</td>
+                    <td className="text-center py-3">Normal</td>
+                    <td className="text-center py-3">Top Results</td>
+                  </tr>
+                  <tr className="border-b border-border/50">
+                    <td className="py-3">Premium Gigs</td>
+                    <td className="text-center py-3">Limited</td>
+                    <td className="text-center py-3">Full Access</td>
+                  </tr>
+                  <tr className="border-b border-border/50">
+                    <td className="py-3">Gallery Photos</td>
+                    <td className="text-center py-3">5 max</td>
+                    <td className="text-center py-3">Unlimited</td>
+                  </tr>
+                  <tr>
+                    <td className="py-3">Customer Support</td>
+                    <td className="text-center py-3">Standard</td>
+                    <td className="text-center py-3">Priority</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
           {/* Pricing */}
           <div className="text-center p-6 rounded-xl bg-gradient-to-r from-brand-primary/10 to-brand-accent/10 border border-brand-primary/20">
-            <div className="inline-flex items-center gap-2 mb-2">
-              <Badge variant="secondary" className="bg-brand-warning/20 text-brand-warning border-brand-warning/30">
-                TESTING MODE
-              </Badge>
-            </div>
-            <h3 className="text-xl font-bold mb-2">Pro Subscription</h3>
+            <h3 className="text-3xl font-bold mb-2">
+              $29
+              <span className="text-lg font-normal text-muted-foreground">/month</span>
+            </h3>
             <p className="text-muted-foreground mb-4">
-              Currently activated for free during testing phase
+              Cancel anytime • Save 5% on your bookings with reduced commission
             </p>
+            <div className="text-sm text-brand-success font-semibold">
+              Pay $5 less commission on every $100 earned!
+            </div>
           </div>
 
           {/* Action Button */}
@@ -160,11 +209,11 @@ export function ProSubscriptionDialog({
             disabled={loading}
             className="w-full h-12 text-lg font-semibold hero-button"
           >
-            {loading ? "Activating..." : "Activate Pro Features"}
+            {loading ? "Processing..." : profileId && profileId !== 'temp-id' ? "Subscribe Now - $29/month" : "Select Pro Plan"}
           </Button>
 
           <p className="text-xs text-muted-foreground text-center">
-            * This is a test version. Payment integration will be added later.
+            Secure payment processed by Stripe • Cancel anytime
           </p>
         </div>
       </DialogContent>
