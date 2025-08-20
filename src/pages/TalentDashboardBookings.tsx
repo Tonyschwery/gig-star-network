@@ -172,14 +172,12 @@ const TalentDashboardBookings = () => {
           
           {/* Action Buttons */}
           <div className="flex flex-wrap gap-2">
-            <ModeSwitch size="sm" />
-            
             <Button
-              onClick={() => navigate('/talent-dashboard/gigs')}
+              onClick={() => navigate('/talent-dashboard')}
               variant="outline"
               size="sm"
             >
-              Gig Opportunities
+              ← Back to Dashboard
             </Button>
             
             <Button
@@ -190,39 +188,6 @@ const TalentDashboardBookings = () => {
               <Edit3 className="h-4 w-4 mr-2" />
               <span className="hidden sm:inline">Edit Profile</span>
               <span className="sm:hidden">Edit</span>
-            </Button>
-            
-            {!profile.is_pro_subscriber ? (
-              <Button 
-                onClick={() => setShowProDialog(true)}
-                className="hero-button flex-shrink-0"
-                size="sm"
-              >
-                <Crown className="h-4 w-4 mr-2" />
-                <span className="hidden sm:inline">Subscribe to Pro</span>
-                <span className="sm:hidden">Pro</span>
-              </Button>
-            ) : (
-              <Button 
-                onClick={handleCancelSubscription}
-                variant="outline"
-                className="border-red-200 text-red-600 hover:bg-red-50 flex-shrink-0"
-                size="sm"
-              >
-                <span className="hidden sm:inline">Cancel Pro</span>
-                <span className="sm:hidden">Cancel</span>
-              </Button>
-            )}
-            
-            <Button 
-              variant="outline" 
-              onClick={handleSignOut}
-              className="flex-shrink-0"
-              size="sm"
-            >
-              <LogOut className="h-4 w-4 mr-2" />
-              <span className="hidden sm:inline">Sign Out</span>
-              <span className="sm:hidden">Logout</span>
             </Button>
           </div>
         </div>
