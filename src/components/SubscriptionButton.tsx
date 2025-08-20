@@ -50,6 +50,12 @@ export function SubscriptionButton({
 
         if (data?.url) {
           window.open(data.url, '_blank');
+          
+          toast({
+            title: "Opening subscription portal...",
+            description: "Manage your subscription settings.",
+            duration: 3000,
+          });
         } else {
           throw new Error("No portal URL received");
         }
@@ -65,6 +71,12 @@ export function SubscriptionButton({
 
         if (data?.url) {
           window.open(data.url, '_blank');
+          
+          toast({
+            title: "Redirecting to checkout...",
+            description: "Complete your payment to activate Pro features.",
+            duration: 5000,
+          });
         } else {
           throw new Error("No checkout URL received");
         }

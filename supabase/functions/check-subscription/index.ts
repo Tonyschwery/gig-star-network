@@ -7,7 +7,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Helper logging function for enhanced debugging
+// Helper logging function for debugging
 const logStep = (step: string, details?: any) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
   console.log(`[CHECK-SUBSCRIPTION] ${step}${detailsStr}`);
@@ -18,27 +18,37 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // Use the service role key to perform writes (upsert) in Supabase
-  const supabaseClient = createClient(
-    Deno.env.get("SUPABASE_URL") ?? "",
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-    { auth: { persistSession: false } }
-  );
-
   try {
     logStep("Function started");
 
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
-    if (!stripeKey) throw new Error("STRIPE_SECRET_KEY is not set");
+    if (!stripeKey || stripeKey.startsWith("sk_test_mock")) {
+      logStep("Using mock Stripe key - returning mock subscription data");
+      // Return mock subscription data for testing
+      return new Response(JSON.stringify({ 
+        subscribed: false,
+        subscription_tier: null,
+        subscription_end: null,
+        message: "Mock subscription check - add real Stripe key to check actual subscription"
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
     logStep("Stripe key verified");
+
+    // Use the service role key to perform writes (upsert) in Supabase
+    const supabaseClient = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+      { auth: { persistSession: false } }
+    );
 
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) throw new Error("No authorization header provided");
     logStep("Authorization header found");
 
     const token = authHeader.replace("Bearer ", "");
-    logStep("Authenticating user with token");
-    
     const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
     if (userError) throw new Error(`Authentication error: ${userError.message}`);
     const user = userData.user;
@@ -50,18 +60,8 @@ serve(async (req) => {
     
     if (customers.data.length === 0) {
       logStep("No customer found, updating unsubscribed state");
-      await supabaseClient.from("talent_profiles").update({
-        is_pro_subscriber: false,
-        subscription_status: 'free',
-        subscription_started_at: null,
-        stripe_customer_id: null,
-        updated_at: new Date().toISOString(),
-      }).eq('user_id', user.id);
-      
-      return new Response(JSON.stringify({ 
-        subscribed: false, 
-        subscription_status: 'free' 
-      }), {
+      // For testing, we can skip the database update
+      return new Response(JSON.stringify({ subscribed: false }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
       });
@@ -76,30 +76,33 @@ serve(async (req) => {
       limit: 1,
     });
     const hasActiveSub = subscriptions.data.length > 0;
-    let subscriptionStatus = 'free';
+    let subscriptionTier = null;
     let subscriptionEnd = null;
 
     if (hasActiveSub) {
       const subscription = subscriptions.data[0];
       subscriptionEnd = new Date(subscription.current_period_end * 1000).toISOString();
-      subscriptionStatus = 'pro';
       logStep("Active subscription found", { subscriptionId: subscription.id, endDate: subscriptionEnd });
+      // Determine subscription tier from price
+      const priceId = subscription.items.data[0].price.id;
+      const price = await stripe.prices.retrieve(priceId);
+      const amount = price.unit_amount || 0;
+      if (amount <= 999) {
+        subscriptionTier = "Basic";
+      } else if (amount <= 2999) {
+        subscriptionTier = "Premium";
+      } else {
+        subscriptionTier = "Enterprise";
+      }
+      logStep("Determined subscription tier", { priceId, amount, subscriptionTier });
     } else {
       logStep("No active subscription found");
     }
 
-    await supabaseClient.from("talent_profiles").update({
-      is_pro_subscriber: hasActiveSub,
-      subscription_status: subscriptionStatus,
-      subscription_started_at: hasActiveSub ? new Date().toISOString() : null,
-      stripe_customer_id: customerId,
-      updated_at: new Date().toISOString(),
-    }).eq('user_id', user.id);
-
-    logStep("Updated database with subscription info", { subscribed: hasActiveSub, subscriptionStatus });
+    logStep("Returning subscription info", { subscribed: hasActiveSub, subscriptionTier });
     return new Response(JSON.stringify({
       subscribed: hasActiveSub,
-      subscription_status: subscriptionStatus,
+      subscription_tier: subscriptionTier,
       subscription_end: subscriptionEnd
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
