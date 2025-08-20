@@ -75,11 +75,9 @@ export function ManualInvoiceModal({
 
     try {
       // Call the secure create-invoice Edge Function
-      const isGig = booking.is_gig_opportunity && booking.is_public_request;
       const { data, error } = await supabase.functions.invoke('create-invoice', {
         body: {
-          id: isGig && gigApplicationId ? gigApplicationId : booking.id,
-          type: isGig ? 'gig' : 'booking',
+          id: booking.id,
           total_amount: price,
           currency: currency,
           platform_commission: platformCommission,

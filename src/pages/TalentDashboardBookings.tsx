@@ -23,6 +23,7 @@ import { ModeSwitch } from "@/components/ModeSwitch";
 import { BookingRequests } from "@/components/BookingRequests";
 import { Header } from "@/components/Header";
 import { UniversalChat } from "@/components/UniversalChat";
+import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
 
 interface TalentProfile {
   id: string;
@@ -53,6 +54,9 @@ const TalentDashboardBookings = () => {
   const [profile, setProfile] = useState<TalentProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [showProDialog, setShowProDialog] = useState(false);
+  
+  // Enable real-time notifications
+  useRealtimeNotifications();
 
   useEffect(() => {
     if (!user) {

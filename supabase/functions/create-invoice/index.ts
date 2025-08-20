@@ -8,8 +8,7 @@ const corsHeaders = {
 };
 
 interface InvoiceRequest {
-  id: string; // Can be booking_id or gig_application_id
-  type: 'booking' | 'gig'; // Type to determine data source
+  id: string; // booking_id
   total_amount: number;
   currency: string;
   platform_commission: number;
@@ -76,122 +75,49 @@ serve(async (req) => {
     }
 
     // Extract data from already parsed request body
-    const { id, type, total_amount, currency, platform_commission, talent_earnings, commission_rate, hourly_rate, hours_booked, booking_id } = invoiceData;
+    const { id, total_amount, currency, platform_commission, talent_earnings, commission_rate, hourly_rate, hours_booked, booking_id } = invoiceData;
 
-    // Handle backward compatibility - if booking_id is provided but not id/type
-    const recordId = id || booking_id;
-    const recordType = type || 'booking';
+    // Handle backward compatibility - if booking_id is provided but not id
+    const bookingId = id || booking_id;
 
     // Validate required fields
-    if (!recordId || !total_amount || total_amount <= 0) {
+    if (!bookingId || !total_amount || total_amount <= 0) {
       throw new Error("Missing or invalid required fields");
     }
 
-    console.log(`Creating invoice for ${recordType}:`, recordId);
+    console.log("Creating invoice for booking:", bookingId);
 
-    // Step A: Get record details based on type
-    let recordData;
-    if (recordType === 'booking') {
-      const { data: booking, error: bookingFetchError } = await supabaseService
-        .from("bookings")
-        .select("*, talent_id")
-        .eq("id", recordId)
-        .single();
+    // Get booking details
+    const { data: booking, error: bookingFetchError } = await supabaseService
+      .from("bookings")
+      .select("*, talent_id")
+      .eq("id", bookingId)
+      .single();
 
-      if (bookingFetchError) {
-        console.error("Error fetching booking:", bookingFetchError);
-        throw new Error("Failed to fetch booking details");
-      }
-
-      if (!booking.talent_id) {
-        throw new Error("No talent assigned to this booking");
-      }
-
-      recordData = booking;
-    } else if (recordType === 'gig') {
-      // Step 1: First query gig_applications to get gig_id and talent_id
-      console.log("Step 1: Fetching gig application data for ID:", recordId);
-      const { data: gigApplication, error: gigAppError } = await supabaseService
-        .from("gig_applications")
-        .select("gig_id, talent_id, id")
-        .eq("id", recordId)
-        .single();
-
-      if (gigAppError) {
-        console.error("Error fetching gig application:", gigAppError);
-        throw new Error("Failed to fetch gig application details");
-      }
-
-      if (!gigApplication) {
-        console.error("No gig application found for ID:", recordId);
-        throw new Error("Gig application not found");
-      }
-
-      console.log("Found gig application:", {
-        gig_id: gigApplication.gig_id,
-        talent_id: gigApplication.talent_id,
-        application_id: gigApplication.id
-      });
-
-      // Step 2: Query the bookings table using gig_id to get booker_id and budget
-      console.log("Step 2: Fetching gig data for gig_id:", gigApplication.gig_id);
-      const { data: gig, error: gigFetchError } = await supabaseService
-        .from("bookings")
-        .select("id, user_id, event_type, budget, budget_currency, event_date, event_location, description")
-        .eq("id", gigApplication.gig_id)
-        .eq("is_gig_opportunity", true)
-        .eq("is_public_request", true)
-        .single();
-
-      if (gigFetchError) {
-        console.error("Error fetching gig:", gigFetchError);
-        throw new Error("Failed to fetch gig details");
-      }
-
-      if (!gig) {
-        console.error("No gig found for ID:", gigApplication.gig_id);
-        throw new Error("Gig not found");
-      }
-
-      console.log("Found gig data:", {
-        gig_id: gig.id,
-        booker_id: gig.user_id,
-        budget: gig.budget,
-        currency: gig.budget_currency
-      });
-
-      // Step 3: Combine all the data for payment creation
-      recordData = { 
-        ...gig, 
-        talent_id: gigApplication.talent_id,
-        gig_application_id: gigApplication.id,
-        gig_id: gigApplication.gig_id
-      };
-
-      console.log("Combined record data prepared:", {
-        booking_id: recordData.gig_id,
-        booker_id: recordData.user_id,
-        talent_id: recordData.talent_id
-      });
-    } else {
-      throw new Error("Invalid type. Must be 'booking' or 'gig'");
+    if (bookingFetchError) {
+      console.error("Error fetching booking:", bookingFetchError);
+      throw new Error("Failed to fetch booking details");
     }
 
-    console.log(`Found ${recordType} with talent_id:`, recordData.talent_id);
+    if (!booking.talent_id) {
+      throw new Error("No talent assigned to this booking");
+    }
 
-    // Step B: Insert payment record with correct talent_id
-    console.log("Step B: Creating payment record with data:", {
-      booking_id: recordType === 'gig' ? recordData.gig_id : recordId,
-      booker_id: recordData.user_id,
-      talent_id: recordData.talent_id,
+    console.log("Found booking with talent_id:", booking.talent_id);
+
+    // Create payment record
+    console.log("Creating payment record with data:", {
+      booking_id: bookingId,
+      booker_id: booking.user_id,
+      talent_id: booking.talent_id,
       total_amount: total_amount,
       currency: currency || "USD"
     });
 
     const paymentData = {
-      booking_id: recordType === 'gig' ? recordData.gig_id : recordId, // Use gig_id for gigs, booking_id for bookings
-      booker_id: recordData.user_id,
-      talent_id: recordData.talent_id, // Use actual talent_id from record
+      booking_id: bookingId,
+      booker_id: booking.user_id,
+      talent_id: booking.talent_id,
       total_amount: total_amount,
       platform_commission: platform_commission,
       talent_earnings: talent_earnings,
@@ -218,61 +144,31 @@ serve(async (req) => {
 
     console.log("Created payment record:", payment.id);
 
-    // Step C: Update record status and link payment
-    if (recordType === 'gig') {
-      // Update gig application status
-      const { error: gigAppUpdateError } = await supabaseService
-        .from("gig_applications")
-        .update({
-          status: "invoice_sent"
-        })
-        .eq("id", recordId);
+    // Update booking status and link payment
+    const { error: bookingUpdateError } = await supabaseService
+      .from("bookings")
+      .update({
+        status: "pending_approval",
+        payment_id: payment.id
+      })
+      .eq("id", bookingId);
 
-      if (gigAppUpdateError) {
-        console.error("Error updating gig application:", gigAppUpdateError);
-        throw new Error("Failed to update gig application status");
-      }
-
-      // Update the original gig booking
-      const { error: gigUpdateError } = await supabaseService
-        .from("bookings")
-        .update({
-          status: "pending_approval",
-          payment_id: payment.id,
-          talent_id: recordData.talent_id // Assign talent to the gig
-        })
-        .eq("id", recordData.gig_id);
-
-      if (gigUpdateError) {
-        console.error("Error updating gig:", gigUpdateError);
-        throw new Error("Failed to update gig status");
-      }
-    } else {
-      const { error: recordUpdateError } = await supabaseService
-        .from("bookings")
-        .update({
-          status: "pending_approval",
-          payment_id: payment.id
-        })
-        .eq("id", recordId);
-
-      if (recordUpdateError) {
-        console.error("Error updating booking:", recordUpdateError);
-        throw new Error("Failed to update booking status");
-      }
+    if (bookingUpdateError) {
+      console.error("Error updating booking:", bookingUpdateError);
+      throw new Error("Failed to update booking status");
     }
 
-    console.log(`Updated ${recordType} status to pending_approval`);
+    console.log("Updated booking status to pending_approval");
 
-    // Step D: Create notification for booker
+    // Create notification for booker
     const { error: notificationError } = await supabaseService
       .from("notifications")
       .insert({
-        user_id: recordData.user_id,
+        user_id: booking.user_id,
         type: "invoice_received",
         title: "Invoice Received",
-        message: `You have received an invoice for your ${recordData.event_type} ${recordType === 'gig' ? 'gig' : 'event'}. Please review and complete payment.`,
-        booking_id: recordType === 'gig' ? recordData.gig_id : recordId
+        message: `You have received an invoice for your ${booking.event_type} event. Please review and complete payment.`,
+        booking_id: bookingId
       });
 
     if (notificationError) {
@@ -281,42 +177,6 @@ serve(async (req) => {
     }
 
     console.log("Created notification for booker");
-
-    // MASTER TASK 1: Create conversation for gig applications after successful invoice creation
-    if (recordType === 'gig') {
-      console.log("TASK 1: Creating conversation for gig application:", recordId);
-      
-      // Check if conversation already exists
-      const { data: existingConversation, error: conversationCheckError } = await supabaseService
-        .from('conversations')
-        .select('id')
-        .eq('gig_application_id', recordId)
-        .maybeSingle();
-
-      if (conversationCheckError) {
-        console.error("Error checking for existing conversation:", conversationCheckError);
-        // Don't throw here as main process succeeded
-      } else if (!existingConversation) {
-        // Create new conversation
-        const { data: newConversation, error: createConversationError } = await supabaseService
-          .from('conversations')
-          .insert({
-            booking_id: recordData.gig_id,
-            gig_application_id: recordId
-          })
-          .select('id')
-          .single();
-
-        if (createConversationError) {
-          console.error("Error creating conversation:", createConversationError);
-          // Don't throw here as main process succeeded
-        } else {
-          console.log("TASK 1 SUCCESS: Created conversation for gig application:", newConversation.id);
-        }
-      } else {
-        console.log("TASK 1: Conversation already exists for gig application");
-      }
-    }
 
     // Return success response
     return new Response(

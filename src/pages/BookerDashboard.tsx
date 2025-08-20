@@ -3,13 +3,17 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { LogOut } from "lucide-react";
-import { NotificationCenter } from "@/components/NotificationCenter";
+import { Header } from "@/components/Header";
 import { BookerDashboardTabs } from "@/components/BookerDashboardTabs";
 import { UniversalChat } from "@/components/UniversalChat";
+import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
 
 const BookerDashboard = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  
+  // Enable real-time notifications
+  useRealtimeNotifications();
 
   useEffect(() => {
     if (!user) {

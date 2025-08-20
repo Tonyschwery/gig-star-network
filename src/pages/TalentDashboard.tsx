@@ -21,6 +21,7 @@ import { NotificationCenter } from "@/components/NotificationCenter";
 import { UniversalChat } from "@/components/UniversalChat";
 import { ProSubscriptionDialog } from "@/components/ProSubscriptionDialog";
 import { ModeSwitch } from "@/components/ModeSwitch";
+import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
 
 interface TalentProfile {
   id: string;
@@ -51,6 +52,9 @@ const TalentDashboard = () => {
   const [profile, setProfile] = useState<TalentProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [showProDialog, setShowProDialog] = useState(false);
+  
+  // Enable real-time notifications
+  useRealtimeNotifications();
 
   useEffect(() => {
     if (!user) {
