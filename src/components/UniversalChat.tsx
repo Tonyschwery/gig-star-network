@@ -123,29 +123,20 @@ export function UniversalChat() {
     setInput("");
   };
 
-  const deleteConversation = async () => {
+  const removeBookingFromChat = () => {
     if (!selectedId) return;
     
-    try {
-      const { error } = await supabase
-        .from('chat_messages')
-        .delete()
-        .eq('booking_id', selectedId);
-      
-      if (error) throw error;
-      
-      toast({
-        title: "Conversation Deleted",
-        description: "All messages in this conversation have been deleted.",
-      });
-    } catch (error) {
-      console.error('Error deleting conversation:', error);
-      toast({
-        title: "Error",
-        description: "Failed to delete conversation. Please try again.",
-        variant: "destructive",
-      });
-    }
+    // Remove the booking from the local state
+    setBookings(prev => prev.filter(b => b.id !== selectedId));
+    
+    // Select the first remaining booking or null
+    const remainingBookings = bookings.filter(b => b.id !== selectedId);
+    setSelectedId(remainingBookings.length > 0 ? remainingBookings[0].id : null);
+    
+    toast({
+      title: "Event Request Removed",
+      description: "This event request has been removed from your chat list.",
+    });
   };
 
   // Request notification permission on first render
@@ -155,33 +146,33 @@ export function UniversalChat() {
 
   return (
     <>
-      {/* Modern floating button - smooth glow animation */}
+      {/* Large modern floating button with smooth glow */}
       <Button
-        className="fixed bottom-6 right-6 rounded-full shadow-elevated relative z-50 h-16 w-16 bg-accent hover:bg-accent/90 border-2 border-accent/30 animate-live-glow hover:animate-none transition-all duration-300 hover:scale-110"
+        className="fixed bottom-6 right-6 rounded-full shadow-elevated relative z-50 h-20 w-20 bg-accent hover:bg-accent/90 border-4 border-accent/20 animate-live-glow hover:animate-none transition-all duration-500 hover:scale-105"
         onClick={() => {
           setOpen(true);
           setMinimized(false);
         }}
         aria-label="Open chat"
       >
-        <MessageCircle className="h-8 w-8 text-accent-foreground" />
+        <MessageCircle className="h-10 w-10 text-accent-foreground" />
         {unreadCount > 0 && (
           <Badge 
             variant="destructive" 
-            className="absolute -top-2 -right-2 h-7 w-7 rounded-full p-0 text-sm font-bold flex items-center justify-center shadow-live animate-live-pulse"
+            className="absolute -top-3 -right-3 h-8 w-8 rounded-full p-0 text-sm font-bold flex items-center justify-center shadow-live animate-live-pulse border-2 border-background"
           >
             {unreadCount > 9 ? '9+' : unreadCount}
           </Badge>
         )}
       </Button>
 
-      {/* Modern Chat Dialog */}
+      {/* Modern Chat Dialog with proper visibility */}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className={`${
           minimized ? 'h-[350px] w-[380px]' : 'h-[75vh] w-[95vw] sm:w-[650px]'
-        } flex flex-col p-0 transition-all duration-300 fixed bottom-24 right-6 translate-x-0 translate-y-0 bg-card/95 backdrop-blur-md border border-card-border shadow-elevated`}>
-          <DialogHeader className="p-4 border-b border-card-border bg-card/80 flex-row items-center justify-between">
-            <DialogTitle className="text-lg font-semibold text-card-foreground">
+        } flex flex-col p-0 transition-all duration-300 fixed bottom-28 right-6 translate-x-0 translate-y-0 bg-background border border-border shadow-elevated`}>
+          <DialogHeader className="p-4 border-b border-border bg-background flex-row items-center justify-between">
+            <DialogTitle className="text-lg font-semibold text-foreground">
               {minimized ? 'Messages' : 'Chat'}
             </DialogTitle>
             <div className="flex items-center gap-2">
@@ -189,9 +180,9 @@ export function UniversalChat() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={deleteConversation}
+                  onClick={removeBookingFromChat}
                   className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-                  title="Delete conversation"
+                  title="Remove this event request from chat"
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
@@ -200,7 +191,7 @@ export function UniversalChat() {
                 variant="ghost"
                 size="sm"
                 onClick={() => setMinimized(!minimized)}
-                className="h-8 w-8 p-0 text-muted-foreground hover:text-card-foreground"
+                className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
                 title={minimized ? 'Maximize' : 'Minimize'}
               >
                 {minimized ? <Maximize2 className="h-4 w-4" /> : <Minimize2 className="h-4 w-4" />}
@@ -209,7 +200,7 @@ export function UniversalChat() {
                 variant="ghost"
                 size="sm"
                 onClick={() => setOpen(false)}
-                className="h-8 w-8 p-0 text-muted-foreground hover:text-card-foreground"
+                className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
                 title="Close"
               >
                 <X className="h-4 w-4" />
@@ -219,14 +210,14 @@ export function UniversalChat() {
           
           {!minimized && (
             <>
-              <div className="p-4 border-b border-card-border bg-card/50 flex items-center gap-2">
+              <div className="p-4 border-b border-border bg-background flex items-center gap-2">
                 <Select value={selectedId ?? undefined} onValueChange={(v) => setSelectedId(v)}>
-                  <SelectTrigger className="w-full bg-input border-border text-card-foreground">
-                    <SelectValue placeholder="Select a booking" />
+                  <SelectTrigger className="w-full bg-background border-border text-foreground">
+                    <SelectValue placeholder="Select an event request" />
                   </SelectTrigger>
-                  <SelectContent className="bg-popover border-border">
+                  <SelectContent className="bg-background border-border">
                     {bookings.map((b) => (
-                      <SelectItem key={b.id} value={b.id} className="text-popover-foreground">
+                      <SelectItem key={b.id} value={b.id} className="text-foreground">
                         {b.event_type} • {b.booker_name}
                       </SelectItem>
                     ))}
@@ -235,10 +226,10 @@ export function UniversalChat() {
               </div>
             </>
           )}
-          <ScrollArea className={`flex-1 p-4 bg-card/30 ${minimized ? 'h-48' : ''}`}>
+          <ScrollArea className={`flex-1 p-4 bg-background ${minimized ? 'h-48' : ''}`}>
             {!selectedId ? (
-              <div className="text-sm text-muted-foreground">
-                {minimized ? 'Select a booking in full view' : 'Select a booking to start chatting.'}
+              <div className="text-sm text-muted-foreground text-center py-8">
+                {minimized ? 'Select an event request in full view' : 'Select an event request to start chatting.'}
               </div>
             ) : (
               <div className="space-y-3">
@@ -246,11 +237,11 @@ export function UniversalChat() {
                   <div key={m.id} className={`flex ${m.senderId === user?.id ? 'justify-end' : 'justify-start'}`}>
                     <div className={`px-4 py-3 rounded-2xl max-w-[75%] text-sm shadow-minimal transition-all hover:shadow-card ${
                       m.senderId === user?.id 
-                        ? 'bg-accent text-accent-foreground' 
-                        : 'bg-card border border-card-border text-card-foreground'
+                        ? 'bg-primary text-primary-foreground' 
+                        : 'bg-muted border border-border text-foreground'
                     }`}>
                       <div className="break-words">{m.content}</div>
-                      <div className="text-[10px] opacity-60 mt-1 text-right">
+                      <div className="text-[10px] opacity-70 mt-1 text-right">
                         {new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </div>
                     </div>
@@ -268,9 +259,9 @@ export function UniversalChat() {
           </ScrollArea>
           
           {!minimized && (
-            <div className="p-4 border-t border-card-border bg-card/50 flex items-center gap-3">
+            <div className="p-4 border-t border-border bg-background flex items-center gap-3">
               <Textarea
-                placeholder={!selectedId ? 'Select a booking to chat' : (isReady ? 'Type your message…' : 'Connecting…')}
+                placeholder={!selectedId ? 'Select an event request to chat' : (isReady ? 'Type your message…' : 'Connecting…')}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => {
@@ -279,13 +270,13 @@ export function UniversalChat() {
                     onSend();
                   }
                 }}
-                className="min-h-[44px] max-h-40 bg-input border-border text-card-foreground placeholder:text-muted-foreground resize-none"
+                className="min-h-[44px] max-h-40 bg-background border-border text-foreground placeholder:text-muted-foreground resize-none"
                 disabled={!selectedId || !isReady}
               />
               <Button 
                 onClick={onSend} 
                 disabled={!input.trim() || !selectedId || !isReady}
-                className="bg-accent hover:bg-accent/90 text-accent-foreground px-6"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground px-6"
               >
                 Send
               </Button>
