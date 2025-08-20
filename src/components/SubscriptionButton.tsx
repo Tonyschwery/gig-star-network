@@ -39,61 +39,54 @@ export function SubscriptionButton({
       setIsLoading(true);
 
       if (isProSubscriber) {
-        // Open customer portal for subscription management
-        const { data, error } = await supabase.functions.invoke('customer-portal', {
-          headers: {
-            Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
-          },
+        // For mock testing - simulate subscription management
+        toast({
+          title: "✅ Mock Subscription Management",
+          description: "In production, this would open Stripe Customer Portal. Simulating cancellation...",
+          duration: 4000,
         });
-
-        if (error) throw error;
-
-        if (data?.url) {
-          window.open(data.url, '_blank');
-          
+        
+        // Simulate subscription cancellation for testing
+        setTimeout(() => {
+          if (onSubscriptionChange) {
+            onSubscriptionChange();
+          }
           toast({
-            title: "Opening subscription portal...",
-            description: "Manage your subscription settings.",
-            duration: 3000,
+            title: "Subscription Updated",
+            description: "Mock subscription has been cancelled for testing.",
           });
-        } else {
-          throw new Error("No portal URL received");
-        }
+          // Reload to refresh UI state
+          window.location.reload();
+        }, 2000);
+        
       } else {
-        // Create checkout session for new subscription
-        const { data, error } = await supabase.functions.invoke('create-checkout', {
-          headers: {
-            Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
-          },
+        // For mock testing - simulate successful subscription
+        toast({
+          title: "🎉 Mock Payment Successful!",
+          description: "Simulating successful Pro subscription activation...",
+          duration: 4000,
         });
-
-        if (error) throw error;
-
-        if (data?.url) {
-          window.open(data.url, '_blank');
-          
+        
+        // Simulate successful subscription for testing
+        setTimeout(() => {
+          if (onSubscriptionChange) {
+            onSubscriptionChange();
+          }
           toast({
-            title: "Redirecting to checkout...",
-            description: "Complete your payment to activate Pro features.",
+            title: "Welcome to Pro! 👑",
+            description: "Your Pro subscription is now active with 0% commission!",
             duration: 5000,
           });
-        } else {
-          throw new Error("No checkout URL received");
-        }
+          // Reload to refresh UI state and show Pro features
+          window.location.reload();
+        }, 2000);
       }
-
-      // Trigger subscription check after a short delay to allow for processing
-      setTimeout(() => {
-        checkSubscriptionStatus();
-      }, 3000);
 
     } catch (error) {
       console.error('Subscription action error:', error);
       toast({
         title: "Error",
-        description: isProSubscriber 
-          ? "Failed to open subscription management. Please try again."
-          : "Failed to start subscription process. Please try again.",
+        description: "Something went wrong. Please try again.",
         variant: "destructive",
       });
     } finally {

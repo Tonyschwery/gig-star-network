@@ -64,46 +64,33 @@ export function ProSubscriptionDialog({
   const handleSubscribe = async () => {
     setLoading(true);
     try {
-      // For existing profiles, use Stripe checkout
-      if (profileId && profileId !== 'temp-id') {
-        const { data, error } = await supabase.functions.invoke('create-checkout', {
-          headers: {
-            Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
-          },
-        });
-
-        if (error) throw error;
-
-        if (data?.url) {
-          // Open Stripe checkout in a new tab
-          window.open(data.url, '_blank');
-          onOpenChange(false);
-          
-          toast({
-            title: "Redirecting to checkout...",
-            description: "Complete your payment to activate Pro features.",
-            duration: 5000,
-          });
-        } else {
-          throw new Error("No checkout URL received");
-        }
-        return;
-      }
-
-      // During onboarding - store intent to subscribe
-      onSubscribe();
-      onOpenChange(false);
-      
+      // For mock testing - simulate successful subscription
       toast({
-        title: "Pro subscription selected! 🎉",
-        description: "Complete your profile setup and your Pro subscription will be activated.",
-        duration: 5000,
+        title: "🎉 Mock Payment Successful!",
+        description: "Simulating successful Pro subscription activation...",
+        duration: 4000,
       });
+      
+      // Simulate successful subscription for testing
+      setTimeout(() => {
+        onSubscribe();
+        onOpenChange(false);
+        
+        toast({
+          title: "Welcome to Pro! 👑",
+          description: "Your Pro subscription is now active with 0% commission!",
+          duration: 5000,
+        });
+        
+        // Reload to refresh UI state and show Pro features
+        setTimeout(() => window.location.reload(), 1000);
+      }, 2000);
+      
     } catch (error) {
       console.error('Error starting subscription:', error);
       toast({
         title: "Error",
-        description: "Failed to start subscription process. Please try again.",
+        description: "Something went wrong. Please try again.",
         variant: "destructive"
       });
     } finally {
