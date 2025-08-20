@@ -26,8 +26,8 @@ export const useRealtimeNotifications = () => {
           
           // Show toast notification for new notifications
           toast({
-            title: notification.title,
-            description: notification.message,
+            title: notification?.title || 'New Notification',
+            description: notification?.message || 'You have a new notification',
             duration: 5000,
           });
         }
@@ -46,7 +46,7 @@ export const useRealtimeNotifications = () => {
           // Show toast for new bookings received by bookers
           toast({
             title: "Booking Updated",
-            description: `Your ${booking.event_type} booking status has been updated.`,
+            description: `Your ${booking?.event_type || 'event'} booking status has been updated.`,
             duration: 5000,
           });
         }

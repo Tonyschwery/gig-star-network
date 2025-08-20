@@ -144,12 +144,11 @@ serve(async (req) => {
 
     console.log("Created payment record:", payment.id);
 
-    // Update booking status and link payment
+    // Update booking status to pending_approval (payment record already links via booking_id)
     const { error: bookingUpdateError } = await supabaseService
       .from("bookings")
       .update({
-        status: "pending_approval",
-        payment_id: payment.id
+        status: "pending_approval"
       })
       .eq("id", bookingId);
 
