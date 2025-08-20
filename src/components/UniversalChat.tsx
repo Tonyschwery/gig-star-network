@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { MessageCircle, X, Trash2, Minimize2, Maximize2 } from "lucide-react";
+import { MessageCircle, X, Minimize2, Maximize2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useRealtimeChat } from "@/hooks/useRealtimeChat";
@@ -123,22 +123,6 @@ export function UniversalChat() {
     setInput("");
   };
 
-  const removeBookingFromChat = () => {
-    if (!selectedId) return;
-    
-    // Remove the booking from the local state
-    setBookings(prev => prev.filter(b => b.id !== selectedId));
-    
-    // Select the first remaining booking or null
-    const remainingBookings = bookings.filter(b => b.id !== selectedId);
-    setSelectedId(remainingBookings.length > 0 ? remainingBookings[0].id : null);
-    
-    toast({
-      title: "Event Request Removed",
-      description: "This event request has been removed from your chat list.",
-    });
-  };
-
   // Request notification permission on first render
   useEffect(() => {
     requestPermission();
@@ -146,21 +130,21 @@ export function UniversalChat() {
 
   return (
     <>
-      {/* Professional floating chat button */}
-      <div className="fixed bottom-6 right-6 z-50">
+      {/* Floating chat button */}
+      <div className="fixed bottom-4 right-4 z-50">
         <Button
-          className="h-16 w-16 rounded-full shadow-elevated bg-accent hover:bg-accent/90 border-2 border-accent/30 hover:border-accent/50 transition-all duration-300 hover:scale-105 group"
+          className="h-14 w-14 rounded-full bg-accent hover:bg-accent/90 border border-border"
           onClick={() => {
             setOpen(true);
             setMinimized(false);
           }}
           aria-label="Open chat"
         >
-          <MessageCircle className="h-7 w-7 text-accent-foreground group-hover:scale-110 transition-transform duration-200" />
+          <MessageCircle className="h-6 w-6 text-accent-foreground" />
           {unreadCount > 0 && (
             <Badge 
               variant="destructive" 
-              className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0 text-xs font-bold flex items-center justify-center shadow-card border-2 border-card animate-live-pulse"
+              className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 text-xs font-bold flex items-center justify-center"
             >
               {unreadCount > 9 ? '9+' : unreadCount}
             </Badge>
@@ -172,48 +156,37 @@ export function UniversalChat() {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className={`${
           minimized 
-            ? 'h-[400px] w-[350px] sm:w-[380px]' 
-            : 'h-[600px] w-[95vw] max-w-[450px]'
-        } fixed bottom-6 right-6 sm:bottom-28 sm:right-6 translate-x-0 translate-y-0 bg-card border border-border shadow-lg rounded-2xl overflow-hidden`}>
+            ? 'h-[400px] w-[320px]' 
+            : 'h-[90vh] max-h-[600px] w-[95vw] max-w-[400px]'
+        } fixed bottom-4 right-4 bg-card border border-border rounded-lg overflow-hidden`}>
           
           <div className="flex flex-col h-full">
-            {/* Modern Header */}
-            <div className="flex items-center justify-between p-4 bg-card border-b border-border shrink-0">
-              <div className="flex items-center gap-3">
-                <div className="h-2 w-2 bg-accent rounded-full animate-live-pulse"></div>
-                <DialogTitle className="text-lg font-semibold text-card-foreground">
+            {/* Header */}
+            <div className="flex items-center justify-between p-3 bg-card border-b border-border shrink-0">
+              <div className="flex items-center gap-2">
+                <div className="h-2 w-2 bg-accent rounded-full"></div>
+                <DialogTitle className="text-base font-medium text-card-foreground">
                   {minimized ? 'Messages' : 'Live Chat'}
                 </DialogTitle>
               </div>
               <div className="flex items-center gap-1">
-                {selectedId && !minimized && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={removeBookingFromChat}
-                    className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full"
-                    title="Remove this event request from chat"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                )}
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => setMinimized(!minimized)}
-                  className="h-8 w-8 p-0 text-muted-foreground hover:text-card-foreground hover:bg-muted/50 rounded-full"
+                  className="h-7 w-7 p-0 text-muted-foreground hover:text-card-foreground"
                   title={minimized ? 'Maximize' : 'Minimize'}
                 >
-                  {minimized ? <Maximize2 className="h-4 w-4" /> : <Minimize2 className="h-4 w-4" />}
+                  {minimized ? <Maximize2 className="h-3 w-3" /> : <Minimize2 className="h-3 w-3" />}
                 </Button>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => setOpen(false)}
-                  className="h-8 w-8 p-0 text-muted-foreground hover:text-card-foreground hover:bg-muted/50 rounded-full"
+                  className="h-7 w-7 p-0 text-muted-foreground hover:text-card-foreground"
                   title="Close"
                 >
-                  <X className="h-4 w-4" />
+                  <X className="h-3 w-3" />
                 </Button>
               </div>
             </div>
@@ -222,18 +195,18 @@ export function UniversalChat() {
             {!minimized && (
               <div className="p-3 bg-muted/30 border-b border-border shrink-0">
                 <Select value={selectedId ?? undefined} onValueChange={(v) => setSelectedId(v)}>
-                  <SelectTrigger className="w-full bg-card border-border text-card-foreground hover:bg-muted/50 transition-colors">
+                  <SelectTrigger className="w-full bg-card border-border text-card-foreground text-sm h-9">
                     <SelectValue placeholder="Select an event to chat about" />
                   </SelectTrigger>
-                  <SelectContent className="bg-card border-border shadow-elevated">
+                  <SelectContent className="bg-card border-border">
                     {bookings.map((b) => (
                       <SelectItem 
                         key={b.id} 
                         value={b.id} 
-                        className="text-card-foreground hover:bg-muted/50 focus:bg-muted/50"
+                        className="text-card-foreground text-sm"
                       >
                         <div className="flex items-center gap-2">
-                          <div className="h-2 w-2 bg-accent rounded-full"></div>
+                          <div className="h-1.5 w-1.5 bg-accent rounded-full"></div>
                           <span className="font-medium">{b.event_type}</span>
                           <span className="text-muted-foreground">•</span>
                           <span className="text-muted-foreground">{b.booker_name}</span>
@@ -245,19 +218,19 @@ export function UniversalChat() {
               </div>
             )}
             
-            {/* Messages Area - Takes remaining space */}
+            {/* Messages Area */}
             <div className="flex-1 min-h-0">
               <ScrollArea className="h-full">
-                <div className="p-4 space-y-4 pb-2">
+                <div className="p-3 space-y-3">
                   {!selectedId ? (
-                    <div className="flex flex-col items-center justify-center py-12 text-center">
-                      <div className="h-16 w-16 bg-muted/50 rounded-full flex items-center justify-center mb-4">
-                        <MessageCircle className="h-8 w-8 text-muted-foreground" />
+                    <div className="flex flex-col items-center justify-center py-8 text-center">
+                      <div className="h-12 w-12 bg-muted/50 rounded-full flex items-center justify-center mb-3">
+                        <MessageCircle className="h-6 w-6 text-muted-foreground" />
                       </div>
-                      <h3 className="text-card-foreground font-medium mb-2">
+                      <h3 className="text-card-foreground font-medium mb-1 text-sm">
                         {minimized ? 'Select Event' : 'Choose an event to start chatting'}
                       </h3>
-                      <p className="text-muted-foreground text-sm">
+                      <p className="text-muted-foreground text-xs">
                         {minimized ? 'Open full view to select' : 'Pick an event request from the dropdown above'}
                       </p>
                     </div>
@@ -268,17 +241,17 @@ export function UniversalChat() {
                           key={m.id} 
                           className={`flex ${m.senderId === user?.id ? 'justify-end' : 'justify-start'}`}
                         >
-                          <div className={`relative max-w-[80%] sm:max-w-[75%] group ${
-                            m.senderId === user?.id ? 'ml-4' : 'mr-4'
+                          <div className={`relative max-w-[85%] ${
+                            m.senderId === user?.id ? 'ml-2' : 'mr-2'
                           }`}>
-                            <div className={`px-4 py-3 text-sm ${
+                            <div className={`px-3 py-2 text-sm ${
                               m.senderId === user?.id 
-                                ? 'bg-accent text-accent-foreground rounded-2xl rounded-br-md' 
-                                : 'bg-muted border border-border text-card-foreground rounded-2xl rounded-bl-md'
+                                ? 'bg-accent text-accent-foreground rounded-lg rounded-br-sm' 
+                                : 'bg-muted border border-border text-card-foreground rounded-lg rounded-bl-sm'
                             }`}>
-                              <div className="break-words leading-relaxed">{m.content}</div>
+                              <div className="break-words">{m.content}</div>
                             </div>
-                            <div className={`text-[11px] text-muted-foreground mt-1 px-1 ${
+                            <div className={`text-[10px] text-muted-foreground mt-1 px-1 ${
                               m.senderId === user?.id ? 'text-right' : 'text-left'
                             }`}>
                               {new Date(m.createdAt).toLocaleTimeString([], { 
@@ -292,12 +265,12 @@ export function UniversalChat() {
                       ))}
                       
                       {!messages.length && (
-                        <div className="flex flex-col items-center justify-center py-12 text-center">
-                          <div className="h-16 w-16 bg-accent/10 rounded-full flex items-center justify-center mb-4">
-                            <MessageCircle className="h-8 w-8 text-accent" />
+                        <div className="flex flex-col items-center justify-center py-8 text-center">
+                          <div className="h-12 w-12 bg-accent/10 rounded-full flex items-center justify-center mb-3">
+                            <MessageCircle className="h-6 w-6 text-accent" />
                           </div>
-                          <h3 className="text-card-foreground font-medium mb-2">Start the conversation</h3>
-                          <p className="text-muted-foreground text-sm">Send your first message below</p>
+                          <h3 className="text-card-foreground font-medium mb-1 text-sm">Start the conversation</h3>
+                          <p className="text-muted-foreground text-xs">Send your first message below</p>
                         </div>
                       )}
                     </>
@@ -307,10 +280,10 @@ export function UniversalChat() {
               </ScrollArea>
             </div>
             
-            {/* Input Area - Fixed at bottom when not minimized */}
+            {/* Input Area - Always visible when not minimized */}
             {!minimized && (
-              <div className="shrink-0 p-4 bg-card border-t border-border">
-                <div className="flex items-end gap-3 mb-2">
+              <div className="shrink-0 p-3 bg-card border-t border-border">
+                <div className="flex items-end gap-2 mb-2">
                   <div className="flex-1">
                     <Textarea
                       placeholder={!selectedId ? 'Select an event to start chatting' : (isReady ? 'Type a message...' : 'Connecting...')}
@@ -322,7 +295,7 @@ export function UniversalChat() {
                           onSend();
                         }
                       }}
-                      className="min-h-[44px] max-h-24 bg-background border-border text-foreground placeholder:text-muted-foreground resize-none rounded-xl focus:ring-2 focus:ring-accent/20 focus:border-accent/50 transition-all duration-200"
+                      className="min-h-[40px] max-h-20 bg-background border-border text-foreground placeholder:text-muted-foreground resize-none rounded-lg text-sm"
                       disabled={!selectedId || !isReady}
                       rows={1}
                     />
@@ -330,7 +303,7 @@ export function UniversalChat() {
                   <Button 
                     onClick={onSend} 
                     disabled={!input.trim() || !selectedId || !isReady}
-                    className="bg-accent hover:bg-accent/90 text-accent-foreground px-4 py-2.5 rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shrink-0 h-11"
+                    className="bg-accent hover:bg-accent/90 text-accent-foreground px-3 py-2 rounded-lg disabled:opacity-50 shrink-0 h-10 text-sm"
                   >
                     Send
                   </Button>
@@ -338,11 +311,11 @@ export function UniversalChat() {
                 
                 {/* Connection Status */}
                 <div className="flex items-center justify-center">
-                  <div className={`flex items-center gap-2 text-xs ${
+                  <div className={`flex items-center gap-1 text-xs ${
                     isReady ? 'text-accent' : 'text-muted-foreground'
                   }`}>
-                    <div className={`h-1.5 w-1.5 rounded-full ${
-                      isReady ? 'bg-accent animate-live-pulse' : 'bg-muted-foreground'
+                    <div className={`h-1 w-1 rounded-full ${
+                      isReady ? 'bg-accent' : 'bg-muted-foreground'
                     }`}></div>
                     {isReady ? 'Connected' : 'Connecting...'}
                   </div>
