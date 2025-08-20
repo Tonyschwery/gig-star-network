@@ -53,36 +53,9 @@ export const useRealtimeNotifications = () => {
       )
       .subscribe();
 
-    // Set up subscription for talent dashboard notifications
-    const talentChannel = supabase
-      .channel(`talent-bookings-${user.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'bookings'
-        },
-        async (payload) => {
-          const booking = payload.new as any;
-          
-          // Check if this booking is for the current user's talent profile
-          const { data: talentProfile } = await supabase
-            .from('talent_profiles')
-            .select('id')
-            .eq('user_id', user.id)
-            .eq('id', booking.talent_id)
-            .single();
-
-          if (talentProfile) {
-            toast({
-              title: "New Booking Request",
-              description: `You have a new ${booking.event_type} booking request!`,
-              duration: 5000,
-            });
-          }
-        }
-      )
+    // Set up subscription for booking status updates only (not new bookings to avoid duplicates)
+    const bookingUpdatesChannel = supabase
+      .channel(`booking-updates-${user.id}`)
       .on(
         'postgres_changes',
         {
@@ -94,6 +67,18 @@ export const useRealtimeNotifications = () => {
           const booking = payload.new as any;
           const oldBooking = payload.old as any;
           
+          // Only show notifications for status changes, not for other updates
+          if (booking.status === oldBooking.status) return;
+          
+          // Check if this booking is for the current user (as booker)
+          if (booking.user_id === user.id) {
+            toast({
+              title: "Booking Status Updated",
+              description: `Your ${booking?.event_type || 'event'} booking status changed to ${booking.status}.`,
+              duration: 5000,
+            });
+          }
+          
           // Check if this booking is for the current user's talent profile
           const { data: talentProfile } = await supabase
             .from('talent_profiles')
@@ -102,10 +87,10 @@ export const useRealtimeNotifications = () => {
             .eq('id', booking.talent_id)
             .single();
 
-          if (talentProfile && booking.status !== oldBooking.status) {
+          if (talentProfile) {
             toast({
               title: "Booking Status Updated",
-              description: `A ${booking.event_type} booking status changed to ${booking.status}.`,
+              description: `A ${booking?.event_type || 'event'} booking status changed to ${booking.status}.`,
               duration: 5000,
             });
           }
@@ -115,7 +100,7 @@ export const useRealtimeNotifications = () => {
 
     return () => {
       supabase.removeChannel(notificationChannel);
-      supabase.removeChannel(talentChannel);
+      supabase.removeChannel(bookingUpdatesChannel);
     };
   }, [user, toast]);
 };
