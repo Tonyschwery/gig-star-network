@@ -208,11 +208,11 @@ export default function TalentProfile() {
           {/* Back Button */}
           <Button 
             variant="ghost" 
-            onClick={() => navigate('/')}
+            onClick={() => navigate(isOwnProfile ? '/talent-dashboard' : '/')}
             className="mb-6"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Talents
+            {isOwnProfile ? `Back to Dashboard - ${talent.artist_name}` : 'Back to Talents'}
           </Button>
 
           <div className="grid lg:grid-cols-3 gap-8">
