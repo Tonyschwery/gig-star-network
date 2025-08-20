@@ -47,12 +47,31 @@ export function SubscriptionButton({
         });
         
         // Simulate subscription cancellation for testing
-        setTimeout(() => {
+        setTimeout(async () => {
+          // Update database to remove Pro status
+          const { error } = await supabase
+            .from('talent_profiles')
+            .update({ 
+              is_pro_subscriber: false,
+              subscription_status: 'free',
+              subscription_started_at: null
+            })
+            .eq('user_id', user.id);
+
+          if (error) {
+            toast({
+              title: "Error",
+              description: "Failed to update subscription status.",
+              variant: "destructive",
+            });
+            return;
+          }
+
           if (onSubscriptionChange) {
             onSubscriptionChange();
           }
           toast({
-            title: "Subscription Updated",
+            title: "Subscription Cancelled",
             description: "Mock subscription has been cancelled for testing.",
           });
           // Reload to refresh UI state
@@ -63,22 +82,53 @@ export function SubscriptionButton({
         // For mock testing - simulate successful subscription
         toast({
           title: "🎉 Mock Payment Successful!",
-          description: "Simulating successful Pro subscription activation...",
+          description: "Activating your Pro subscription...",
           duration: 4000,
         });
         
         // Simulate successful subscription for testing
-        setTimeout(() => {
+        setTimeout(async () => {
+          // Update database to mark user as Pro subscriber
+          const { error } = await supabase
+            .from('talent_profiles')
+            .update({ 
+              is_pro_subscriber: true,
+              subscription_status: 'pro',
+              subscription_started_at: new Date().toISOString()
+            })
+            .eq('user_id', user.id);
+
+          if (error) {
+            toast({
+              title: "Error",
+              description: "Failed to update subscription status.",
+              variant: "destructive",
+            });
+            return;
+          }
+
           if (onSubscriptionChange) {
             onSubscriptionChange();
           }
+          
+          // Show detailed success message with benefits
           toast({
-            title: "Welcome to Pro! 👑",
-            description: "Your Pro subscription is now active with 0% commission!",
-            duration: 5000,
+            title: "🎉 Welcome to Qtalent Pro! 👑",
+            description: "✅ 0% Commission • ✅ Pro Badge • ✅ Priority Search • ✅ Unlimited Photos • ✅ Premium Gigs Access",
+            duration: 8000,
           });
+          
+          // Show additional congratulations message
+          setTimeout(() => {
+            toast({
+              title: "🚀 Pro Features Unlocked!",
+              description: "You can now add unlimited gallery photos, music links, and access premium gig opportunities!",
+              duration: 6000,
+            });
+          }, 2000);
+          
           // Reload to refresh UI state and show Pro features
-          window.location.reload();
+          setTimeout(() => window.location.reload(), 3000);
         }, 2000);
       }
 
