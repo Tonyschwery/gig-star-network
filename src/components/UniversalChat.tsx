@@ -173,7 +173,7 @@ export function UniversalChat() {
         <DialogContent className={`${
           minimized 
             ? 'h-[400px] w-[350px] sm:w-[380px]' 
-            : 'h-[80vh] max-h-[700px] w-[95vw] max-w-[500px] sm:max-w-[550px] lg:max-w-[600px]'
+            : 'h-[85vh] max-h-[750px] w-[95vw] max-w-[500px] sm:max-w-[550px] lg:max-w-[600px]'
         } flex flex-col p-0 transition-all duration-300 fixed bottom-6 right-6 sm:bottom-28 sm:right-6 translate-x-0 translate-y-0 bg-card border border-border shadow-elevated rounded-2xl overflow-hidden`}>
           
           {/* Modern Header */}
@@ -245,8 +245,14 @@ export function UniversalChat() {
           )}
           
           {/* Messages Area */}
-          <ScrollArea className={`flex-1 ${minimized ? 'h-48' : ''}`}>
-            <div className="p-4 space-y-4 min-h-[200px]">
+          <ScrollArea className={`${
+            minimized 
+              ? 'h-48' 
+              : selectedId 
+                ? 'max-h-[calc(100vh-320px)] min-h-[200px]' 
+                : 'max-h-[calc(100vh-260px)] min-h-[200px]'
+          } overflow-y-auto`}>
+            <div className="p-4 space-y-4">
               {!selectedId ? (
                 <div className="flex flex-col items-center justify-center py-12 text-center">
                   <div className="h-16 w-16 bg-muted/50 rounded-full flex items-center justify-center mb-4">
