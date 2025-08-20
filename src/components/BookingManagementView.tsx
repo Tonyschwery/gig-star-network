@@ -22,7 +22,6 @@ import { ProSubscriptionDialog } from "@/components/ProSubscriptionDialog";
 import { BookingRequests } from "@/components/BookingRequests";
 import { NotificationCenter } from "@/components/NotificationCenter";
 import { ModeSwitch } from "@/components/ModeSwitch";
-import { GigOpportunities } from "@/components/GigOpportunities";
 
 interface TalentProfile {
   id: string;
@@ -330,18 +329,8 @@ export const BookingManagementView = ({
           </div>
         </div>
 
-        {/* Gig Opportunities Section - Show for Gigs page only when showGigOpportunities=true, or always show for talent dashboard */}
+        {/* Booking Requests Section */}
         {profile && (
-          <div className="mb-6 md:mb-8">
-            <GigOpportunities 
-              isProSubscriber={profile.is_pro_subscriber || false}
-              onUpgrade={() => setShowProDialog(true)}
-            />
-          </div>
-        )}
-
-        {/* Booking Requests Section - Only show for Talent Dashboard (when showGigOpportunities=false) */}
-        {profile && !showGigOpportunities && (
           <div className="mb-6 md:mb-8">
             <BookingRequests 
               talentId={profile.id} 
@@ -350,7 +339,7 @@ export const BookingManagementView = ({
           </div>
         )}
 
-        {/* Hide profile cards on Gigs page to focus on opportunities */}
+        {/* Hide profile cards on specific pages to focus on other content */}
         {!showGigOpportunities && (
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 lg:gap-6">

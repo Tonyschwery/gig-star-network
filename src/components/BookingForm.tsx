@@ -150,7 +150,7 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
     }
 
     // Prevent talents from booking themselves
-    if (talentId !== "public-request") {
+    if (talentId !== "admin-request") {
       const { data: talentProfile } = await supabase
         .from('talent_profiles')
         .select('user_id')
@@ -179,56 +179,76 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
     setIsSubmitting(true);
 
     try {
-      const isPublicRequest = talentId === "public-request";
+      const isAdminRequest = talentId === "admin-request";
       
-      // Prepare the booking data with proper types
-      const bookingData = {
-        user_id: user.id,
-        talent_id: isPublicRequest ? null : talentId,
-        booker_name: bookerName.trim(),
-        booker_email: user.email || '',
-        event_date: format(eventDate, 'yyyy-MM-dd'),
-        event_duration: parseInt(eventDuration),
-        event_location: eventLocation.trim(),
-        event_address: eventLocation.trim(), // Use event_location for address field
-        event_type: eventType,
-        description: description?.trim() || null,
-        is_public_request: Boolean(isPublicRequest),
-        is_gig_opportunity: Boolean(isPublicRequest),
-        needs_equipment: false,
-        equipment_types: [],
-        custom_equipment: null,
-      };
-      
-      console.log('Submitting booking with data:', bookingData);
-      console.log('JSON.stringify bookingData:', JSON.stringify(bookingData));
-      
-      const { data, error } = await supabase
-        .from('bookings')
-        .insert(bookingData)
-        .select();
+      if (isAdminRequest) {
+        // Send admin email instead of creating database record
+        const { error } = await supabase.functions.invoke('send-email', {
+          body: {
+            type: 'admin-event-request',
+            eventData: {
+              bookerName: bookerName.trim(),
+              bookerEmail: user.email || '',
+              eventDate: format(eventDate, 'yyyy-MM-dd'),
+              eventDuration: parseInt(eventDuration),
+              eventLocation: eventLocation.trim(),
+              eventType: eventType,
+              description: description?.trim() || '',
+            }
+          }
+        });
 
-      if (error) {
-        console.error('Database error:', error);
-        throw error;
+        if (error) {
+          console.error('Admin email error:', error);
+          throw error;
+        }
+
+        toast({
+          title: "Request Submitted!",
+          description: "Your event request has been sent to our team. We'll get back to you soon!",
+        });
+      } else {
+        // Regular talent booking
+        const bookingData = {
+          user_id: user.id,
+          talent_id: talentId,
+          booker_name: bookerName.trim(),
+          booker_email: user.email || '',
+          event_date: format(eventDate, 'yyyy-MM-dd'),
+          event_duration: parseInt(eventDuration),
+          event_location: eventLocation.trim(),
+          event_address: eventLocation.trim(),
+          event_type: eventType,
+          description: description?.trim() || null,
+          is_public_request: false,
+          is_gig_opportunity: false,
+          needs_equipment: false,
+          equipment_types: [],
+          custom_equipment: null,
+        };
+        
+        const { data, error } = await supabase
+          .from('bookings')
+          .insert(bookingData)
+          .select();
+
+        if (error) {
+          console.error('Database error:', error);
+          throw error;
+        }
+
+        toast({
+          title: "Booking Request Sent!",
+          description: `Your booking request for ${talentName} has been submitted successfully.`,
+        });
       }
-      
-      console.log('Booking created successfully:', data);
-
-      toast({
-        title: isPublicRequest ? "Request Submitted!" : "Booking Request Sent!",
-        description: isPublicRequest 
-          ? "Your request has been submitted and will be visible to our pro talents who can help you."
-          : `Your booking request for ${talentName} has been submitted successfully.`,
-      });
 
       onSuccess();
       onClose();
     } catch (error: any) {
-      console.error('Error creating booking:', error);
+      console.error('Error submitting request:', error);
       
-      // More specific error handling
-      let errorMessage = "There was an error submitting your booking request. Please try again.";
+      let errorMessage = "There was an error submitting your request. Please try again.";
       
       if (error.code === 'PGRST116') {
         errorMessage = "Database connection error. Please check your internet connection and try again.";
@@ -237,7 +257,7 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
       }
       
       toast({
-        title: "Booking Failed",
+        title: "Request Failed",
         description: errorMessage,
         variant: "destructive",
       });

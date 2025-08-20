@@ -31,7 +31,7 @@ export default function YourEvent() {
             </div>
             
             <p className="text-lg text-muted-foreground max-w-2xl">
-              Can't find the perfect talent for your event? Let us help! Fill out the details below and our pro talents will get in touch with you to discuss your requirements.
+              Can't find the perfect talent for your event? Let us help! Fill out the details below and our team will reach out to you with personalized recommendations.
             </p>
           </div>
 
@@ -40,13 +40,13 @@ export default function YourEvent() {
             <CardHeader>
               <CardTitle className="text-2xl text-center">Event Request Form</CardTitle>
               <p className="text-center text-muted-foreground">
-                Our talented artists will review your request and reach out to you directly
+                Our team will review your request and reach out to you with personalized talent recommendations
               </p>
             </CardHeader>
             <CardContent className="p-8">
               <BookingForm
-                talentId="public-request"
-                talentName="Personal Assistance Request"
+                talentId="admin-request"
+                talentName="Event Request"
                 onClose={() => navigate('/')}
                 onSuccess={() => navigate('/')}
               />
@@ -66,14 +66,14 @@ export default function YourEvent() {
               <div className="text-3xl mb-4">⚡</div>
               <h3 className="font-semibold mb-2">Quick Response</h3>
               <p className="text-sm text-muted-foreground">
-                Our pro talents typically respond within 24 hours
+                Our team typically responds within 24 hours
               </p>
             </Card>
             <Card className="p-6 text-center">
               <div className="text-3xl mb-4">💎</div>
               <h3 className="font-semibold mb-2">Premium Quality</h3>
               <p className="text-sm text-muted-foreground">
-                Only verified pro talents with excellent reviews will contact you
+                We'll connect you with verified talents that match your specific requirements
               </p>
             </Card>
           </div>

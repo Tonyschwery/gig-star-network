@@ -1,14 +1,8 @@
-// PASTE THIS ENTIRE CODE BLOCK, REPLACING THE OLD FILE
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BookingCard, Booking } from "./BookingCard";
-
-import { GigOpportunitiesIntegrated } from './GigOpportunitiesIntegrated';
-import { Button } from "./ui/button";
-import { Calendar, Sparkles } from "lucide-react";
 
 export const TalentDashboardTabs = () => {
     const { user } = useAuth();
@@ -34,7 +28,8 @@ export const TalentDashboardTabs = () => {
         const { data, error } = await supabase
             .from('bookings')
             .select(`*, payments(*)`)
-            .eq('talent_id', profileId);
+            .eq('talent_id', profileId)
+            .eq('is_gig_opportunity', false); // Only show direct bookings
 
         if (error) console.error("Error fetching bookings:", error);
         else setAllBookings(data || []);
@@ -52,7 +47,7 @@ export const TalentDashboardTabs = () => {
     if (loading) return <div>Loading...</div>;
     
     // Filter bookings for Direct Bookings tabs
-    const directBookings = allBookings.filter(b => !b.is_gig_opportunity);
+    const directBookings = allBookings; // All bookings are now direct bookings
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -68,46 +63,18 @@ export const TalentDashboardTabs = () => {
     );
 
     return (
-        <>
-            <Tabs defaultValue="bookings" className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="bookings">Direct Bookings</TabsTrigger>
-                    <TabsTrigger value="gigs">Gig Opportunities</TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="bookings">
-                    <Tabs defaultValue="pending" className="w-full">
-                        <TabsList className="grid w-full grid-cols-4">
-                            <TabsTrigger value="pending">New ({newRequests.length})</TabsTrigger>
-                            <TabsTrigger value="pending_approval">Pending ({pendingApproval.length})</TabsTrigger>
-                            <TabsTrigger value="upcoming">Upcoming ({upcomingBookings.length})</TabsTrigger>
-                            <TabsTrigger value="past">Past ({pastBookings.length})</TabsTrigger>
-                        </TabsList>
-                        <TabsContent value="pending">{renderBookings(newRequests)}</TabsContent>
-                        <TabsContent value="pending_approval">{renderBookings(pendingApproval)}</TabsContent>
-                        <TabsContent value="upcoming">{renderBookings(upcomingBookings)}</TabsContent>
-                        <TabsContent value="past">{renderBookings(pastBookings)}</TabsContent>
-                    </Tabs>
-                </TabsContent>
-                
-                <TabsContent value="gigs">
-                    {talentProfile?.is_pro_subscriber ? (
-                        <GigOpportunitiesIntegrated 
-                            isProSubscriber={!!talentProfile?.is_pro_subscriber}
-                            onUpgrade={() => {}}
-                            talentId={talentProfile?.id || ''}
-                        />
-                    ) : (
-                        <div className="text-center p-8 border rounded-lg">
-                            <h3 className="font-bold">This is a Pro Feature</h3>
-                            <p>Upgrade to Pro to view and apply for exclusive gig opportunities.</p>
-                            <Button>Upgrade to Pro</Button>
-                        </div>
-                    )}
-                </TabsContent>
-            </Tabs>
-            
-        </>
+        <Tabs defaultValue="pending" className="w-full">
+            <TabsList className="grid w-full grid-cols-4">
+                <TabsTrigger value="pending">New ({newRequests.length})</TabsTrigger>
+                <TabsTrigger value="pending_approval">Pending ({pendingApproval.length})</TabsTrigger>
+                <TabsTrigger value="upcoming">Upcoming ({upcomingBookings.length})</TabsTrigger>
+                <TabsTrigger value="past">Past ({pastBookings.length})</TabsTrigger>
+            </TabsList>
+            <TabsContent value="pending">{renderBookings(newRequests)}</TabsContent>
+            <TabsContent value="pending_approval">{renderBookings(pendingApproval)}</TabsContent>
+            <TabsContent value="upcoming">{renderBookings(upcomingBookings)}</TabsContent>
+            <TabsContent value="past">{renderBookings(pastBookings)}</TabsContent>
+        </Tabs>
     );
 };
 

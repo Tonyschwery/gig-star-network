@@ -36,8 +36,53 @@ serve(async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { type, recipientEmail, recipientName, data }: EmailRequest = await req.json();
-    logStep('Request parsed', { type, recipientEmail, recipientName });
+    const requestBody = await req.json();
+    const { type, eventData } = requestBody;
+
+    if (type === 'admin-event-request') {
+      const adminEmail = "admin@qtalent.live"; // Replace with your actual admin email
+      
+      const emailResponse = await resend.emails.send({
+        from: "Qtalent <noreply@qtalent.live>", // Replace with your verified domain
+        to: [adminEmail],
+        subject: `New Event Request from ${eventData.bookerName}`,
+        html: `
+          <h1>New Event Request</h1>
+          <p>A new event request has been submitted through the website.</p>
+          
+          <h2>Event Details:</h2>
+          <ul>
+            <li><strong>Booker Name:</strong> ${eventData.bookerName}</li>
+            <li><strong>Booker Email:</strong> ${eventData.bookerEmail}</li>
+            <li><strong>Event Date:</strong> ${eventData.eventDate}</li>
+            <li><strong>Event Duration:</strong> ${eventData.eventDuration} hours</li>
+            <li><strong>Event Location:</strong> ${eventData.eventLocation}</li>
+            <li><strong>Event Type:</strong> ${eventData.eventType}</li>
+          </ul>
+          
+          ${eventData.description ? `
+            <h2>Event Description:</h2>
+            <p>${eventData.description}</p>
+          ` : ''}
+          
+          <p>Please reach out to the booker at ${eventData.bookerEmail} to discuss their requirements.</p>
+        `,
+      });
+
+      console.log("Admin email sent successfully:", emailResponse);
+
+      return new Response(JSON.stringify(emailResponse), {
+        status: 200,
+        headers: {
+          "Content-Type": "application/json",
+          ...corsHeaders,
+        },
+      });
+    }
+
+    // Legacy email types handling
+    const { type: legacyType, recipientEmail, recipientName, data } = requestBody as EmailRequest;
+    logStep('Request parsed', { type: legacyType || type, recipientEmail, recipientName });
 
     // Check if Resend API key is configured
     if (!Deno.env.get('RESEND_API_KEY')) {
@@ -55,9 +100,9 @@ serve(async (req: Request): Promise<Response> => {
     let subject: string;
     const appUrl = 'https://myxizupccweukrxfdqmc.supabase.co'; // Your app URL
 
-    logStep('Generating email template', { type });
+    logStep('Generating email template', { type: legacyType || type });
 
-    switch (type) {
+    switch (legacyType || type) {
       case 'booking':
         emailHtml = await renderAsync(
           React.createElement(BookingNotificationEmail, {
@@ -130,7 +175,7 @@ serve(async (req: Request): Promise<Response> => {
         break;
 
       default:
-        throw new Error(`Unknown email type: ${type}`);
+        throw new Error(`Unknown email type: ${legacyType || type}`);
     }
 
     logStep('Sending email', { to: recipientEmail, subject });

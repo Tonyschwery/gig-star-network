@@ -190,16 +190,7 @@ const TalentDashboard = () => {
               size="sm"
             >
               <Calendar className="h-4 w-4 mr-2" />
-              Direct Bookings
-            </Button>
-            
-            <Button
-              onClick={() => navigate('/talent-dashboard/gigs')}
-              variant="outline"
-              size="sm"
-            >
-              <Music className="h-4 w-4 mr-2" />
-              Gig Opportunities
+              My Bookings
             </Button>
             
             <Button
@@ -252,7 +243,7 @@ const TalentDashboard = () => {
           <NotificationCenter />
         </div>
 
-        {/* Dashboard Overview - Removed Profile Views */}
+        {/* Dashboard Overview */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -269,28 +260,26 @@ const TalentDashboard = () => {
                   View All
                 </Button>
               </div>
-              <p className="text-xs text-muted-foreground">Manage your direct bookings</p>
+              <p className="text-xs text-muted-foreground">Manage your bookings and requests</p>
             </CardContent>
           </Card>
           
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Gig Opportunities</CardTitle>
-              <Music className="h-4 w-4 muted" />
+              <CardTitle className="text-sm font-medium">Profile Status</CardTitle>
+              <Edit3 className="h-4 w-4 muted" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
                 <Button 
                   variant="link" 
                   className="p-0 h-auto text-2xl font-bold"
-                  onClick={() => navigate('/talent-dashboard/gigs')}
+                  onClick={() => navigate('/talent-profile-edit')}
                 >
-                  Browse
+                  Edit Profile
                 </Button>
               </div>
-              <p className="text-xs text-muted-foreground">
-                {profile.is_pro_subscriber ? 'Discover new opportunities' : 'Upgrade to Pro for access'}
-              </p>
+              <p className="text-xs text-muted-foreground">Keep your profile updated and attractive</p>
             </CardContent>
           </Card>
         </div>
@@ -301,7 +290,7 @@ const TalentDashboard = () => {
             <CardTitle>Quick Actions</CardTitle>
             <CardDescription>Manage your talent profile and settings</CardDescription>
           </CardHeader>
-          <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <Button 
               variant="outline" 
               className="w-full"
@@ -317,14 +306,6 @@ const TalentDashboard = () => {
             >
               <Calendar className="h-4 w-4 mr-2" />
               View Bookings
-            </Button>
-            <Button 
-              variant="outline" 
-              className="w-full"
-              onClick={() => navigate('/talent-dashboard/gigs')}
-            >
-              <Music className="h-4 w-4 mr-2" />
-              Browse Gigs
             </Button>
             <Button 
               variant="outline" 

@@ -259,7 +259,7 @@ export function HeroSection() {
               </h2>
             </div>
             <p className="text-subhead max-w-2xl mx-auto">
-              Let us help you find the perfect talent for your event. Our team will personally match you with artists that fit your specific needs and budget.
+              Let us help you find the perfect talent for your event. Our team will personally reach out with curated recommendations that fit your specific needs and budget.
             </p>
           </div>
           
@@ -272,7 +272,7 @@ export function HeroSection() {
           </Button>
           
           <div className="text-sm text-muted-foreground">
-            📝 Submit your request and our pro talents will reach out to you
+            📝 Submit your request and our team will reach out with personalized recommendations
           </div>
         </div>
       </div>
