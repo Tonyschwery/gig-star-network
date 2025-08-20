@@ -245,8 +245,8 @@ export function UniversalChat() {
           )}
           
           {/* Messages Area */}
-          <ScrollArea className={`flex-1 ${minimized ? 'h-64' : 'max-h-96'}`}>
-            <div className="p-4 space-y-4">
+          <ScrollArea className={`flex-1 ${minimized ? 'h-48' : ''}`}>
+            <div className="p-4 space-y-4 min-h-[200px]">
               {!selectedId ? (
                 <div className="flex flex-col items-center justify-center py-12 text-center">
                   <div className="h-16 w-16 bg-muted/50 rounded-full flex items-center justify-center mb-4">
@@ -305,9 +305,9 @@ export function UniversalChat() {
             </div>
           </ScrollArea>
           
-          {/* Modern Input Area (only in full view) */}
+          {/* Modern Input Area - Always show when not minimized */}
           {!minimized && (
-            <div className="p-4 bg-muted/20 border-t border-border">
+            <div className="shrink-0 p-4 bg-card/50 border-t border-border backdrop-blur-sm">
               <div className="flex items-end gap-3">
                 <div className="flex-1">
                   <Textarea
@@ -320,7 +320,7 @@ export function UniversalChat() {
                         onSend();
                       }
                     }}
-                    className="min-h-[44px] max-h-32 bg-card border-border text-card-foreground placeholder:text-muted-foreground resize-none rounded-xl focus:ring-2 focus:ring-accent/20 focus:border-accent/50 transition-all duration-200"
+                    className="min-h-[44px] max-h-32 bg-background border-border text-foreground placeholder:text-muted-foreground resize-none rounded-xl focus:ring-2 focus:ring-accent/20 focus:border-accent/50 transition-all duration-200 shadow-sm"
                     disabled={!selectedId || !isReady}
                     rows={1}
                   />
@@ -328,7 +328,7 @@ export function UniversalChat() {
                 <Button 
                   onClick={onSend} 
                   disabled={!input.trim() || !selectedId || !isReady}
-                  className="bg-accent hover:bg-accent/90 text-accent-foreground px-6 py-3 rounded-xl shadow-minimal hover:shadow-card transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="bg-accent hover:bg-accent/90 text-accent-foreground px-6 py-3 rounded-xl shadow-minimal hover:shadow-card transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
                 >
                   Send
                 </Button>
