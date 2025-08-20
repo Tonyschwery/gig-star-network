@@ -78,23 +78,27 @@ export function ProSubscriptionDialog({
       // Simulate successful subscription for testing
       setTimeout(async () => {
         // Update database to mark user as Pro subscriber
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('talent_profiles')
           .update({ 
             is_pro_subscriber: true,
             subscription_status: 'pro',
             subscription_started_at: new Date().toISOString()
           })
-          .eq('user_id', user.id);
+          .eq('user_id', user.id)
+          .select();
 
         if (error) {
+          console.error('Database update error:', error);
           toast({
-            title: "Error",
-            description: "Failed to update subscription status.",
+            title: "Database Error",
+            description: `Failed to update subscription: ${error.message}`,
             variant: "destructive",
           });
           return;
         }
+
+        console.log('Database update successful:', data);
 
         onSubscribe();
         onOpenChange(false);

@@ -88,24 +88,30 @@ export function SubscriptionButton({
         
         // Simulate successful subscription for testing
         setTimeout(async () => {
+          console.log('Updating talent profile for user:', user.id);
+          
           // Update database to mark user as Pro subscriber
-          const { error } = await supabase
+          const { data, error } = await supabase
             .from('talent_profiles')
             .update({ 
               is_pro_subscriber: true,
               subscription_status: 'pro',
               subscription_started_at: new Date().toISOString()
             })
-            .eq('user_id', user.id);
+            .eq('user_id', user.id)
+            .select();
 
           if (error) {
+            console.error('Database update error:', error);
             toast({
-              title: "Error",
-              description: "Failed to update subscription status.",
+              title: "Database Error",
+              description: `Failed to update subscription: ${error.message}`,
               variant: "destructive",
             });
             return;
           }
+
+          console.log('Database update successful:', data);
 
           if (onSubscriptionChange) {
             onSubscriptionChange();
@@ -114,7 +120,7 @@ export function SubscriptionButton({
           // Show detailed success message with benefits
           toast({
             title: "🎉 Welcome to Qtalent Pro! 👑",
-            description: "✅ 0% Commission • ✅ Pro Badge • ✅ Priority Search • ✅ Unlimited Photos • ✅ Premium Gigs Access",
+            description: "✅ 0% Commission • ✅ Pro Badge • ✅ Priority Search • ✅ Unlimited Photos • ✅ Premium Gigs",
             duration: 8000,
           });
           
@@ -122,13 +128,13 @@ export function SubscriptionButton({
           setTimeout(() => {
             toast({
               title: "🚀 Pro Features Unlocked!",
-              description: "You can now add unlimited gallery photos, music links, and access premium gig opportunities!",
+              description: "Your profile now shows the Pro badge! Add unlimited gallery photos and music links.",
               duration: 6000,
             });
           }, 2000);
           
           // Reload to refresh UI state and show Pro features
-          setTimeout(() => window.location.reload(), 3000);
+          setTimeout(() => window.location.reload(), 4000);
         }, 2000);
       }
 
