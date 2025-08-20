@@ -173,8 +173,8 @@ export function UniversalChat() {
         <DialogContent className={`${
           minimized 
             ? 'h-[400px] w-[350px] sm:w-[380px]' 
-            : 'h-[85vh] max-h-[750px] w-[95vw] max-w-[500px] sm:max-w-[550px] lg:max-w-[600px]'
-        } flex flex-col p-0 transition-all duration-300 fixed bottom-6 right-6 sm:bottom-28 sm:right-6 translate-x-0 translate-y-0 bg-card border border-border shadow-elevated rounded-2xl overflow-hidden`}>
+            : 'h-[600px] w-[95vw] max-w-[450px]'
+        } flex flex-col p-0 fixed bottom-6 right-6 sm:bottom-28 sm:right-6 translate-x-0 translate-y-0 bg-card border border-border shadow-lg rounded-2xl overflow-hidden`}>
           
           {/* Modern Header */}
           <div className="flex items-center justify-between p-4 bg-card border-b border-border">
@@ -245,71 +245,66 @@ export function UniversalChat() {
           )}
           
           {/* Messages Area */}
-          <ScrollArea className={`${
-            minimized 
-              ? 'h-48' 
-              : selectedId 
-                ? 'max-h-[calc(100vh-320px)] min-h-[200px]' 
-                : 'max-h-[calc(100vh-260px)] min-h-[200px]'
-          } overflow-y-auto`}>
-            <div className="p-4 space-y-4">
-              {!selectedId ? (
-                <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <div className="h-16 w-16 bg-muted/50 rounded-full flex items-center justify-center mb-4">
-                    <MessageCircle className="h-8 w-8 text-muted-foreground" />
+          <div className={`flex-1 overflow-hidden ${minimized ? 'h-48' : ''}`}>
+            <ScrollArea className="h-full">
+              <div className="p-4 space-y-4">
+                {!selectedId ? (
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <div className="h-16 w-16 bg-muted/50 rounded-full flex items-center justify-center mb-4">
+                      <MessageCircle className="h-8 w-8 text-muted-foreground" />
+                    </div>
+                    <h3 className="text-card-foreground font-medium mb-2">
+                      {minimized ? 'Select Event' : 'Choose an event to start chatting'}
+                    </h3>
+                    <p className="text-muted-foreground text-sm">
+                      {minimized ? 'Open full view to select' : 'Pick an event request from the dropdown above'}
+                    </p>
                   </div>
-                  <h3 className="text-card-foreground font-medium mb-2">
-                    {minimized ? 'Select Event' : 'Choose an event to start chatting'}
-                  </h3>
-                  <p className="text-muted-foreground text-sm">
-                    {minimized ? 'Open full view to select' : 'Pick an event request from the dropdown above'}
-                  </p>
-                </div>
-              ) : (
-                <>
-                  {messages.map((m, index) => (
-                    <div 
-                      key={m.id} 
-                      className={`flex ${m.senderId === user?.id ? 'justify-end' : 'justify-start'} animate-fadeIn`}
-                      style={{ animationDelay: `${index * 0.1}s` }}
-                    >
-                      <div className={`relative max-w-[80%] sm:max-w-[75%] group ${
-                        m.senderId === user?.id ? 'ml-4' : 'mr-4'
-                      }`}>
-                        <div className={`px-4 py-3 text-sm shadow-minimal transition-all duration-200 group-hover:shadow-card ${
-                          m.senderId === user?.id 
-                            ? 'bg-accent text-accent-foreground rounded-2xl rounded-br-md' 
-                            : 'bg-muted border border-border text-card-foreground rounded-2xl rounded-bl-md'
+                ) : (
+                  <>
+                    {messages.map((m, index) => (
+                      <div 
+                        key={m.id} 
+                        className={`flex ${m.senderId === user?.id ? 'justify-end' : 'justify-start'}`}
+                      >
+                        <div className={`relative max-w-[80%] sm:max-w-[75%] group ${
+                          m.senderId === user?.id ? 'ml-4' : 'mr-4'
                         }`}>
-                          <div className="break-words leading-relaxed">{m.content}</div>
-                        </div>
-                        <div className={`text-[11px] text-muted-foreground mt-1 px-1 ${
-                          m.senderId === user?.id ? 'text-right' : 'text-left'
-                        }`}>
-                          {new Date(m.createdAt).toLocaleTimeString([], { 
-                            hour: '2-digit', 
-                            minute: '2-digit',
-                            hour12: true 
-                          })}
+                          <div className={`px-4 py-3 text-sm ${
+                            m.senderId === user?.id 
+                              ? 'bg-accent text-accent-foreground rounded-2xl rounded-br-md' 
+                              : 'bg-muted border border-border text-card-foreground rounded-2xl rounded-bl-md'
+                          }`}>
+                            <div className="break-words leading-relaxed">{m.content}</div>
+                          </div>
+                          <div className={`text-[11px] text-muted-foreground mt-1 px-1 ${
+                            m.senderId === user?.id ? 'text-right' : 'text-left'
+                          }`}>
+                            {new Date(m.createdAt).toLocaleTimeString([], { 
+                              hour: '2-digit', 
+                              minute: '2-digit',
+                              hour12: true 
+                            })}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                  
-                  {!messages.length && (
-                    <div className="flex flex-col items-center justify-center py-12 text-center">
-                      <div className="h-16 w-16 bg-accent/10 rounded-full flex items-center justify-center mb-4">
-                        <MessageCircle className="h-8 w-8 text-accent" />
+                    ))}
+                    
+                    {!messages.length && (
+                      <div className="flex flex-col items-center justify-center py-12 text-center">
+                        <div className="h-16 w-16 bg-accent/10 rounded-full flex items-center justify-center mb-4">
+                          <MessageCircle className="h-8 w-8 text-accent" />
+                        </div>
+                        <h3 className="text-card-foreground font-medium mb-2">Start the conversation</h3>
+                        <p className="text-muted-foreground text-sm">Send your first message below</p>
                       </div>
-                      <h3 className="text-card-foreground font-medium mb-2">Start the conversation</h3>
-                      <p className="text-muted-foreground text-sm">Send your first message below</p>
-                    </div>
-                  )}
-                </>
-              )}
-              <div ref={messagesEndRef} />
-            </div>
-          </ScrollArea>
+                    )}
+                  </>
+                )}
+                <div ref={messagesEndRef} />
+              </div>
+            </ScrollArea>
+          </div>
           
           {/* Modern Input Area - Always show when not minimized */}
           {!minimized && (
