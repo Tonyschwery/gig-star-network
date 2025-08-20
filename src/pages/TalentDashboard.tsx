@@ -277,7 +277,7 @@ const TalentDashboard = () => {
               </div>
               <Button 
                 variant="outline" 
-                onClick={() => window.open(`/talent/${profile.id}`, '_blank')}
+                onClick={() => navigate(`/talent/${profile.id}`)}
                 className="w-full sm:w-auto"
               >
                 <ExternalLink className="h-4 w-4 mr-2" />

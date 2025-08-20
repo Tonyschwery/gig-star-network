@@ -513,10 +513,19 @@ export default function TalentOnboarding() {
         onOpenChange={setShowProDialog}
         onSubscribe={() => {
           toast({
-            title: "Pro Features Activated! 🎉",
-            description: "Your pro subscription will be activated shortly.",
-            duration: 5000,
+            title: "Pro Subscription Activated! 🎉",
+            description: "Complete your profile first, then return to your dashboard to enjoy all Pro benefits including unlimited photos, music links, and 0% commission!",
+            duration: 8000,
           });
+          
+          // Additional helpful message
+          setTimeout(() => {
+            toast({
+              title: "💡 Pro Tip",
+              description: "After completing your profile, visit your talent dashboard to access all Pro features like adding music links and unlimited gallery photos.",
+              duration: 6000,
+            });
+          }, 2000);
         }}
         profileId="temp-id"
       />
