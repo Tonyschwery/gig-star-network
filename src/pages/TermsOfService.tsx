@@ -71,7 +71,7 @@ export default function TermsOfService() {
                     <h3 className="text-lg font-semibold mb-2">For Talent</h3>
                     <ul className="space-y-2 text-muted-foreground">
                       <li>• Standard accounts: 20% commission on bookings</li>
-                      <li>• Pro accounts: 15% commission on bookings + monthly subscription fee</li>
+                      <li>• Pro accounts: 0% commission on bookings + monthly subscription fee</li>
                     </ul>
                   </div>
                   

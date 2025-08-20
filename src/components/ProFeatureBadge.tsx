@@ -54,7 +54,7 @@ export function ProFeatureBadge({
 
 export function ProComparisonList() {
   const features = [
-    { name: "Platform Commission", free: "20%", pro: "15%" },
+    { name: "Platform Commission", free: "20%", pro: "0%" },
     { name: "Gallery Photos", free: "5 max", pro: "Unlimited" },
     { name: "Search Priority", free: "Standard", pro: "Top Results" },
     { name: "Premium Gigs", free: "Limited", pro: "Full Access" },

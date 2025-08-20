@@ -22,7 +22,16 @@ serve(async (req) => {
     logStep("Function started");
 
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
-    if (!stripeKey) throw new Error("STRIPE_SECRET_KEY is not set");
+    if (!stripeKey || stripeKey.startsWith("sk_test_mock")) {
+      logStep("Using mock Stripe key - returning mock checkout URL");
+      // Return a mock response when no real Stripe key is configured
+      return new Response(JSON.stringify({ 
+        url: `${req.headers.get("origin") || "http://localhost:3000"}/pricing?subscription=mock_checkout&message=Mock checkout - add real Stripe key to process payments`
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
     logStep("Stripe key verified");
 
     // Use the anon key for reading user data

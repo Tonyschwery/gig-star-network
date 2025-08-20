@@ -42,10 +42,10 @@ export default function Pricing() {
       description: "For serious performers who want to earn more",
       monthlyPrice: 29,
       yearlyPrice: 290,
-      commission: "15%",
+      commission: "0%",
       features: [
         "Everything in Free",
-        "Reduced 15% commission (save 5%!)",
+        "Zero commission - keep 100% of earnings!",
         "Priority listing in search results",
         "Access to exclusive premium gigs",
         "Priority customer support",
@@ -59,7 +59,7 @@ export default function Pricing() {
       buttonText: "Upgrade to Pro",
       popular: true,
       badge: "Most Popular",
-      savings: "Save $5 on every $100 earned!"
+      savings: "Save $20 on every $100 earned!"
     }
   ];
 
@@ -191,7 +191,7 @@ export default function Pricing() {
                     plan.name === 'Pro' ? 'text-brand-success' : 'text-muted-foreground'
                   }`}>
                     {plan.commission} platform commission
-                    {plan.name === 'Pro' && <span className="block text-xs text-brand-success mt-1">Save 5% on every booking!</span>}
+                    {plan.name === 'Pro' && <span className="block text-xs text-brand-success mt-1">Keep 100% of your earnings!</span>}
                   </div>
                   {plan.savings && (
                     <div className="text-xs text-brand-success font-medium mt-2 bg-brand-success/10 rounded-full px-3 py-1">
@@ -273,7 +273,7 @@ export default function Pricing() {
             <CardContent className="pt-6">
               <h3 className="font-semibold mb-2">How much money will I save with Pro?</h3>
               <p className="text-muted-foreground">
-                Pro users pay only 15% commission vs 20% for free users. This means you save $5 on every $100 you earn! For a $500 gig, you'd save $25 with Pro.
+                Pro users pay 0% commission vs 20% for free users. This means you save $20 on every $100 you earn! For a $500 gig, you'd save $100 with Pro.
               </p>
             </CardContent>
           </Card>
@@ -282,7 +282,7 @@ export default function Pricing() {
             <CardContent className="pt-6">
               <h3 className="font-semibold mb-2">What's included in Pro membership?</h3>
               <p className="text-muted-foreground">
-                Pro members get reduced commission (15% vs 20%), golden crown badge, priority in search results, access to exclusive premium gigs, unlimited gallery photos, and priority customer support.
+                Pro members get zero commission (0% vs 20%), golden crown badge, priority in search results, access to exclusive premium gigs, unlimited gallery photos, and priority customer support.
               </p>
             </CardContent>
           </Card>

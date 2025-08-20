@@ -57,7 +57,7 @@ export function ManualInvoiceModal({
   const { toast } = useToast();
 
   const price = parseFloat(agreedPrice) || 0;
-  const platformCommissionRate = isProSubscriber ? 10 : 20;
+  const platformCommissionRate = isProSubscriber ? 0 : 20;
   const platformCommission = (price * platformCommissionRate) / 100;
   const talentEarnings = price - platformCommission;
 
@@ -245,7 +245,7 @@ export function ManualInvoiceModal({
                   </div>
                   {!isProSubscriber && (
                     <div className="mt-3 p-2 bg-yellow-50 rounded text-xs text-yellow-700">
-                      💡 Pro subscribers pay only 10% commission (you're paying 20%)
+                      💡 Pro subscribers pay 0% commission (you're paying 20%)
                     </div>
                   )}
                 </CardContent>

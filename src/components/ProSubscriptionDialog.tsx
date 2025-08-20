@@ -27,8 +27,8 @@ const benefits = [
   },
   {
     icon: Zap,
-    title: "Reduced Commission (15% vs 20%)",
-    description: "Keep more of your earnings with only 15% platform fee instead of 20%"
+    title: "Zero Commission (0% vs 20%)",
+    description: "Keep 100% of your earnings - no platform fees for Pro subscribers!"
   },
   {
     icon: Search,
@@ -157,7 +157,7 @@ export function ProSubscriptionDialog({
                   <tr className="border-b border-border/50">
                     <td className="py-3">Platform Commission</td>
                     <td className="text-center py-3 text-destructive font-semibold">20%</td>
-                    <td className="text-center py-3 text-brand-success font-semibold">15%</td>
+                    <td className="text-center py-3 text-brand-success font-semibold">0%</td>
                   </tr>
                   <tr className="border-b border-border/50">
                     <td className="py-3">Profile Badge</td>
@@ -196,10 +196,10 @@ export function ProSubscriptionDialog({
               <span className="text-lg font-normal text-muted-foreground">/month</span>
             </h3>
             <p className="text-muted-foreground mb-4">
-              Cancel anytime • Save 5% on your bookings with reduced commission
+              Cancel anytime • Keep 100% of your earnings with zero commission
             </p>
             <div className="text-sm text-brand-success font-semibold">
-              Pay $5 less commission on every $100 earned!
+              Save $20 on every $100 earned - Zero platform fees!
             </div>
           </div>
 
