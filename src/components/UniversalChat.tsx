@@ -174,180 +174,182 @@ export function UniversalChat() {
           minimized 
             ? 'h-[400px] w-[350px] sm:w-[380px]' 
             : 'h-[600px] w-[95vw] max-w-[450px]'
-        } flex flex-col p-0 fixed bottom-6 right-6 sm:bottom-28 sm:right-6 translate-x-0 translate-y-0 bg-card border border-border shadow-lg rounded-2xl overflow-hidden`}>
+        } fixed bottom-6 right-6 sm:bottom-28 sm:right-6 translate-x-0 translate-y-0 bg-card border border-border shadow-lg rounded-2xl overflow-hidden`}>
           
-          {/* Modern Header */}
-          <div className="flex items-center justify-between p-4 bg-card border-b border-border">
-            <div className="flex items-center gap-3">
-              <div className="h-2 w-2 bg-accent rounded-full animate-live-pulse"></div>
-              <DialogTitle className="text-lg font-semibold text-card-foreground">
-                {minimized ? 'Messages' : 'Live Chat'}
-              </DialogTitle>
-            </div>
-            <div className="flex items-center gap-1">
-              {selectedId && !minimized && (
+          <div className="flex flex-col h-full">
+            {/* Modern Header */}
+            <div className="flex items-center justify-between p-4 bg-card border-b border-border shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="h-2 w-2 bg-accent rounded-full animate-live-pulse"></div>
+                <DialogTitle className="text-lg font-semibold text-card-foreground">
+                  {minimized ? 'Messages' : 'Live Chat'}
+                </DialogTitle>
+              </div>
+              <div className="flex items-center gap-1">
+                {selectedId && !minimized && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={removeBookingFromChat}
+                    className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full"
+                    title="Remove this event request from chat"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                )}
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={removeBookingFromChat}
-                  className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full"
-                  title="Remove this event request from chat"
+                  onClick={() => setMinimized(!minimized)}
+                  className="h-8 w-8 p-0 text-muted-foreground hover:text-card-foreground hover:bg-muted/50 rounded-full"
+                  title={minimized ? 'Maximize' : 'Minimize'}
                 >
-                  <Trash2 className="h-4 w-4" />
+                  {minimized ? <Maximize2 className="h-4 w-4" /> : <Minimize2 className="h-4 w-4" />}
                 </Button>
-              )}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setMinimized(!minimized)}
-                className="h-8 w-8 p-0 text-muted-foreground hover:text-card-foreground hover:bg-muted/50 rounded-full"
-                title={minimized ? 'Maximize' : 'Minimize'}
-              >
-                {minimized ? <Maximize2 className="h-4 w-4" /> : <Minimize2 className="h-4 w-4" />}
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setOpen(false)}
-                className="h-8 w-8 p-0 text-muted-foreground hover:text-card-foreground hover:bg-muted/50 rounded-full"
-                title="Close"
-              >
-                <X className="h-4 w-4" />
-              </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setOpen(false)}
+                  className="h-8 w-8 p-0 text-muted-foreground hover:text-card-foreground hover:bg-muted/50 rounded-full"
+                  title="Close"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
-          </div>
-          
-          {/* Event Selector (only in full view) */}
-          {!minimized && (
-            <div className="p-3 bg-muted/30 border-b border-border">
-              <Select value={selectedId ?? undefined} onValueChange={(v) => setSelectedId(v)}>
-                <SelectTrigger className="w-full bg-card border-border text-card-foreground hover:bg-muted/50 transition-colors">
-                  <SelectValue placeholder="Select an event to chat about" />
-                </SelectTrigger>
-                <SelectContent className="bg-card border-border shadow-elevated">
-                  {bookings.map((b) => (
-                    <SelectItem 
-                      key={b.id} 
-                      value={b.id} 
-                      className="text-card-foreground hover:bg-muted/50 focus:bg-muted/50"
-                    >
-                      <div className="flex items-center gap-2">
-                        <div className="h-2 w-2 bg-accent rounded-full"></div>
-                        <span className="font-medium">{b.event_type}</span>
-                        <span className="text-muted-foreground">•</span>
-                        <span className="text-muted-foreground">{b.booker_name}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-          
-          {/* Messages Area */}
-          <div className={`flex-1 overflow-hidden ${minimized ? 'h-48' : ''}`}>
-            <ScrollArea className="h-full">
-              <div className="p-4 space-y-4">
-                {!selectedId ? (
-                  <div className="flex flex-col items-center justify-center py-12 text-center">
-                    <div className="h-16 w-16 bg-muted/50 rounded-full flex items-center justify-center mb-4">
-                      <MessageCircle className="h-8 w-8 text-muted-foreground" />
-                    </div>
-                    <h3 className="text-card-foreground font-medium mb-2">
-                      {minimized ? 'Select Event' : 'Choose an event to start chatting'}
-                    </h3>
-                    <p className="text-muted-foreground text-sm">
-                      {minimized ? 'Open full view to select' : 'Pick an event request from the dropdown above'}
-                    </p>
-                  </div>
-                ) : (
-                  <>
-                    {messages.map((m, index) => (
-                      <div 
-                        key={m.id} 
-                        className={`flex ${m.senderId === user?.id ? 'justify-end' : 'justify-start'}`}
+            
+            {/* Event Selector (only in full view) */}
+            {!minimized && (
+              <div className="p-3 bg-muted/30 border-b border-border shrink-0">
+                <Select value={selectedId ?? undefined} onValueChange={(v) => setSelectedId(v)}>
+                  <SelectTrigger className="w-full bg-card border-border text-card-foreground hover:bg-muted/50 transition-colors">
+                    <SelectValue placeholder="Select an event to chat about" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-card border-border shadow-elevated">
+                    {bookings.map((b) => (
+                      <SelectItem 
+                        key={b.id} 
+                        value={b.id} 
+                        className="text-card-foreground hover:bg-muted/50 focus:bg-muted/50"
                       >
-                        <div className={`relative max-w-[80%] sm:max-w-[75%] group ${
-                          m.senderId === user?.id ? 'ml-4' : 'mr-4'
-                        }`}>
-                          <div className={`px-4 py-3 text-sm ${
-                            m.senderId === user?.id 
-                              ? 'bg-accent text-accent-foreground rounded-2xl rounded-br-md' 
-                              : 'bg-muted border border-border text-card-foreground rounded-2xl rounded-bl-md'
-                          }`}>
-                            <div className="break-words leading-relaxed">{m.content}</div>
-                          </div>
-                          <div className={`text-[11px] text-muted-foreground mt-1 px-1 ${
-                            m.senderId === user?.id ? 'text-right' : 'text-left'
-                          }`}>
-                            {new Date(m.createdAt).toLocaleTimeString([], { 
-                              hour: '2-digit', 
-                              minute: '2-digit',
-                              hour12: true 
-                            })}
-                          </div>
+                        <div className="flex items-center gap-2">
+                          <div className="h-2 w-2 bg-accent rounded-full"></div>
+                          <span className="font-medium">{b.event_type}</span>
+                          <span className="text-muted-foreground">•</span>
+                          <span className="text-muted-foreground">{b.booker_name}</span>
                         </div>
-                      </div>
+                      </SelectItem>
                     ))}
-                    
-                    {!messages.length && (
-                      <div className="flex flex-col items-center justify-center py-12 text-center">
-                        <div className="h-16 w-16 bg-accent/10 rounded-full flex items-center justify-center mb-4">
-                          <MessageCircle className="h-8 w-8 text-accent" />
-                        </div>
-                        <h3 className="text-card-foreground font-medium mb-2">Start the conversation</h3>
-                        <p className="text-muted-foreground text-sm">Send your first message below</p>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            
+            {/* Messages Area - Takes remaining space */}
+            <div className="flex-1 min-h-0">
+              <ScrollArea className="h-full">
+                <div className="p-4 space-y-4 pb-2">
+                  {!selectedId ? (
+                    <div className="flex flex-col items-center justify-center py-12 text-center">
+                      <div className="h-16 w-16 bg-muted/50 rounded-full flex items-center justify-center mb-4">
+                        <MessageCircle className="h-8 w-8 text-muted-foreground" />
                       </div>
-                    )}
-                  </>
-                )}
-                <div ref={messagesEndRef} />
-              </div>
-            </ScrollArea>
-          </div>
-          
-          {/* Modern Input Area - Always show when not minimized */}
-          {!minimized && (
-            <div className="shrink-0 p-4 bg-card/50 border-t border-border backdrop-blur-sm">
-              <div className="flex items-end gap-3">
-                <div className="flex-1">
-                  <Textarea
-                    placeholder={!selectedId ? 'Select an event to start chatting' : (isReady ? 'Type a message...' : 'Connecting...')}
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        onSend();
-                      }
-                    }}
-                    className="min-h-[44px] max-h-32 bg-background border-border text-foreground placeholder:text-muted-foreground resize-none rounded-xl focus:ring-2 focus:ring-accent/20 focus:border-accent/50 transition-all duration-200 shadow-sm"
-                    disabled={!selectedId || !isReady}
-                    rows={1}
-                  />
+                      <h3 className="text-card-foreground font-medium mb-2">
+                        {minimized ? 'Select Event' : 'Choose an event to start chatting'}
+                      </h3>
+                      <p className="text-muted-foreground text-sm">
+                        {minimized ? 'Open full view to select' : 'Pick an event request from the dropdown above'}
+                      </p>
+                    </div>
+                  ) : (
+                    <>
+                      {messages.map((m, index) => (
+                        <div 
+                          key={m.id} 
+                          className={`flex ${m.senderId === user?.id ? 'justify-end' : 'justify-start'}`}
+                        >
+                          <div className={`relative max-w-[80%] sm:max-w-[75%] group ${
+                            m.senderId === user?.id ? 'ml-4' : 'mr-4'
+                          }`}>
+                            <div className={`px-4 py-3 text-sm ${
+                              m.senderId === user?.id 
+                                ? 'bg-accent text-accent-foreground rounded-2xl rounded-br-md' 
+                                : 'bg-muted border border-border text-card-foreground rounded-2xl rounded-bl-md'
+                            }`}>
+                              <div className="break-words leading-relaxed">{m.content}</div>
+                            </div>
+                            <div className={`text-[11px] text-muted-foreground mt-1 px-1 ${
+                              m.senderId === user?.id ? 'text-right' : 'text-left'
+                            }`}>
+                              {new Date(m.createdAt).toLocaleTimeString([], { 
+                                hour: '2-digit', 
+                                minute: '2-digit',
+                                hour12: true 
+                              })}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                      
+                      {!messages.length && (
+                        <div className="flex flex-col items-center justify-center py-12 text-center">
+                          <div className="h-16 w-16 bg-accent/10 rounded-full flex items-center justify-center mb-4">
+                            <MessageCircle className="h-8 w-8 text-accent" />
+                          </div>
+                          <h3 className="text-card-foreground font-medium mb-2">Start the conversation</h3>
+                          <p className="text-muted-foreground text-sm">Send your first message below</p>
+                        </div>
+                      )}
+                    </>
+                  )}
+                  <div ref={messagesEndRef} />
                 </div>
-                <Button 
-                  onClick={onSend} 
-                  disabled={!input.trim() || !selectedId || !isReady}
-                  className="bg-accent hover:bg-accent/90 text-accent-foreground px-6 py-3 rounded-xl shadow-minimal hover:shadow-card transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
-                >
-                  Send
-                </Button>
-              </div>
-              
-              {/* Connection Status */}
-              <div className="flex items-center justify-center mt-2">
-                <div className={`flex items-center gap-2 text-xs ${
-                  isReady ? 'text-accent' : 'text-muted-foreground'
-                }`}>
-                  <div className={`h-1.5 w-1.5 rounded-full ${
-                    isReady ? 'bg-accent animate-live-pulse' : 'bg-muted-foreground'
-                  }`}></div>
-                  {isReady ? 'Connected' : 'Connecting...'}
-                </div>
-              </div>
+              </ScrollArea>
             </div>
-          )}
+            
+            {/* Input Area - Fixed at bottom when not minimized */}
+            {!minimized && (
+              <div className="shrink-0 p-4 bg-card border-t border-border">
+                <div className="flex items-end gap-3 mb-2">
+                  <div className="flex-1">
+                    <Textarea
+                      placeholder={!selectedId ? 'Select an event to start chatting' : (isReady ? 'Type a message...' : 'Connecting...')}
+                      value={input}
+                      onChange={(e) => setInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          onSend();
+                        }
+                      }}
+                      className="min-h-[44px] max-h-24 bg-background border-border text-foreground placeholder:text-muted-foreground resize-none rounded-xl focus:ring-2 focus:ring-accent/20 focus:border-accent/50 transition-all duration-200"
+                      disabled={!selectedId || !isReady}
+                      rows={1}
+                    />
+                  </div>
+                  <Button 
+                    onClick={onSend} 
+                    disabled={!input.trim() || !selectedId || !isReady}
+                    className="bg-accent hover:bg-accent/90 text-accent-foreground px-4 py-2.5 rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shrink-0 h-11"
+                  >
+                    Send
+                  </Button>
+                </div>
+                
+                {/* Connection Status */}
+                <div className="flex items-center justify-center">
+                  <div className={`flex items-center gap-2 text-xs ${
+                    isReady ? 'text-accent' : 'text-muted-foreground'
+                  }`}>
+                    <div className={`h-1.5 w-1.5 rounded-full ${
+                      isReady ? 'bg-accent animate-live-pulse' : 'bg-muted-foreground'
+                    }`}></div>
+                    {isReady ? 'Connected' : 'Connecting...'}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </>
