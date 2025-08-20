@@ -119,8 +119,7 @@ export function ProSubscriptionDialog({
           });
         }, 2000);
         
-        // Reload to refresh UI state and show Pro features
-        setTimeout(() => window.location.reload(), 3000);
+        // Don't reload the page - just close dialog and update state
       }, 2000);
       
     } catch (error) {

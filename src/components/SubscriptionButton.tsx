@@ -74,8 +74,6 @@ export function SubscriptionButton({
             title: "Subscription Cancelled",
             description: "Mock subscription has been cancelled for testing.",
           });
-          // Reload to refresh UI state
-          window.location.reload();
         }, 2000);
         
       } else {
@@ -133,8 +131,8 @@ export function SubscriptionButton({
             });
           }, 2000);
           
-          // Reload to refresh UI state and show Pro features
-          setTimeout(() => window.location.reload(), 4000);
+          // Don't reload the page, just trigger callback
+          // This prevents form refresh issues
         }, 2000);
       }
 
