@@ -41,7 +41,7 @@ serve(async (req: Request): Promise<Response> => {
     const { type, eventData } = requestBody;
 
     if (type === 'admin-event-request') {
-      const adminEmail = "Qtalents@proton.me";
+      const adminEmail = "tonyschwery@proton.me";
       
       const emailResponse = await resend.emails.send({
         from: "Qtalent <onboarding@resend.dev>", // Using Resend's verified sender
