@@ -87,15 +87,12 @@ export default function AdminMessages() {
   };
 
   const sendBroadcastMessage = async () => {
-    if (!broadcastForm.subject.trim() || !broadcastForm.message.trim()) {
-      toast.error('Please fill in all fields');
+    if (!broadcastForm.message.trim()) {
+      toast.error('Please enter a message');
       return;
     }
 
     try {
-      // In a real implementation, this would send emails or create notifications
-      // For now, we'll just create notifications for all users
-      
       let targetUsers: string[] = [];
       
       if (broadcastForm.recipient_type === 'talents') {
@@ -123,11 +120,11 @@ export default function AdminMessages() {
         targetUsers = Array.from(allUsers);
       }
 
-      // Create notifications for all target users
+      // Create notifications for all target users with "qtalent" title
       const notifications = targetUsers.map(userId => ({
         user_id: userId,
         type: 'admin_broadcast',
-        title: broadcastForm.subject,
+        title: 'qtalent',
         message: broadcastForm.message,
       }));
 
@@ -137,6 +134,28 @@ export default function AdminMessages() {
           .insert(notifications);
         
         if (error) throw error;
+      }
+
+      // Send emails using the notification email function
+      if (targetUsers.length > 0) {
+        const { error: emailError } = await supabase.functions.invoke('send-notification-email', {
+          body: {
+            emailType: 'broadcast',
+            userIds: targetUsers,
+            broadcastData: {
+              subject: 'qtalent',
+              message: broadcastForm.message,
+              recipientType: broadcastForm.recipient_type
+            },
+            skipPreferenceCheck: true // Admin broadcasts bypass user preferences
+          }
+        });
+
+        if (emailError) {
+          console.error('Error sending broadcast emails:', emailError);
+          // Don't fail the whole operation if emails fail
+          toast.warning('Notifications sent but some emails may have failed');
+        }
       }
 
       toast.success(`Broadcast message sent to ${targetUsers.length} users`);
@@ -225,10 +244,13 @@ export default function AdminMessages() {
               <div>
                 <label className="text-sm font-medium mb-2 block">Subject</label>
                 <Input
-                  value={broadcastForm.subject}
-                  onChange={(e) => setBroadcastForm(prev => ({ ...prev, subject: e.target.value }))}
-                  placeholder="Enter message subject..."
+                  value="qtalent"
+                  disabled
+                  className="bg-muted"
                 />
+                <p className="text-xs text-muted-foreground mt-1">
+                  All broadcast messages use "qtalent" as the subject
+                </p>
               </div>
               
               <div>

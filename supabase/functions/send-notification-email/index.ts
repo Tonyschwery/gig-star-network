@@ -30,6 +30,7 @@ serve(async (req: Request): Promise<Response> => {
       bookingId,
       messageId,
       paymentId,
+      broadcastData,
       notificationType,
       skipPreferenceCheck = false 
     } = await req.json();
@@ -187,6 +188,15 @@ serve(async (req: Request): Promise<Response> => {
                   platformCommission: payment.platform_commission,
                 };
               }
+            }
+            break;
+
+          case 'broadcast':
+            if (broadcastData) {
+              emailData = {
+                message: broadcastData.message,
+                recipientType: broadcastData.recipientType,
+              };
             }
             break;
         }

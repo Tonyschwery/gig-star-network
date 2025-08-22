@@ -167,6 +167,8 @@ export function NotificationCenter() {
         return <AlertCircle className="h-4 w-4 text-red-500" />;
       case 'new_booking':
         return <CheckCircle className="h-4 w-4 text-blue-500" />;
+      case 'admin_broadcast':
+        return <AlertCircle className="h-4 w-4 text-orange-500" />;
       default:
         return <Bell className="h-4 w-4 text-muted-foreground" />;
     }

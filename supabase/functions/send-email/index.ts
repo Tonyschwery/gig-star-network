@@ -8,6 +8,7 @@ import { BookingNotificationEmail } from './_templates/booking-notification.tsx'
 import { MessageNotificationEmail } from './_templates/message-notification.tsx';
 import { PaymentNotificationEmail } from './_templates/payment-notification.tsx';
 import { AdminNotificationEmail } from './_templates/admin-notification.tsx';
+import { BroadcastNotificationEmail } from './_templates/broadcast-notification.tsx';
 
 const resend = new Resend(Deno.env.get('RESEND_API_KEY') as string);
 
@@ -172,6 +173,17 @@ serve(async (req: Request): Promise<Response> => {
           })
         );
         subject = `Admin Alert: ${data.notificationType.replace('_', ' ')}`;
+        break;
+
+      case 'broadcast':
+        emailHtml = await renderAsync(
+          React.createElement(BroadcastNotificationEmail, {
+            message: data.message,
+            recipientType: data.recipientType,
+            appUrl,
+          })
+        );
+        subject = 'qtalent';
         break;
 
       default:
