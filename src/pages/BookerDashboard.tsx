@@ -6,6 +6,7 @@ import { LogOut } from "lucide-react";
 import { Header } from "@/components/Header";
 import { BookerDashboardTabs } from "@/components/BookerDashboardTabs";
 import { UniversalChat } from "@/components/UniversalChat";
+import { NotificationCenter } from "@/components/NotificationCenter";
 import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
 
 const BookerDashboard = () => {
@@ -37,38 +38,50 @@ const BookerDashboard = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
         {/* Header */}
         <div className="flex flex-col gap-4 mb-6 lg:mb-8">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div>
+            <div className="flex-1 min-w-0">
               <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold gradient-text">
                 Welcome, {user?.email?.split('@')[0] || 'Guest'}!
               </h1>
               <p className="text-muted-foreground text-sm sm:text-base">Manage your event bookings</p>
             </div>
+            
+            {/* Notification Center - Desktop */}
+            <div className="hidden sm:block">
+              <NotificationCenter />
+            </div>
           </div>
           
-          {/* Action Buttons */}
-          <div className="flex flex-wrap gap-2">
-            <Button 
-              variant="outline" 
-              onClick={() => navigate('/')}
-              className="flex-shrink-0"
-              size="sm"
-            >
-              Browse Talents
-            </Button>
-            <Button 
-              variant="outline" 
-              onClick={handleSignOut}
-              className="flex-shrink-0"
-              size="sm"
-            >
-              <LogOut className="h-4 w-4 mr-2" />
-              <span className="hidden sm:inline">Sign Out</span>
-              <span className="sm:hidden">Logout</span>
-            </Button>
+          {/* Action Buttons Row */}
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+            <div className="flex flex-wrap gap-2 flex-1">
+              <Button 
+                variant="outline" 
+                onClick={() => navigate('/')}
+                className="flex-shrink-0"
+                size="sm"
+              >
+                Browse Talents
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={handleSignOut}
+                className="flex-shrink-0"
+                size="sm"
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                <span className="hidden sm:inline">Sign Out</span>
+                <span className="sm:hidden">Logout</span>
+              </Button>
+            </div>
+            
+            {/* Notification Center - Mobile */}
+            <div className="sm:hidden self-start">
+              <NotificationCenter />
+            </div>
           </div>
         </div>
 

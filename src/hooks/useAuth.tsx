@@ -54,9 +54,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                   // Existing talent with profile - always redirect to talent dashboard unless already there
                   window.location.href = '/talent-dashboard';
                 }
-              } else if (currentPath === '/auth' || currentPath === '/talent-onboarding') {
-                // Non-talent users only redirect if coming from auth pages
-                window.location.href = '/';
+              } else {
+                // Non-talent users (bookers) - check if they have bookings
+                try {
+                  const { data: bookings, error: bookingsError } = await supabase
+                    .from('bookings')
+                    .select('id')
+                    .eq('user_id', session.user.id)
+                    .limit(1);
+                  
+                  if (!bookingsError && bookings && bookings.length > 0) {
+                    // Booker has bookings - redirect to booker dashboard
+                    if (currentPath !== '/booker-dashboard') {
+                      window.location.href = '/booker-dashboard';
+                    }
+                  } else if (currentPath === '/auth' || currentPath === '/talent-onboarding') {
+                    // New booker or coming from auth pages - redirect to homepage
+                    window.location.href = '/';
+                  }
+                } catch (error) {
+                  console.error('Error checking bookings:', error);
+                  // Fallback: redirect based on current path
+                  if (currentPath === '/auth' || currentPath === '/talent-onboarding') {
+                    window.location.href = '/';
+                  }
+                }
               }
             } catch (error) {
               console.error('Error checking user profile:', error);

@@ -12,13 +12,18 @@ export const useChatFilter = () => {
   const filterMessage = (content: string): FilterResult => {
     const lowerContent = content.toLowerCase().trim();
     
-    // Phone number patterns (various formats)
+    // Enhanced phone number patterns (various formats)
     const phonePatterns = [
       /\b\d{3}[-.\s]?\d{3}[-.\s]?\d{4}\b/, // 123-456-7890, 123.456.7890, 123 456 7890
       /\b\d{10,}\b/, // 10+ consecutive digits
       /\(\d{3}\)\s?\d{3}[-.\s]?\d{4}/, // (123) 456-7890
       /\+\d{1,3}[-.\s]?\d{3,}/, // +1-234-567-8900, +44 20 1234 5678
       /\b\d{3}[-.\s]?\d{4}\b/, // 123-4567
+      /\b\d{7,15}\b/, // Any sequence of 7-15 digits that could be a phone number
+      /\b\d{3}\s?\d{3}\s?\d{4}\b/, // 123 456 7890 variants
+      /phone\s*:?\s*\d+/i, // "phone: 123456789" or "phone 123456789"
+      /number\s*:?\s*\d+/i, // "number: 123456789" or "number 123456789"
+      /call\s+me\s+at\s+\d+/i, // "call me at 1234567890"
     ];
 
     // Website/URL patterns
@@ -29,7 +34,7 @@ export const useChatFilter = () => {
       /\b[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.(net|org|edu|gov|co\.uk|io|app|dev)\b/i, // other common domains
     ];
 
-    // Social media and contact requests
+    // Enhanced social media and contact requests
     const contactRequestPatterns = [
       /\b(instagram|insta|ig)\b/i,
       /\b(facebook|fb)\b/i,
@@ -50,6 +55,11 @@ export const useChatFilter = () => {
       /add me on/i,
       /dm me/i,
       /message me (on|at)/i,
+      /\bwebsite\b/i, // "website" mentions
+      /\bname handle\b/i, // "name handle" mentions
+      /handle\s*[:@]/i, // "handle: @something" or "handle @something"
+      /my\s+handle\s+is/i, // "my handle is"
+      /phone\s*number/i, // "phone number" mentions
     ];
 
     // Email patterns
