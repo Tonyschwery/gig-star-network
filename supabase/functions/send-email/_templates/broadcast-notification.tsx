@@ -25,10 +25,10 @@ export const BroadcastNotificationEmail = ({
 }: BroadcastNotificationProps) => (
   <Html>
     <Head />
-    <Preview>Important message from qtalent</Preview>
+    <Preview>Important message from Qtalents</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Heading style={h1}>qtalent</Heading>
+        <Heading style={h1}>Qtalents</Heading>
         
         <Section style={messageSection}>
           <Text style={messageText}>
@@ -44,12 +44,12 @@ export const BroadcastNotificationEmail = ({
             target="_blank"
             style={button}
           >
-            Visit qtalent
+            Visit Qtalents
           </Link>
         </Section>
 
         <Text style={footer}>
-          This is an important message from the qtalent team.
+          This is an important message from the Qtalents team.
         </Text>
         
         <Text style={footer}>
@@ -58,7 +58,7 @@ export const BroadcastNotificationEmail = ({
             target="_blank"
             style={{ ...link, color: '#898989' }}
           >
-            qtalent.com
+            Qtalents.com
           </Link>
           - Connect talents with events
         </Text>

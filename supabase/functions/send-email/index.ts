@@ -183,7 +183,7 @@ serve(async (req: Request): Promise<Response> => {
             appUrl,
           })
         );
-        subject = 'qtalent';
+        subject = 'Qtalents';
         break;
 
       default:

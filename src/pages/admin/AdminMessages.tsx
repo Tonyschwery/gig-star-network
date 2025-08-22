@@ -120,12 +120,13 @@ export default function AdminMessages() {
         targetUsers = Array.from(allUsers);
       }
 
-      // Create notifications for all target users with "qtalent" title
+       // Create notifications for all target users with "Qtalents" title
       const notifications = targetUsers.map(userId => ({
         user_id: userId,
         type: 'admin_broadcast',
-        title: 'qtalent',
+        title: 'Qtalents',
         message: broadcastForm.message,
+        created_at: new Date().toISOString()
       }));
 
       if (notifications.length > 0) {
@@ -143,7 +144,7 @@ export default function AdminMessages() {
             emailType: 'broadcast',
             userIds: targetUsers,
             broadcastData: {
-              subject: 'qtalent',
+              subject: 'Qtalents',
               message: broadcastForm.message,
               recipientType: broadcastForm.recipient_type
             },
@@ -244,12 +245,12 @@ export default function AdminMessages() {
               <div>
                 <label className="text-sm font-medium mb-2 block">Subject</label>
                 <Input
-                  value="qtalent"
-                  disabled
+                  value="Qtalents"
+                  readOnly
                   className="bg-muted"
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  All broadcast messages use "qtalent" as the subject
+                  All broadcast messages use "Qtalents" as the subject
                 </p>
               </div>
               
