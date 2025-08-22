@@ -15,6 +15,13 @@ import TalentDashboard from "./pages/TalentDashboard";
 import TalentDashboardBookings from "./pages/TalentDashboardBookings";
 import TalentProfileEdit from "./pages/TalentProfileEdit";
 import AdminDashboard from "./pages/AdminDashboard";
+import { AdminLayout } from "./components/admin/AdminLayout";
+import AdminUsers from "./pages/admin/AdminUsers";
+import AdminBookings from "./pages/admin/AdminBookings";
+import AdminMessages from "./pages/admin/AdminMessages";
+import AdminPayments from "./pages/admin/AdminPayments";
+import AdminSettings from "./pages/admin/AdminSettings";
+import AdminReports from "./pages/admin/AdminReports";
 import YourEvent from "./pages/YourEvent";
 
 
@@ -41,9 +48,17 @@ const App = () => (
             <Route path="/login" element={<Login />} />
             <Route path="/admin" element={
               <AdminRoute>
-                <AdminDashboard />
+                <AdminLayout />
               </AdminRoute>
-            } />
+            }>
+              <Route index element={<AdminDashboard />} />
+              <Route path="users" element={<AdminUsers />} />
+              <Route path="bookings" element={<AdminBookings />} />
+              <Route path="payments" element={<AdminPayments />} />
+              <Route path="messages" element={<AdminMessages />} />
+              <Route path="settings" element={<AdminSettings />} />
+              <Route path="reports" element={<AdminReports />} />
+            </Route>
             <Route path="/booker-dashboard" element={
               <ProtectedRoute>
                 <BookerDashboard />
