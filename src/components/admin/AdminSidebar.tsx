@@ -24,7 +24,6 @@ const adminRoutes = [
   { path: '/admin/bookings', label: 'Booking Management', icon: Calendar },
   { path: '/admin/payments', label: 'Payment Management', icon: DollarSign },
   { path: '/admin/messages', label: 'Message Center', icon: MessageSquare },
-  { path: '/admin/moderation', label: 'Content Moderation', icon: Ban },
   { path: '/admin/reports', label: 'Reports & Analytics', icon: BarChart3 },
   { path: '/admin/settings', label: 'System Settings', icon: Settings },
 ];
