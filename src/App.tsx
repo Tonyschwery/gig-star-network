@@ -3,6 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./hooks/useAuth";
+import { AdminProvider } from "./hooks/useAdminAuth";
 import { UserModeProvider } from "./contexts/UserModeContext";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
@@ -13,6 +14,7 @@ import TalentProfile from "./pages/TalentProfile";
 import TalentDashboard from "./pages/TalentDashboard";
 import TalentDashboardBookings from "./pages/TalentDashboardBookings";
 import TalentProfileEdit from "./pages/TalentProfileEdit";
+import AdminDashboard from "./pages/AdminDashboard";
 import YourEvent from "./pages/YourEvent";
 
 
@@ -24,17 +26,24 @@ import TermsOfService from "./pages/TermsOfService";
 import NotFound from "./pages/NotFound";
 import { ProtectedTalentRoute } from "./components/ProtectedTalentRoute";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import { AdminRoute } from "./components/AdminRoute";
 
 const App = () => (
   <AuthProvider>
-    <UserModeProvider>
-      <TooltipProvider>
+    <AdminProvider>
+      <UserModeProvider>
+        <TooltipProvider>
         <Toaster />
         <Sonner />
         <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/admin" element={
+              <AdminRoute>
+                <AdminDashboard />
+              </AdminRoute>
+            } />
             <Route path="/booker-dashboard" element={
               <ProtectedRoute>
                 <BookerDashboard />
@@ -70,8 +79,9 @@ const App = () => (
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
         </Routes>
-      </TooltipProvider>
-    </UserModeProvider>
+        </TooltipProvider>
+      </UserModeProvider>
+    </AdminProvider>
   </AuthProvider>
 );
 

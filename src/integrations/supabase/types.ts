@@ -41,6 +41,47 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_users: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          permissions: string[]
+          role: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          permissions?: string[]
+          role?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          permissions?: string[]
+          role?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_users_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "admin_users"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       bookings: {
         Row: {
           booker_email: string | null
@@ -515,6 +556,10 @@ export type Database = {
         Args: { payment_id_param: string }
         Returns: Json
       }
+      get_admin_permissions: {
+        Args: { user_id_param?: string }
+        Returns: string[]
+      }
       get_payment_status: {
         Args: { booking_id_param: string }
         Returns: Json
@@ -530,6 +575,10 @@ export type Database = {
           rate_per_hour: number
           subscription_status: string
         }[]
+      }
+      is_admin: {
+        Args: { user_id_param?: string }
+        Returns: boolean
       }
       user_has_talent_profile: {
         Args: { user_id_param?: string }
