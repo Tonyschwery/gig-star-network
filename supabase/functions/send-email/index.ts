@@ -193,7 +193,7 @@ serve(async (req: Request): Promise<Response> => {
     logStep('Sending email', { to: recipientEmail, subject });
 
     const { data: emailResult, error: emailError } = await resend.emails.send({
-      from: 'GCC Talents <onboarding@resend.dev>', // You'll need to update this with your verified domain
+      from: 'Qtalent <noreply@qtalent.live>',
       to: [recipientEmail],
       subject,
       html: emailHtml,
