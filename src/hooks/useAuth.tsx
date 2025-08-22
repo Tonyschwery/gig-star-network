@@ -31,6 +31,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           // Small delay to ensure state is updated
           setTimeout(async () => {
             try {
+              // Check if user is admin first
+              const { data: isAdminData } = await supabase
+                .rpc('is_admin', { user_id_param: session.user.id });
+
+              if (isAdminData) {
+                // Admin user - redirect to admin dashboard
+                if (currentPath === '/auth' || currentPath === '/login') {
+                  window.location.href = '/admin';
+                }
+                return;
+              }
+
               // Check user type from metadata
               const userType = session.user.user_metadata?.user_type;
               
