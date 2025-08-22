@@ -74,40 +74,60 @@ export default function AdminUsers() {
 
   const deleteTalentProfile = async (talentId: string) => {
     try {
-      const { error } = await supabase
-        .from('talent_profiles')
-        .delete()
-        .eq('id', talentId);
+      // First get the talent profile to get user_id
+      const talentToDelete = talents.find(t => t.id === talentId);
+      if (!talentToDelete) {
+        toast.error('Talent profile not found');
+        return;
+      }
+
+      // Use the admin RPC function to completely delete the user
+      const { data, error } = await supabase.rpc('admin_delete_user', {
+        user_id_to_delete: talentToDelete.user_id
+      });
       
       if (error) throw error;
       
-      setTalents(talents.filter(t => t.id !== talentId));
-      toast.success('Talent profile deleted successfully');
-    } catch (error) {
-      console.error('Error deleting talent:', error);
-      toast.error('Failed to delete talent profile');
+      const result = data as { success: boolean; error?: string; message?: string };
+      if (result?.success) {
+        // Remove from local state
+        setTalents(talents.filter(t => t.id !== talentId));
+        toast.success('User and talent profile deleted successfully');
+      } else {
+        throw new Error(result?.error || 'Failed to delete user');
+      }
+    } catch (error: any) {
+      console.error('Error deleting user:', error);
+      toast.error(`Failed to delete user: ${error.message}`);
     }
   };
 
   const toggleProSubscription = async (talentId: string, currentStatus: boolean) => {
     try {
-      const { error } = await supabase
-        .from('talent_profiles')
-        .update({ is_pro_subscriber: !currentStatus })
-        .eq('id', talentId);
+      // Use the admin RPC function to properly update subscription
+      const { data, error } = await supabase.rpc('admin_update_subscription', {
+        talent_id_param: talentId,
+        is_pro: !currentStatus
+      });
       
       if (error) throw error;
       
-      setTalents(talents.map(t => 
-        t.id === talentId 
-          ? { ...t, is_pro_subscriber: !currentStatus }
-          : t
-      ));
-      
-      toast.success(`Pro subscription ${!currentStatus ? 'enabled' : 'disabled'} for talent`);
-    } catch (error) {
+      const result = data as { success: boolean; error?: string; message?: string; is_pro?: boolean };
+      if (result?.success) {
+        // Update local state
+        setTalents(talents.map(t => 
+          t.id === talentId 
+            ? { ...t, is_pro_subscriber: !currentStatus }
+            : t
+        ));
+        
+        toast.success(`Pro subscription ${!currentStatus ? 'enabled' : 'disabled'} for talent`);
+      } else {
+        throw new Error(result?.error || 'Failed to update subscription');
+      }
+    } catch (error: any) {
       console.error('Error updating subscription:', error);
-      toast.error('Failed to update subscription');
+      toast.error(`Failed to update subscription: ${error.message}`);
     }
   };
 
