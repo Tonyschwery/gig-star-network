@@ -552,6 +552,14 @@ export type Database = {
       }
     }
     Functions: {
+      admin_delete_user: {
+        Args: { user_id_to_delete: string }
+        Returns: Json
+      }
+      admin_update_subscription: {
+        Args: { is_pro: boolean; talent_id_param: string }
+        Returns: Json
+      }
       complete_manual_payment: {
         Args: { payment_id_param: string }
         Returns: Json
