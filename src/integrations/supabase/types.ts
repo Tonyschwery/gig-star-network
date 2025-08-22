@@ -229,6 +229,51 @@ export type Database = {
         }
         Relationships: []
       }
+      event_requests: {
+        Row: {
+          booker_email: string
+          booker_name: string
+          created_at: string
+          description: string | null
+          event_date: string
+          event_duration: number
+          event_location: string
+          event_type: string
+          id: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          booker_email: string
+          booker_name: string
+          created_at?: string
+          description?: string | null
+          event_date: string
+          event_duration: number
+          event_location: string
+          event_type: string
+          id?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          booker_email?: string
+          booker_name?: string
+          created_at?: string
+          description?: string | null
+          event_date?: string
+          event_duration?: number
+          event_location?: string
+          event_type?: string
+          id?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       gig_applications: {
         Row: {
           created_at: string

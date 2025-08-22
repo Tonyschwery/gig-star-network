@@ -41,7 +41,7 @@ serve(async (req: Request): Promise<Response> => {
     const { type, eventData } = requestBody;
 
     if (type === 'admin-event-request') {
-      const adminEmail = "admin@qtalent.live"; // Replace with your actual admin email
+      const adminEmail = "Qtalents@proton.me";
       
       const emailResponse = await resend.emails.send({
         from: "Qtalent <noreply@qtalent.live>", // Replace with your verified domain

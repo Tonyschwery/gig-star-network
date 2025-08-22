@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Star, MapPin, Search, Music, Crown, HelpCircle } from "lucide-react";
 import { countries } from "@/lib/countries";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 const talentTypes = [
   { value: 'all', label: 'All Talent Types' },
@@ -32,6 +33,7 @@ interface TalentProfile {
 
 export function HeroSection() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [searchFilters, setSearchFilters] = useState({
     location: '',
     talentType: 'all'
@@ -268,11 +270,14 @@ export function HeroSection() {
             className="hero-button px-8 py-6 text-lg"
             onClick={() => navigate('/your-event')}
           >
-            Tell us about your event
+            {user ? "Tell us about your event" : "Sign up & tell us about your event"}
           </Button>
           
           <div className="text-sm text-muted-foreground">
-            📝 Submit your request and our team will reach out with personalized recommendations
+            📝 {user 
+              ? "Submit your request and our team will reach out with personalized recommendations" 
+              : "Create an account to submit your event request - it only takes a minute!"
+            }
           </div>
         </div>
       </div>

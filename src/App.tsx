@@ -16,6 +16,7 @@ import TalentDashboardBookings from "./pages/TalentDashboardBookings";
 import TalentProfileEdit from "./pages/TalentProfileEdit";
 import AdminDashboard from "./pages/AdminDashboard";
 import { AdminLayout } from "./components/admin/AdminLayout";
+import AdminEventRequests from "./pages/admin/AdminEventRequests";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminBookings from "./pages/admin/AdminBookings";
 import AdminMessages from "./pages/admin/AdminMessages";
@@ -56,6 +57,7 @@ const App = () => (
               <Route path="bookings" element={<AdminBookings />} />
               <Route path="payments" element={<AdminPayments />} />
               <Route path="messages" element={<AdminMessages />} />
+              <Route path="event-requests" element={<AdminEventRequests />} />
               <Route path="settings" element={<AdminSettings />} />
               <Route path="reports" element={<AdminReports />} />
             </Route>

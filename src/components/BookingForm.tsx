@@ -182,25 +182,40 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
       const isAdminRequest = talentId === "admin-request";
       
       if (isAdminRequest) {
-        // Send admin email instead of creating database record
-        const { error } = await supabase.functions.invoke('send-email', {
+        // Store in database and send admin email
+        const eventRequestData = {
+          user_id: user.id,
+          booker_name: bookerName.trim(),
+          booker_email: user.email || '',
+          event_date: format(eventDate, 'yyyy-MM-dd'),
+          event_duration: parseInt(eventDuration),
+          event_location: eventLocation.trim(),
+          event_type: eventType,
+          description: description?.trim() || null,
+        };
+
+        // Insert into event_requests table
+        const { error: dbError } = await supabase
+          .from('event_requests')
+          .insert(eventRequestData);
+
+        if (dbError) {
+          console.error('Database error:', dbError);
+          throw dbError;
+        }
+
+        // Send admin email
+        const { error: emailError } = await supabase.functions.invoke('send-email', {
           body: {
             type: 'admin-event-request',
-            eventData: {
-              bookerName: bookerName.trim(),
-              bookerEmail: user.email || '',
-              eventDate: format(eventDate, 'yyyy-MM-dd'),
-              eventDuration: parseInt(eventDuration),
-              eventLocation: eventLocation.trim(),
-              eventType: eventType,
-              description: description?.trim() || '',
-            }
+            eventData: eventRequestData
           }
         });
 
-        if (error) {
-          console.error('Admin email error:', error);
-          throw error;
+        if (emailError) {
+          console.error('Admin email error:', emailError);
+          // Don't fail if email fails, just log warning
+          console.warn('Email notification failed, but request was saved to database');
         }
 
         toast({
