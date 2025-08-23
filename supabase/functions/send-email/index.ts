@@ -44,7 +44,7 @@ serve(async (req: Request): Promise<Response> => {
       const adminEmail = "tonyschwery@proton.me";
       
       const emailResponse = await resend.emails.send({
-        from: "Qtalent <onboarding@resend.dev>", // Using Resend's verified sender
+        from: "Qtalent <noreply@qtalent.live>",
         to: [adminEmail],
         subject: `New Event Request from ${eventData.bookerName}`,
         html: `
@@ -193,7 +193,7 @@ serve(async (req: Request): Promise<Response> => {
     logStep('Sending email', { to: recipientEmail, subject });
 
     const { data: emailResult, error: emailError } = await resend.emails.send({
-      from: 'Qtalent <onboarding@resend.dev>',
+      from: 'Qtalent <noreply@qtalent.live>',
       to: [recipientEmail],
       subject,
       html: emailHtml,

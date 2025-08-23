@@ -73,7 +73,7 @@ serve(async (req) => {
 
     // Send the email
     const { error: emailError } = await resend.emails.send({
-      from: "GCC Talents <welcome@gcctalents.com>",
+      from: "Qtalent <noreply@qtalent.live>",
       to: [email],
       subject: subject,
       html: emailHtml,

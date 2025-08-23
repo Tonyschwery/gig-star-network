@@ -73,7 +73,7 @@ async function sendPaymentConfirmationEmails(payment: any) {
 
       emailPromises.push(
         resend.emails.send({
-          from: "GCC Talents <bookings@gcctalents.com>",
+          from: "Qtalent <noreply@qtalent.live>",
           to: [bookerEmail],
           subject: "Your Booking is Confirmed!",
           html: bookerHtml,
@@ -107,7 +107,7 @@ async function sendPaymentConfirmationEmails(payment: any) {
 
       emailPromises.push(
         resend.emails.send({
-          from: "GCC Talents <bookings@gcctalents.com>",
+          from: "Qtalent <noreply@qtalent.live>",
           to: [talentEmail],
           subject: "You Have a New Confirmed Booking!",
           html: talentHtml,
