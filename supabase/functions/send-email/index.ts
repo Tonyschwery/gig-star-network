@@ -41,7 +41,7 @@ serve(async (req: Request): Promise<Response> => {
     const { type, eventData } = requestBody;
 
     if (type === 'admin-event-request') {
-      const adminEmail = "tonyschwery@proton.me";
+      const adminEmail = "qtalentslive@gmail.com";
       
       const emailResponse = await resend.emails.send({
         from: "Qtalent <noreply@qtalent.live>",
