@@ -24,6 +24,7 @@ serve(async (req: Request): Promise<Response> => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
     );
 
+    const requestBody = await req.json();
     const { 
       emailType,
       userIds,
@@ -33,22 +34,18 @@ serve(async (req: Request): Promise<Response> => {
       broadcastData,
       notificationType,
       skipPreferenceCheck = false 
-    } = await req.json();
+    } = requestBody;
 
-    logStep('Request parsed', { emailType, userIds, bookingId, messageId, paymentId });
+    logStep('Request parsed', requestBody);
 
-    // Get admin email for admin notifications
-    let adminEmail = null;
-    if (emailType === 'admin' || skipPreferenceCheck) {
-      const { data: adminSettings } = await supabaseAdmin
-        .from('admin_settings')
-        .select('setting_value')
-        .eq('setting_key', 'admin_email')
-        .single();
-      
-      adminEmail = adminSettings?.setting_value;
-      logStep('Admin email retrieved', { adminEmail });
+    // Validate userIds is an array
+    if (!Array.isArray(userIds)) {
+      throw new Error(`userIds must be an array, received: ${typeof userIds}`);
     }
+
+    // Use hardcoded admin email
+    const adminEmail = 'qtalentslive@gmail.com';
+    logStep('Using admin email', { adminEmail });
 
     // Process emails for each user
     const emailPromises = [];
@@ -127,8 +124,8 @@ serve(async (req: Request): Promise<Response> => {
           case 'message':
             if (messageId && bookingId) {
               const { data: message } = await supabaseAdmin
-                .from('booking_messages')
-                .select('message, sender_type')
+                .from('chat_messages')
+                .select('content, sender_id')
                 .eq('id', messageId)
                 .single();
 
@@ -138,13 +135,15 @@ serve(async (req: Request): Promise<Response> => {
                   event_type,
                   event_date,
                   booker_name,
+                  user_id,
                   talent_profiles!inner(artist_name, user_id)
                 `)
                 .eq('id', bookingId)
                 .single();
 
               if (message && booking) {
-                const senderName = message.sender_type === 'talent' 
+                const isFromTalent = message.sender_id === booking.talent_profiles?.user_id;
+                const senderName = isFromTalent 
                   ? booking.talent_profiles?.artist_name 
                   : booking.booker_name;
 
@@ -152,9 +151,9 @@ serve(async (req: Request): Promise<Response> => {
                   senderName,
                   eventType: booking.event_type,
                   eventDate: booking.event_date,
-                  messagePreview: message.message.substring(0, 100) + (message.message.length > 100 ? '...' : ''),
+                  messagePreview: message.content.substring(0, 100) + (message.content.length > 100 ? '...' : ''),
                   bookingId,
-                  isFromTalent: message.sender_type === 'talent',
+                  isFromTalent,
                 };
               }
             }
