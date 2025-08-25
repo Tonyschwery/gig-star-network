@@ -223,28 +223,8 @@ serve(async (req: Request): Promise<Response> => {
           })
         );
         subject = `Admin Alert: ${data.notificationType.replace('_', ' ')}`;
-        // For admin emails, send to admin email instead of recipientEmail
-        const { data: adminEmailResult, error: adminEmailError } = await resend.emails.send({
-          from: 'Qtalent <noreply@qtalent.live>',
-          to: [adminRecipientEmail],
-          subject,
-          html: emailHtml,
-        });
-
-        if (adminEmailError) {
-          logStep('Admin email send error', adminEmailError);
-          throw adminEmailError;
-        }
-
-        logStep('Admin email sent successfully', adminEmailResult);
-
-        return new Response(
-          JSON.stringify({ success: true, emailId: adminEmailResult?.id }),
-          {
-            status: 200,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          }
-        );
+        // For admin emails, override the recipient
+        recipientEmail = adminRecipientEmail;
         break;
 
       case 'broadcast':
