@@ -36,11 +36,11 @@ serve(async (req) => {
 
     const { type, userId, email, userData }: WelcomeEmailRequest = await req.json();
 
-    if (!type || !userId || !email) {
-      throw new Error("Missing required parameters: type, userId, or email");
+    if (!type || !email) {
+      throw new Error("Missing required parameters: type or email");
     }
 
-    console.log(`Processing welcome email: ${type} for user ${userId}`);
+    console.log(`Processing welcome email: ${type} for user ${email}`);
 
     let emailHtml: string;
     let subject: string;

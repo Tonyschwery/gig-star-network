@@ -17,7 +17,8 @@ export interface SendWelcomeEmailData {
  */
 export const sendWelcomeEmail = async (emailData: SendWelcomeEmailData): Promise<boolean> => {
   try {
-    const { error } = await supabase.functions.invoke('welcome-email', {
+    console.log('Calling welcome-email function with data:', emailData);
+    const { data, error } = await supabase.functions.invoke('welcome-email', {
       body: emailData
     });
 
@@ -26,7 +27,7 @@ export const sendWelcomeEmail = async (emailData: SendWelcomeEmailData): Promise
       return false;
     }
 
-    console.log('Welcome email sent successfully');
+    console.log('Welcome email sent successfully:', data);
     return true;
   } catch (error) {
     console.error('Error sending welcome email:', error);
@@ -39,7 +40,8 @@ export const sendWelcomeEmail = async (emailData: SendWelcomeEmailData): Promise
  */
 export const sendAdminNotification = async (userEmail: string, userData: { firstName?: string; lastName?: string }): Promise<boolean> => {
   try {
-    const { error } = await supabase.functions.invoke('send-email', {
+    console.log('Calling send-email function for admin notification');
+    const { data, error } = await supabase.functions.invoke('send-email', {
       body: {
         type: 'admin-signup-notification',
         userEmail,
@@ -52,7 +54,7 @@ export const sendAdminNotification = async (userEmail: string, userData: { first
       return false;
     }
 
-    console.log('Admin notification sent successfully');
+    console.log('Admin notification sent successfully:', data);
     return true;
   } catch (error) {
     console.error('Error sending admin notification:', error);
