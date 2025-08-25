@@ -62,8 +62,14 @@ const Auth = () => {
           });
         }
       } else {
-        // Send welcome email (non-blocking)
-        sendWelcomeEmail({
+        toast({
+          title: "Account created successfully!",
+          description: "Please check your email to verify your account, then complete your talent profile.",
+        });
+
+        // Send welcome email (with proper error handling)
+        console.log('🚀 Starting email sending process...');
+        const welcomeEmailResult = await sendWelcomeEmail({
           type: 'user_signup',
           userId: '', // Will be filled by edge function after user creation
           email,
@@ -73,16 +79,25 @@ const Auth = () => {
           }
         });
 
-        // Send admin notification (non-blocking)
-        sendAdminNotification(email, {
+        if (!welcomeEmailResult) {
+          console.warn('⚠️ Welcome email failed to send, but signup was successful');
+        }
+
+        // Send admin notification (with proper error handling)
+        const adminNotificationResult = await sendAdminNotification(email, {
           firstName: name.split(' ')[0],
           lastName: name.split(' ').slice(1).join(' ')
         });
 
-        toast({
-          title: "Account created successfully!",
-          description: "Please check your email to verify your account, then complete your talent profile.",
+        if (!adminNotificationResult) {
+          console.warn('⚠️ Admin notification failed to send, but signup was successful');
+        }
+
+        console.log('📧 Email sending process completed:', {
+          welcomeEmail: welcomeEmailResult,
+          adminNotification: adminNotificationResult
         });
+        
         // Don't navigate immediately, wait for email verification
         // User will be redirected after email verification through useAuth
       }

@@ -17,20 +17,25 @@ export interface SendWelcomeEmailData {
  */
 export const sendWelcomeEmail = async (emailData: SendWelcomeEmailData): Promise<boolean> => {
   try {
-    console.log('Calling welcome-email function with data:', emailData);
+    console.log('🔵 Calling welcome-email function with data:', emailData);
+    
     const { data, error } = await supabase.functions.invoke('welcome-email', {
       body: emailData
     });
 
+    console.log('🔵 Welcome email function response:', { data, error });
+
     if (error) {
-      console.error('Failed to send welcome email:', error);
+      console.error('🔴 Failed to send welcome email - Supabase error:', error);
+      console.error('🔴 Error details:', JSON.stringify(error, null, 2));
       return false;
     }
 
-    console.log('Welcome email sent successfully:', data);
+    console.log('✅ Welcome email sent successfully:', data);
     return true;
   } catch (error) {
-    console.error('Error sending welcome email:', error);
+    console.error('🔴 Exception in sendWelcomeEmail:', error);
+    console.error('🔴 Error stack:', error instanceof Error ? error.stack : 'No stack trace');
     return false;
   }
 };
@@ -40,7 +45,9 @@ export const sendWelcomeEmail = async (emailData: SendWelcomeEmailData): Promise
  */
 export const sendAdminNotification = async (userEmail: string, userData: { firstName?: string; lastName?: string }): Promise<boolean> => {
   try {
-    console.log('Calling send-email function for admin notification');
+    console.log('🟡 Calling send-email function for admin notification');
+    console.log('🟡 Admin notification data:', { userEmail, userData });
+    
     const { data, error } = await supabase.functions.invoke('send-email', {
       body: {
         type: 'admin-signup-notification',
@@ -49,15 +56,19 @@ export const sendAdminNotification = async (userEmail: string, userData: { first
       }
     });
 
+    console.log('🟡 Admin notification function response:', { data, error });
+
     if (error) {
-      console.error('Failed to send admin notification:', error);
+      console.error('🔴 Failed to send admin notification - Supabase error:', error);
+      console.error('🔴 Error details:', JSON.stringify(error, null, 2));
       return false;
     }
 
-    console.log('Admin notification sent successfully:', data);
+    console.log('✅ Admin notification sent successfully:', data);
     return true;
   } catch (error) {
-    console.error('Error sending admin notification:', error);
+    console.error('🔴 Exception in sendAdminNotification:', error);
+    console.error('🔴 Error stack:', error instanceof Error ? error.stack : 'No stack trace');
     return false;
   }
 };
