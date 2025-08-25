@@ -10,7 +10,7 @@ import { PaymentNotificationEmail } from './_templates/payment-notification.tsx'
 import { AdminNotificationEmail } from './_templates/admin-notification.tsx';
 import { BroadcastNotificationEmail } from './_templates/broadcast-notification.tsx';
 
-const resend = new Resend(Deno.env.get('RESEND_API_KEY') as string);
+// Resend will be initialized inside the request handler
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -37,6 +37,17 @@ serve(async (req: Request): Promise<Response> => {
   }
 
   try {
+    // Check if RESEND_API_KEY is available
+    const resendApiKey = Deno.env.get('RESEND_API_KEY');
+    console.log('[send-email] RESEND_API_KEY available:', !!resendApiKey);
+    
+    if (!resendApiKey) {
+      throw new Error("RESEND_API_KEY environment variable is not set");
+    }
+
+    // Initialize Resend client inside the request handler
+    const resend = new Resend(resendApiKey);
+
     const requestBody = await req.json();
     const { type, eventData } = requestBody;
 

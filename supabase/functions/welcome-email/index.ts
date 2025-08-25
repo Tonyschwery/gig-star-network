@@ -11,7 +11,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+// Resend will be initialized inside the request handler
 
 interface WelcomeEmailRequest {
   type: 'user_signup' | 'talent_profile_created';
@@ -31,8 +31,18 @@ serve(async (req) => {
   }
 
   try {
-    // No need for supabase client in this function as it just sends emails
     console.log("Welcome email function called");
+
+    // Check if RESEND_API_KEY is available
+    const resendApiKey = Deno.env.get("RESEND_API_KEY");
+    console.log("RESEND_API_KEY available:", !!resendApiKey);
+    
+    if (!resendApiKey) {
+      throw new Error("RESEND_API_KEY environment variable is not set");
+    }
+
+    // Initialize Resend client inside the request handler
+    const resend = new Resend(resendApiKey);
 
     const { type, userId, email, userData }: WelcomeEmailRequest = await req.json();
 
