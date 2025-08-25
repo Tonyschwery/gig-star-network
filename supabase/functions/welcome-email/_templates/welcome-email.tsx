@@ -37,7 +37,7 @@ export const WelcomeEmail = ({
           <Text style={text}>Hi {displayName},</Text>
           
           <Text style={text}>
-            Welcome to Qtalent.live, the premier platform connecting exceptional talent with event organizers across the Gulf region. We're thrilled to have you join our community!
+            Welcome to Qtalent.live, the premier platform connecting exceptional talent with event organizers worldwide. We're thrilled to have you join our community!
           </Text>
 
           <Section style={highlightBox}>
@@ -48,18 +48,9 @@ export const WelcomeEmail = ({
               • Explore talented performers for your events<br/>
               • Connect with event organizers looking for your skills<br/>
               • Build meaningful connections in the entertainment industry<br/>
-              • Discover exciting opportunities in the Gulf region
+              • Discover exciting opportunities worldwide
             </Text>
           </Section>
-
-          <div style={buttonContainer}>
-            <Button
-              style={button}
-              href={`${appUrl}/auth`}
-            >
-              Get Started
-            </Button>
-          </div>
 
           <Hr style={hr} />
 

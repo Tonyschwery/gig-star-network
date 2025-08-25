@@ -37,7 +37,7 @@ export const TalentWelcomeEmail = ({
           </Text>
           
           <Text style={text}>
-            Event organizers across the Gulf region can now discover your unique talents and book you for their events. 
+            Event organizers worldwide can now discover your unique talents and book you for their events. 
             Your profile showcases your skills, experience, and what makes you special.
           </Text>
 
