@@ -81,6 +81,44 @@ serve(async (req: Request): Promise<Response> => {
       });
     }
 
+    // Handle admin signup notifications
+    if (type === 'admin-signup-notification') {
+      const adminEmail = "qtalentslive@gmail.com";
+      const { userEmail, userData } = requestBody;
+      const userName = userData?.firstName && userData?.lastName 
+        ? `${userData.firstName} ${userData.lastName}`
+        : 'New User';
+      
+      const emailResponse = await resend.emails.send({
+        from: "Qtalent <noreply@qtalent.live>",
+        to: [adminEmail],
+        subject: "New Signup on Qtalents",
+        html: `
+          <h1>New User Signup</h1>
+          <p>A new user has signed up for Qtalents!</p>
+          
+          <h2>User Details:</h2>
+          <ul>
+            <li><strong>Name:</strong> ${userName}</li>
+            <li><strong>Email:</strong> ${userEmail}</li>
+            <li><strong>Signup Date:</strong> ${new Date().toLocaleDateString()}</li>
+          </ul>
+          
+          <p>You can view and manage users in the admin dashboard.</p>
+        `,
+      });
+
+      console.log("Admin signup notification sent successfully:", emailResponse);
+
+      return new Response(JSON.stringify(emailResponse), {
+        status: 200,
+        headers: {
+          "Content-Type": "application/json",
+          ...corsHeaders,
+        },
+      });
+    }
+
     // Legacy email types handling
     const { type: legacyType, recipientEmail, recipientName, data } = requestBody as EmailRequest;
     logStep('Request parsed', { type: legacyType || type, recipientEmail, recipientName });
