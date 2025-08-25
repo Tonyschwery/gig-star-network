@@ -31,10 +31,8 @@ serve(async (req) => {
   }
 
   try {
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-    );
+    // No need for supabase client in this function as it just sends emails
+    console.log("Welcome email function called");
 
     const { type, userId, email, userData }: WelcomeEmailRequest = await req.json();
 
