@@ -12,16 +12,24 @@ import {
 import * as React from 'npm:react@18.3.1'
 
 interface AdminNotificationProps {
-  eventType: string
-  notificationType: 'new_booking' | 'payment_completed' | 'new_talent_signup' | 'subscription_upgrade'
+  eventType?: string
+  notificationType: 'new_booking' | 'payment_completed' | 'new_talent_signup' | 'subscription_upgrade' | 'new_event_request'
   bookerName?: string
+  bookerEmail?: string
+  bookerUserId?: string
+  requesterEmail?: string
   talentName?: string
+  talentUserId?: string
   eventDate?: string
   eventLocation?: string
   amount?: string
   currency?: string
+  budget?: string
   bookingId?: string
+  eventRequestId?: string
   talentId?: string
+  description?: string
+  requestType?: string
   appUrl: string
 }
 
@@ -29,19 +37,29 @@ export const AdminNotificationEmail = ({
   eventType,
   notificationType,
   bookerName,
+  bookerEmail,
+  bookerUserId,
+  requesterEmail,
   talentName,
+  talentUserId,
   eventDate,
   eventLocation,
   amount,
   currency,
+  budget,
   bookingId,
+  eventRequestId,
   talentId,
+  description,
+  requestType,
   appUrl
 }: AdminNotificationProps) => {
   const getSubject = () => {
     switch (notificationType) {
       case 'new_booking':
-        return 'New Booking Created'
+        return 'New Direct Booking Created'
+      case 'new_event_request':
+        return 'New Event Request Received'
       case 'payment_completed':
         return 'Payment Completed'
       case 'new_talent_signup':
@@ -56,7 +74,9 @@ export const AdminNotificationEmail = ({
   const getMessage = () => {
     switch (notificationType) {
       case 'new_booking':
-        return `A new booking has been created by ${bookerName} for a ${eventType} event${eventDate ? ` on ${eventDate}` : ''}${eventLocation ? ` at ${eventLocation}` : ''}.`
+        return `A new direct booking has been created by ${bookerName} for a ${eventType} event${eventDate ? ` on ${eventDate}` : ''}${eventLocation ? ` at ${eventLocation}` : ''}.`
+      case 'new_event_request':
+        return `A new event request has been submitted by ${bookerName} for a ${eventType} event${eventDate ? ` on ${eventDate}` : ''}${eventLocation ? ` at ${eventLocation}` : ''}. This is an indirect request that needs talent matching.`
       case 'payment_completed':
         return `A payment of ${currency} ${amount} has been completed for a ${eventType} event between ${bookerName} and ${talentName}.`
       case 'new_talent_signup':
@@ -73,9 +93,11 @@ export const AdminNotificationEmail = ({
       case 'new_booking':
       case 'payment_completed':
         return `${appUrl}/admin/bookings`
+      case 'new_event_request':
+        return `${appUrl}/admin/event-requests`
       case 'new_talent_signup':
       case 'subscription_upgrade':
-        return `${appUrl}/admin/talents`
+        return `${appUrl}/admin/users`
       default:
         return `${appUrl}/admin`
     }
@@ -92,15 +114,41 @@ export const AdminNotificationEmail = ({
           <Text style={text}>{getMessage()}</Text>
           
           <div style={detailsBox}>
-            <Text style={detailsTitle}>Details:</Text>
-            {bookerName && <Text style={detailsItem}>Booker: {bookerName}</Text>}
-            {talentName && <Text style={detailsItem}>Talent: {talentName}</Text>}
-            {eventType && <Text style={detailsItem}>Event Type: {eventType}</Text>}
-            {eventDate && <Text style={detailsItem}>Event Date: {eventDate}</Text>}
-            {eventLocation && <Text style={detailsItem}>Location: {eventLocation}</Text>}
-            {amount && currency && <Text style={detailsItem}>Amount: {currency} {amount}</Text>}
-            {bookingId && <Text style={detailsItem}>Booking ID: {bookingId}</Text>}
-            {talentId && <Text style={detailsItem}>Talent ID: {talentId}</Text>}
+            <Text style={detailsTitle}>Contact & User Information:</Text>
+            {bookerName && <Text style={detailsItem}><strong>Client Name:</strong> {bookerName}</Text>}
+            {bookerEmail && <Text style={detailsItem}><strong>Client Email:</strong> {bookerEmail}</Text>}
+            {requesterEmail && <Text style={detailsItem}><strong>User Account Email:</strong> {requesterEmail}</Text>}
+            {bookerUserId && <Text style={detailsItem}><strong>User ID:</strong> {bookerUserId}</Text>}
+            {requestType && <Text style={detailsItem}><strong>Request Type:</strong> {requestType}</Text>}
+            
+            {(eventType || eventDate || eventLocation) && (
+              <>
+                <Text style={detailsTitle}>Event Details:</Text>
+                {eventType && <Text style={detailsItem}><strong>Event Type:</strong> {eventType}</Text>}
+                {eventDate && <Text style={detailsItem}><strong>Event Date:</strong> {eventDate}</Text>}
+                {eventLocation && <Text style={detailsItem}><strong>Location:</strong> {eventLocation}</Text>}
+                {budget && currency && <Text style={detailsItem}><strong>Budget:</strong> {currency} {budget}</Text>}
+                {description && <Text style={detailsItem}><strong>Description:</strong> {description}</Text>}
+              </>
+            )}
+            
+            {talentName && (
+              <>
+                <Text style={detailsTitle}>Talent Information:</Text>
+                <Text style={detailsItem}><strong>Talent Name:</strong> {talentName}</Text>
+                {talentUserId && <Text style={detailsItem}><strong>Talent User ID:</strong> {talentUserId}</Text>}
+              </>
+            )}
+            
+            {(amount || bookingId || eventRequestId) && (
+              <>
+                <Text style={detailsTitle}>System References:</Text>
+                {amount && currency && <Text style={detailsItem}><strong>Amount:</strong> {currency} {amount}</Text>}
+                {bookingId && <Text style={detailsItem}><strong>Booking ID:</strong> {bookingId}</Text>}
+                {eventRequestId && <Text style={detailsItem}><strong>Event Request ID:</strong> {eventRequestId}</Text>}
+                {talentId && <Text style={detailsItem}><strong>Talent Profile ID:</strong> {talentId}</Text>}
+              </>
+            )}
           </div>
 
           <div style={buttonContainer}>

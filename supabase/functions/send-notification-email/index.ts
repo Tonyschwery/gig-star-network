@@ -33,6 +33,7 @@ serve(async (req: Request): Promise<Response> => {
       paymentId,
       broadcastData,
       notificationType,
+      eventRequestId,
       skipPreferenceCheck = false 
     } = requestBody;
 
@@ -234,14 +235,51 @@ serve(async (req: Request): Promise<Response> => {
           .single();
 
         if (booking) {
+          // Get booker user details
+          const { data: bookerUser } = await supabaseAdmin.auth.admin.getUserById(booking.user_id);
+          
           adminEmailData = {
             ...adminEmailData,
             eventType: booking.event_type,
             eventDate: booking.event_date,
             eventLocation: booking.event_location,
             bookerName: booking.booker_name,
+            bookerEmail: booking.booker_email || bookerUser?.user?.email,
+            bookerUserId: booking.user_id,
             talentName: booking.talent_profiles?.artist_name,
+            talentUserId: booking.talent_profiles?.user_id,
             bookingId: booking.id,
+            budget: booking.budget,
+            currency: booking.budget_currency,
+            requestType: booking.is_public_request ? 'Public Request' : 'Direct Booking',
+          };
+        }
+      }
+
+      // Handle event requests (indirect requests)
+      if (eventRequestId) {
+        const { data: eventRequest } = await supabaseAdmin
+          .from('event_requests')
+          .select('*')
+          .eq('id', eventRequestId)
+          .single();
+
+        if (eventRequest) {
+          // Get user details for event request
+          const { data: requesterUser } = await supabaseAdmin.auth.admin.getUserById(eventRequest.user_id);
+          
+          adminEmailData = {
+            ...adminEmailData,
+            eventType: eventRequest.event_type,
+            eventDate: eventRequest.event_date,
+            eventLocation: eventRequest.event_location,
+            bookerName: eventRequest.booker_name,
+            bookerEmail: eventRequest.booker_email,
+            bookerUserId: eventRequest.user_id,
+            requesterEmail: requesterUser?.user?.email,
+            eventRequestId: eventRequest.id,
+            description: eventRequest.description,
+            requestType: 'Indirect Request',
           };
         }
       }
