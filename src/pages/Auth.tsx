@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { User, Mail, Lock, ArrowLeft } from "lucide-react";
 import { sendWelcomeEmail, sendAdminNotification } from "@/utils/emailService";
+import { testWelcomeEmail, testAdminEmail } from "@/utils/testEmail";
 
 const Auth = () => {
   const [email, setEmail] = useState("");
@@ -167,6 +168,23 @@ const Auth = () => {
             <CardDescription>
               Create your talent profile and start getting booked for events
             </CardDescription>
+            {/* Test Email Buttons - Remove these after testing */}
+            <div className="flex gap-2 mt-4">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => testWelcomeEmail("your-email@domain.com")}
+              >
+                🧪 Test Welcome Email
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => testAdminEmail("your-email@domain.com")}
+              >
+                🧪 Test Admin Email
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="signup" className="w-full">
