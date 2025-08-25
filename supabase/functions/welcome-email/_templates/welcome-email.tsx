@@ -29,15 +29,15 @@ export const WelcomeEmail = ({
   return (
     <Html>
       <Head />
-      <Preview>Welcome to GCC Talents - Your journey starts here!</Preview>
+      <Preview>Welcome to Qtalent.live - Your journey starts here!</Preview>
       <Body style={main}>
         <Container style={container}>
-          <Heading style={h1}>Welcome to GCC Talents! 🎉</Heading>
+          <Heading style={h1}>Welcome to Qtalent.live! 🎉</Heading>
           
           <Text style={text}>Hi {displayName},</Text>
           
           <Text style={text}>
-            Welcome to GCC Talents, the premier platform connecting exceptional talent with event organizers across the Gulf region. We're thrilled to have you join our community!
+            Welcome to Qtalent.live, the premier platform connecting exceptional talent with event organizers across the Gulf region. We're thrilled to have you join our community!
           </Text>
 
           <Section style={highlightBox}>
@@ -65,14 +65,14 @@ export const WelcomeEmail = ({
 
           <Text style={text}>
             <strong>Need Help?</strong><br/>
-            Our support team is here to help you make the most of your GCC Talents experience. 
+            Our support team is here to help you make the most of your Qtalent.live experience. 
             Feel free to reach out if you have any questions.
           </Text>
 
           <Text style={footer}>
             Best regards,<br/>
-            The GCC Talents Team<br/>
-            <Link href={appUrl} style={link}>gcctalents.com</Link>
+            The Qtalent.live Team<br/>
+            <Link href={appUrl} style={link}>qtalent.live</Link>
           </Text>
         </Container>
       </Body>

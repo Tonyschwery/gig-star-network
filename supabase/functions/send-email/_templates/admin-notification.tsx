@@ -113,7 +113,7 @@ export const AdminNotificationEmail = ({
           </div>
 
           <Text style={footer}>
-            GCC Talents Admin System
+            Qtalent.live Admin System
           </Text>
         </Container>
       </Body>

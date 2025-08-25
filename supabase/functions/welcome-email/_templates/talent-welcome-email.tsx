@@ -27,13 +27,13 @@ export const TalentWelcomeEmail = ({
   return (
     <Html>
       <Head />
-      <Preview>Congratulations! Your talent profile is now live on GCC Talents</Preview>
+      <Preview>Congratulations! Your talent profile is now live on Qtalent.live</Preview>
       <Body style={main}>
         <Container style={container}>
           <Heading style={h1}>🎊 Congratulations, {artistName}!</Heading>
           
           <Text style={text}>
-            Your talent profile is now <strong>LIVE</strong> on GCC Talents! 
+            Your talent profile is now <strong>LIVE</strong> on Qtalent.live! 
           </Text>
           
           <Text style={text}>
@@ -81,8 +81,8 @@ export const TalentWelcomeEmail = ({
 
           <Text style={footer}>
             Best of luck,<br/>
-            The GCC Talents Team<br/>
-            <Link href={appUrl} style={link}>gcctalents.com</Link>
+            The Qtalent.live Team<br/>
+            <Link href={appUrl} style={link}>qtalent.live</Link>
           </Text>
         </Container>
       </Body>

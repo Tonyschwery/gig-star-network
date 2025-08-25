@@ -111,7 +111,7 @@ export const BookingNotificationEmail = ({
 
           <Text style={footer}>
             Best regards,<br/>
-            The GCC Talents Team
+            The Qtalent.live Team
           </Text>
         </Container>
       </Body>

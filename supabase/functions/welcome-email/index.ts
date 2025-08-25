@@ -49,12 +49,12 @@ serve(async (req) => {
 
     if (type === 'user_signup') {
       // Send generic welcome email to all new users
-      subject = "Welcome to GCC Talents!";
+      subject = "Welcome to Qtalent.live!";
       emailHtml = await renderAsync(
         React.createElement(WelcomeEmail, {
           userEmail: email,
           firstName: userData?.firstName || '',
-          appUrl: Deno.env.get("SUPABASE_URL")?.replace('/auth/v1', '') || 'https://gcctalents.com'
+          appUrl: Deno.env.get("SUPABASE_URL")?.replace('/auth/v1', '') || 'https://qtalent.live'
         })
       );
     } else if (type === 'talent_profile_created') {
@@ -64,7 +64,7 @@ serve(async (req) => {
         React.createElement(TalentWelcomeEmail, {
           artistName: userData?.artistName || 'Talented Artist',
           userEmail: email,
-          appUrl: Deno.env.get("SUPABASE_URL")?.replace('/auth/v1', '') || 'https://gcctalents.com'
+          appUrl: Deno.env.get("SUPABASE_URL")?.replace('/auth/v1', '') || 'https://qtalent.live'
         })
       );
     } else {
