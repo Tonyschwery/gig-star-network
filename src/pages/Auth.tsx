@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { User, Mail, Lock, ArrowLeft } from "lucide-react";
+import { sendWelcomeEmail, sendAdminNotification } from "@/utils/emailService";
 
 const Auth = () => {
   const [email, setEmail] = useState("");
@@ -61,6 +62,23 @@ const Auth = () => {
           });
         }
       } else {
+        // Send welcome email (non-blocking)
+        sendWelcomeEmail({
+          type: 'user_signup',
+          userId: '', // Will be filled by edge function after user creation
+          email,
+          userData: {
+            firstName: name.split(' ')[0],
+            lastName: name.split(' ').slice(1).join(' ')
+          }
+        });
+
+        // Send admin notification (non-blocking)
+        sendAdminNotification(email, {
+          firstName: name.split(' ')[0],
+          lastName: name.split(' ').slice(1).join(' ')
+        });
+
         toast({
           title: "Account created successfully!",
           description: "Please check your email to verify your account, then complete your talent profile.",
