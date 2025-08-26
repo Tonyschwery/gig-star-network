@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { Mail, Lock, ArrowLeft, User } from "lucide-react";
-import { sendWelcomeEmail, sendAdminNotification } from "@/utils/emailService";
+// Email service removed - emails now sent via database triggers
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -64,22 +64,7 @@ const Login = () => {
           });
         }
       } else {
-        // Send welcome email (non-blocking)
-        sendWelcomeEmail({
-          type: 'user_signup',
-          userId: '', // Will be filled by edge function after user creation
-          email,
-          userData: {
-            firstName: name.split(' ')[0],
-            lastName: name.split(' ').slice(1).join(' ')
-          }
-        });
-
-        // Send admin notification (non-blocking)
-        sendAdminNotification(email, {
-          firstName: name.split(' ')[0],
-          lastName: name.split(' ').slice(1).join(' ')
-        });
+        // Emails are now sent automatically via database triggers
 
         toast({
           title: "Account created successfully!",

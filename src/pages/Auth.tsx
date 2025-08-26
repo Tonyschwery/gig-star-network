@@ -7,8 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { User, Mail, Lock, ArrowLeft } from "lucide-react";
-import { sendWelcomeEmail, sendAdminNotification } from "@/utils/emailService";
-import { testWelcomeEmail, testAdminEmail } from "@/utils/testEmail";
+// Email imports removed - emails now sent via database triggers
 
 const Auth = () => {
   const [email, setEmail] = useState("");
@@ -68,36 +67,7 @@ const Auth = () => {
           description: "Please check your email to verify your account, then complete your talent profile.",
         });
 
-        // Send welcome email (with proper error handling)
-        console.log('🚀 Starting email sending process...');
-        const welcomeEmailResult = await sendWelcomeEmail({
-          type: 'user_signup',
-          userId: '', // Will be filled by edge function after user creation
-          email,
-          userData: {
-            firstName: name.split(' ')[0],
-            lastName: name.split(' ').slice(1).join(' ')
-          }
-        });
-
-        if (!welcomeEmailResult) {
-          console.warn('⚠️ Welcome email failed to send, but signup was successful');
-        }
-
-        // Send admin notification (with proper error handling)
-        const adminNotificationResult = await sendAdminNotification(email, {
-          firstName: name.split(' ')[0],
-          lastName: name.split(' ').slice(1).join(' ')
-        });
-
-        if (!adminNotificationResult) {
-          console.warn('⚠️ Admin notification failed to send, but signup was successful');
-        }
-
-        console.log('📧 Email sending process completed:', {
-          welcomeEmail: welcomeEmailResult,
-          adminNotification: adminNotificationResult
-        });
+        // Emails are now sent automatically via database triggers
         
         // Don't navigate immediately, wait for email verification
         // User will be redirected after email verification through useAuth
@@ -168,23 +138,7 @@ const Auth = () => {
             <CardDescription>
               Create your talent profile and start getting booked for events
             </CardDescription>
-            {/* Test Email Buttons - Remove these after testing */}
-            <div className="flex gap-2 mt-4">
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => testWelcomeEmail("your-email@domain.com")}
-              >
-                🧪 Test Welcome Email
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => testAdminEmail("your-email@domain.com")}
-              >
-                🧪 Test Admin Email
-              </Button>
-            </div>
+            {/* Email sending is now automated via database triggers */}
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="signup" className="w-full">

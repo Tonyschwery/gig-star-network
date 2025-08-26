@@ -204,19 +204,7 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
           throw dbError;
         }
 
-        // Send admin email
-        const { error: emailError } = await supabase.functions.invoke('send-email', {
-          body: {
-            type: 'admin-event-request',
-            eventData: eventRequestData
-          }
-        });
-
-        if (emailError) {
-          console.error('Admin email error:', emailError);
-          // Don't fail if email fails, just log warning
-          console.warn('Email notification failed, but request was saved to database');
-        }
+        // Emails are sent automatically via database triggers
 
         toast({
           title: "Request Submitted!",
