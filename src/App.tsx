@@ -1,4 +1,6 @@
 import { Toaster } from "@/components/ui/toaster";
+// Import email system testing utility for browser console access
+import "@/utils/testEmailSystem";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Routes, Route } from "react-router-dom";
