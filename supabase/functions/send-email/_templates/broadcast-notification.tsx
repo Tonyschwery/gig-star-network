@@ -58,7 +58,7 @@ export const BroadcastNotificationEmail = ({
             target="_blank"
             style={{ ...link, color: '#898989' }}
           >
-            Qtalents.com
+            Qtalent.live
           </Link>
           - Connect talents with events
         </Text>

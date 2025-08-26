@@ -27,7 +27,7 @@ interface EventRequestConfirmationProps {
 export const EventRequestConfirmationEmail = ({
   recipientName,
   eventData,
-  appUrl = 'https://qtalents.com'
+  appUrl = 'https://qtalent.live'
 }: EventRequestConfirmationProps) => (
   <Html>
     <Head />
@@ -93,7 +93,7 @@ export const EventRequestConfirmationEmail = ({
         </Section>
 
         <Text style={footer}>
-          If you have any questions, feel free to reply to this email or contact us at support@qtalents.com
+          If you have any questions, feel free to reply to this email or contact us at support@qtalent.live
         </Text>
       </Container>
     </Body>

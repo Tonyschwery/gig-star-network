@@ -28,7 +28,7 @@ interface AdminEventRequestProps {
 
 export const AdminEventRequestEmail = ({
   eventData,
-  appUrl = 'https://qtalents.com'
+  appUrl = 'https://qtalent.live'
 }: AdminEventRequestProps) => (
   <Html>
     <Head />
