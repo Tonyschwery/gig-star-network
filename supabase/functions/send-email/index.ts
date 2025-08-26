@@ -383,6 +383,32 @@ serve(async (req: Request): Promise<Response> => {
         subject = `Admin Alert: ${data.notificationType?.replace('_', ' ') || 'Notification'}`;
         break;
 
+      case 'booking_request_talent':
+        emailHtml = `
+          <h1>New Booking Request</h1>
+          <p>Hi ${data.recipient_name},</p>
+          <p>You have received a new booking request!</p>
+          
+          <div style="background-color: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h3>Booking Details:</h3>
+            <p><strong>Event Type:</strong> ${data.event_type}</p>
+            <p><strong>Client:</strong> ${data.booker_name} (${data.booker_email})</p>
+            <p><strong>Date:</strong> ${data.event_date}</p>
+            <p><strong>Duration:</strong> ${data.event_duration} hours</p>
+            <p><strong>Location:</strong> ${data.event_location}</p>
+          </div>
+          
+          <p>Please log in to your dashboard to review and respond to this booking request.</p>
+          
+          <p style="margin-top: 30px;">
+            <a href="${appUrl}/talent-dashboard" style="background-color: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">View Booking Request</a>
+          </p>
+          
+          <p>Best regards,<br>The Qtalent Team</p>
+        `;
+        subject = data.subject || 'New Booking Request for Your Services';
+        break;
+
       default:
         throw new Error(`Unknown email type: ${type}`);
     }

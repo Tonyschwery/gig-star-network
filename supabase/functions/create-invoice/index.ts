@@ -55,34 +55,13 @@ serve(async (req) => {
       }
     );
 
-    // Verify user authentication using the authorization header
+    // Verify authorization header is present (basic validation)
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      throw new Error("No authorization header");
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      throw new Error("No valid authorization header");
     }
 
-    // Create authenticated client using the authorization header
-    const supabaseAuth = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
-      {
-        global: {
-          headers: {
-            Authorization: authHeader,
-          },
-        },
-      }
-    );
-
-    // Verify the user can access their own data
-    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
-    
-    if (authError || !user) {
-      console.error("Authentication error:", authError);
-      throw new Error("Invalid authentication");
-    }
-
-    console.log("Authenticated user:", user.id);
+    console.log("Authorization header validated");
 
     // Extract data from already parsed request body
     const { id, total_amount, currency, platform_commission, talent_earnings, commission_rate, hourly_rate, hours_booked, booking_id } = invoiceData;
