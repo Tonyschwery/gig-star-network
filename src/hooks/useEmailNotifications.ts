@@ -151,6 +151,30 @@ export const useEmailNotifications = () => {
         admin_emails: adminEmails
       });
 
+      // Send notification to talent if talent is assigned
+      if (bookingData.talent_id) {
+        // Get talent user info to send email
+        const { data: talentProfile } = await supabase
+          .from('talent_profiles')
+          .select('user_id, artist_name')
+          .eq('id', bookingData.talent_id)
+          .single();
+
+        if (talentProfile) {
+          await sendNotificationEmail('booking_request_talent', [talentProfile.user_id], {
+            recipient_name: talentProfile.artist_name,
+            booker_name: bookingData.booker_name,
+            booker_email: bookingData.booker_email,
+            event_type: bookingData.event_type,
+            event_date: bookingData.event_date,
+            event_location: bookingData.event_location,
+            event_duration: bookingData.event_duration,
+            booking_id: bookingData.id,
+            subject: 'New Booking Request for Your Services'
+          });
+        }
+      }
+
     } catch (error) {
       console.error('Error sending booking emails:', error);
     }
