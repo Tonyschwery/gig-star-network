@@ -196,6 +196,51 @@ export type Database = {
         }
         Relationships: []
       }
+      email_logs: {
+        Row: {
+          created_at: string | null
+          data: Json | null
+          error_message: string | null
+          event_type: string
+          id: string
+          recipient_email: string
+          recipient_name: string | null
+          retry_count: number | null
+          sender_email: string
+          status: string
+          subject: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          data?: Json | null
+          error_message?: string | null
+          event_type: string
+          id?: string
+          recipient_email: string
+          recipient_name?: string | null
+          retry_count?: number | null
+          sender_email?: string
+          status?: string
+          subject: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          data?: Json | null
+          error_message?: string | null
+          event_type?: string
+          id?: string
+          recipient_email?: string
+          recipient_name?: string | null
+          retry_count?: number | null
+          sender_email?: string
+          status?: string
+          subject?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       email_preferences: {
         Row: {
           booking_notifications: boolean
@@ -632,6 +677,14 @@ export type Database = {
       is_admin: {
         Args: { user_id_param?: string }
         Returns: boolean
+      }
+      send_email_notification: {
+        Args: {
+          email_data: Json
+          event_type: string
+          recipient_emails: string[]
+        }
+        Returns: undefined
       }
       user_has_talent_profile: {
         Args: { user_id_param?: string }
