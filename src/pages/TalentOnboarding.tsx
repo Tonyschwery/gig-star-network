@@ -16,6 +16,7 @@ import { SimpleGalleryUpload } from '@/components/SimpleGalleryUpload';
 import { SimpleAvatarUpload } from '@/components/SimpleAvatarUpload';
 import { ProFeatureWrapper } from '@/components/ProFeatureWrapper';
 import { ProSubscriptionDialog } from '@/components/ProSubscriptionDialog';
+import { useEmailNotifications } from '@/hooks/useEmailNotifications';
 
 const MUSIC_GENRES = [
   'afro-house',
@@ -98,6 +99,7 @@ const CURRENCIES = [
 export default function TalentOnboarding() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { sendTalentProfileEmails } = useEmailNotifications();
   const [loading, setLoading] = useState(false);
   const [pictureFile, setPictureFile] = useState<File | null>(null);
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
@@ -200,7 +202,7 @@ export default function TalentOnboarding() {
       }
 
       // Create talent profile
-      const { error } = await supabase
+      const { data: talentProfile, error } = await supabase
         .from('talent_profiles')
         .insert({
           user_id: user.id,
@@ -219,7 +221,9 @@ export default function TalentOnboarding() {
           rate_per_hour: parseFloat(formData.ratePerHour),
           currency: formData.currency,
           location: formData.location
-        });
+        })
+        .select('id')
+        .single();
 
       if (error) {
         toast({
@@ -235,6 +239,24 @@ export default function TalentOnboarding() {
         title: "Profile created successfully!",
         description: "Welcome to our talent community",
       });
+
+      // Send talent profile emails via frontend
+      try {
+        if (talentProfile && user.email) {
+          await sendTalentProfileEmails(
+            user.id,
+            user.email,
+            formData.artistName,
+            talentProfile.id,
+            formData.act,
+            parseFloat(formData.ratePerHour),
+            formData.currency
+          );
+        }
+      } catch (emailError) {
+        console.error('Error sending talent profile emails:', emailError);
+        // Don't show error to user for email issues
+      }
 
       // Force a page refresh to trigger auth state re-evaluation
       // This ensures the UserModeContext picks up the new talent profile

@@ -15,6 +15,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { countries } from "@/lib/countries";
+import { useEmailNotifications } from "@/hooks/useEmailNotifications";
 
 interface BookingFormProps {
   talentId: string;
@@ -26,6 +27,7 @@ interface BookingFormProps {
 export function BookingForm({ talentId, talentName, onClose, onSuccess }: BookingFormProps) {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { sendEventRequestEmails, sendBookingEmails } = useEmailNotifications();
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [bookerName, setBookerName] = useState("");
@@ -204,7 +206,13 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
           throw dbError;
         }
 
-        // Emails are sent automatically via database triggers
+        // Send event request emails via frontend
+        try {
+          await sendEventRequestEmails(eventRequestData);
+        } catch (emailError) {
+          console.error('Error sending event request emails:', emailError);
+          // Don't show error to user for email issues
+        }
 
         toast({
           title: "Request Submitted!",
@@ -238,6 +246,20 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
         if (error) {
           console.error('Database error:', error);
           throw error;
+        }
+
+        // Send booking emails via frontend
+        try {
+          if (data && data[0]) {
+            const bookingWithTalent = {
+              ...data[0],
+              talent_name: talentName
+            };
+            await sendBookingEmails(bookingWithTalent);
+          }
+        } catch (emailError) {
+          console.error('Error sending booking emails:', emailError);
+          // Don't show error to user for email issues
         }
 
         toast({

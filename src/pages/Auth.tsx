@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { User, Mail, Lock, ArrowLeft } from "lucide-react";
-// Email imports removed - emails now sent via database triggers
+import { useEmailNotifications } from "@/hooks/useEmailNotifications";
 
 const Auth = () => {
   const [email, setEmail] = useState("");
@@ -16,6 +16,7 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { sendUserSignupEmails } = useEmailNotifications();
 
   useEffect(() => {
     // Check if user is already logged in
@@ -67,7 +68,17 @@ const Auth = () => {
           description: "Please check your email to verify your account, then complete your talent profile.",
         });
 
-        // Emails are now sent automatically via database triggers
+        // Send welcome emails via frontend
+        try {
+          // Get user info from the signup response if available
+          const { data: { user: newUser } } = await supabase.auth.getUser();
+          if (newUser) {
+            await sendUserSignupEmails(newUser.id, name, email);
+          }
+        } catch (emailError) {
+          console.error('Error sending welcome emails:', emailError);
+          // Don't show error to user for email issues
+        }
         
         // Don't navigate immediately, wait for email verification
         // User will be redirected after email verification through useAuth
@@ -138,7 +149,6 @@ const Auth = () => {
             <CardDescription>
               Create your talent profile and start getting booked for events
             </CardDescription>
-            {/* Email sending is now automated via database triggers */}
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="signup" className="w-full">

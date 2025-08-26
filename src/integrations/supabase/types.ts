@@ -678,14 +678,6 @@ export type Database = {
         Args: { user_id_param?: string }
         Returns: boolean
       }
-      send_email_notification: {
-        Args: {
-          email_data: Json
-          event_type: string
-          recipient_emails: string[]
-        }
-        Returns: undefined
-      }
       user_has_talent_profile: {
         Args: { user_id_param?: string }
         Returns: boolean
