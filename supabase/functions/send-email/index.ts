@@ -9,6 +9,8 @@ import { MessageNotificationEmail } from './_templates/message-notification.tsx'
 import { PaymentNotificationEmail } from './_templates/payment-notification.tsx';
 import { AdminNotificationEmail } from './_templates/admin-notification.tsx';
 import { BroadcastNotificationEmail } from './_templates/broadcast-notification.tsx';
+import { AdminEventRequestEmail } from './_templates/admin-event-request.tsx';
+import { EventRequestConfirmationEmail } from './_templates/event-request-confirmation.tsx';
 
 // Resend will be initialized inside the request handler
 
@@ -18,7 +20,7 @@ const corsHeaders = {
 };
 
 interface EmailRequest {
-  type: 'booking' | 'message' | 'payment' | 'admin';
+  type: 'booking' | 'message' | 'payment' | 'admin' | 'admin-event-request' | 'event_request_confirmation';
   recipientEmail: string;
   recipientName: string;
   data: any;
@@ -52,36 +54,68 @@ serve(async (req: Request): Promise<Response> => {
     const { type, eventData } = requestBody;
 
     if (type === 'admin-event-request') {
-      const adminEmail = "qtalentslive@gmail.com";
+      logStep('Processing admin event request email');
+      
+      const adminEmail = "qtalents@proton.me";
+      
+      const html = await renderAsync(
+        React.createElement(AdminEventRequestEmail, {
+          eventData,
+          appUrl: 'https://qtalents.com'
+        })
+      );
+      
+      const subject = `New Event Request from ${eventData?.booker_name || 'Unknown'}`;
       
       const emailResponse = await resend.emails.send({
-        from: "Qtalent <noreply@qtalent.live>",
+        from: "QTalents <noreply@qtalents.com>",
         to: [adminEmail],
-        subject: `New Event Request from ${eventData.bookerName}`,
-        html: `
-          <h1>New Event Request</h1>
-          <p>A new event request has been submitted through the website.</p>
-          
-          <h2>Event Details:</h2>
-          <ul>
-            <li><strong>Booker Name:</strong> ${eventData.bookerName}</li>
-            <li><strong>Booker Email:</strong> ${eventData.bookerEmail}</li>
-            <li><strong>Event Date:</strong> ${eventData.eventDate}</li>
-            <li><strong>Event Duration:</strong> ${eventData.eventDuration} hours</li>
-            <li><strong>Event Location:</strong> ${eventData.eventLocation}</li>
-            <li><strong>Event Type:</strong> ${eventData.eventType}</li>
-          </ul>
-          
-          ${eventData.description ? `
-            <h2>Event Description:</h2>
-            <p>${eventData.description}</p>
-          ` : ''}
-          
-          <p>Please reach out to the booker at ${eventData.bookerEmail} to discuss their requirements.</p>
-        `,
+        subject,
+        html,
       });
 
-      console.log("Admin email sent successfully:", emailResponse);
+      if (emailResponse.error) {
+        console.error('[send-email] Error sending admin event request email:', emailResponse.error);
+        throw emailResponse.error;
+      }
+
+      console.log("Admin event request email sent successfully:", emailResponse);
+
+      return new Response(JSON.stringify(emailResponse), {
+        status: 200,
+        headers: {
+          "Content-Type": "application/json",
+          ...corsHeaders,
+        },
+      });
+    }
+    
+    if (type === 'event_request_confirmation') {
+      logStep('Processing event request confirmation email');
+      
+      const html = await renderAsync(
+        React.createElement(EventRequestConfirmationEmail, {
+          recipientName: eventData?.booker_name || 'Valued Customer',
+          eventData,
+          appUrl: 'https://qtalents.com'
+        })
+      );
+      
+      const subject = 'Event Request Confirmation - We received your request!';
+      
+      const emailResponse = await resend.emails.send({
+        from: "QTalents <noreply@qtalents.com>",
+        to: [eventData?.booker_email],
+        subject,
+        html,
+      });
+
+      if (emailResponse.error) {
+        console.error('[send-email] Error sending event request confirmation:', emailResponse.error);
+        throw emailResponse.error;
+      }
+
+      console.log("Event request confirmation sent successfully:", emailResponse);
 
       return new Response(JSON.stringify(emailResponse), {
         status: 200,

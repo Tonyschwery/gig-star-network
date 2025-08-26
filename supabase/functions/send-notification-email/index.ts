@@ -199,6 +199,22 @@ serve(async (req: Request): Promise<Response> => {
               };
             }
             break;
+            
+          case 'event_request_confirmation':
+            if (eventRequestId) {
+              const { data: eventRequest } = await supabaseAdmin
+                .from('event_requests')
+                .select('*')
+                .eq('id', eventRequestId)
+                .single();
+
+              if (eventRequest) {
+                emailData = {
+                  eventData: eventRequest
+                };
+              }
+            }
+            break;
         }
 
         // Send email via send-email function
