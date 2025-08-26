@@ -76,13 +76,33 @@ export function TalentGrid() {
   const fetchTalents = async () => {
     console.log('[TalentGrid] Starting to fetch talents...');
     try {
-      const { data, error } = await supabase
+      // Try direct talent_profiles table query as fallback
+      let { data, error } = await supabase
         .from('talent_profiles_public')
         .select('*')
-        .order('is_pro_subscriber', { ascending: false }) // Pro users first
+        .order('is_pro_subscriber', { ascending: false })
         .order('created_at', { ascending: false });
 
-      console.log('[TalentGrid] Query result:', { data, error });
+      console.log('[TalentGrid] talent_profiles_public Query result:', { data, error });
+
+      // If talent_profiles_public fails or returns empty, try direct table access
+      if (!data || data.length === 0) {
+        console.log('[TalentGrid] Trying direct talent_profiles table...');
+        const directResult = await supabase
+          .from('talent_profiles')
+          .select(`
+            id, artist_name, act, gender, age, location, rate_per_hour, 
+            currency, music_genres, custom_genre, picture_url, 
+            soundcloud_link, youtube_link, biography, nationality, 
+            created_at, is_pro_subscriber, gallery_images
+          `)
+          .order('is_pro_subscriber', { ascending: false })
+          .order('created_at', { ascending: false });
+        
+        console.log('[TalentGrid] Direct talent_profiles query result:', directResult);
+        data = directResult.data;
+        error = directResult.error;
+      }
 
       if (error) {
         console.error('[TalentGrid] Error fetching talents:', error);
