@@ -74,6 +74,7 @@ export function TalentGrid() {
   }, [talents, activeFilters]);
 
   const fetchTalents = async () => {
+    console.log('[TalentGrid] Starting to fetch talents...');
     try {
       const { data, error } = await supabase
         .from('talent_profiles_public')
@@ -81,15 +82,19 @@ export function TalentGrid() {
         .order('is_pro_subscriber', { ascending: false }) // Pro users first
         .order('created_at', { ascending: false });
 
+      console.log('[TalentGrid] Query result:', { data, error });
+
       if (error) {
-        console.error('Error fetching talents:', error);
+        console.error('[TalentGrid] Error fetching talents:', error);
         return;
       }
 
+      console.log('[TalentGrid] Setting talents data:', data);
       setTalents(data || []);
     } catch (error) {
-      console.error('Error:', error);
+      console.error('[TalentGrid] Catch error:', error);
     } finally {
+      console.log('[TalentGrid] Setting loading to false');
       setLoading(false);
     }
   };
@@ -136,6 +141,14 @@ export function TalentGrid() {
                           activeFilters.date || 
                           (activeFilters.type && activeFilters.type !== 'all');
   const talentsToShow = hasActiveFilters ? filteredTalents : talents;
+  
+  console.log('[TalentGrid] Render state:', { 
+    talentsLength: talents.length, 
+    filteredTalentsLength: filteredTalents.length,
+    hasActiveFilters, 
+    talentsToShowLength: talentsToShow.length,
+    loading 
+  });
 
   if (loading) {
     return (
