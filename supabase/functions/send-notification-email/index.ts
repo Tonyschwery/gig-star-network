@@ -28,6 +28,7 @@ serve(async (req: Request): Promise<Response> => {
     const { 
       emailType,
       userIds,
+      emailData,
       bookingId,
       messageId,
       paymentId,
@@ -36,6 +37,12 @@ serve(async (req: Request): Promise<Response> => {
       eventRequestId,
       skipPreferenceCheck = false 
     } = requestBody;
+
+    // Extract IDs from emailData if they exist there
+    const actualBookingId = bookingId || emailData?.booking_id;
+    const actualMessageId = messageId || emailData?.message_id;
+    const actualPaymentId = paymentId || emailData?.payment_id;
+    const actualEventRequestId = eventRequestId || emailData?.event_request_id;
 
     logStep('Request parsed', requestBody);
 
@@ -97,14 +104,14 @@ serve(async (req: Request): Promise<Response> => {
         // Prepare email data based on type
         switch (emailType) {
           case 'booking':
-            if (bookingId) {
+            if (actualBookingId) {
               const { data: booking } = await supabaseAdmin
                 .from('bookings')
                 .select(`
                   *,
                   talent_profiles!inner(artist_name, user_id)
                 `)
-                .eq('id', bookingId)
+                .eq('id', actualBookingId)
                 .single();
 
               if (booking) {
@@ -123,11 +130,11 @@ serve(async (req: Request): Promise<Response> => {
             break;
 
           case 'message':
-            if (messageId && bookingId) {
+            if (actualMessageId && actualBookingId) {
               const { data: message } = await supabaseAdmin
                 .from('chat_messages')
                 .select('content, sender_id')
-                .eq('id', messageId)
+                .eq('id', actualMessageId)
                 .single();
 
               const { data: booking } = await supabaseAdmin
@@ -139,7 +146,7 @@ serve(async (req: Request): Promise<Response> => {
                   user_id,
                   talent_profiles!inner(artist_name, user_id)
                 `)
-                .eq('id', bookingId)
+                .eq('id', actualBookingId)
                 .single();
 
               if (message && booking) {
@@ -153,7 +160,7 @@ serve(async (req: Request): Promise<Response> => {
                   eventType: booking.event_type,
                   eventDate: booking.event_date,
                   messagePreview: message.content.substring(0, 100) + (message.content.length > 100 ? '...' : ''),
-                  bookingId,
+                  bookingId: actualBookingId,
                   isFromTalent,
                 };
               }
@@ -161,7 +168,7 @@ serve(async (req: Request): Promise<Response> => {
             break;
 
           case 'payment':
-            if (paymentId || bookingId) {
+            if (actualPaymentId || actualBookingId) {
               const { data: payment } = await supabaseAdmin
                 .from('payments')
                 .select(`
@@ -173,7 +180,7 @@ serve(async (req: Request): Promise<Response> => {
                     talent_profiles!inner(artist_name, user_id)
                   )
                 `)
-                .eq(paymentId ? 'id' : 'booking_id', paymentId || bookingId)
+                .eq(actualPaymentId ? 'id' : 'booking_id', actualPaymentId || actualBookingId)
                 .single();
 
               if (payment) {
@@ -201,11 +208,11 @@ serve(async (req: Request): Promise<Response> => {
             break;
             
           case 'event_request_confirmation':
-            if (eventRequestId) {
+            if (actualEventRequestId) {
               const { data: eventRequest } = await supabaseAdmin
                 .from('event_requests')
                 .select('*')
-                .eq('id', eventRequestId)
+                .eq('id', actualEventRequestId)
                 .single();
 
               if (eventRequest) {
@@ -222,8 +229,10 @@ serve(async (req: Request): Promise<Response> => {
           body: {
             type: emailType,
             recipientEmail: userEmail,
-            recipientName: userName,
-            data: emailData,
+            data: {
+              ...emailData,
+              recipient_name: userName
+            },
           },
         });
 
@@ -235,19 +244,19 @@ serve(async (req: Request): Promise<Response> => {
       }
     }
 
-    // Send admin notification if needed
-    if (emailType === 'admin' && adminEmail && notificationType) {
-      let adminEmailData: any = { notificationType };
+    // Send admin notification for admin email types
+    if (emailType.startsWith('admin_') && adminEmail) {
+      let adminEmailData: any = { ...emailData };
 
       // Get additional data for admin notification
-      if (bookingId) {
+      if (actualBookingId) {
         const { data: booking } = await supabaseAdmin
           .from('bookings')
           .select(`
             *,
             talent_profiles!inner(artist_name, user_id)
           `)
-          .eq('id', bookingId)
+          .eq('id', actualBookingId)
           .single();
 
         if (booking) {
@@ -273,11 +282,11 @@ serve(async (req: Request): Promise<Response> => {
       }
 
       // Handle event requests (indirect requests)
-      if (eventRequestId) {
+      if (actualEventRequestId) {
         const { data: eventRequest } = await supabaseAdmin
           .from('event_requests')
           .select('*')
-          .eq('id', eventRequestId)
+          .eq('id', actualEventRequestId)
           .single();
 
         if (eventRequest) {
@@ -300,7 +309,7 @@ serve(async (req: Request): Promise<Response> => {
         }
       }
 
-      if (paymentId) {
+      if (actualPaymentId) {
         const { data: payment } = await supabaseAdmin
           .from('payments')
           .select(`
@@ -311,7 +320,7 @@ serve(async (req: Request): Promise<Response> => {
               talent_profiles!inner(artist_name)
             )
           `)
-          .eq('id', paymentId)
+          .eq('id', actualPaymentId)
           .single();
 
         if (payment) {
@@ -327,10 +336,12 @@ serve(async (req: Request): Promise<Response> => {
 
       const adminEmailPromise = supabaseAdmin.functions.invoke('send-email', {
         body: {
-          type: 'admin',
+          type: emailType,
           recipientEmail: adminEmail,
-          recipientName: 'Admin',
-          data: adminEmailData,
+          data: {
+            ...adminEmailData,
+            recipient_name: 'Admin'
+          },
         },
       });
 
