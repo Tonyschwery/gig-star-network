@@ -117,7 +117,7 @@ serve(async (req: Request): Promise<Response> => {
             <li><strong>User ID:</strong> ${data.user_id || 'Not provided'}</li>
             <li><strong>Signup Date:</strong> ${data.signup_date ? new Date(data.signup_date).toLocaleDateString() : 'Unknown'}</li>
           </ul>
-          <p><a href="${appUrl}/admin-dashboard/users">Manage Users</a></p>
+          <p><a href="${appUrl}/admin/users">Manage Users</a></p>
         `;
         subject = 'New User Signup on Qtalent';
         break;
@@ -134,7 +134,7 @@ serve(async (req: Request): Promise<Response> => {
             <li><strong>Rate:</strong> ${data.rate_per_hour || 'Not set'} ${data.currency || ''}</li>
             <li><strong>Talent ID:</strong> ${data.talent_id || 'Not provided'}</li>
           </ul>
-          <p><a href="${appUrl}/admin-dashboard/users">Review Talent</a></p>
+          <p><a href="${appUrl}/admin/users">Review Talent</a></p>
         `;
         subject = 'New Talent Profile Created';
         break;
@@ -153,7 +153,7 @@ serve(async (req: Request): Promise<Response> => {
             <li><strong>Location:</strong> ${data.event_location || 'Not provided'}</li>
             <li><strong>Status:</strong> ${data.status || 'Unknown'}</li>
           </ul>
-          <p><a href="${appUrl}/admin-dashboard/bookings">Manage Bookings</a></p>
+          <p><a href="${appUrl}/admin/bookings">Manage Bookings</a></p>
         `;
         subject = 'New Booking Request';
         break;
@@ -171,7 +171,7 @@ serve(async (req: Request): Promise<Response> => {
             <li><strong>Previous Status:</strong> ${data.old_status || 'Unknown'}</li>
             <li><strong>New Status:</strong> ${data.new_status || 'Unknown'}</li>
           </ul>
-          <p><a href="${appUrl}/admin-dashboard/bookings">View Booking</a></p>
+          <p><a href="${appUrl}/admin/bookings">View Booking</a></p>
         `;
         subject = 'Booking Status Changed';
         break;
@@ -191,7 +191,7 @@ serve(async (req: Request): Promise<Response> => {
             <li><strong>Description:</strong> ${data.description}</li>
           </ul>
           <p><strong>Note:</strong> No "undefined" fields should appear above. If any field says "Not Provided" or similar, that's the intended fallback.</p>
-          <p><a href="${appUrl}/admin-dashboard/event-requests">Manage Event Requests</a></p>
+          <p><a href="${appUrl}/admin/event-requests">Manage Event Requests</a></p>
         `;
         subject = 'New Event Request from Website';
         break;
@@ -210,7 +210,7 @@ serve(async (req: Request): Promise<Response> => {
             ${data.is_subscription ? '' : `<li><strong>Booking ID:</strong> ${data.booking_id || 'Not provided'}</li>`}
             ${data.platform_commission ? `<li><strong>Platform Commission:</strong> ${data.platform_commission} ${data.currency || 'USD'}</li>` : ''}
           </ul>
-          <p><a href="${appUrl}/admin-dashboard/payments">View Payments</a></p>
+          <p><a href="${appUrl}/admin/payments">View Payments</a></p>
         `;
         subject = data.is_subscription ? 'New Subscription Payment' : 'New Booking Payment';
         break;
