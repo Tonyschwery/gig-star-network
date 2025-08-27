@@ -113,28 +113,21 @@ const TalentDashboard = () => {
     if (!user || !session) return;
 
     try {
-      const { data, error } = await supabase.functions.invoke('customer-portal', {
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json'
-        },
+      // For PayPal subscriptions, direct users to PayPal's subscription management
+      toast({
+        title: "Cancel Pro Subscription",
+        description: "To cancel your PayPal subscription, please visit your PayPal account's subscription management page.",
+        duration: 6000,
       });
 
-      if (error) {
-        console.error('Supabase function error:', error);
-        throw new Error(error.message || 'Failed to open customer portal');
-      }
-
-      if (data?.url) {
-        window.open(data.url, '_blank');
-      } else {
-        throw new Error('No portal URL returned');
-      }
+      // Open PayPal subscription management page
+      window.open('https://www.paypal.com/myaccount/autopay/', '_blank');
+      
     } catch (error) {
-      console.error('Error opening customer portal:', error);
+      console.error('Error accessing subscription management:', error);
       toast({
         title: "Error",
-        description: "Failed to open subscription management portal. Please try again.",
+        description: "Unable to access subscription management. Please visit paypal.com directly.",
         variant: "destructive",
       });
     }
