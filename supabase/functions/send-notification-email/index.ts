@@ -271,8 +271,12 @@ serve(async (req: Request): Promise<Response> => {
           // Get talent email if talent is assigned
           let talentEmail = null;
           if (booking.talent_profiles?.user_id) {
-            const { data: talentUser } = await supabaseAdmin.auth.admin.getUserById(booking.talent_profiles.user_id);
-            talentEmail = talentUser?.user?.email;
+            try {
+              const { data: talentUser } = await supabaseAdmin.auth.admin.getUserById(booking.talent_profiles.user_id);
+              talentEmail = talentUser?.user?.email || null;
+            } catch (error) {
+              logStep('Error fetching talent user', { error: error.message });
+            }
           }
           
           adminEmailData = {

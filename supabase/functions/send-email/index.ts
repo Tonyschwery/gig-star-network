@@ -417,22 +417,23 @@ serve(async (req: Request): Promise<Response> => {
         emailHtml = `
           <h1>New Booking Request</h1>
           <p>Hi ${data.recipient_name},</p>
-          <p>You have received a new booking request!</p>
+          <p>You have received a new booking request from a client!</p>
           
           <div style="background-color: #f0f9ff; padding: 20px; border-radius: 8px; margin: 20px 0;">
             <h3>🎉 Event Details:</h3>
             <p><strong>Event Type:</strong> ${data.event_type || 'Not specified'}</p>
             <p><strong>Client Name:</strong> ${data.booker_name || 'Not provided'}</p>
-            <p><strong>Date:</strong> ${data.event_date || 'Not set'}</p>
+            <p><strong>Event Date:</strong> ${data.event_date || 'Not set'}</p>
             <p><strong>Duration:</strong> ${data.event_duration ? data.event_duration + ' hours' : 'Not specified'}</p>
-            <p><strong>Location:</strong> ${data.event_location || 'Not provided'}</p>
-            ${data.description ? `<p><strong>Description:</strong> ${data.description}</p>` : ''}
+            <p><strong>Event Location:</strong> ${data.event_location || 'Not provided'}</p>
+            ${data.description ? `<p><strong>Event Description:</strong> ${data.description}</p>` : ''}
+            ${data.budget ? `<p><strong>Budget:</strong> ${data.budget} ${data.budget_currency || 'USD'}</p>` : ''}
           </div>
           
-          <p>Please log in to your dashboard to review and respond to this booking request.</p>
+          <p><strong>Next Steps:</strong> Please review the complete request details in your dashboard and respond to the client promptly.</p>
           
           <p style="margin-top: 30px;">
-            <a href="${appUrl}/talent-dashboard" style="background-color: #28a745; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">View Booking Request</a>
+            <a href="${appUrl}/talent-dashboard" style="background-color: #28a745; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">Review & Respond to Request</a>
           </p>
           
           <p>Best regards,<br>The Qtalent Team</p>

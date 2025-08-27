@@ -68,6 +68,14 @@ const BookerDashboard = () => {
               </Button>
               <Button 
                 variant="outline" 
+                onClick={() => navigate('/your-event')}
+                className="flex-shrink-0"
+                size="sm"
+              >
+                Tell us about your event
+              </Button>
+              <Button 
+                variant="outline" 
                 onClick={handleSignOut}
                 className="flex-shrink-0"
                 size="sm"
