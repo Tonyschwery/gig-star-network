@@ -20,19 +20,18 @@ export default function Pricing() {
       commission: "20%",
       features: [
         "Create professional profile",
-        "Receive booking requests", 
-        "Basic messaging with clients",
-        "Standard support response",
+        "1 profile image only",
+        "Basic messaging (filtered)",
         "1 booking request per month",
-        "Up to 1 profile image",
-        "Basic profile visibility"
+        "Basic profile visibility",
+        "Standard support response"
       ],
       limitations: [
-        "20% platform commission on earnings",
-        "Limited access to premium gigs",
-        "Standard search ranking",
-        "No priority support",
-        "Basic profile features only"
+        "No audio/video links allowed",
+        "Messaging heavily filtered (no booker contact details)",
+        "Limited to 1 booking request per month",
+        "20% platform commission on earnings", 
+        "No Pro badge or featured placement"
       ],
       buttonText: "Get Started Free",
       popular: false,
@@ -45,16 +44,15 @@ export default function Pricing() {
       yearlyPrice: 179.88,
       commission: "0%",
       features: [
-        "Everything in Free",
+        "Everything in Free, plus:",
+        "Up to 10 profile images",
+        "Audio & video links on profile", 
+        "Full messaging access (see booker details)",
+        "Featured in Pro Artists section",
+        "Pro badge for trust & visibility",
+        "Unlimited booking requests",
         "Zero commission - keep 100% of earnings!",
-        "Priority listing in search results",
-        "Access to exclusive premium gigs",
-        "Priority customer support",
-        "Verified Pro badge with crown",
-        "Unlimited gallery photos & videos",
-        "Custom booking requirements",
-        "Enhanced profile features",
-        "Advanced messaging tools"
+        "Priority customer support"
       ],
       limitations: [],
       buttonText: "Upgrade to Pro",
@@ -152,7 +150,7 @@ export default function Pricing() {
               }`}
             >
               Yearly
-              <Badge variant="secondary" className="ml-2">Save 17%</Badge>
+              <Badge variant="secondary" className="ml-2">Save $60/year</Badge>
             </button>
           </div>
         </div>

@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Upload, X, ImageIcon, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -19,9 +19,30 @@ export function SimpleGalleryUpload({
 }: SimpleGalleryUploadProps) {
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
+  const [isProUser, setIsProUser] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { toast } = useToast();
+
+  useEffect(() => {
+    // Check if user is Pro to determine max images
+    const checkProStatus = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from('talent_profiles')
+          .select('is_pro_subscriber')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        
+        setIsProUser(profile?.is_pro_subscriber || false);
+      }
+    };
+    
+    checkProStatus();
+  }, []);
+
+  const effectiveMaxImages = isProUser ? Math.max(maxImages, 10) : 1; // Pro users get 10, Free users get 1
 
   const processImageToSquare = (file: File): Promise<File> => {
     return new Promise((resolve, reject) => {
@@ -116,13 +137,13 @@ export function SimpleGalleryUpload({
   const handleFiles = async (files: FileList) => {
     if (disabled) return;
 
-    const remainingSlots = maxImages - currentImages.length;
+    const remainingSlots = effectiveMaxImages - currentImages.length;
     const filesToProcess = Array.from(files).slice(0, remainingSlots);
     
     if (files.length > remainingSlots) {
       toast({
         title: "Too Many Images",
-        description: `You can only upload ${remainingSlots} more image(s). Maximum is ${maxImages} photos.`,
+        description: `You can only upload ${remainingSlots} more image(s). ${isProUser ? 'Pro maximum is 10 photos' : 'Free users are limited to 1 photo. Upgrade to Pro for up to 10 photos!'}.`,
         variant: "destructive",
       });
     }
@@ -206,7 +227,7 @@ export function SimpleGalleryUpload({
     }
   };
 
-  const canUploadMore = currentImages.length < maxImages && !disabled;
+  const canUploadMore = currentImages.length < effectiveMaxImages && !disabled;
 
   return (
     <div className="space-y-4">
@@ -300,8 +321,8 @@ export function SimpleGalleryUpload({
 
       {/* Info */}
       <div className="text-sm text-muted-foreground">
-        {currentImages.length} of {maxImages} photos uploaded
-        {currentImages.length >= maxImages && (
+        {currentImages.length} of {effectiveMaxImages} photos uploaded
+        {currentImages.length >= effectiveMaxImages && (
           <span className="ml-2 text-primary">• Gallery full</span>
         )}
       </div>

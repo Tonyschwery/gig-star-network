@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 
 interface FilterResult {
@@ -6,15 +5,19 @@ interface FilterResult {
   reason?: string;
 }
 
-export const useChatFilter = () => {
+export const useChatFilterPro = (isProUser: boolean = false) => {
   const [lastFilterResult, setLastFilterResult] = useState<FilterResult | null>(null);
 
   const filterMessage = (content: string): FilterResult => {
+    // Pro users have no restrictions - they can send anything
+    if (isProUser) {
+      const result = { isBlocked: false };
+      setLastFilterResult(result);
+      return result;
+    }
+
+    // Apply filtering only for free users
     const lowerContent = content.toLowerCase().trim();
-    
-    // Check if user is Pro - if so, return early (no filtering)
-    // This check should be passed from the component using this hook
-    // For now, we'll apply filtering to all users and let the component decide
     
     // Enhanced phone number patterns (various formats)
     const phonePatterns = [
@@ -75,7 +78,10 @@ export const useChatFilter = () => {
     // Check for phone numbers
     for (const pattern of phonePatterns) {
       if (pattern.test(content)) {
-        const result = { isBlocked: true, reason: 'Phone numbers are not allowed in chat messages' };
+        const result = { 
+          isBlocked: true, 
+          reason: 'Phone numbers are not allowed for Free users. Upgrade to Pro to share contact details.' 
+        };
         setLastFilterResult(result);
         return result;
       }
@@ -84,7 +90,10 @@ export const useChatFilter = () => {
     // Check for websites/URLs
     for (const pattern of websitePatterns) {
       if (pattern.test(content)) {
-        const result = { isBlocked: true, reason: 'Website links are not allowed in chat messages' };
+        const result = { 
+          isBlocked: true, 
+          reason: 'Website links are not allowed for Free users. Upgrade to Pro to share links.' 
+        };
         setLastFilterResult(result);
         return result;
       }
@@ -93,7 +102,10 @@ export const useChatFilter = () => {
     // Check for social media and contact requests
     for (const pattern of contactRequestPatterns) {
       if (pattern.test(lowerContent)) {
-        const result = { isBlocked: true, reason: 'Social media contact requests are not allowed. Please keep conversations professional within the platform.' };
+        const result = { 
+          isBlocked: true, 
+          reason: 'Contact details are not allowed for Free users. Upgrade to Pro for unlimited messaging access.' 
+        };
         setLastFilterResult(result);
         return result;
       }
@@ -102,7 +114,10 @@ export const useChatFilter = () => {
     // Check for email addresses
     for (const pattern of emailPatterns) {
       if (pattern.test(content)) {
-        const result = { isBlocked: true, reason: 'Email addresses are not allowed in chat messages' };
+        const result = { 
+          isBlocked: true, 
+          reason: 'Email addresses are not allowed for Free users. Upgrade to Pro to share contact details.' 
+        };
         setLastFilterResult(result);
         return result;
       }
@@ -120,7 +135,10 @@ export const useChatFilter = () => {
 
     for (const pattern of suspiciousPatterns) {
       if (pattern.test(lowerContent)) {
-        const result = { isBlocked: true, reason: 'Please keep all communication within the platform for your safety and security' };
+        const result = { 
+          isBlocked: true, 
+          reason: 'External contact sharing is restricted for Free users. Upgrade to Pro for full messaging access.' 
+        };
         setLastFilterResult(result);
         return result;
       }

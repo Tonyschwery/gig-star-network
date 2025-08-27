@@ -2,6 +2,7 @@ import { Header } from "@/components/Header";
 import { HeroSection } from "@/components/HeroSection";
 import { HowItWorks } from "@/components/HowItWorks";
 import { TalentGrid } from "@/components/TalentGrid";
+import { FeaturedProArtists } from "@/components/FeaturedProArtists";
 import { Footer } from "@/components/Footer";
 
 const Index = () => {
@@ -11,6 +12,7 @@ const Index = () => {
       <main>
         <HeroSection />
         <HowItWorks />
+        <FeaturedProArtists />
         <TalentGrid />
       </main>
       <Footer />

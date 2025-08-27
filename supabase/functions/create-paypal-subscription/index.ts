@@ -82,7 +82,7 @@ serve(async (req) => {
     logStep("User authenticated", { userId: user.id, email: user.email });
 
     // Get PayPal access token (use sandbox for now)
-    const isProduction = false; // TODO: Change to true for production
+    const isProduction = false; // Using sandbox for testing
     const accessToken = await getPayPalAccessToken(isProduction);
     logStep("PayPal access token obtained");
 
@@ -90,8 +90,8 @@ serve(async (req) => {
       ? "https://api-m.paypal.com" 
       : "https://api-m.sandbox.paypal.com";
 
-    // Create PayPal subscription plan if it doesn't exist
-    const planPrice = planType === "monthly" ? "19.99" : "179.88"; // yearly = 14.99 * 12
+    // Create PayPal subscription plan with correct pricing
+    const planPrice = planType === "monthly" ? "19.99" : "179.88"; // yearly = $179.88 (equivalent to $14.99/month)
     const planInterval = planType === "monthly" ? "MONTH" : "YEAR";
     const planName = `Qtalent Pro ${planType === "monthly" ? "Monthly" : "Annual"}`;
 

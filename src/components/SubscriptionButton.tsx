@@ -86,7 +86,7 @@ export function SubscriptionButton({
     }
   };
 
-  const price = planType === "monthly" ? "$19.99/month" : "$14.99/month (billed annually)";
+  const price = planType === "monthly" ? "$19.99/month" : "$179.88/year (save $60)";
 
   if (isProSubscriber) {
     return (

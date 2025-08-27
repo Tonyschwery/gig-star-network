@@ -28,6 +28,8 @@ import AdminReports from "./pages/admin/AdminReports";
 import YourEvent from "./pages/YourEvent";
 
 
+import SubscriptionSuccess from "./pages/SubscriptionSuccess";
+import SubscriptionCancelled from "./pages/SubscriptionCancelled";
 import Pricing from "./pages/Pricing";
 import HowItWorks from "./pages/HowItWorks";
 import TrustSafety from "./pages/TrustSafety";
@@ -91,6 +93,8 @@ const App = () => (
             } />
             <Route path="/your-event" element={<YourEvent />} />
             <Route path="/pricing" element={<Pricing />} />
+            <Route path="/subscription-success" element={<SubscriptionSuccess />} />
+            <Route path="/subscription-cancelled" element={<SubscriptionCancelled />} />
             <Route path="/how-it-works" element={<HowItWorks />} />
             <Route path="/trust-safety" element={<TrustSafety />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />

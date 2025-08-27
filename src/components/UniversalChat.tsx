@@ -7,9 +7,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { MessageCircle, X, Minimize2, Maximize2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useRealtimeChat } from "@/hooks/useRealtimeChat";
-import { useChatFilter } from "@/hooks/useChatFilter";
+import { useChatFilterPro } from "@/hooks/useChatFilterPro";
 import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 import { useToast } from "@/hooks/use-toast";
 import { useWebPushNotifications } from "@/hooks/useWebPushNotifications";
@@ -24,13 +25,15 @@ interface BookingLite {
 
 export function UniversalChat() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [minimized, setMinimized] = useState(false);
   const [bookings, setBookings] = useState<BookingLite[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [input, setInput] = useState("");
-  const { filterMessage } = useChatFilter();
+  const [isProUser, setIsProUser] = useState(false);
+  const { filterMessage } = useChatFilterPro(isProUser);
   const { unreadCount } = useUnreadMessages();
   const { showNotification, requestPermission } = useWebPushNotifications();
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -39,6 +42,16 @@ export function UniversalChat() {
   useEffect(() => {
     const load = async () => {
       if (!user) return;
+      
+      // Check if user is Pro subscriber
+      const { data: talentProfile } = await supabase
+        .from('talent_profiles')
+        .select('id, is_pro_subscriber')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      setIsProUser(talentProfile?.is_pro_subscriber || false);
+      
       // Fetch bookings where the user is the booker
       const { data: asBooker } = await supabase
         .from('bookings')
@@ -49,12 +62,6 @@ export function UniversalChat() {
         .limit(20);
 
       // Fetch bookings where the user is the talent
-      const { data: talentProfile } = await supabase
-        .from('talent_profiles')
-        .select('id')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
       let asTalent: BookingLite[] = [];
       if (talentProfile?.id) {
         const { data } = await supabase
@@ -113,7 +120,7 @@ export function UniversalChat() {
     if (filterResult.isBlocked) {
       toast({
         title: "Message Blocked",
-        description: filterResult.reason,
+        description: filterResult.reason + (isProUser ? "" : " Click to upgrade to Pro."),
         variant: "destructive",
       });
       return;
