@@ -31,6 +31,7 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [bookerName, setBookerName] = useState("");
+  const [bookerPhone, setBookerPhone] = useState("");
   const [eventDate, setEventDate] = useState<Date>();
   const [eventDuration, setEventDuration] = useState("");
   const [eventLocation, setEventLocation] = useState("");
@@ -189,6 +190,7 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
           user_id: user.id,
           booker_name: bookerName.trim(),
           booker_email: user.email || '',
+          booker_phone: bookerPhone?.trim() || null,
           event_date: format(eventDate, 'yyyy-MM-dd'),
           event_duration: parseInt(eventDuration),
           event_location: eventLocation.trim(),
@@ -225,6 +227,7 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
           talent_id: talentId,
           booker_name: bookerName.trim(),
           booker_email: user.email || '',
+          booker_phone: bookerPhone?.trim() || null,
           event_date: format(eventDate, 'yyyy-MM-dd'),
           event_duration: parseInt(eventDuration),
           event_location: eventLocation.trim(),
@@ -403,18 +406,34 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
             </Tabs>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Booker Name */}
-              <div className="space-y-2">
-                <Label htmlFor="booker-name">Your Name *</Label>
-                <div className="relative">
-                  <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              {/* Booker Name & Phone */}
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="booker-name">Your Name *</Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="booker-name"
+                      placeholder="Enter your full name"
+                      value={bookerName}
+                      onChange={(e) => setBookerName(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="booker-phone">Phone Number (Optional)</Label>
                   <Input
-                    id="booker-name"
-                    placeholder="Enter your full name"
-                    value={bookerName}
-                    onChange={(e) => setBookerName(e.target.value)}
-                    className="pl-10"
+                    id="booker-phone"
+                    type="tel"
+                    placeholder="e.g., +1 555-123-4567"
+                    value={bookerPhone}
+                    onChange={(e) => setBookerPhone(e.target.value)}
                   />
+                  <p className="text-xs text-muted-foreground">
+                    This helps our team contact you if needed
+                  </p>
                 </div>
               </div>
 

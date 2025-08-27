@@ -100,25 +100,13 @@ export const useEmailNotifications = () => {
 
   const sendEventRequestEmails = async (eventRequestData: any) => {
     try {
-      // Send confirmation email to requester
-      await sendNotificationEmail('event_request_confirmation', [eventRequestData.user_id], {
-        recipientName: eventRequestData.booker_name,
-        eventData: {
-          event_date: eventRequestData.event_date,
-          event_duration: eventRequestData.event_duration,
-          event_location: eventRequestData.event_location,
-          event_type: eventRequestData.event_type,
-          description: eventRequestData.description
-        },
-        subject: 'Event Request Confirmation - We received your request!'
-      });
-
-      // Send admin notification
+      // Send admin notification with phone number
       const adminEmails = ['qtalentslive@gmail.com'];
       await sendNotificationEmail('admin_hero_form_submission', [], {
         recipient_name: 'Admin',
         booker_name: eventRequestData.booker_name,
         booker_email: eventRequestData.booker_email,
+        booker_phone: eventRequestData.booker_phone,
         event_type: eventRequestData.event_type,
         event_date: eventRequestData.event_date,
         event_location: eventRequestData.event_location,
@@ -135,25 +123,44 @@ export const useEmailNotifications = () => {
 
   const sendBookingEmails = async (bookingData: any) => {
     try {
-      // Send admin notification for new booking
+      // Get talent email for admin notification
+      let talentEmail = null;
+      if (bookingData.talent_id) {
+        const { data: talentProfile } = await supabase
+          .from('talent_profiles')
+          .select('user_id')
+          .eq('id', bookingData.talent_id)
+          .single();
+
+        if (talentProfile) {
+          // We can't get email from auth.users directly in client-side code
+          // The send-notification-email function will handle getting the email via service role
+        }
+      }
+
+      // Send admin notification for new booking with complete information
       const adminEmails = ['qtalentslive@gmail.com'];
       await sendNotificationEmail('admin_booking_created', [], {
         recipient_name: 'Admin',
         booking_id: bookingData.id,
         booker_name: bookingData.booker_name,
         booker_email: bookingData.booker_email,
+        booker_phone: bookingData.booker_phone,
         talent_name: bookingData.talent_name || 'TBD',
         event_type: bookingData.event_type,
         event_date: bookingData.event_date,
+        event_duration: bookingData.event_duration,
         event_location: bookingData.event_location,
+        description: bookingData.description,
+        budget: bookingData.budget,
+        budget_currency: bookingData.budget_currency,
         status: bookingData.status,
         subject: 'New Booking Request',
         admin_emails: adminEmails
       });
 
-      // Send notification to talent if talent is assigned
+      // Send notification to talent if talent is assigned (hide sensitive client info)
       if (bookingData.talent_id) {
-        // Get talent user info to send email
         const { data: talentProfile } = await supabase
           .from('talent_profiles')
           .select('user_id, artist_name')
@@ -163,12 +170,12 @@ export const useEmailNotifications = () => {
         if (talentProfile) {
           await sendNotificationEmail('booking_request_talent', [talentProfile.user_id], {
             recipient_name: talentProfile.artist_name,
-            booker_name: bookingData.booker_name,
-            booker_email: bookingData.booker_email,
+            booker_name: bookingData.booker_name, // Only name, no email/phone
             event_type: bookingData.event_type,
             event_date: bookingData.event_date,
             event_location: bookingData.event_location,
             event_duration: bookingData.event_duration,
+            description: bookingData.description,
             booking_id: bookingData.id,
             subject: 'New Booking Request for Your Services'
           });

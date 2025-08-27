@@ -143,17 +143,39 @@ serve(async (req: Request): Promise<Response> => {
         emailHtml = `
           <h1>New Booking Request</h1>
           <p>A new booking request has been submitted!</p>
-          <h2>Booking Details:</h2>
-          <ul>
-            <li><strong>Booking ID:</strong> ${data.booking_id || 'Not provided'}</li>
-            <li><strong>Booker:</strong> ${data.booker_name || 'Not provided'} (${data.booker_email || 'No email'})</li>
-            <li><strong>Talent:</strong> ${data.talent_name || 'Not assigned'}</li>
-            <li><strong>Event Type:</strong> ${data.event_type || 'Not specified'}</li>
-            <li><strong>Event Date:</strong> ${data.event_date || 'Not set'}</li>
-            <li><strong>Location:</strong> ${data.event_location || 'Not provided'}</li>
-            <li><strong>Status:</strong> ${data.status || 'Unknown'}</li>
-          </ul>
-          <p><a href="${appUrl}/admin/bookings">Manage Bookings</a></p>
+          
+          <div style="background-color: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h2>📋 Booking Details:</h2>
+            <p><strong>Booking ID:</strong> ${data.booking_id || 'Not provided'}</p>
+            <p><strong>Status:</strong> ${data.status || 'Pending'}</p>
+          </div>
+          
+          <div style="background-color: #e8f4fd; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h3>👤 Client Information:</h3>
+            <p><strong>Name:</strong> ${data.booker_name || 'Not provided'}</p>
+            <p><strong>Email:</strong> ${data.booker_email || 'Not provided'}</p>
+            <p><strong>Phone:</strong> ${data.booker_phone || 'Not provided'}</p>
+          </div>
+          
+          <div style="background-color: #f0f9ff; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h3>🎭 Talent Information:</h3>
+            <p><strong>Artist Name:</strong> ${data.talent_name || 'Not assigned'}</p>
+            <p><strong>Talent Email:</strong> ${data.talent_email || 'Not available'}</p>
+          </div>
+          
+          <div style="background-color: #fdf2f8; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h3>🎉 Event Details:</h3>
+            <p><strong>Event Type:</strong> ${data.event_type || 'Not specified'}</p>
+            <p><strong>Event Date:</strong> ${data.event_date || 'Not set'}</p>
+            <p><strong>Duration:</strong> ${data.event_duration ? data.event_duration + ' hours' : 'Not specified'}</p>
+            <p><strong>Location:</strong> ${data.event_location || 'Not provided'}</p>
+            ${data.description ? `<p><strong>Description:</strong> ${data.description}</p>` : ''}
+            ${data.budget ? `<p><strong>Budget:</strong> ${data.budget} ${data.budget_currency || 'USD'}</p>` : ''}
+          </div>
+          
+          <p style="margin-top: 30px;">
+            <a href="${appUrl}/admin/bookings" style="background-color: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">Manage Bookings</a>
+          </p>
         `;
         subject = 'New Booking Request';
         break;
@@ -180,18 +202,26 @@ serve(async (req: Request): Promise<Response> => {
         emailHtml = `
           <h1>New Event Request from Website</h1>
           <p>Someone has submitted an event request through the hero form!</p>
-          <h2>Request Details:</h2>
-          <ul>
-            <li><strong>Name:</strong> ${data.booker_name}</li>
-            <li><strong>Email:</strong> ${data.booker_email}</li>
-            <li><strong>Event Type:</strong> ${data.event_type}</li>
-            <li><strong>Event Date:</strong> ${data.event_date || 'Not provided'}</li>
-            <li><strong>Location:</strong> ${data.event_location}</li>
-            <li><strong>Duration:</strong> ${data.event_duration ? data.event_duration + ' hours' : 'Not specified'}</li>
-            <li><strong>Description:</strong> ${data.description}</li>
-          </ul>
-          <p><strong>Note:</strong> No "undefined" fields should appear above. If any field says "Not Provided" or similar, that's the intended fallback.</p>
-          <p><a href="${appUrl}/admin/event-requests">Manage Event Requests</a></p>
+          
+          <div style="background-color: #e8f4fd; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h3>👤 Client Information:</h3>
+            <p><strong>Name:</strong> ${data.booker_name || 'Not provided'}</p>
+            <p><strong>Email:</strong> ${data.booker_email || 'Not provided'}</p>
+            <p><strong>Phone:</strong> ${data.booker_phone || 'Not provided'}</p>
+          </div>
+          
+          <div style="background-color: #fdf2f8; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h3>🎉 Event Request Details:</h3>
+            <p><strong>Event Type:</strong> ${data.event_type || 'Not specified'}</p>
+            <p><strong>Event Date:</strong> ${data.event_date || 'Not provided'}</p>
+            <p><strong>Duration:</strong> ${data.event_duration ? data.event_duration + ' hours' : 'Not specified'}</p>
+            <p><strong>Location:</strong> ${data.event_location || 'Not provided'}</p>
+            ${data.description ? `<p><strong>Description:</strong> ${data.description}</p>` : '<p><strong>Description:</strong> Not provided</p>'}
+          </div>
+          
+          <p style="margin-top: 30px;">
+            <a href="${appUrl}/admin/event-requests" style="background-color: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">Manage Event Requests</a>
+          </p>
         `;
         subject = 'New Event Request from Website';
         break;
@@ -389,19 +419,20 @@ serve(async (req: Request): Promise<Response> => {
           <p>Hi ${data.recipient_name},</p>
           <p>You have received a new booking request!</p>
           
-          <div style="background-color: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
-            <h3>Booking Details:</h3>
-            <p><strong>Event Type:</strong> ${data.event_type}</p>
-            <p><strong>Client:</strong> ${data.booker_name} (${data.booker_email})</p>
-            <p><strong>Date:</strong> ${data.event_date}</p>
-            <p><strong>Duration:</strong> ${data.event_duration} hours</p>
-            <p><strong>Location:</strong> ${data.event_location}</p>
+          <div style="background-color: #f0f9ff; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h3>🎉 Event Details:</h3>
+            <p><strong>Event Type:</strong> ${data.event_type || 'Not specified'}</p>
+            <p><strong>Client Name:</strong> ${data.booker_name || 'Not provided'}</p>
+            <p><strong>Date:</strong> ${data.event_date || 'Not set'}</p>
+            <p><strong>Duration:</strong> ${data.event_duration ? data.event_duration + ' hours' : 'Not specified'}</p>
+            <p><strong>Location:</strong> ${data.event_location || 'Not provided'}</p>
+            ${data.description ? `<p><strong>Description:</strong> ${data.description}</p>` : ''}
           </div>
           
           <p>Please log in to your dashboard to review and respond to this booking request.</p>
           
           <p style="margin-top: 30px;">
-            <a href="${appUrl}/talent-dashboard" style="background-color: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">View Booking Request</a>
+            <a href="${appUrl}/talent-dashboard" style="background-color: #28a745; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">View Booking Request</a>
           </p>
           
           <p>Best regards,<br>The Qtalent Team</p>

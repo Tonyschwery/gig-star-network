@@ -86,6 +86,7 @@ export type Database = {
         Row: {
           booker_email: string | null
           booker_name: string
+          booker_phone: string | null
           budget: number | null
           budget_currency: string | null
           created_at: string
@@ -109,6 +110,7 @@ export type Database = {
         Insert: {
           booker_email?: string | null
           booker_name?: string
+          booker_phone?: string | null
           budget?: number | null
           budget_currency?: string | null
           created_at?: string
@@ -132,6 +134,7 @@ export type Database = {
         Update: {
           booker_email?: string | null
           booker_name?: string
+          booker_phone?: string | null
           budget?: number | null
           budget_currency?: string | null
           created_at?: string
@@ -278,6 +281,7 @@ export type Database = {
         Row: {
           booker_email: string
           booker_name: string
+          booker_phone: string | null
           created_at: string
           description: string | null
           event_date: string
@@ -292,6 +296,7 @@ export type Database = {
         Insert: {
           booker_email: string
           booker_name: string
+          booker_phone?: string | null
           created_at?: string
           description?: string | null
           event_date: string
@@ -306,6 +311,7 @@ export type Database = {
         Update: {
           booker_email?: string
           booker_name?: string
+          booker_phone?: string | null
           created_at?: string
           description?: string | null
           event_date?: string

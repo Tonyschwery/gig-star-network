@@ -105,8 +105,14 @@ export const BookingNotificationEmail = ({
             Type: {eventType}<br/>
             Date: {eventDate}<br/>
             Location: {eventLocation}<br/>
-            {bookerName && `Booker: ${bookerName}`}<br/>
-            {talentName && `Talent: ${talentName}`}
+            {isForTalent ? (
+              bookerName && `Client: ${bookerName}`
+            ) : (
+              <>
+                {bookerName && `Booker: ${bookerName}`}<br/>
+                {talentName && `Talent: ${talentName}`}
+              </>
+            )}
           </Text>
 
           <Text style={footer}>

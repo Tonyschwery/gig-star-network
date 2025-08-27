@@ -248,8 +248,13 @@ serve(async (req: Request): Promise<Response> => {
     if (emailType.startsWith('admin_') && adminEmail) {
       let adminEmailData: any = { ...emailData };
 
-      // Get additional data for admin notification
-      if (actualBookingId) {
+      // If emailData already contains the necessary data (from frontend), use it directly
+      if (emailData && Object.keys(emailData).length > 0) {
+        adminEmailData = { ...emailData };
+      }
+
+      // Get additional data for admin notification only if not provided
+      if (actualBookingId && !adminEmailData.booking_id) {
         const { data: booking } = await supabaseAdmin
           .from('bookings')
           .select(`
@@ -263,26 +268,35 @@ serve(async (req: Request): Promise<Response> => {
           // Get booker user details
           const { data: bookerUser } = await supabaseAdmin.auth.admin.getUserById(booking.user_id);
           
+          // Get talent email if talent is assigned
+          let talentEmail = null;
+          if (booking.talent_profiles?.user_id) {
+            const { data: talentUser } = await supabaseAdmin.auth.admin.getUserById(booking.talent_profiles.user_id);
+            talentEmail = talentUser?.user?.email;
+          }
+          
           adminEmailData = {
             ...adminEmailData,
-            eventType: booking.event_type,
-            eventDate: booking.event_date,
-            eventLocation: booking.event_location,
-            bookerName: booking.booker_name,
-            bookerEmail: booking.booker_email || bookerUser?.user?.email,
-            bookerUserId: booking.user_id,
-            talentName: booking.talent_profiles?.artist_name,
-            talentUserId: booking.talent_profiles?.user_id,
-            bookingId: booking.id,
+            booking_id: booking.id,
+            booker_name: booking.booker_name,
+            booker_email: booking.booker_email || bookerUser?.user?.email,
+            booker_phone: booking.booker_phone,
+            talent_name: booking.talent_profiles?.artist_name,
+            talent_email: talentEmail,
+            event_type: booking.event_type,
+            event_date: booking.event_date,
+            event_duration: booking.event_duration,
+            event_location: booking.event_location,
+            description: booking.description,
             budget: booking.budget,
-            currency: booking.budget_currency,
-            requestType: booking.is_public_request ? 'Public Request' : 'Direct Booking',
+            budget_currency: booking.budget_currency,
+            status: booking.status,
           };
         }
       }
 
-      // Handle event requests (indirect requests)
-      if (actualEventRequestId) {
+      // Handle event requests (indirect requests) only if not provided
+      if (actualEventRequestId && !adminEmailData.event_type) {
         const { data: eventRequest } = await supabaseAdmin
           .from('event_requests')
           .select('*')
@@ -295,16 +309,14 @@ serve(async (req: Request): Promise<Response> => {
           
           adminEmailData = {
             ...adminEmailData,
-            eventType: eventRequest.event_type,
-            eventDate: eventRequest.event_date,
-            eventLocation: eventRequest.event_location,
-            bookerName: eventRequest.booker_name,
-            bookerEmail: eventRequest.booker_email,
-            bookerUserId: eventRequest.user_id,
-            requesterEmail: requesterUser?.user?.email,
-            eventRequestId: eventRequest.id,
+            booker_name: eventRequest.booker_name,
+            booker_email: eventRequest.booker_email,
+            booker_phone: eventRequest.booker_phone,
+            event_type: eventRequest.event_type,
+            event_date: eventRequest.event_date,
+            event_duration: eventRequest.event_duration,
+            event_location: eventRequest.event_location,
             description: eventRequest.description,
-            requestType: 'Indirect Request',
           };
         }
       }
