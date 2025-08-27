@@ -78,8 +78,8 @@ Deno.serve(async (req) => {
     const tokenData: PayPalTokenResponse = await tokenResponse.json();
     console.log('Got PayPal access token');
 
-    // Create subscription plan data
-    const planId = planType === 'yearly' ? 'P-PRO-YEARLY' : 'P-PRO-MONTHLY';
+    // Create subscription plan data - using real PayPal plan IDs
+    const planId = planType === 'yearly' ? 'P-PRO-YEARLY' : 'P-88506464TT114905NNCXWJ4A';
     const amount = planType === 'yearly' ? '179.88' : '19.99';
     
     // Create subscription
