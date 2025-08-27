@@ -64,70 +64,33 @@ export function ProSubscriptionDialog({
   const handleSubscribe = async () => {
     setLoading(true);
     try {
-      // Get current user for database update
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("User not authenticated");
-
-      // For mock testing - simulate successful subscription
       toast({
-        title: "🎉 Mock Payment Successful!",
-        description: "Activating your Pro subscription...",
-        duration: 4000,
+        title: "Redirecting to PayPal...",
+        description: "You'll be redirected to PayPal to complete your subscription.",
+        duration: 3000,
       });
-      
-      // Simulate successful subscription for testing
-      setTimeout(async () => {
-        // Update database to mark user as Pro subscriber
-        const { data, error } = await supabase
-          .from('talent_profiles')
-          .update({ 
-            is_pro_subscriber: true,
-            subscription_status: 'pro',
-            subscription_started_at: new Date().toISOString()
-          })
-          .eq('user_id', user.id)
-          .select();
 
-        if (error) {
-          console.error('Database update error:', error);
-          toast({
-            title: "Database Error",
-            description: `Failed to update subscription: ${error.message}`,
-            variant: "destructive",
-          });
-          return;
-        }
+      const { data, error } = await supabase.functions.invoke('create-paypal-subscription', {
+        body: { planType: 'monthly' },
+      });
 
-        console.log('Database update successful:', data);
+      if (error) {
+        throw error;
+      }
 
-        onSubscribe();
+      if (data?.success && data?.approvalUrl) {
+        // Close dialog and redirect to PayPal
         onOpenChange(false);
-        
-        // Show detailed success message with benefits
-        toast({
-          title: "🎉 Welcome to Qtalent Pro! 👑",
-          description: "✅ 0% Commission • ✅ Pro Badge • ✅ Priority Search • ✅ Unlimited Photos • ✅ Premium Gigs Access",
-          duration: 8000,
-        });
-        
-        // Show additional congratulations message
-        setTimeout(() => {
-          toast({
-            title: "🚀 Pro Features Unlocked!",
-            description: "You can now add unlimited gallery photos, music links, and access premium gig opportunities!",
-            duration: 6000,
-          });
-        }, 2000);
-        
-        // Don't reload the page - just close dialog and update state
-      }, 2000);
-      
+        window.location.href = data.approvalUrl;
+      } else {
+        throw new Error(data?.error || "Failed to create subscription");
+      }
     } catch (error) {
-      console.error('Error starting subscription:', error);
+      console.error('Subscription error:', error);
       toast({
-        title: "Error",
-        description: "Something went wrong. Please try again.",
-        variant: "destructive"
+        title: "Subscription Failed",
+        description: "There was an error processing your subscription. Please try again.",
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
@@ -215,7 +178,7 @@ export function ProSubscriptionDialog({
           {/* Pricing */}
           <div className="text-center p-6 rounded-xl bg-gradient-to-r from-brand-primary/10 to-brand-accent/10 border border-brand-primary/20">
             <h3 className="text-3xl font-bold mb-2">
-              $29
+              $19.99
               <span className="text-lg font-normal text-muted-foreground">/month</span>
             </h3>
             <p className="text-muted-foreground mb-4">
@@ -232,11 +195,11 @@ export function ProSubscriptionDialog({
             disabled={loading}
             className="w-full h-12 text-lg font-semibold hero-button"
           >
-            {loading ? "Processing..." : profileId && profileId !== 'temp-id' ? "Subscribe Now - $29/month" : "Select Pro Plan"}
+            {loading ? "Processing..." : profileId && profileId !== 'temp-id' ? "Subscribe Now - $19.99/month" : "Select Pro Plan"}
           </Button>
 
           <p className="text-xs text-muted-foreground text-center">
-            Secure payment processed by Stripe • Cancel anytime
+            Secure payment processed by PayPal • Cancel anytime
           </p>
         </div>
       </DialogContent>

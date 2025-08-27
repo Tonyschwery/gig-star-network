@@ -57,9 +57,6 @@ export function SubscriptionButton({
 
         const { data, error } = await supabase.functions.invoke('create-paypal-subscription', {
           body: { planType },
-          headers: {
-            Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
-          },
         });
 
         if (error) {
@@ -67,8 +64,8 @@ export function SubscriptionButton({
         }
 
         if (data?.success && data?.approvalUrl) {
-          // Open PayPal subscription in new tab
-          window.open(data.approvalUrl, '_blank');
+          // Redirect to PayPal subscription approval
+          window.location.href = data.approvalUrl;
         } else {
           throw new Error(data?.error || "Failed to create subscription");
         }

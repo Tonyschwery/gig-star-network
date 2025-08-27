@@ -27,43 +27,36 @@ export default function SubscriptionSuccess() {
 
   const activateProSubscription = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      setProcessing(true);
       
-      if (user) {
-        // Check if user has a talent profile
-        const { data: profile } = await supabase
-          .from('talent_profiles')
-          .select('id')
-          .eq('user_id', user.id)
-          .maybeSingle();
-
-        if (profile) {
-          // Update the talent profile to Pro
-          const { error } = await supabase
-            .from('talent_profiles')
-            .update({ 
-              is_pro_subscriber: true,
-              subscription_started_at: new Date().toISOString(),
-              subscription_status: 'active'
-            })
-            .eq('user_id', user.id);
-
-          if (error) {
-            console.error('Error updating profile:', error);
-          } else {
-            toast({
-              title: "Welcome to Pro! 🎉",
-              description: "Your Pro subscription is now active. Enjoy all the premium benefits!",
-              duration: 5000,
-            });
-          }
-        }
+      // Get subscription parameters from URL
+      const subscriptionId = searchParams.get('subscription_id');
+      const token = searchParams.get('token');
+      
+      if (!subscriptionId || !token) {
+        throw new Error('Missing subscription parameters');
       }
-      
+
+      // Activate subscription via edge function
+      const { data, error } = await supabase.functions.invoke('activate-paypal-subscription', {
+        body: { subscriptionId, token },
+      });
+
+      if (error || !data?.success) {
+        throw new Error(data?.error || 'Failed to activate subscription');
+      }
+
       setSuccess(true);
+      
+      toast({
+        title: "Welcome to Pro! 🎉",
+        description: "Your Pro subscription is now active. Enjoy all the premium benefits!",
+        duration: 5000,
+      });
     } catch (error) {
-      console.error('Error activating subscription:', error);
-      setSuccess(true); // Still show success page, activation can happen via webhook
+      console.error('Error activating Pro subscription:', error);
+      // Redirect to error page or show error message
+      navigate('/subscription-cancelled');
     } finally {
       setProcessing(false);
     }
