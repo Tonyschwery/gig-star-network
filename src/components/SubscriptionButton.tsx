@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Crown, CreditCard, Check } from "lucide-react";
+import { Crown, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
@@ -12,6 +12,7 @@ interface SubscriptionButtonProps {
   variant?: "default" | "outline" | "ghost";
   size?: "default" | "sm" | "lg";
   className?: string;
+  planType?: "monthly" | "yearly";
 }
 
 export function SubscriptionButton({ 
@@ -19,7 +20,8 @@ export function SubscriptionButton({
   onSubscriptionChange,
   variant = "default",
   size = "default",
-  className = ""
+  className = "",
+  planType = "monthly"
 }: SubscriptionButtonProps) {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -39,101 +41,37 @@ export function SubscriptionButton({
       setIsLoading(true);
 
       if (isProSubscriber) {
-        // For mock testing - simulate subscription management
+        // For managing existing subscription - in real app, this would open PayPal management
         toast({
-          title: "✅ Mock Subscription Management",
-          description: "In production, this would open Stripe Customer Portal. Simulating cancellation...",
-          duration: 4000,
+          title: "Subscription Management",
+          description: "Contact support to manage your subscription or visit your PayPal account.",
+          duration: 5000,
         });
-        
-        // Simulate subscription cancellation for testing
-        setTimeout(async () => {
-          // Update database to remove Pro status
-          const { error } = await supabase
-            .from('talent_profiles')
-            .update({ 
-              is_pro_subscriber: false,
-              subscription_status: 'free',
-              subscription_started_at: null
-            })
-            .eq('user_id', user.id);
-
-          if (error) {
-            toast({
-              title: "Error",
-              description: "Failed to update subscription status.",
-              variant: "destructive",
-            });
-            return;
-          }
-
-          if (onSubscriptionChange) {
-            onSubscriptionChange();
-          }
-          toast({
-            title: "Subscription Cancelled",
-            description: "Mock subscription has been cancelled for testing.",
-          });
-        }, 2000);
-        
       } else {
-        // For mock testing - simulate successful subscription
+        // Create PayPal subscription
         toast({
-          title: "🎉 Mock Payment Successful!",
-          description: "Activating your Pro subscription...",
-          duration: 4000,
+          title: "Redirecting to PayPal...",
+          description: "You'll be redirected to PayPal to complete your subscription.",
+          duration: 3000,
         });
-        
-        // Simulate successful subscription for testing
-        setTimeout(async () => {
-          console.log('Updating talent profile for user:', user.id);
-          
-          // Update database to mark user as Pro subscriber
-          const { data, error } = await supabase
-            .from('talent_profiles')
-            .update({ 
-              is_pro_subscriber: true,
-              subscription_status: 'pro',
-              subscription_started_at: new Date().toISOString()
-            })
-            .eq('user_id', user.id)
-            .select();
 
-          if (error) {
-            console.error('Database update error:', error);
-            toast({
-              title: "Database Error",
-              description: `Failed to update subscription: ${error.message}`,
-              variant: "destructive",
-            });
-            return;
-          }
+        const { data, error } = await supabase.functions.invoke('create-paypal-subscription', {
+          body: { planType },
+          headers: {
+            Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+          },
+        });
 
-          console.log('Database update successful:', data);
+        if (error) {
+          throw error;
+        }
 
-          if (onSubscriptionChange) {
-            onSubscriptionChange();
-          }
-          
-          // Show detailed success message with benefits
-          toast({
-            title: "🎉 Welcome to Qtalent Pro! 👑",
-            description: "✅ 0% Commission • ✅ Pro Badge • ✅ Priority Search • ✅ Unlimited Photos • ✅ Premium Gigs",
-            duration: 8000,
-          });
-          
-          // Show additional congratulations message
-          setTimeout(() => {
-            toast({
-              title: "🚀 Pro Features Unlocked!",
-              description: "Your profile now shows the Pro badge! Add unlimited gallery photos and music links.",
-              duration: 6000,
-            });
-          }, 2000);
-          
-          // Don't reload the page, just trigger callback
-          // This prevents form refresh issues
-        }, 2000);
+        if (data?.success && data?.approvalUrl) {
+          // Open PayPal subscription in new tab
+          window.open(data.approvalUrl, '_blank');
+        } else {
+          throw new Error(data?.error || "Failed to create subscription");
+        }
       }
 
     } catch (error) {
@@ -148,27 +86,7 @@ export function SubscriptionButton({
     }
   };
 
-  const checkSubscriptionStatus = async () => {
-    try {
-      const { data, error } = await supabase.functions.invoke('check-subscription', {
-        headers: {
-          Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
-        },
-      });
-
-      if (error) throw error;
-
-      if (data?.subscribed && onSubscriptionChange) {
-        onSubscriptionChange();
-        toast({
-          title: "Subscription updated",
-          description: "Your subscription status has been refreshed.",
-        });
-      }
-    } catch (error) {
-      console.error('Error checking subscription status:', error);
-    }
-  };
+  const price = planType === "monthly" ? "$19.99/month" : "$14.99/month (billed annually)";
 
   if (isProSubscriber) {
     return (
@@ -180,7 +98,7 @@ export function SubscriptionButton({
         className={`${className} gap-2`}
       >
         <Crown className="h-4 w-4" />
-        {isLoading ? "Loading..." : "Manage Subscription"}
+        {isLoading ? "Loading..." : "Manage Pro"}
         <Badge variant="secondary" className="ml-1 text-xs">
           Pro
         </Badge>
@@ -197,7 +115,8 @@ export function SubscriptionButton({
       className={`${className} gap-2 relative overflow-hidden group`}
     >
       <Crown className="h-4 w-4 text-brand-warning" />
-      {isLoading ? "Loading..." : "Upgrade to Pro"}
+      <ExternalLink className="h-3 w-3 ml-1" />
+      {isLoading ? "Loading..." : `Upgrade to Pro - ${price}`}
       <div className="absolute inset-0 bg-gradient-to-r from-brand-primary/20 to-brand-accent/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
       <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
     </Button>

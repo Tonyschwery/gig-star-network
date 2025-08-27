@@ -66,13 +66,11 @@ export const BookingCard = ({ booking, mode, onUpdate, isProSubscriber }: Bookin
   };
 
   const handleDecline = async () => {
-    const table = gigApplicationId ? 'gig_applications' : 'bookings';
-    const id = gigApplicationId || booking.id;
-    await supabase.from(table).update({ status: 'declined' }).eq('id', id);
+    await supabase.from('bookings').update({ status: 'declined' }).eq('id', booking.id);
     onUpdate?.();
   };
   
-  const paymentAmount = booking.payments?.[0]?.total_amount;
+  const paymentAmount = undefined; // No payment tracking in new system
 
 
   return (
@@ -88,7 +86,7 @@ export const BookingCard = ({ booking, mode, onUpdate, isProSubscriber }: Bookin
             <div><Clock3 className="inline h-4 w-4 mr-2" />Duration: {booking.event_duration} hours</div>
             <div><MapPin className="inline h-4 w-4 mr-2" />{booking.event_location}</div>
         </div>
-        {paymentAmount && <div className="font-semibold text-green-600">Amount Paid: ${paymentAmount} {booking.payments?.[0].currency}</div>}
+        {paymentAmount && <div className="font-semibold text-green-600">Direct Payment - Contact talent for payment details</div>}
         <div className="flex flex-wrap gap-2 pt-2 border-t mt-2">
             {mode === 'booker' && booking.talent_id && <Button onClick={() => navigate(`/talent/${booking.talent_id}`)} variant="outline" size="sm"><User className="h-4 w-4 mr-2" />View Talent</Button>}
             {mode === 'talent' && booking.status === 'pending' && (

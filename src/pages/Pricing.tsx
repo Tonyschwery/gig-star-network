@@ -23,7 +23,8 @@ export default function Pricing() {
         "Receive booking requests", 
         "Basic messaging with clients",
         "Standard support response",
-        "Up to 5 gallery photos",
+        "1 booking request per month",
+        "Up to 1 profile image",
         "Basic profile visibility"
       ],
       limitations: [
@@ -40,8 +41,8 @@ export default function Pricing() {
     {
       name: "Pro",
       description: "For serious performers who want to earn more",
-      monthlyPrice: 29,
-      yearlyPrice: 290,
+      monthlyPrice: 19.99,
+      yearlyPrice: 179.88,
       commission: "0%",
       features: [
         "Everything in Free",

@@ -35,22 +35,21 @@ export default function AdminDashboard() {
 
   const loadDashboardStats = async () => {
     try {
-      const [usersData, talentsData, bookingsData, paymentsData, chatData] = await Promise.all([
+      const [usersData, talentsData, bookingsData, chatData] = await Promise.all([
         supabase.from('admin_users').select('id').limit(1000),
         supabase.from('talent_profiles').select('id'),
         supabase.from('bookings').select('id, status'),
-        supabase.from('payments').select('id'),
         supabase.from('chat_messages').select('booking_id').limit(1000),
       ]);
 
       const pendingBookings = bookingsData.data?.filter(b => b.status === 'pending').length || 0;
-      const uniqueChats = new Set(chatData.data?.map(c => c.booking_id)).size;
+      const uniqueChats = new Set(chatData?.data?.map(c => c.booking_id)).size;
 
       setStats({
         totalUsers: usersData.data?.length || 0,
         totalTalents: talentsData.data?.length || 0,
         totalBookings: bookingsData.data?.length || 0,
-        totalPayments: paymentsData.data?.length || 0,
+        totalPayments: 0, // No longer tracking payments
         pendingBookings,
         activeChats: uniqueChats,
       });

@@ -27,9 +27,9 @@ export const TalentDashboardTabs = () => {
         }
         const { data, error } = await supabase
             .from('bookings')
-            .select(`*, payments(*)`)
+            .select(`*`)
             .eq('talent_id', profileId)
-            .eq('is_gig_opportunity', false); // Only show direct bookings
+            .order('event_date', { ascending: false });
 
         if (error) console.error("Error fetching bookings:", error);
         else setAllBookings(data || []);

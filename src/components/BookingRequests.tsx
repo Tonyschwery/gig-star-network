@@ -16,7 +16,7 @@ export const BookingRequests = ({ talentId, isProSubscriber }: BookingRequestsPr
 
     const fetchBookings = useCallback(async () => {
         if (!talentId) return;
-        const { data, error } = await supabase.from('bookings').select(`*, payments(*)`).eq('talent_id', talentId).eq('is_gig_opportunity', false).order('event_date', { ascending: false });
+        const { data, error } = await supabase.from('bookings').select(`*`).eq('talent_id', talentId).eq('is_gig_opportunity', false).order('event_date', { ascending: false });
         if (error) console.error("Error fetching direct bookings:", error);
         else setBookings(data || []);
         setLoading(false);

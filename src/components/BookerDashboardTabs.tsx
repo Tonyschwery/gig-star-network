@@ -14,7 +14,7 @@ export const BookerDashboardTabs = ({ userId }: { userId: string }) => {
 
     const fetchBookings = useCallback(async () => {
         if (!userId) return;
-        const { data, error } = await supabase.from('bookings').select(`*, talent_profiles(*), payments(*)`).eq('user_id', userId).order('event_date', { ascending: false });
+        const { data, error } = await supabase.from('bookings').select(`*, talent_profiles(*)`).eq('user_id', userId).order('event_date', { ascending: false });
         if (error) console.error("Error fetching bookings:", error);
         else setBookings(data || []);
         setLoading(false);
