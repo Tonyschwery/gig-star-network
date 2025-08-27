@@ -82,6 +82,33 @@ export type Database = {
           },
         ]
       }
+      booking_request_tracking: {
+        Row: {
+          created_at: string
+          id: string
+          month_year: string
+          request_count: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          month_year: string
+          request_count?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          month_year?: string
+          request_count?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       bookings: {
         Row: {
           booker_email: string | null
@@ -325,55 +352,6 @@ export type Database = {
         }
         Relationships: []
       }
-      gig_applications: {
-        Row: {
-          created_at: string
-          gig_id: string
-          id: string
-          status: string
-          talent_id: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          gig_id: string
-          id?: string
-          status?: string
-          talent_id: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          gig_id?: string
-          id?: string
-          status?: string
-          talent_id?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "gig_applications_gig_id_fkey"
-            columns: ["gig_id"]
-            isOneToOne: false
-            referencedRelation: "bookings"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "gig_applications_talent_id_fkey"
-            columns: ["talent_id"]
-            isOneToOne: false
-            referencedRelation: "talent_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "gig_applications_talent_id_fkey"
-            columns: ["talent_id"]
-            isOneToOne: false
-            referencedRelation: "talent_profiles_public"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       notifications: {
         Row: {
           booking_id: string | null
@@ -421,88 +399,6 @@ export type Database = {
           },
         ]
       }
-      payments: {
-        Row: {
-          booker_id: string
-          booking_id: string
-          commission_rate: number
-          created_at: string
-          currency: string
-          hourly_rate: number
-          hours_booked: number
-          id: string
-          payment_method: string | null
-          payment_reference: string | null
-          payment_status: string
-          platform_commission: number
-          processed_at: string | null
-          talent_earnings: number
-          talent_id: string
-          total_amount: number
-          updated_at: string
-        }
-        Insert: {
-          booker_id: string
-          booking_id: string
-          commission_rate?: number
-          created_at?: string
-          currency?: string
-          hourly_rate: number
-          hours_booked: number
-          id?: string
-          payment_method?: string | null
-          payment_reference?: string | null
-          payment_status?: string
-          platform_commission?: number
-          processed_at?: string | null
-          talent_earnings: number
-          talent_id: string
-          total_amount: number
-          updated_at?: string
-        }
-        Update: {
-          booker_id?: string
-          booking_id?: string
-          commission_rate?: number
-          created_at?: string
-          currency?: string
-          hourly_rate?: number
-          hours_booked?: number
-          id?: string
-          payment_method?: string | null
-          payment_reference?: string | null
-          payment_status?: string
-          platform_commission?: number
-          processed_at?: string | null
-          talent_earnings?: number
-          talent_id?: string
-          total_amount?: number
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "payments_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "bookings"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "payments_talent_id_fkey"
-            columns: ["talent_id"]
-            isOneToOne: false
-            referencedRelation: "talent_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "payments_talent_id_fkey"
-            columns: ["talent_id"]
-            isOneToOne: false
-            referencedRelation: "talent_profiles_public"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       talent_profiles: {
         Row: {
           act: Database["public"]["Enums"]["talent_act"]
@@ -522,7 +418,6 @@ export type Database = {
           picture_url: string | null
           rate_per_hour: number | null
           soundcloud_link: string | null
-          stripe_customer_id: string | null
           subscription_started_at: string | null
           subscription_status: string
           updated_at: string
@@ -547,7 +442,6 @@ export type Database = {
           picture_url?: string | null
           rate_per_hour?: number | null
           soundcloud_link?: string | null
-          stripe_customer_id?: string | null
           subscription_started_at?: string | null
           subscription_status?: string
           updated_at?: string
@@ -572,7 +466,6 @@ export type Database = {
           picture_url?: string | null
           rate_per_hour?: number | null
           soundcloud_link?: string | null
-          stripe_customer_id?: string | null
           subscription_started_at?: string | null
           subscription_status?: string
           updated_at?: string
@@ -656,6 +549,10 @@ export type Database = {
         Args: { is_pro: boolean; talent_id_param: string }
         Returns: Json
       }
+      check_booking_limit: {
+        Args: { user_id_param: string }
+        Returns: boolean
+      }
       complete_manual_payment: {
         Args: { payment_id_param: string }
         Returns: Json
@@ -679,6 +576,10 @@ export type Database = {
           rate_per_hour: number
           subscription_status: string
         }[]
+      }
+      increment_booking_count: {
+        Args: { user_id_param: string }
+        Returns: undefined
       }
       is_admin: {
         Args: { user_id_param?: string }
