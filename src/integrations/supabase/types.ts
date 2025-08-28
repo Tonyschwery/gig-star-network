@@ -407,6 +407,7 @@ export type Database = {
           biography: string
           created_at: string
           currency: string | null
+          current_period_end: string | null
           custom_genre: string | null
           gallery_images: string[] | null
           gender: Database["public"]["Enums"]["talent_gender"]
@@ -415,7 +416,9 @@ export type Database = {
           location: string | null
           music_genres: string[]
           nationality: string
+          paypal_subscription_id: string | null
           picture_url: string | null
+          plan_id: string | null
           rate_per_hour: number | null
           soundcloud_link: string | null
           subscription_started_at: string | null
@@ -431,6 +434,7 @@ export type Database = {
           biography: string
           created_at?: string
           currency?: string | null
+          current_period_end?: string | null
           custom_genre?: string | null
           gallery_images?: string[] | null
           gender: Database["public"]["Enums"]["talent_gender"]
@@ -439,7 +443,9 @@ export type Database = {
           location?: string | null
           music_genres?: string[]
           nationality: string
+          paypal_subscription_id?: string | null
           picture_url?: string | null
+          plan_id?: string | null
           rate_per_hour?: number | null
           soundcloud_link?: string | null
           subscription_started_at?: string | null
@@ -455,6 +461,7 @@ export type Database = {
           biography?: string
           created_at?: string
           currency?: string | null
+          current_period_end?: string | null
           custom_genre?: string | null
           gallery_images?: string[] | null
           gender?: Database["public"]["Enums"]["talent_gender"]
@@ -463,7 +470,9 @@ export type Database = {
           location?: string | null
           music_genres?: string[]
           nationality?: string
+          paypal_subscription_id?: string | null
           picture_url?: string | null
+          plan_id?: string | null
           rate_per_hour?: number | null
           soundcloud_link?: string | null
           subscription_started_at?: string | null
