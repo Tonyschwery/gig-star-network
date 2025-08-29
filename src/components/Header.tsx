@@ -8,7 +8,7 @@ import { NotificationCenter } from "@/components/NotificationCenter";
 import { QtalentLogo } from "@/components/QtalentLogo";
 import { MobileMenu } from "@/components/ui/mobile-menu";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { ProSubscriptionDialog } from "@/components/ProSubscriptionDialog";
+
 import { ProfileMenu } from "@/components/ProfileMenu";
 import { SubscriptionButton } from "@/components/SubscriptionButton";
 import { ModeSwitch } from "@/components/ModeSwitch";
@@ -24,7 +24,7 @@ export function Header() {
   const [talentId, setTalentId] = useState<string | null>(null);
   const [isProTalent, setIsProTalent] = useState<boolean>(false);
   const [profilePictureUrl, setProfilePictureUrl] = useState<string | null>(null);
-  const [showProDialog, setShowProDialog] = useState(false);
+  
   const isMobile = useIsMobile();
   
   // Check if we should show artist dashboard navigation
@@ -103,33 +103,13 @@ export function Header() {
   };
 
   const handleProButtonClick = () => {
-    if (isMobile) {
-      setShowProDialog(true);
-    } else {
-      navigate('/pricing');
-    }
+    navigate('/pricing');
   };
 
-  const handleRefreshProfile = () => {
-    fetchTalentProfile();
-    setShowProDialog(false);
-  };
 
-  const handleManageSubscription = async () => {
-    try {
-      const { data, error } = await supabase.functions.invoke('customer-portal', {
-        headers: {
-          Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
-        },
-      });
-
-      if (error) throw error;
-      if (data?.url) {
-        window.open(data.url, '_blank');
-      }
-    } catch (error) {
-      console.error('Error opening customer portal:', error);
-    }
+  const handleManageSubscription = () => {
+    // For PayPal subscriptions, direct to PayPal management
+    window.open('https://www.paypal.com/myaccount/autopay/', '_blank');
   };
 
 
@@ -375,14 +355,14 @@ export function Header() {
                         </Button>
                       )}
                       
-                      {talentName && !isProTalent && !showArtistDashboardNav && (
-                        <Button 
-                          className="w-full hero-button mt-2"
-                          onClick={handleProButtonClick}
-                        >
-                          <Crown className="h-4 w-4 mr-2" />
-                          Subscribe to Pro
-                        </Button>
+                      {talentName && !showArtistDashboardNav && (
+                        <SubscriptionButton
+                          isProSubscriber={isProTalent}
+                          onSubscriptionChange={fetchTalentProfile}
+                          variant="default"
+                          size="sm"
+                          className="w-full mt-2"
+                        />
                       )}
                       
                       {talentName && showArtistDashboardNav && (
@@ -432,13 +412,6 @@ export function Header() {
         </div>
       </header>
 
-      {/* Pro Subscription Dialog */}
-      <ProSubscriptionDialog
-        open={showProDialog}
-        onOpenChange={setShowProDialog}
-        onSubscribe={handleRefreshProfile}
-        profileId={talentId || 'temp-id'}
-      />
     </>
   );
 }

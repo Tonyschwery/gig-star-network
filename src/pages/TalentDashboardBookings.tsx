@@ -17,7 +17,7 @@ import {
   Crown
 } from "lucide-react";
 
-import { ProSubscriptionDialog } from "@/components/ProSubscriptionDialog";
+
 import { NotificationCenter } from "@/components/NotificationCenter";
 import { ModeSwitch } from "@/components/ModeSwitch";
 import { BookingRequests } from "@/components/BookingRequests";
@@ -53,7 +53,7 @@ const TalentDashboardBookings = () => {
   const { toast } = useToast();
   const [profile, setProfile] = useState<TalentProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [showProDialog, setShowProDialog] = useState(false);
+  
   
   // Enable real-time notifications
   useRealtimeNotifications();
@@ -200,15 +200,6 @@ const TalentDashboardBookings = () => {
           isProSubscriber={profile.is_pro_subscriber || false}
         />
 
-        {/* Pro Subscription Dialog */}
-        <ProSubscriptionDialog
-          open={showProDialog}
-          onOpenChange={setShowProDialog}
-          onSubscribe={() => {
-            fetchTalentProfile();
-          }}
-          profileId={profile.id}
-        />
 
         {/* Universal Chat */}
         <UniversalChat />

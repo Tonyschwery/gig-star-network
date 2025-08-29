@@ -15,7 +15,7 @@ import { countries } from '@/lib/countries';
 import { SimpleGalleryUpload } from '@/components/SimpleGalleryUpload';
 import { SimpleAvatarUpload } from '@/components/SimpleAvatarUpload';
 import { ProFeatureWrapper } from '@/components/ProFeatureWrapper';
-import { ProSubscriptionDialog } from '@/components/ProSubscriptionDialog';
+import { SubscriptionModal } from '@/components/SubscriptionModal';
 import { useEmailNotifications } from '@/hooks/useEmailNotifications';
 
 const MUSIC_GENRES = [
@@ -530,26 +530,9 @@ export default function TalentOnboarding() {
       </Card>
       
       {/* Pro Subscription CTA Dialog */}
-      <ProSubscriptionDialog
+      <SubscriptionModal
         open={showProDialog}
         onOpenChange={setShowProDialog}
-        onSubscribe={() => {
-          toast({
-            title: "Pro Subscription Activated! 🎉",
-            description: "Complete your profile first, then return to your dashboard to enjoy all Pro benefits including unlimited photos, music links, and 0% commission!",
-            duration: 8000,
-          });
-          
-          // Additional helpful message
-          setTimeout(() => {
-            toast({
-              title: "💡 Pro Tip",
-              description: "After completing your profile, visit your talent dashboard to access all Pro features like adding music links and unlimited gallery photos.",
-              duration: 6000,
-            });
-          }, 2000);
-        }}
-        profileId="temp-id"
       />
     </div>
   );

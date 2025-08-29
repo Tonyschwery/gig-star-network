@@ -18,7 +18,7 @@ import {
   Crown
 } from "lucide-react";
 
-import { ProSubscriptionDialog } from "@/components/ProSubscriptionDialog";
+import { SubscriptionButton } from "@/components/SubscriptionButton";
 import { BookingRequests } from "@/components/BookingRequests";
 import { NotificationCenter } from "@/components/NotificationCenter";
 import { ModeSwitch } from "@/components/ModeSwitch";
@@ -80,7 +80,7 @@ export const BookingManagementView = ({
   const { toast } = useToast();
   const [profile, setProfile] = useState<TalentProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [showProDialog, setShowProDialog] = useState(false);
+  
   const [displayItems, setDisplayItems] = useState<DisplayItem[]>([]);
 
   // Data adapter function to normalize booking and gig objects
@@ -277,27 +277,12 @@ export const BookingManagementView = ({
             </Button>
             
             {/* Pro/Subscription Button */}
-            {!profile.is_pro_subscriber ? (
-              <Button 
-                onClick={() => setShowProDialog(true)}
-                className="hero-button flex-shrink-0"
-                size="sm"
-              >
-                <Crown className="h-4 w-4 mr-2" />
-                <span className="hidden sm:inline">Subscribe to Pro</span>
-                <span className="sm:hidden">Pro</span>
-              </Button>
-            ) : (
-              <Button 
-                onClick={handleCancelSubscription}
-                variant="outline"
-                className="border-red-200 text-red-600 hover:bg-red-50 flex-shrink-0"
-                size="sm"
-              >
-                <span className="hidden sm:inline">Cancel Pro</span>
-                <span className="sm:hidden">Cancel</span>
-              </Button>
-            )}
+            <SubscriptionButton
+              isProSubscriber={profile.is_pro_subscriber || false}
+              onSubscriptionChange={fetchTalentProfile}
+              variant="default"
+              size="sm"
+            />
             
             
             {/* Sign Out */}
@@ -488,16 +473,6 @@ export const BookingManagementView = ({
           </div>
         )}
 
-        {/* Pro Subscription Dialog */}
-        <ProSubscriptionDialog
-          open={showProDialog}
-          onOpenChange={setShowProDialog}
-          onSubscribe={() => {
-            // Refresh profile to show pro status
-            fetchTalentProfile();
-          }}
-          profileId={profile.id}
-        />
       </div>
     </div>
   );

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Crown } from 'lucide-react';
-import { ProSubscriptionDialog } from './ProSubscriptionDialog';
+import { SubscriptionModal } from './SubscriptionModal';
 import { Button } from './ui/button';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
@@ -22,7 +22,7 @@ export function ProFeatureWrapper({
   showProIcon = true,
   featureType = 'general'
 }: ProFeatureWrapperProps) {
-  const [showProDialog, setShowProDialog] = useState(false);
+  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const [profileId, setProfileId] = useState<string | null>(null);
   const [isCurrentUserPro, setIsCurrentUserPro] = useState(false);
   const { toast } = useToast();
@@ -49,53 +49,9 @@ export function ProFeatureWrapper({
     fetchProfile();
   }, []);
 
-  const handleActivatePro = async () => {
-    if (!profileId) {
-      // If no profile exists yet, show a message that pro will be activated
-      toast({
-        title: "Pro Features Activated! 🎉",
-        description: "Your pro subscription will be activated when you complete your profile.",
-        duration: 5000,
-      });
-      setShowProDialog(false);
-      return;
-    }
-    
-    // If profile exists, update it directly
-    try {
-      const { error } = await supabase
-        .from('talent_profiles')
-        .update({ 
-          is_pro_subscriber: true,
-          subscription_started_at: new Date().toISOString()
-        })
-        .eq('id', profileId);
-
-      if (error) {
-        throw error;
-      }
-
-      toast({
-        title: "Welcome to Pro! 🎉",
-        description: "Your pro subscription is now active. Enjoy all the premium benefits!",
-        duration: 5000,
-      });
-      setShowProDialog(false);
-      
-      // Refresh the page to show updated features
-      window.location.reload();
-    } catch (error) {
-      console.error('Error activating subscription:', error);
-      toast({
-        title: "Error",
-        description: "Failed to activate subscription. Please try again.",
-        variant: "destructive"
-      });
-    }
-  };
 
   const handleUpgradeClick = () => {
-    navigate('/pricing');
+    setShowSubscriptionModal(true);
   };
 
   // If user is already Pro, don't restrict anything
@@ -129,11 +85,9 @@ export function ProFeatureWrapper({
         <div className="absolute inset-0 bg-muted/20 rounded-md"></div>
       </div>
 
-      <ProSubscriptionDialog
-        open={showProDialog}
-        onOpenChange={setShowProDialog}
-        onSubscribe={handleActivatePro}
-        profileId={profileId || 'temp-id'}
+      <SubscriptionModal
+        open={showSubscriptionModal}
+        onOpenChange={setShowSubscriptionModal}
       />
     </>
   );

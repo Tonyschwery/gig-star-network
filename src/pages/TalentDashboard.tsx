@@ -19,7 +19,7 @@ import {
 import { Header } from "@/components/Header";
 import { NotificationCenter } from "@/components/NotificationCenter";
 import { UniversalChat } from "@/components/UniversalChat";
-import { ProSubscriptionDialog } from "@/components/ProSubscriptionDialog";
+import { SubscriptionButton } from "@/components/SubscriptionButton";
 import { ModeSwitch } from "@/components/ModeSwitch";
 import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
 
@@ -51,7 +51,7 @@ const TalentDashboard = () => {
   const { toast } = useToast();
   const [profile, setProfile] = useState<TalentProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [showProDialog, setShowProDialog] = useState(false);
+  
   
   // Enable real-time notifications
   useRealtimeNotifications();
@@ -200,27 +200,12 @@ const TalentDashboard = () => {
               <span className="sm:hidden">Edit</span>
             </Button>
             
-            {!profile.is_pro_subscriber ? (
-              <Button 
-                onClick={() => setShowProDialog(true)}
-                className="hero-button flex-shrink-0"
-                size="sm"
-              >
-                <Crown className="h-4 w-4 mr-2" />
-                <span className="hidden sm:inline">Subscribe to Pro</span>
-                <span className="sm:hidden">Pro</span>
-              </Button>
-            ) : (
-              <Button 
-                onClick={handleCancelSubscription}
-                variant="outline"
-                className="border-red-200 text-red-600 hover:bg-red-50 flex-shrink-0"
-                size="sm"
-              >
-                <span className="hidden sm:inline">Cancel Pro</span>
-                <span className="sm:hidden">Cancel</span>
-              </Button>
-            )}
+            <SubscriptionButton
+              isProSubscriber={profile.is_pro_subscriber || false}
+              onSubscriptionChange={fetchTalentProfile}
+              variant="default"
+              size="sm"
+            />
             
             <Button 
               variant="outline" 
@@ -280,15 +265,6 @@ const TalentDashboard = () => {
           </CardContent>
         </Card>
 
-        {/* Pro Subscription Dialog */}
-        <ProSubscriptionDialog
-          open={showProDialog}
-          onOpenChange={setShowProDialog}
-          onSubscribe={() => {
-            fetchTalentProfile();
-          }}
-          profileId={profile.id}
-        />
 
         {/* Universal Chat */}
         <UniversalChat />
