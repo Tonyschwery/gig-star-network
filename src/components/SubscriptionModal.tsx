@@ -133,14 +133,36 @@ export function SubscriptionModal({ open, onOpenChange }: SubscriptionModalProps
         });
       },
       onApprove: async (data, actions) => {
+        console.log('🎉 PayPal onApprove called with data:', data);
+        console.log('Subscription ID:', data.subscriptionID);
+        console.log('Order ID:', data.orderID);
+        console.log('Facilitator Access Token:', data.facilitatorAccessToken);
+        console.log('User ID being passed:', user.id);
+
         toast({
           title: "Subscription Successful!",
           description: "Redirecting to confirmation page...",
           duration: 3000,
         });
         onOpenChange(false);
-        // Redirect to success page with subscription details
-        window.location.href = `/subscription-success?subscription_id=${data.subscriptionID}&token=${data.facilitatorAccessToken || ''}`;
+        
+        // Build redirect URL with all available parameters
+        const redirectUrl = new URL('/subscription-success', window.location.origin);
+        
+        if (data.subscriptionID) {
+          redirectUrl.searchParams.set('subscription_id', data.subscriptionID);
+        }
+        if (data.orderID) {
+          redirectUrl.searchParams.set('order_id', data.orderID);
+        }
+        if (data.facilitatorAccessToken) {
+          redirectUrl.searchParams.set('token', data.facilitatorAccessToken);
+        }
+        
+        console.log('🔗 Redirecting to:', redirectUrl.toString());
+        
+        // Redirect to success page
+        window.location.href = redirectUrl.toString();
       },
       onError: (err) => {
         console.error('PayPal error:', err);
