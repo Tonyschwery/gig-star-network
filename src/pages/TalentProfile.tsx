@@ -20,6 +20,7 @@ import {
   ExternalLink,
   Play
 } from "lucide-react";
+import { ProBadge } from "@/components/ProBadge";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
@@ -42,6 +43,7 @@ interface TalentProfile {
   biography: string;
   nationality: string;
   created_at: string;
+  is_pro_subscriber?: boolean;
 }
 
 export default function TalentProfile() {
@@ -236,7 +238,10 @@ export default function TalentProfile() {
                         {talent.act.charAt(0).toUpperCase() + talent.act.slice(1)}
                       </span>
                     </div>
-                    <h1 className="text-3xl font-bold">{talent.artist_name}</h1>
+                    <div className="flex items-center gap-3">
+                      <h1 className="text-3xl font-bold">{talent.artist_name}</h1>
+                      {talent.is_pro_subscriber && <ProBadge size="default" />}
+                    </div>
                     <div className="flex items-center space-x-1 text-sm opacity-90">
                       <MapPin className="h-3 w-3" />
                       <span>{talent.location || 'Location not specified'}</span>

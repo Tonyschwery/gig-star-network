@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Crown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { ProBadge } from "@/components/ProBadge";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { SubscriptionModal } from "@/components/SubscriptionModal";
@@ -36,12 +37,8 @@ export function SubscriptionButton({
     }
 
     if (isProSubscriber) {
-      // For managing existing subscription - in real app, this would open PayPal management
-      toast({
-        title: "Subscription Management",
-        description: "Contact support to manage your subscription or visit your PayPal account.",
-        duration: 5000,
-      });
+      // For managing existing subscription - open PayPal management
+      window.open('https://www.paypal.com/myaccount/autopay/', '_blank');
     } else {
       // Open subscription modal
       setShowModal(true);
@@ -58,9 +55,7 @@ export function SubscriptionButton({
       >
         <Crown className="h-4 w-4" />
         Manage Pro
-        <Badge variant="secondary" className="ml-1 text-xs">
-          Pro
-        </Badge>
+        <ProBadge size="sm" showIcon={false} />
       </Button>
     );
   }

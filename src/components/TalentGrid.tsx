@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Star, MapPin, Music, Mic, Camera, Brush, User, Filter, X, Crown } from "lucide-react";
+import { ProBadge } from "@/components/ProBadge";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -345,10 +346,7 @@ function TalentCard({ talent }: TalentCardProps) {
         </div>
         {talent.is_pro_subscriber && (
           <div className="absolute top-3 right-3">
-            <Badge className="pro-badge">
-              <Crown className="h-3 w-3 mr-1" />
-              PRO
-            </Badge>
+            <ProBadge size="sm" />
           </div>
         )}
       </div>
@@ -358,10 +356,7 @@ function TalentCard({ talent }: TalentCardProps) {
           <div className="flex items-center gap-2 mb-1">
             <h3 className="font-semibold text-lg">{talent.artist_name}</h3>
             {talent.is_pro_subscriber && (
-              <Badge className="pro-badge text-xs">
-                <Crown className="h-3 w-3 mr-1" />
-                PRO
-              </Badge>
+              <ProBadge size="sm" />
             )}
           </div>
           <div className="flex items-center space-x-1 text-sm text-muted-foreground">
