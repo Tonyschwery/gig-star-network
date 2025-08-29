@@ -24,7 +24,7 @@ export function SubscriptionModal({ open, onOpenChange }: SubscriptionModalProps
       name: "Monthly Pro",
       price: "$19.99",
       period: "/month",
-      planId: "P-9NW37063VU373363ENCYI3LY",
+      planId: "P-5DD48036RS5113705NCY45IY",
       features: [
         "Zero commission - keep 100% of earnings",
         "Up to 10 profile images",
@@ -42,7 +42,7 @@ export function SubscriptionModal({ open, onOpenChange }: SubscriptionModalProps
       name: "Yearly Pro", 
       price: "$179.88",
       period: "/year",
-      planId: "P-83U36288W1589964ANCYI6QQ",
+      planId: "P-8R7404252P6382316NCY46DA",
       features: [
         "Everything in Monthly Pro",
         "Save $60 per year",
