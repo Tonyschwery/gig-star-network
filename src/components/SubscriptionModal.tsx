@@ -1,22 +1,44 @@
-import { useState } from "react";
-import { Crown, ExternalLink, Check, X } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Crown, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 
 interface SubscriptionModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
+// PayPal SDK types
+declare global {
+  interface Window {
+    paypal?: {
+      Buttons: (options: {
+        createSubscription: (data: any, actions: any) => Promise<string>;
+        onApprove: (data: any, actions: any) => Promise<void>;
+        onError: (err: any) => void;
+        onCancel: (data: any) => void;
+        style?: {
+          shape?: string;
+          color?: string;
+          layout?: string;
+          label?: string;
+        };
+      }) => {
+        render: (selector: string) => Promise<void>;
+      };
+    };
+  }
+}
+
 export function SubscriptionModal({ open, onOpenChange }: SubscriptionModalProps) {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState<string | null>(null);
+  const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
+  const [paypalLoaded, setPaypalLoaded] = useState(false);
 
   const plans = [
     {
@@ -54,7 +76,98 @@ export function SubscriptionModal({ open, onOpenChange }: SubscriptionModalProps
     }
   ];
 
-  const handleSubscribe = async (planType: "monthly" | "yearly", planId: string) => {
+  // Load PayPal SDK
+  useEffect(() => {
+    if (!open) return;
+
+    const loadPayPalScript = () => {
+      if (window.paypal) {
+        setPaypalLoaded(true);
+        return;
+      }
+
+      const script = document.createElement('script');
+      script.src = `https://www.paypal.com/sdk/js?client-id=AU8JVXx6NV6vgdQ1CEtIdlKs_L_4tJQp6r-wyoJ_1X2iVAM7Z4WOyYjUBKgWTH9p7A0Ks4kVrYP1z7cS&vault=true&intent=subscription`;
+      script.async = true;
+      script.onload = () => setPaypalLoaded(true);
+      script.onerror = () => {
+        toast({
+          title: "Error",
+          description: "Failed to load PayPal. Please refresh and try again.",
+          variant: "destructive",
+        });
+      };
+      document.head.appendChild(script);
+    };
+
+    loadPayPalScript();
+  }, [open, toast]);
+
+  // Render PayPal buttons when plan is selected and PayPal is loaded
+  useEffect(() => {
+    if (!paypalLoaded || !selectedPlan || !window.paypal || !user) return;
+
+    const plan = plans.find(p => p.id === selectedPlan);
+    if (!plan) return;
+
+    const containerId = `paypal-button-container-${plan.id}`;
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    // Clear any existing PayPal buttons
+    container.innerHTML = '';
+
+    window.paypal.Buttons({
+      createSubscription: (data, actions) => {
+        return actions.subscription.create({
+          plan_id: plan.planId,
+          custom_id: user.id, // Pass Supabase User ID
+          subscriber: {
+            email_address: user.email
+          },
+          application_context: {
+            brand_name: "QTalent",
+            shipping_preference: "NO_SHIPPING",
+            user_action: "SUBSCRIBE_NOW"
+          }
+        });
+      },
+      onApprove: async (data, actions) => {
+        toast({
+          title: "Subscription Successful!",
+          description: "Welcome to QTalent Pro! Your subscription is now active.",
+          duration: 5000,
+        });
+        onOpenChange(false);
+        // Optionally redirect to success page
+        window.location.href = `/subscription-success?subscription_id=${data.subscriptionID}`;
+      },
+      onError: (err) => {
+        console.error('PayPal error:', err);
+        toast({
+          title: "Subscription Error",
+          description: "There was an issue processing your subscription. Please try again.",
+          variant: "destructive",
+        });
+        setSelectedPlan(null);
+      },
+      onCancel: (data) => {
+        toast({
+          title: "Subscription Cancelled",
+          description: "You cancelled the subscription process.",
+        });
+        setSelectedPlan(null);
+      },
+      style: {
+        shape: 'rect',
+        color: 'gold',
+        layout: 'vertical',
+        label: 'subscribe'
+      }
+    }).render(`#${containerId}`);
+  }, [paypalLoaded, selectedPlan, user, plans, toast, onOpenChange]);
+
+  const handlePlanSelect = (planId: string) => {
     if (!user) {
       toast({
         title: "Authentication required",
@@ -64,41 +177,15 @@ export function SubscriptionModal({ open, onOpenChange }: SubscriptionModalProps
       return;
     }
 
-    try {
-      setIsLoading(planType);
-
+    if (!paypalLoaded) {
       toast({
-        title: "Redirecting to PayPal...",
-        description: "You'll be redirected to PayPal to complete your subscription.",
-        duration: 3000,
+        title: "Please wait",
+        description: "PayPal is loading. Please try again in a moment.",
       });
-
-      const { data, error } = await supabase.functions.invoke('create-paypal-subscription', {
-        body: { planType },
-      });
-
-      if (error) {
-        throw error;
-      }
-
-      if (data?.success && data?.approvalUrl) {
-        // Close modal and redirect to PayPal
-        onOpenChange(false);
-        window.location.href = data.approvalUrl;
-      } else {
-        throw new Error(data?.error || "Failed to create subscription");
-      }
-
-    } catch (error) {
-      console.error('Subscription error:', error);
-      toast({
-        title: "Error",
-        description: "Something went wrong. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(null);
+      return;
     }
+
+    setSelectedPlan(planId);
   };
 
   return (
@@ -158,29 +245,44 @@ export function SubscriptionModal({ open, onOpenChange }: SubscriptionModalProps
                   ))}
                 </div>
                 
-                <Button 
-                  className="w-full gap-2 relative overflow-hidden group"
-                  variant={plan.popular ? "default" : "outline"}
-                  onClick={() => handleSubscribe(plan.id as "monthly" | "yearly", plan.planId)}
-                  disabled={isLoading === plan.id}
-                >
-                  <Crown className="h-4 w-4" />
-                  <ExternalLink className="h-3 w-3" />
-                  {isLoading === plan.id ? "Processing..." : `Subscribe ${plan.name}`}
-                  {!isLoading && (
-                    <>
-                      <div className="absolute inset-0 bg-gradient-to-r from-brand-primary/20 to-brand-accent/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
-                    </>
-                  )}
-                </Button>
+                {selectedPlan === plan.id ? (
+                  <div className="space-y-4">
+                    <div id={`paypal-button-container-${plan.id}`} className="min-h-[50px]">
+                      {/* PayPal buttons will be rendered here */}
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setSelectedPlan(null)}
+                      className="w-full"
+                    >
+                      Choose Different Plan
+                    </Button>
+                  </div>
+                ) : (
+                  <Button 
+                    className="w-full gap-2 relative overflow-hidden group"
+                    variant={plan.popular ? "default" : "outline"}
+                    onClick={() => handlePlanSelect(plan.id)}
+                    disabled={!paypalLoaded}
+                  >
+                    <Crown className="h-4 w-4" />
+                    {paypalLoaded ? `Select ${plan.name}` : "Loading PayPal..."}
+                    {paypalLoaded && (
+                      <>
+                        <div className="absolute inset-0 bg-gradient-to-r from-brand-primary/20 to-brand-accent/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+                      </>
+                    )}
+                  </Button>
+                )}
               </CardContent>
             </Card>
           ))}
         </div>
 
         <div className="text-center text-xs text-muted-foreground mt-6">
-          <p>Secure payments powered by PayPal. Cancel anytime from your dashboard.</p>
+          <p>Secure payments powered by PayPal. Cancel anytime from your PayPal account.</p>
         </div>
       </DialogContent>
     </Dialog>

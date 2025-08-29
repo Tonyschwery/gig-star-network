@@ -309,7 +309,7 @@ export function BookerInvoiceCard({ booking, payment, onPaymentUpdate }: BookerI
           <div className="space-y-4 border-t pt-4">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Lock className="h-4 w-4" />
-              <span>Secure Payment with Stripe (Demo Mode)</span>
+              <span>Secure Payment (Demo Mode)</span>
             </div>
 
             <div className="grid gap-4">
@@ -377,7 +377,7 @@ export function BookerInvoiceCard({ booking, payment, onPaymentUpdate }: BookerI
             </div>
 
             <p className="text-xs text-muted-foreground text-center">
-              🔒 This is a demo payment interface. In production, this would connect to Stripe's secure payment processing.
+              🔒 This is a demo payment interface. In production, this would connect to secure payment processing.
             </p>
           </div>
         )}
