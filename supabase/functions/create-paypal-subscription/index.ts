@@ -50,7 +50,7 @@ Deno.serve(async (req) => {
     console.log('Creating PayPal subscription for user:', user.id, 'plan:', planType);
 
     // Get PayPal credentials
-    const clientId = Deno.env.get('PAYPAL_SANDBOX_CLIENT_ID');
+    const clientId = 'AU8JVXx6NV6vgdQ1CEtIdlKs_L_4tJQp6r-wyoJ_1X2iVAM7Z4WOyYjUBKgWTH9p7A0Ks4kVrYP1z7cS'; // PayPal Sandbox Client ID
     const clientSecret = Deno.env.get('PAYPAL_SANDBOX_CLIENT_SECRET');
     const businessEmail = Deno.env.get('PAYPAL_SANDBOX_BUSINESS_EMAIL');
 

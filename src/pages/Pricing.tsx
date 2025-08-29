@@ -213,7 +213,6 @@ export default function Pricing() {
                 
                 {plan.name === 'Pro' ? (
                   <SubscriptionButton 
-                    planType={billingCycle}
                     variant={plan.popular ? "default" : "outline"}
                     className="w-full text-sm md:text-base py-2 md:py-3"
                   />
