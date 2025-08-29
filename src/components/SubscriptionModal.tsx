@@ -135,12 +135,12 @@ export function SubscriptionModal({ open, onOpenChange }: SubscriptionModalProps
       onApprove: async (data, actions) => {
         toast({
           title: "Subscription Successful!",
-          description: "Welcome to QTalent Pro! Your subscription is now active.",
-          duration: 5000,
+          description: "Redirecting to confirmation page...",
+          duration: 3000,
         });
         onOpenChange(false);
-        // Optionally redirect to success page
-        window.location.href = `/subscription-success?subscription_id=${data.subscriptionID}`;
+        // Redirect to success page with subscription details
+        window.location.href = `/subscription-success?subscription_id=${data.subscriptionID}&token=${data.facilitatorAccessToken || ''}`;
       },
       onError: (err) => {
         console.error('PayPal error:', err);

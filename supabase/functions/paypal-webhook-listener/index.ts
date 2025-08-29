@@ -16,20 +16,29 @@ interface PayPalWebhookVerificationResponse {
   verification_status: string;
 }
 
-interface PayPalOrder {
+interface PayPalSubscription {
   id: string;
   status: string;
-  purchase_units: Array<{
-    custom_id?: string;
-    reference_id?: string;
-  }>;
+  plan_id: string;
+  custom_id?: string;
+  subscriber?: {
+    email_address?: string;
+  };
+  billing_info?: {
+    next_billing_time?: string;
+    cycle_executions?: Array<{
+      tenure_type: string;
+      sequence: number;
+      cycles_completed: number;
+    }>;
+  };
 }
 
 interface PayPalWebhookEvent {
   id: string;
   event_type: string;
   summary: string;
-  resource: PayPalOrder;
+  resource: PayPalSubscription;
   create_time: string;
 }
 
@@ -123,16 +132,19 @@ serve(async (req) => {
 
     console.log('Webhook verified successfully');
 
-    // Process the webhook event
-    if (webhookEvent.event_type === 'CHECKOUT.ORDER.APPROVED') {
-      const order = webhookEvent.resource;
-      console.log('Processing order approval:', order.id);
+    // Process subscription webhook events
+    if (webhookEvent.event_type === 'BILLING.SUBSCRIPTION.ACTIVATED' || 
+        webhookEvent.event_type === 'BILLING.SUBSCRIPTION.CREATED' ||
+        webhookEvent.event_type === 'PAYMENT.SALE.COMPLETED') {
+      
+      const subscription = webhookEvent.resource;
+      console.log('Processing subscription event:', webhookEvent.event_type, 'ID:', subscription.id);
 
       // Extract user ID from custom_id field
-      const customId = order.purchase_units?.[0]?.custom_id;
+      const customId = subscription.custom_id;
       if (!customId) {
-        console.error('No custom_id found in order');
-        return new Response(JSON.stringify({ error: 'No user ID found in order' }), {
+        console.error('No custom_id found in subscription');
+        return new Response(JSON.stringify({ error: 'No user ID found in subscription' }), {
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
@@ -140,14 +152,24 @@ serve(async (req) => {
 
       console.log('Updating subscription for user:', customId);
 
+      // Determine subscription period based on plan_id
+      let periodEndDate = new Date();
+      if (subscription.plan_id?.includes('monthly') || subscription.plan_id?.includes('P-5DD48036RS5113705NCY45IY')) {
+        // Monthly plan - 30 days
+        periodEndDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+      } else {
+        // Yearly plan - 365 days
+        periodEndDate = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
+      }
+
       // Update user's subscription status in talent_profiles
       const { data, error } = await supabase
         .from('talent_profiles')
         .update({
           subscription_status: 'active',
-          paypal_subscription_id: order.id,
-          plan_id: order.purchase_units?.[0]?.reference_id || 'basic_plan',
-          current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days from now
+          paypal_subscription_id: subscription.id,
+          plan_id: subscription.plan_id || 'basic_plan',
+          current_period_end: periodEndDate.toISOString(),
           is_pro_subscriber: true,
           subscription_started_at: new Date().toISOString(),
         })
@@ -177,7 +199,8 @@ serve(async (req) => {
         success: true, 
         message: 'Subscription activated successfully',
         user_id: customId,
-        order_id: order.id 
+        subscription_id: subscription.id,
+        event_type: webhookEvent.event_type
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
