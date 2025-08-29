@@ -79,7 +79,7 @@ Deno.serve(async (req) => {
     console.log('Got PayPal access token');
 
     // Create subscription plan data - using real PayPal plan IDs
-    const planId = planType === 'yearly' ? 'P-PRO-YEARLY' : 'P-88506464TT114905NNCXWJ4A';
+    const planId = planType === 'yearly' ? 'P-83U36288W1589964ANCYI6QQ' : 'P-9NW37063VU373363ENCYI3LY';
     const amount = planType === 'yearly' ? '179.88' : '19.99';
     
     // Create subscription
@@ -88,6 +88,7 @@ Deno.serve(async (req) => {
       subscriber: {
         email_address: user.email,
       },
+      custom_id: user.id, // Pass user ID to webhook
       application_context: {
         brand_name: 'QTalent',
         landing_page: 'BILLING',

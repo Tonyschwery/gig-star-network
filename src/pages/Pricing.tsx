@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Check, Crown, Star, Zap, Users, MessageSquare, Calendar, Shield, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { SubscriptionButton } from "@/components/SubscriptionButton";
 
 export default function Pricing() {
   const navigate = useNavigate();
@@ -210,12 +211,20 @@ export default function Pricing() {
                   ))}
                 </div>
                 
-                <Button 
-                  className={`w-full text-sm md:text-base py-2 md:py-3 ${plan.popular ? 'hero-button' : 'outline-button'}`}
-                  onClick={() => handleGetStarted(plan.name)}
-                >
-                  {plan.buttonText}
-                </Button>
+                {plan.name === 'Pro' ? (
+                  <SubscriptionButton 
+                    planType={billingCycle}
+                    variant={plan.popular ? "default" : "outline"}
+                    className="w-full text-sm md:text-base py-2 md:py-3"
+                  />
+                ) : (
+                  <Button 
+                    className={`w-full text-sm md:text-base py-2 md:py-3 ${plan.popular ? 'hero-button' : 'outline-button'}`}
+                    onClick={() => handleGetStarted(plan.name)}
+                  >
+                    {plan.buttonText}
+                  </Button>
+                )}
               </CardContent>
             </Card>
           ))}
