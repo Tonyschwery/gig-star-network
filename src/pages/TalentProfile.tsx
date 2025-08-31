@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { YouTubePlayer } from "@/components/YouTubePlayer";
 import { BookingForm } from "@/components/BookingForm";
+import { SoundCloudEmbed } from "@/components/SoundCloudEmbed";
 import { 
   MapPin, 
   Music, 
@@ -327,24 +328,13 @@ export default function TalentProfile() {
                           <div className="w-5 h-5 bg-orange-500 rounded mr-2"></div>
                           SoundCloud Audio
                         </h3>
-                        <div className="relative">
-                          <iframe
-                            width="100%"
-                            height="166"
-                            scrolling="no"
-                            frameBorder="no"
-                            allow="autoplay"
-                            src={talent.soundcloud_link.includes('api.soundcloud.com') 
-                              ? talent.soundcloud_link 
-                              : `https://w.soundcloud.com/player/?url=${encodeURIComponent(talent.soundcloud_link)}&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true`
-                            }
-                            className="rounded-lg"
-                          ></iframe>
-                        </div>
+                        <SoundCloudEmbed 
+                          url={talent.soundcloud_link}
+                          className="mb-3"
+                        />
                         <Button
                           variant="outline"
                           size="sm"
-                          className="mt-3"
                           onClick={() => window.open(talent.soundcloud_link, '_blank')}
                         >
                           <ExternalLink className="h-4 w-4 mr-2" />

@@ -86,7 +86,10 @@ export default function AdminUsers() {
         user_id_to_delete: talentToDelete.user_id
       });
       
-      if (error) throw error;
+      if (error) {
+        console.error('RPC Error:', error);
+        throw error;
+      }
       
       const result = data as { success: boolean; error?: string; message?: string };
       if (result?.success) {
@@ -98,7 +101,7 @@ export default function AdminUsers() {
       }
     } catch (error: any) {
       console.error('Error deleting user:', error);
-      toast.error(`Failed to delete user: ${error.message}`);
+      toast.error(`Failed to delete user: ${error.message || 'Unknown error'}`);
     }
   };
 
@@ -110,7 +113,10 @@ export default function AdminUsers() {
         is_pro: !currentStatus
       });
       
-      if (error) throw error;
+      if (error) {
+        console.error('RPC Error:', error);
+        throw error;
+      }
       
       const result = data as { success: boolean; error?: string; message?: string; is_pro?: boolean };
       if (result?.success) {
@@ -127,7 +133,7 @@ export default function AdminUsers() {
       }
     } catch (error: any) {
       console.error('Error updating subscription:', error);
-      toast.error(`Failed to update subscription: ${error.message}`);
+      toast.error(`Failed to update subscription: ${error.message || 'Unknown error'}`);
     }
   };
 
