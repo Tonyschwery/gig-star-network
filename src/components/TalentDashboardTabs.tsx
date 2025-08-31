@@ -52,9 +52,9 @@ export const TalentDashboardTabs = () => {
     today.setHours(0, 0, 0, 0);
 
     const newRequests = directBookings.filter(b => b.status === 'pending');
-    const pendingApproval = directBookings.filter(b => b.status === 'pending_approval');
+    const acceptedBookings = directBookings.filter(b => b.status === 'accepted');
     const upcomingBookings = directBookings.filter(b => b.status === 'confirmed' && new Date(b.event_date) >= today);
-    const pastBookings = directBookings.filter(b => new Date(b.event_date) < today);
+    const pastBookings = directBookings.filter(b => ['confirmed', 'accepted', 'pending'].includes(b.status) && new Date(b.event_date) < today);
 
     const renderBookings = (list: Booking[]) => (
         list.length > 0
@@ -66,12 +66,12 @@ export const TalentDashboardTabs = () => {
         <Tabs defaultValue="pending" className="w-full">
             <TabsList className="grid w-full grid-cols-4">
                 <TabsTrigger value="pending">New ({newRequests.length})</TabsTrigger>
-                <TabsTrigger value="pending_approval">Pending ({pendingApproval.length})</TabsTrigger>
+                <TabsTrigger value="accepted">Accepted ({acceptedBookings.length})</TabsTrigger>
                 <TabsTrigger value="upcoming">Upcoming ({upcomingBookings.length})</TabsTrigger>
                 <TabsTrigger value="past">Past ({pastBookings.length})</TabsTrigger>
             </TabsList>
             <TabsContent value="pending">{renderBookings(newRequests)}</TabsContent>
-            <TabsContent value="pending_approval">{renderBookings(pendingApproval)}</TabsContent>
+            <TabsContent value="accepted">{renderBookings(acceptedBookings)}</TabsContent>
             <TabsContent value="upcoming">{renderBookings(upcomingBookings)}</TabsContent>
             <TabsContent value="past">{renderBookings(pastBookings)}</TabsContent>
         </Tabs>

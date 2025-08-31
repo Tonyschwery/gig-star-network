@@ -16,6 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { countries } from "@/lib/countries";
 import { useEmailNotifications } from "@/hooks/useEmailNotifications";
+import { useBookingLimit } from "@/hooks/useBookingLimit";
 
 interface BookingFormProps {
   talentId: string;
@@ -28,6 +29,7 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
   const { user } = useAuth();
   const { toast } = useToast();
   const { sendEventRequestEmails, sendBookingEmails } = useEmailNotifications();
+  const { canCreateBooking, bookingsThisMonth, isProUser, loading: limitLoading } = useBookingLimit();
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [bookerName, setBookerName] = useState("");
@@ -147,6 +149,16 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
       toast({
         title: "Authentication Required",
         description: "Please sign up or sign in first to book this talent.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Check booking limit for non-pro users (skip for admin requests)
+    if (talentId !== "admin-request" && !canCreateBooking) {
+      toast({
+        title: "Booking Limit Reached",
+        description: `Free users are limited to 1 booking per month. You have ${bookingsThisMonth} booking(s) this month. Upgrade to Pro for unlimited bookings!`,
         variant: "destructive",
       });
       return;
@@ -305,6 +317,17 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
         </CardHeader>
         
         <CardContent>
+          {!isProUser && talentId !== "admin-request" && (
+            <div className="mb-4 p-3 bg-muted rounded-lg border">
+              <p className="text-sm text-muted-foreground">
+                Free Plan: {bookingsThisMonth}/1 bookings used this month
+                {!canCreateBooking && (
+                  <span className="text-destructive font-medium"> - Upgrade to Pro for unlimited bookings!</span>
+                )}
+              </p>
+            </div>
+          )}
+          
           <div className="text-sm text-muted-foreground mb-4">
             Booking request for: <span className="font-medium text-primary">{talentName}</span>
           </div>

@@ -41,13 +41,57 @@ export const BookingCard = ({ booking, mode, onUpdate, isProSubscriber }: Bookin
   };
 
   const handleAccept = async () => {
-    await supabase.from('bookings').update({ status: 'accepted' }).eq('id', booking.id);
-    onUpdate?.();
+    try {
+      const { error } = await supabase
+        .from('bookings')
+        .update({ status: 'accepted' })
+        .eq('id', booking.id);
+      
+      if (error) {
+        console.error('Error accepting booking:', error);
+        return;
+      }
+      
+      onUpdate?.();
+    } catch (error) {
+      console.error('Error accepting booking:', error);
+    }
   };
 
   const handleDecline = async () => {
-    await supabase.from('bookings').update({ status: 'declined' }).eq('id', booking.id);
-    onUpdate?.();
+    try {
+      const { error } = await supabase
+        .from('bookings')
+        .update({ status: 'declined' })
+        .eq('id', booking.id);
+      
+      if (error) {
+        console.error('Error declining booking:', error);
+        return;
+      }
+      
+      onUpdate?.();
+    } catch (error) {
+      console.error('Error declining booking:', error);
+    }
+  };
+
+  const handleConfirm = async () => {
+    try {
+      const { error } = await supabase
+        .from('bookings')
+        .update({ status: 'confirmed' })
+        .eq('id', booking.id);
+      
+      if (error) {
+        console.error('Error confirming booking:', error);
+        return;
+      }
+      
+      onUpdate?.();
+    } catch (error) {
+      console.error('Error confirming booking:', error);
+    }
   };
 
 
@@ -95,6 +139,15 @@ export const BookingCard = ({ booking, mode, onUpdate, isProSubscriber }: Bookin
             <User className="h-4 w-4 mr-2" />View Talent
           </Button>
         )}
+        
+        {/* Booker confirmation button */}
+        {mode === 'booker' && booking.status === 'accepted' && (
+          <Button onClick={handleConfirm} size="sm">
+            <Check className="h-4 w-4 mr-2" />Confirm Booking
+          </Button>
+        )}
+        
+        {/* Talent accept/decline buttons */}
         {mode === 'talent' && booking.status === 'pending' && (
           <>
             <Button onClick={handleDecline} variant="outline" size="sm" className="border-red-200 text-red-600">
