@@ -55,9 +55,9 @@ export default function PrivacyPolicy() {
                   </div>
                   
                   <div>
-                    <h3 className="text-lg font-semibold mb-2">Payment Information</h3>
+                    <h3 className="text-lg font-semibold mb-2">Subscription Information</h3>
                     <p className="text-muted-foreground">
-                      When you make payments through our platform, we collect payment information processed securely by our payment processors.
+                      When you subscribe to Pro services, we collect subscription information processed securely through PayPal and our payment partners.
                     </p>
                   </div>
                 </div>
@@ -67,7 +67,8 @@ export default function PrivacyPolicy() {
                 <h2 className="text-2xl font-bold mb-4">How We Use Your Information</h2>
                 <ul className="space-y-2 text-muted-foreground">
                   <li>• Provide and improve our services</li>
-                  <li>• Process transactions and send transaction-related communications</li>
+                  <li>• Process Pro subscription services</li>
+                  <li>• Facilitate connections between talent and bookers</li>
                   <li>• Send you updates about our services</li>
                   <li>• Provide customer support</li>
                   <li>• Ensure platform safety and security</li>

@@ -160,10 +160,11 @@ const TalentDashboard = () => {
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="flex flex-col gap-4 mb-6">
+          {/* Welcome Header with clean styling */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div>
+            <div className="relative">
               <div className="flex items-center gap-3">
-                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold gradient-text">
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground">
                   Welcome back, {profile.artist_name}
                 </h1>
                 {profile.is_pro_subscriber && (
@@ -173,7 +174,7 @@ const TalentDashboard = () => {
                   </Badge>
                 )}
               </div>
-              <p className="text-muted-foreground text-sm sm:text-base">Manage your talent profile and bookings</p>
+              <p className="text-muted-foreground text-sm sm:text-base mt-1">Manage your talent profile and bookings</p>
             </div>
           </div>
           

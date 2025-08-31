@@ -70,15 +70,15 @@ export default function TermsOfService() {
                   <div>
                     <h3 className="text-lg font-semibold mb-2">For Talent</h3>
                     <ul className="space-y-2 text-muted-foreground">
-                      <li>• Standard accounts: 20% commission on bookings</li>
-                      <li>• Pro accounts: 0% commission on bookings + monthly subscription fee</li>
+                      <li>• Pro subscription: Monthly fee for enhanced features and unlimited messaging</li>
+                      <li>• Free accounts: Limited messaging and profile features</li>
                     </ul>
                   </div>
                   
                   <div>
-                    <h3 className="text-lg font-semibold mb-2">For Clients</h3>
+                    <h3 className="text-lg font-semibold mb-2">For Event Organizers</h3>
                     <p className="text-muted-foreground">
-                      Creating an account and booking talent is free. You pay only the agreed amount to the performer.
+                      Creating an account and connecting with talent is completely free. Payment arrangements are made directly between talent and bookers.
                     </p>
                   </div>
                 </div>
@@ -104,12 +104,12 @@ export default function TermsOfService() {
               </section>
 
               <section>
-                <h2 className="text-2xl font-bold mb-4">Payment Terms</h2>
+                <h2 className="text-2xl font-bold mb-4">Subscription & Payment Terms</h2>
                 <ul className="space-y-2 text-muted-foreground">
-                  <li>• All payments are processed securely through our platform</li>
-                  <li>• Payments are released to talent after successful completion of the event</li>
-                  <li>• Platform fees are automatically deducted from talent earnings</li>
-                  <li>• Refunds are subject to our refund policy and booking terms</li>
+                  <li>• Pro subscriptions are processed securely through PayPal</li>
+                  <li>• Subscription fees are non-refundable</li>
+                  <li>• Subscriptions can be cancelled at any time through your account</li>
+                  <li>• Payment arrangements between talent and bookers are made independently</li>
                 </ul>
               </section>
 

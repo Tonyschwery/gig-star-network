@@ -18,7 +18,7 @@ export default function Pricing() {
       description: "Start your talent journey",
       monthlyPrice: 0,
       yearlyPrice: 0,
-      commission: "20%",
+      commission: "none",
       features: [
         "Create professional profile",
         "1 profile image only",
@@ -28,11 +28,10 @@ export default function Pricing() {
         "Standard support response"
       ],
       limitations: [
-        "No audio/video links allowed",
-        "Messaging heavily filtered (no booker contact details)",
-        "Limited to 1 booking request per month",
-        "20% platform commission on earnings", 
-        "No Pro badge or featured placement"
+                    "No audio/video links allowed",
+                    "Messaging heavily filtered (no booker contact details)",
+                    "Limited to 1 booking request per month",
+                    "No Pro badge or featured placement"
       ],
       buttonText: "Get Started Free",
       popular: false,
@@ -43,7 +42,7 @@ export default function Pricing() {
       description: "For serious performers who want to earn more",
       monthlyPrice: 19.99,
       yearlyPrice: 179.88,
-      commission: "0%",
+      commission: "none",
       features: [
         "Everything in Free, plus:",
         "Up to 10 profile images",
@@ -52,7 +51,7 @@ export default function Pricing() {
         "Featured in Pro Artists section",
         "Pro badge for trust & visibility",
         "Unlimited booking requests",
-        "Zero commission - keep 100% of earnings!",
+        "Priority placement in search results",
         "Priority customer support"
       ],
       limitations: [],
@@ -187,11 +186,8 @@ export default function Pricing() {
                       /{billingCycle === 'monthly' ? 'month' : 'year'}
                     </span>
                   </div>
-                  <div className={`text-xs md:text-sm font-semibold mt-2 ${
-                    plan.name === 'Pro' ? 'text-brand-success' : 'text-muted-foreground'
-                  }`}>
-                    {plan.commission} platform commission
-                    {plan.name === 'Pro' && <span className="block text-xs text-brand-success mt-1">Keep 100% of your earnings!</span>}
+                  <div className={`text-xs md:text-sm font-semibold mt-2 text-muted-foreground`}>
+                    Connection fee: {plan.commission}
                   </div>
                   {plan.savings && (
                     <div className="text-xs text-brand-success font-medium mt-2 bg-brand-success/10 rounded-full px-3 py-1">
@@ -230,44 +226,6 @@ export default function Pricing() {
         </div>
       </section>
 
-      {/* For Clients Section */}
-      <section className="bg-secondary/30 py-20">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-headline mb-4">For Event Organizers</h2>
-            <p className="text-subhead mb-8">Booking talent is completely free for clients</p>
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
-            {clientFeatures.map((feature, index) => (
-              <Card key={index} className="glass-card text-center">
-                <CardContent className="pt-6">
-                  <div className="flex justify-center mb-4">
-                    {feature.icon}
-                  </div>
-                  <h3 className="font-semibold mb-2">{feature.title}</h3>
-                  <p className="text-sm text-muted-foreground">{feature.description}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-
-          <Card className="glass-card max-w-2xl mx-auto">
-            <CardContent className="text-center py-12">
-              <h3 className="text-2xl font-bold mb-4">Free for Event Organizers</h3>
-              <p className="text-muted-foreground mb-6">
-                Browse, connect, and book talent at no cost. You only pay the agreed price to the performer.
-              </p>
-              <Button 
-                className="hero-button"
-                onClick={() => navigate('/your-event')}
-              >
-                Start Booking Now
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-      </section>
 
       {/* FAQ Section */}
       <section className="container mx-auto px-4 py-20">
@@ -278,27 +236,9 @@ export default function Pricing() {
         <div className="max-w-3xl mx-auto space-y-6">
           <Card className="glass-card">
             <CardContent className="pt-6">
-              <h3 className="font-semibold mb-2">How much money will I save with Pro?</h3>
-              <p className="text-muted-foreground">
-                Pro users pay 0% commission vs 20% for free users. This means you save $20 on every $100 you earn! For a $500 gig, you'd save $100 with Pro.
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="glass-card">
-            <CardContent className="pt-6">
               <h3 className="font-semibold mb-2">What's included in Pro membership?</h3>
               <p className="text-muted-foreground">
-                Pro members get zero commission (0% vs 20%), golden crown badge, priority in search results, access to exclusive premium gigs, unlimited gallery photos, and priority customer support.
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="glass-card">
-            <CardContent className="pt-6">
-              <h3 className="font-semibold mb-2">How do payments work?</h3>
-              <p className="text-muted-foreground">
-                Clients pay the agreed amount directly to you through our secure payment system. We process payments and take our commission automatically, so you receive your earnings minus the commission fee.
+                Pro members get unlimited messaging, up to 10 profile images, audio & video links, access to booker contact details, Pro badge for credibility, and priority customer support.
               </p>
             </CardContent>
           </Card>
@@ -307,25 +247,25 @@ export default function Pricing() {
             <CardContent className="pt-6">
               <h3 className="font-semibold mb-2">Can I cancel my Pro subscription?</h3>
               <p className="text-muted-foreground">
-                Yes, you can cancel anytime through your dashboard. You'll continue to have Pro benefits until the end of your billing period, then revert to the free plan.
+                Yes, you can cancel anytime through your PayPal account or dashboard. You'll continue to have Pro benefits until the end of your billing period, then revert to the free plan.
               </p>
             </CardContent>
           </Card>
 
           <Card className="glass-card">
             <CardContent className="pt-6">
-              <h3 className="font-semibold mb-2">Is there a setup fee for clients?</h3>
+              <h3 className="font-semibold mb-2">How does messaging work for free vs Pro users?</h3>
               <p className="text-muted-foreground">
-                No, creating an account and booking talent is completely free for event organizers and clients. They only pay the agreed performance fee.
+                Free users have filtered messaging with limited booking requests per month. Pro users get unlimited messaging and can see full booker contact details.
               </p>
             </CardContent>
           </Card>
 
           <Card className="glass-card">
             <CardContent className="pt-6">
-              <h3 className="font-semibold mb-2">What are premium gigs?</h3>
+              <h3 className="font-semibold mb-2">What's the difference between free and Pro profiles?</h3>
               <p className="text-muted-foreground">
-                Premium gigs are exclusive, high-paying opportunities from corporate clients, luxury events, and premium venues that are only available to Pro subscribers.
+                Free profiles have 1 image and basic visibility. Pro profiles feature up to 10 images, audio/video links, Pro badge, and featured placement in our Pro Artists section.
               </p>
             </CardContent>
           </Card>

@@ -14,8 +14,8 @@ export default function TrustSafety() {
     },
     {
       icon: <CreditCard className="h-8 w-8 text-accent" />,
-      title: "Secure Payments",
-      description: "Payment protection for both clients and talent with secure processing and escrow services."
+      title: "Secure Connections",
+      description: "Safe and secure platform for connecting talent with event organizers through verified profiles."
     },
     {
       icon: <MessageSquare className="h-8 w-8 text-accent" />,
