@@ -24,7 +24,7 @@ export function ProBadge({ size = "default", className, showIcon = true }: ProBa
   return (
     <Badge 
       className={cn(
-        "bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 text-black shadow-lg hover:shadow-xl transition-all duration-300 border-2 border-amber-300 relative overflow-hidden",
+        "bg-gradient-to-r from-brand-success to-brand-accent text-background shadow-lg hover:shadow-xl transition-all duration-300 border-2 border-brand-accent relative overflow-hidden",
         "before:absolute before:inset-0 before:bg-gradient-to-r before:from-transparent before:via-white/20 before:to-transparent before:animate-shimmer",
         sizeClasses[size],
         className

@@ -102,34 +102,56 @@ export function ProBenefitsModal({ isOpen, onClose, showCongratulations = false 
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid md:grid-cols-2 gap-4 mt-6">
-          {benefits.map((benefit, index) => (
-            <Card key={index} className="glass-card hover:shadow-lg transition-all duration-300">
-              <CardContent className="p-4">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
-                    {benefit.icon}
+        {showCongratulations ? (
+          <Card className="glass-card p-6 mt-6">
+            <div className="space-y-4">
+              <h3 className="text-headline text-center mb-6">Your Pro Benefits</h3>
+              <div className="grid gap-3">
+                {benefits.map((benefit, index) => (
+                  <div key={index} className="flex items-center gap-4 p-3 rounded-lg bg-accent/5 border border-accent/20">
+                    <div className="w-8 h-8 bg-accent/20 rounded-full flex items-center justify-center flex-shrink-0">
+                      {benefit.icon}
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-semibold text-sm text-foreground">{benefit.title}</h4>
+                      <p className="text-xs text-muted-foreground">{benefit.description}</p>
+                    </div>
+                    <CheckCircle className="h-4 w-4 text-accent flex-shrink-0" />
                   </div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-sm mb-1">{benefit.title}</h3>
-                    <p className="text-xs text-muted-foreground mb-3">{benefit.description}</p>
-                    <Button
-                      size="sm"
-                      onClick={() => handleActionClick(benefit.actionPath)}
-                      className="w-full text-xs"
-                    >
-                      {benefit.action}
-                      <ArrowRight className="h-3 w-3 ml-1" />
-                    </Button>
+                ))}
+              </div>
+            </div>
+          </Card>
+        ) : (
+          <div className="grid md:grid-cols-2 gap-4 mt-6">
+            {benefits.map((benefit, index) => (
+              <Card key={index} className="glass-card hover:shadow-lg transition-all duration-300">
+                <CardContent className="p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
+                      {benefit.icon}
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-sm mb-1">{benefit.title}</h3>
+                      <p className="text-xs text-muted-foreground mb-3">{benefit.description}</p>
+                      <Button
+                        size="sm"
+                        onClick={() => handleActionClick(benefit.actionPath)}
+                        className="w-full text-xs"
+                      >
+                        {benefit.action}
+                        <ArrowRight className="h-3 w-3 ml-1" />
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
 
         {showCongratulations && (
-          <div className="text-center mt-6 p-4 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-lg">
+          <div className="text-center mt-6 p-4 bg-gradient-to-r from-accent/10 to-brand-success/10 rounded-lg border border-accent/20">
             <p className="text-sm text-muted-foreground mb-3">
               Ready to enhance your profile? Start by adding more photos and connecting your social media!
             </p>
