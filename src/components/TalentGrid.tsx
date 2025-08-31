@@ -161,7 +161,7 @@ export function TalentGrid() {
   const hasActiveFilters = (activeFilters.location && activeFilters.location !== 'all') || 
                           activeFilters.date || 
                           (activeFilters.type && activeFilters.type !== 'all');
-  const talentsToShow = hasActiveFilters ? filteredTalents : [];
+  const talentsToShow = hasActiveFilters ? filteredTalents : talents;
   
   console.log('[TalentGrid] Render state:', { 
     talentsLength: talents.length, 
@@ -193,14 +193,17 @@ export function TalentGrid() {
   return (
     <section id="talents" className="py-16 bg-muted/30">
       <div className="container mx-auto px-4">
-        {hasActiveFilters && (
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4">Search Results</h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              Found {talentsToShow.length} talent{talentsToShow.length !== 1 ? 's' : ''} matching your criteria
-            </p>
-          </div>
-        )}
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-bold mb-4">
+            {hasActiveFilters ? 'Search Results' : 'All Talent'}
+          </h2>
+          <p className="text-muted-foreground max-w-2xl mx-auto">
+            {hasActiveFilters 
+              ? `Found ${talentsToShow.length} talent${talentsToShow.length !== 1 ? 's' : ''} matching your criteria`
+              : `Discover ${talentsToShow.length} talented performers ready for your event`
+            }
+          </p>
+        </div>
           
         {/* Active Filters Display */}
         {hasActiveFilters && (
@@ -240,28 +243,23 @@ export function TalentGrid() {
           </div>
         )}
 
-        {!hasActiveFilters ? (
-          <div className="text-center py-16">
-            <div className="w-24 h-24 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
-              <Search className="h-12 w-12 text-muted-foreground" />
-            </div>
-            <h3 className="text-2xl font-semibold mb-2">Find Amazing Talent</h3>
-            <p className="text-muted-foreground mb-4 max-w-md mx-auto">
-              Use the search form above to discover talented performers by location and type
-            </p>
-          </div>
-        ) : talentsToShow.length === 0 ? (
+        {talentsToShow.length === 0 ? (
           <div className="text-center py-12">
             <div className="w-24 h-24 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
               <Music className="h-12 w-12 text-muted-foreground" />
             </div>
             <h3 className="text-xl font-semibold mb-2">No talents found</h3>
             <p className="text-muted-foreground mb-4">
-              Try adjusting your search criteria to find more talents
+              {hasActiveFilters 
+                ? 'Try adjusting your search criteria to find more talents'
+                : 'No talent profiles are available at the moment'
+              }
             </p>
-            <Button onClick={clearFilters} variant="outline">
-              Clear Filters
-            </Button>
+            {hasActiveFilters && (
+              <Button onClick={clearFilters} variant="outline">
+                Clear Filters
+              </Button>
+            )}
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

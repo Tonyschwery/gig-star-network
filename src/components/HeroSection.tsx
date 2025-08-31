@@ -4,10 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { Star, MapPin, Search, Music, Crown, HelpCircle } from "lucide-react";
 import { countries } from "@/lib/countries";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { ProBadge } from "@/components/ProBadge";
+import Autoplay from "embla-carousel-autoplay";
 
 const talentTypes = [
   { value: 'all', label: 'All Talent Types' },
@@ -30,6 +33,9 @@ interface TalentProfile {
   location?: string;
   picture_url?: string;
   is_pro_subscriber: boolean;
+  rate_per_hour?: number;
+  currency: string;
+  music_genres: string[];
 }
 
 export function HeroSection() {
@@ -49,9 +55,11 @@ export function HeroSection() {
     try {
       const { data, error } = await supabase
         .from('talent_profiles')
-        .select('id, artist_name, act, location, picture_url, is_pro_subscriber')
+        .select(`
+          id, artist_name, act, location, picture_url, is_pro_subscriber,
+          rate_per_hour, currency, music_genres
+        `)
         .eq('is_pro_subscriber', true)
-        .limit(2)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -214,42 +222,60 @@ export function HeroSection() {
             ) : null}
           </div>
 
-          {/* Right Content - Featured Talents Carousel */}
-          <div className="space-y-4">
+          {/* Right Content - Pro Artists Carousel */}
+          <div className="space-y-6">
             <div className="text-center space-y-2">
-              <h3 className="text-lg font-semibold text-foreground">Featured Pro Artists</h3>
-              <p className="text-sm text-muted-foreground">Premium talents ready to elevate your event</p>
+              <div className="flex items-center justify-center gap-2">
+                <Crown className="h-6 w-6 text-brand-warning" />
+                <h3 className="text-xl font-bold text-foreground">Featured Pro Artists</h3>
+              </div>
+              <p className="text-sm text-muted-foreground">Premium talents with verified profiles & zero commission</p>
             </div>
             
-            <div className="space-y-4">
-              {featuredTalents.length > 0 ? (
-                featuredTalents.map((talent, index) => (
-                  <div
-                    key={talent.id}
-                    className="animate-fade-in"
-                    style={{ animationDelay: `${index * 0.2}s` }}
-                  >
-                    <FeaturedTalentCard 
-                      id={talent.id}
-                      name={talent.artist_name}
-                      location={talent.location || 'Location not specified'}
-                      category={talent.act.charAt(0).toUpperCase() + talent.act.slice(1)}
-                      image={talent.picture_url || "/placeholder.svg"}
-                      isPro={talent.is_pro_subscriber}
-                    />
-                  </div>
-                ))
-              ) : (
-                // Fallback loading state
-                <div className="space-y-4">
-                  {[...Array(2)].map((_, i) => (
-                    <div key={i} className="animate-pulse">
-                      <Card className="p-4 glass-card h-24 bg-muted/50"></Card>
-                    </div>
+            {featuredTalents.length > 0 ? (
+              <Carousel
+                opts={{
+                  align: "start",
+                  loop: true,
+                }}
+                plugins={[
+                  Autoplay({
+                    delay: 3000,
+                    stopOnInteraction: true,
+                  }),
+                ]}
+                className="w-full"
+              >
+                <CarouselContent className="-ml-2 md:-ml-4">
+                  {featuredTalents.map((talent) => (
+                    <CarouselItem key={talent.id} className="pl-2 md:pl-4 md:basis-1/2 lg:basis-1/2">
+                      <FeaturedTalentCard 
+                        id={talent.id}
+                        name={talent.artist_name}
+                        location={talent.location || 'Location not specified'}
+                        category={talent.act.charAt(0).toUpperCase() + talent.act.slice(1)}
+                        image={talent.picture_url || "/placeholder.svg"}
+                        isPro={talent.is_pro_subscriber}
+                        rate={talent.rate_per_hour}
+                        currency={talent.currency}
+                        genres={talent.music_genres}
+                      />
+                    </CarouselItem>
                   ))}
-                </div>
-              )}
-            </div>
+                </CarouselContent>
+                <CarouselPrevious className="hidden md:flex" />
+                <CarouselNext className="hidden md:flex" />
+              </Carousel>
+            ) : (
+              // Loading state
+              <div className="space-y-4">
+                {[...Array(2)].map((_, i) => (
+                  <div key={i} className="animate-pulse">
+                    <Card className="p-4 glass-card h-32 bg-muted/50"></Card>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
         
@@ -294,9 +320,12 @@ interface FeaturedTalentCardProps {
   category: string;
   image: string;
   isPro: boolean;
+  rate?: number;
+  currency: string;
+  genres: string[];
 }
 
-function FeaturedTalentCard({ id, name, location, category, image, isPro }: FeaturedTalentCardProps) {
+function FeaturedTalentCard({ id, name, location, category, image, isPro, rate, currency, genres }: FeaturedTalentCardProps) {
   const navigate = useNavigate();
   
   const handleClick = () => {
@@ -305,59 +334,91 @@ function FeaturedTalentCard({ id, name, location, category, image, isPro }: Feat
     }
   };
 
+  const getCurrencySymbol = (currency: string) => {
+    const symbols: Record<string, string> = {
+      'USD': '$',
+      'EUR': '€',
+      'GBP': '£',
+      'AED': 'د.إ'
+    };
+    return symbols[currency] || currency;
+  };
+
   return (
     <Card 
-      className="group p-4 glass-card hover:shadow-elevated transition-all duration-500 hover:scale-[1.02] cursor-pointer overflow-hidden border border-border/50 hover:border-primary/30 relative"
+      className="group p-4 glass-card hover:shadow-elevated transition-all duration-500 hover:scale-[1.02] cursor-pointer overflow-hidden border border-border/50 hover:border-primary/30 relative h-full"
       onClick={handleClick}
     >
-      <div className="flex items-center space-x-4">
-        {/* Profile Picture with Pro Badge */}
-        <div className="relative">
-          <div className="w-20 h-20 rounded-2xl overflow-hidden ring-2 ring-primary/20 group-hover:ring-primary/40 transition-all duration-300">
-            <img 
-              src={image} 
-              alt={name}
-              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-            />
+      {/* Pro Badge - Top Right */}
+      {isPro && (
+        <div className="absolute top-3 right-3 z-10">
+          <ProBadge size="sm" />
+        </div>
+      )}
+
+      {/* Profile Picture */}
+      <div className="flex justify-center mb-4">
+        <div className="w-20 h-20 rounded-full overflow-hidden ring-2 ring-primary/20 group-hover:ring-primary/40 transition-all duration-300">
+          <img 
+            src={image} 
+            alt={name}
+            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+          />
+        </div>
+      </div>
+      
+      {/* Artist Info */}
+      <div className="text-center space-y-2">
+        <h3 className="font-bold text-base text-foreground group-hover:text-primary transition-colors duration-300 truncate">
+          {name}
+        </h3>
+        <div className="space-y-1">
+          <p className="text-muted-foreground text-sm font-medium">
+            {category}
+          </p>
+          <div className="flex items-center justify-center space-x-1">
+            <MapPin className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+            <span className="text-xs text-muted-foreground truncate">{location}</span>
           </div>
-          
-          {/* Pro Badge - Smaller and positioned outside the image */}
-          {isPro && (
-            <div className="absolute -top-1 -right-1 z-10">
-              <div className="pro-badge text-[10px] px-1.5 py-0.5 rounded-full shadow-md flex items-center gap-0.5 animate-scale-in">
-                <Crown className="h-2.5 w-2.5" />
-                <span className="font-bold">PRO</span>
-              </div>
-            </div>
+        </div>
+
+        {/* Genres */}
+        <div className="flex flex-wrap gap-1 justify-center">
+          {genres?.slice(0, 2).map((genre) => (
+            <span 
+              key={genre} 
+              className="text-xs bg-secondary px-2 py-1 rounded-full text-secondary-foreground"
+            >
+              {genre}
+            </span>
+          ))}
+          {genres?.length > 2 && (
+            <span className="text-xs text-muted-foreground">
+              +{genres.length - 2} more
+            </span>
           )}
         </div>
-        
-        {/* Artist Info */}
-        <div className="flex-1 min-w-0">
-          <div className="space-y-1">
-            <h3 className="font-bold text-lg text-foreground group-hover:text-primary transition-colors duration-300 truncate">
-              {name}
-            </h3>
-            <p className="text-muted-foreground text-sm font-medium">
-              {category}
-            </p>
-            <div className="flex items-center space-x-1">
-              <MapPin className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-              <span className="text-xs text-muted-foreground truncate">{location}</span>
-            </div>
-          </div>
-        </div>
-        
-        {/* Rating & Status */}
-        <div className="flex flex-col items-end space-y-2">
+
+        {/* Rate & Status */}
+        <div className="flex items-center justify-between pt-2">
           <div className="flex items-center space-x-1 bg-yellow-50 dark:bg-yellow-900/20 px-2 py-1 rounded-full">
             <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-            <span className="text-xs font-semibold text-yellow-600 dark:text-yellow-400">4.9</span>
+            <span className="text-xs font-semibold text-yellow-600 dark:text-yellow-400">Pro</span>
           </div>
           
-          <div className="text-xs text-center">
-            <div className="w-2 h-2 bg-green-500 rounded-full mx-auto mb-1 animate-pulse"></div>
-            <span className="text-muted-foreground">Available</span>
+          <div className="text-right">
+            {rate ? (
+              <>
+                <div className="text-sm font-bold text-brand-primary">
+                  {getCurrencySymbol(currency)}{rate}
+                </div>
+                <div className="text-xs text-muted-foreground">per hour</div>
+              </>
+            ) : (
+              <div className="text-xs text-muted-foreground">
+                Contact for rates
+              </div>
+            )}
           </div>
         </div>
       </div>
