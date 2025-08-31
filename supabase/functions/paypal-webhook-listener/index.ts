@@ -160,14 +160,14 @@ serve(async (req) => {
 
       console.log('Successfully updated subscription for user:', customId);
 
-      // Create notification for the user
+      // Create notification for the user with better messaging
       await supabase
         .from('notifications')
         .insert({
           user_id: customId,
           type: 'subscription_activated',
-          title: 'Subscription Activated',
-          message: 'Your Pro subscription has been successfully activated!'
+          title: 'Pro Subscription Activated! 🎉',
+          message: 'Welcome to Pro! You can now upload up to 10 photos, add SoundCloud & YouTube links, get priority listing, and enjoy unlimited bookings. Click to start enhancing your profile!'
         });
 
       return new Response(JSON.stringify({ 

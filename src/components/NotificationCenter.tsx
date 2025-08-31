@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { Bell, X, MessageCircle, CreditCard, CheckCircle, AlertCircle } from "lucide-react";
+import { Bell, X, MessageCircle, CreditCard, CheckCircle, AlertCircle, Crown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
+import { ProBenefitsModal } from "@/components/ProBenefitsModal";
 
 interface Notification {
   id: string;
@@ -30,6 +31,8 @@ export function NotificationCenter() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [showProBenefitsModal, setShowProBenefitsModal] = useState(false);
+  const [showCongratulations, setShowCongratulations] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -169,6 +172,10 @@ export function NotificationCenter() {
         return <CheckCircle className="h-4 w-4 text-blue-500" />;
       case 'admin_broadcast':
         return <AlertCircle className="h-4 w-4 text-orange-500" />;
+      case 'subscription_activated':
+        return <Crown className="h-4 w-4 text-primary" />;
+      case 'payment_completed':
+        return <CheckCircle className="h-4 w-4 text-green-500" />;
       default:
         return <Bell className="h-4 w-4 text-muted-foreground" />;
     }
@@ -179,6 +186,13 @@ export function NotificationCenter() {
     // Mark as read when clicked
     if (!notification.is_read) {
       await markAsRead(notification.id);
+    }
+
+    // Handle subscription-related notifications first
+    if (notification.type === 'subscription_activated' || notification.type === 'payment_completed') {
+      setShowCongratulations(true);
+      setShowProBenefitsModal(true);
+      return;
     }
 
     // Navigate based on notification type and user role
@@ -267,104 +281,116 @@ export function NotificationCenter() {
   if (!user) return null;
 
   return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative">
-          <Bell className="h-5 w-5" />
-          {unreadCount > 0 && (
-            <Badge 
-              variant="destructive" 
-              className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 text-xs flex items-center justify-center"
-            >
-              {unreadCount > 9 ? '9+' : unreadCount}
-            </Badge>
-          )}
-        </Button>
-      </PopoverTrigger>
-      
-      <PopoverContent className="w-80 p-0" align="end">
-        <Card className="border-0 shadow-none">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-lg">Notifications</CardTitle>
-              {unreadCount > 0 && (
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={markAllAsRead}
-                  disabled={loading}
-                >
-                  Mark all read
-                </Button>
-              )}
-            </div>
-          </CardHeader>
-          
-          <CardContent className="p-0">
-            <ScrollArea className="h-96">
-              {notifications.length === 0 ? (
-                <div className="p-6 text-center text-muted-foreground">
-                  <Bell className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                  <p>No notifications yet</p>
-                </div>
-              ) : (
-                <div className="space-y-1">
-                  {notifications.map((notification) => (
-                    <div
-                      key={notification.id}
-                      className={`p-4 border-b hover:bg-muted/50 transition-colors cursor-pointer ${
-                        !notification.is_read ? 'bg-muted/30' : ''
-                      }`}
-                      onClick={() => handleNotificationClick(notification)}
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            {getNotificationIcon(notification.type)}
-                            <p className="font-medium text-sm truncate">
-                              {notification.title}
+    <>
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button variant="ghost" size="icon" className="relative">
+            <Bell className="h-5 w-5" />
+            {unreadCount > 0 && (
+              <Badge 
+                variant="destructive" 
+                className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 text-xs flex items-center justify-center"
+              >
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </Badge>
+            )}
+          </Button>
+        </PopoverTrigger>
+        
+        <PopoverContent className="w-80 p-0" align="end">
+          <Card className="border-0 shadow-none">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg">Notifications</CardTitle>
+                {unreadCount > 0 && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={markAllAsRead}
+                    disabled={loading}
+                  >
+                    Mark all read
+                  </Button>
+                )}
+              </div>
+            </CardHeader>
+            
+            <CardContent className="p-0">
+              <ScrollArea className="h-96">
+                {notifications.length === 0 ? (
+                  <div className="p-6 text-center text-muted-foreground">
+                    <Bell className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    <p>No notifications yet</p>
+                  </div>
+                ) : (
+                  <div className="space-y-1">
+                    {notifications.map((notification) => (
+                      <div
+                        key={notification.id}
+                        className={`p-4 border-b hover:bg-muted/50 transition-colors cursor-pointer ${
+                          !notification.is_read ? 'bg-muted/30' : ''
+                        }`}
+                        onClick={() => handleNotificationClick(notification)}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              {getNotificationIcon(notification.type)}
+                              <p className="font-medium text-sm truncate">
+                                {notification.title}
+                              </p>
+                              {!notification.is_read && (
+                                <div className="h-2 w-2 bg-primary rounded-full" />
+                              )}
+                            </div>
+                            <p className="text-sm text-muted-foreground mb-2">
+                              {notification.message}
                             </p>
-                            {!notification.is_read && (
-                              <div className="h-2 w-2 bg-primary rounded-full" />
-                            )}
+                            <p className="text-xs text-muted-foreground">
+                              {format(new Date(notification.created_at), 'MMM d, h:mm a')}
+                            </p>
                           </div>
-                          <p className="text-sm text-muted-foreground mb-2">
-                            {notification.message}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {format(new Date(notification.created_at), 'MMM d, h:mm a')}
-                          </p>
-                        </div>
-                        
-                        <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
-                          {!notification.is_read && (
+                          
+                          <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+                            {!notification.is_read && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => markAsRead(notification.id)}
+                                className="h-6 w-6 p-0"
+                              >
+                                <Bell className="h-3 w-3" />
+                              </Button>
+                            )}
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => markAsRead(notification.id)}
+                              onClick={() => deleteNotification(notification.id)}
                               className="h-6 w-6 p-0"
                             >
-                              <Bell className="h-3 w-3" />
+                              <X className="h-3 w-3" />
                             </Button>
-                          )}
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => deleteNotification(notification.id)}
-                            className="h-6 w-6 p-0"
-                          >
-                            <X className="h-3 w-3" />
-                          </Button>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </ScrollArea>
-          </CardContent>
-        </Card>
-      </PopoverContent>
-    </Popover>
+                    ))}
+                  </div>
+                )}
+              </ScrollArea>
+            </CardContent>
+          </Card>
+        </PopoverContent>
+      </Popover>
+
+      {/* Pro Benefits Modal */}
+      <ProBenefitsModal
+        isOpen={showProBenefitsModal}
+        onClose={() => {
+          setShowProBenefitsModal(false);
+          setShowCongratulations(false);
+        }}
+        showCongratulations={showCongratulations}
+      />
+    </>
   );
 }

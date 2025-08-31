@@ -25,21 +25,36 @@ export function SimpleGalleryUpload({
   const { toast } = useToast();
 
   useEffect(() => {
+    let isMounted = true;
+    
     // Check if user is Pro to determine max images
     const checkProStatus = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data: profile } = await supabase
-          .from('talent_profiles')
-          .select('is_pro_subscriber')
-          .eq('user_id', user.id)
-          .maybeSingle();
-        
-        setIsProUser(profile?.is_pro_subscriber || false);
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user && isMounted) {
+          const { data: profile } = await supabase
+            .from('talent_profiles')
+            .select('is_pro_subscriber')
+            .eq('user_id', user.id)
+            .maybeSingle();
+          
+          if (isMounted) {
+            setIsProUser(profile?.is_pro_subscriber || false);
+          }
+        }
+      } catch (error) {
+        console.error('Error checking Pro status:', error);
+        if (isMounted) {
+          setIsProUser(false);
+        }
       }
     };
     
     checkProStatus();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const effectiveMaxImages = isProUser ? Math.max(maxImages, 10) : 1; // Pro users get 10, Free users get 1

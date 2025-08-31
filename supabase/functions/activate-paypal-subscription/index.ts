@@ -97,6 +97,22 @@ Deno.serve(async (req) => {
       throw new Error('Failed to activate Pro subscription');
     }
 
+    // Create notification for the user
+    const { error: notificationError } = await supabase
+      .from('notifications')
+      .insert([
+        {
+          user_id: user.id,
+          type: 'subscription_activated',
+          title: 'Pro Subscription Activated! 🎉',
+          message: 'Welcome to Pro! You can now upload up to 10 photos, add SoundCloud & YouTube links, and enjoy priority listing. Click to explore your new features!',
+        }
+      ]);
+
+    if (notificationError) {
+      console.error('Error creating notification:', notificationError);
+    }
+
     console.log('Successfully activated Pro subscription for user:', user.id);
 
     return new Response(JSON.stringify({
