@@ -1,10 +1,10 @@
-// PASTE THIS ENTIRE CODE BLOCK, REPLACING THE OLD FILE
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BookingCard, Booking } from "./BookingCard";
+import { useRealtimeBookings } from '@/hooks/useRealtimeBookings';
+import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications';
 
 export const BookerDashboardTabs = ({ userId }: { userId: string }) => {
     const [bookings, setBookings] = useState<Booking[]>([]);
@@ -12,18 +12,30 @@ export const BookerDashboardTabs = ({ userId }: { userId: string }) => {
 
     const fetchBookings = useCallback(async () => {
         if (!userId) return;
-        const { data, error } = await supabase.from('bookings').select(`*, talent_profiles(*)`).eq('user_id', userId).order('event_date', { ascending: false });
-        if (error) console.error("Error fetching bookings:", error);
-        else setBookings(data || []);
+        console.log('Fetching bookings for booker:', userId);
+        
+        const { data, error } = await supabase
+            .from('bookings')
+            .select(`*, talent_profiles(*)`)
+            .eq('user_id', userId)
+            .order('event_date', { ascending: false });
+            
+        if (error) {
+            console.error("Error fetching bookings:", error);
+        } else {
+            console.log('Fetched bookings:', data?.length);
+            setBookings(data || []);
+        }
         setLoading(false);
     }, [userId]);
 
+    // Use real-time hooks
+    useRealtimeBookings(fetchBookings);
+    useRealtimeNotifications();
+
     useEffect(() => {
         fetchBookings();
-        const channel = supabase.channel(`public:bookings:user_id=eq.${userId}`).on('postgres_changes', { event: '*', schema: 'public', table: 'bookings' }, fetchBookings).subscribe();
-        return () => { supabase.removeChannel(channel); };
-    }, [userId, fetchBookings]);
-
+    }, [fetchBookings]);
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);

@@ -40,7 +40,7 @@ export default function TermsOfService() {
               <section>
                 <h2 className="text-2xl font-bold mb-4">Platform Overview</h2>
                 <p className="text-muted-foreground">
-                  Qtalent.live is a platform that connects event organizers with talented performers, musicians, and creators. We facilitate bookings and provide tools for communication and payment processing.
+                  Qtalent.live is a platform that connects event organizers with talented performers, musicians, and creators. We facilitate bookings and provide tools for communication. Payment arrangements are made directly between talent and bookers.
                 </p>
               </section>
 
@@ -90,7 +90,7 @@ export default function TermsOfService() {
                   <div>
                     <h3 className="text-lg font-semibold mb-2">Booking Process</h3>
                     <p className="text-muted-foreground">
-                      All bookings must be made through our platform. Direct arrangements outside the platform are prohibited and void our protections.
+                      All bookings must be initiated through our platform. Payment arrangements are made directly between talent and bookers.
                     </p>
                   </div>
                   

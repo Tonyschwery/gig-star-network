@@ -31,7 +31,7 @@ export function HowItWorks() {
             step="03"
             icon={<CreditCard className="h-8 w-8" />}
             title="Enjoy the performance"
-            description="Once you've found the perfect artist, you can safely pay through our platform or use any payment method that works for you."
+            description="Once you've found the perfect artist and agreed on payment terms, finalize the booking details and enjoy your event."
           />
         </div>
       </div>

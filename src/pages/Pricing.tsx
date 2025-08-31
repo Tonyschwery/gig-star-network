@@ -76,12 +76,12 @@ export default function Pricing() {
     {
       icon: <Calendar className="h-8 w-8 text-accent" />,
       title: "Easy Booking",
-      description: "Simple booking process with secure payment handling"
+      description: "Simple booking process with direct talent communication"
     },
     {
       icon: <Shield className="h-8 w-8 text-accent" />,
-      title: "Payment Protection",
-      description: "Secure payments with buyer protection guarantee"
+      title: "Direct Connection",
+      description: "Connect directly with talent for seamless booking and communication"
     }
   ];
 

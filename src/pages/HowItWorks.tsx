@@ -19,8 +19,8 @@ export default function HowItWorks() {
     },
     {
       icon: <Calendar className="h-8 w-8 text-accent" />,
-      title: "Book & Confirm",
-      description: "Once you've agreed on terms, confirm your booking with secure payment processing. Get instant confirmation and event details."
+      title: "Book & Confirm Details",
+      description: "Once you've agreed on terms and payment arrangements, confirm your booking. Get instant confirmation and event details."
     },
     {
       icon: <CheckCircle className="h-8 w-8 text-accent" />,
@@ -41,9 +41,9 @@ export default function HowItWorks() {
       description: "Get booking requests directly in your dashboard. Chat with potential clients to discuss event details and negotiate terms."
     },
     {
-      icon: <CreditCard className="h-8 w-8 text-accent" />,
-      title: "Get Paid Securely",
-      description: "Once your performance is complete, receive payment through our secure platform. We handle all payment processing and protection."
+      icon: <MessageSquare className="h-8 w-8 text-accent" />,
+      title: "Agree on Payment Terms",
+      description: "Discuss and agree on payment terms directly with clients. Share your preferred payment method privately - bank details, cash on delivery, or other arrangements that work for both parties."
     }
   ];
 
@@ -164,8 +164,8 @@ export default function HowItWorks() {
                 <CreditCard className="h-6 w-6 text-accent" />
               </div>
               <div>
-                <h3 className="font-semibold mb-2">Secure Payments</h3>
-                <p className="text-muted-foreground">Protected payment processing with buyer and seller guarantees.</p>
+                <h3 className="font-semibold mb-2">Flexible Payment Options</h3>
+                <p className="text-muted-foreground">Discuss payment terms directly with talent. Choose from bank transfers, cash payments, or other mutually agreed arrangements.</p>
               </div>
             </div>
 

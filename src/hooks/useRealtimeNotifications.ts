@@ -10,8 +10,9 @@ export const useRealtimeNotifications = () => {
   useEffect(() => {
     if (!user) return;
 
-    // Set up real-time subscription only for notifications table
-    // Database triggers will handle creating notifications when bookings are created/updated
+    console.log('Setting up real-time notifications for user:', user.id);
+
+    // Set up real-time subscription for notifications
     const notificationChannel = supabase
       .channel(`notifications-realtime-${user.id}`)
       .on(
@@ -23,6 +24,7 @@ export const useRealtimeNotifications = () => {
           filter: `user_id=eq.${user.id}`
         },
         (payload) => {
+          console.log('New notification received:', payload);
           const notification = payload.new as any;
           
           // Show toast notification for new notifications
@@ -33,10 +35,75 @@ export const useRealtimeNotifications = () => {
           });
         }
       )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'bookings',
+          filter: `user_id=eq.${user.id}`
+        },
+        (payload) => {
+          console.log('Booking updated (booker):', payload);
+          const booking = payload.new as any;
+          
+          // Show toast for booking status changes
+          if (booking.status === 'accepted') {
+            toast({
+              title: 'Booking Accepted!',
+              description: 'Your booking request has been accepted',
+              duration: 5000,
+            });
+          } else if (booking.status === 'declined') {
+            toast({
+              title: 'Booking Declined',
+              description: 'Your booking request has been declined',
+              duration: 5000,
+            });
+          }
+        }
+      )
+      .subscribe();
+
+    // Set up real-time subscription for talent bookings
+    const talentBookingChannel = supabase
+      .channel(`talent-bookings-${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'bookings'
+        },
+        async (payload) => {
+          console.log('Booking change detected:', payload);
+          
+          // Check if this booking involves the current user as talent
+          const { data: talentProfile } = await supabase
+            .from('talent_profiles')
+            .select('id')
+            .eq('user_id', user.id)
+            .single();
+            
+          if (talentProfile && payload.new && (payload.new as any).talent_id === talentProfile.id) {
+            const booking = payload.new as any;
+            
+            if (payload.eventType === 'INSERT' && booking.status === 'pending_approval') {
+              toast({
+                title: 'New Booking Request!',
+                description: `New booking request from ${booking.booker_name}`,
+                duration: 5000,
+              });
+            }
+          }
+        }
+      )
       .subscribe();
 
     return () => {
+      console.log('Cleaning up real-time subscriptions');
       supabase.removeChannel(notificationChannel);
+      supabase.removeChannel(talentBookingChannel);
     };
   }, [user, toast]);
 };

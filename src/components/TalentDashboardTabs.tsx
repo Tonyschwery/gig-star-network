@@ -3,6 +3,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BookingCard, Booking } from "./BookingCard";
+import { useRealtimeBookings } from '@/hooks/useRealtimeBookings';
+import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications';
 
 export const TalentDashboardTabs = () => {
     const { user } = useAuth();
@@ -12,6 +14,9 @@ export const TalentDashboardTabs = () => {
 
     const fetchAllBookings = useCallback(async () => {
         if (!user?.id) return;
+        
+        console.log('Fetching bookings for talent:', user.id);
+        
         // Ensure we have the talent profile
         let profileId = talentProfile?.id as string | undefined;
         if (!profileId) {
@@ -20,29 +25,45 @@ export const TalentDashboardTabs = () => {
                 .select('id,is_pro_subscriber')
                 .eq('user_id', user.id)
                 .maybeSingle();
-            if (tpError) console.error("Error fetching talent profile:", tpError);
-            if (!tp) { setLoading(false); return; }
+                
+            if (tpError) {
+                console.error("Error fetching talent profile:", tpError);
+                setLoading(false);
+                return;
+            }
+            
+            if (!tp) { 
+                console.log('No talent profile found');
+                setLoading(false); 
+                return; 
+            }
+            
             setTalentProfile(tp);
             profileId = tp.id;
         }
+        
         const { data, error } = await supabase
             .from('bookings')
             .select(`*`)
             .eq('talent_id', profileId)
             .order('event_date', { ascending: false });
 
-        if (error) console.error("Error fetching bookings:", error);
-        else setAllBookings(data || []);
+        if (error) {
+            console.error("Error fetching bookings:", error);
+        } else {
+            console.log('Fetched talent bookings:', data?.length);
+            setAllBookings(data || []);
+        }
         setLoading(false);
     }, [user, talentProfile]);
 
+    // Use real-time hooks
+    useRealtimeBookings(fetchAllBookings);
+    useRealtimeNotifications();
+
     useEffect(() => {
         fetchAllBookings();
-        // Setup a single channel to listen for all changes related to this talent
-        const channel = supabase.channel(`talent-dashboard:${talentProfile?.id || user?.id || 'unknown'}`).on('postgres_changes', { event: '*', schema: 'public' }, fetchAllBookings).subscribe();
-        return () => { supabase.removeChannel(channel); };
-    }, [talentProfile, user, fetchAllBookings]);
-
+    }, [fetchAllBookings]);
 
     if (loading) return <div>Loading...</div>;
     
