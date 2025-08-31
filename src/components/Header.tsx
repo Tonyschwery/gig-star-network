@@ -8,6 +8,7 @@ import { NotificationCenter } from "@/components/NotificationCenter";
 import { QtalentLogo } from "@/components/QtalentLogo";
 import { MobileMenu } from "@/components/ui/mobile-menu";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { HowItWorksModal } from "@/components/HowItWorksModal";
 
 import { ProfileMenu } from "@/components/ProfileMenu";
 import { SubscriptionButton } from "@/components/SubscriptionButton";
@@ -24,6 +25,7 @@ export function Header() {
   const [talentId, setTalentId] = useState<string | null>(null);
   const [isProTalent, setIsProTalent] = useState<boolean>(false);
   const [profilePictureUrl, setProfilePictureUrl] = useState<string | null>(null);
+  const [showHowItWorksModal, setShowHowItWorksModal] = useState(false);
   
   const isMobile = useIsMobile();
   
@@ -163,9 +165,12 @@ export function Header() {
                       Gigs
                     </button>
                   )}
-                  <a href="#how-it-works" className="text-foreground hover:text-accent transition-colors font-medium">
+                  <button 
+                    onClick={() => setShowHowItWorksModal(true)}
+                    className="text-foreground hover:text-accent transition-colors font-medium"
+                  >
                     How it works
-                  </a>
+                  </button>
                   <button 
                     onClick={() => {
                       const upgradeSection = document.getElementById('upgrade-to-pro');
@@ -296,10 +301,7 @@ export function Header() {
                     
                     <button 
                       onClick={() => {
-                        const section = document.getElementById('how-it-works');
-                        if (section) {
-                          section.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                        }
+                        setShowHowItWorksModal(true);
                         // Close mobile menu - trigger click on overlay/close button
                         const mobileMenuClose = document.querySelector('[data-mobile-menu-close]') as HTMLElement;
                         if (mobileMenuClose) {
@@ -412,6 +414,10 @@ export function Header() {
         </div>
       </header>
 
+      <HowItWorksModal 
+        open={showHowItWorksModal}
+        onOpenChange={setShowHowItWorksModal}
+      />
     </>
   );
 }

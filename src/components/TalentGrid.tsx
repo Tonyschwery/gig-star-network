@@ -3,7 +3,7 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Star, MapPin, Music, Mic, Camera, Brush, User, Filter, X, Crown } from "lucide-react";
+import { Star, MapPin, Music, Mic, Camera, Brush, User, Filter, X, Crown, Search } from "lucide-react";
 import { ProBadge } from "@/components/ProBadge";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -161,7 +161,7 @@ export function TalentGrid() {
   const hasActiveFilters = (activeFilters.location && activeFilters.location !== 'all') || 
                           activeFilters.date || 
                           (activeFilters.type && activeFilters.type !== 'all');
-  const talentsToShow = hasActiveFilters ? filteredTalents : talents;
+  const talentsToShow = hasActiveFilters ? filteredTalents : [];
   
   console.log('[TalentGrid] Render state:', { 
     talentsLength: talents.length, 
@@ -193,75 +193,75 @@ export function TalentGrid() {
   return (
     <section id="talents" className="py-16 bg-muted/30">
       <div className="container mx-auto px-4">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold mb-4">
-            {hasActiveFilters ? 'Search Results' : 'Amazing Talent Ready to Perform'}
-          </h2>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
-            {hasActiveFilters 
-              ? `Found ${talentsToShow.length} talent${talentsToShow.length !== 1 ? 's' : ''} matching your criteria`
-              : 'Browse through our curated selection of professional performers'
-            }
-          </p>
+        {hasActiveFilters && (
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold mb-4">Search Results</h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto">
+              Found {talentsToShow.length} talent{talentsToShow.length !== 1 ? 's' : ''} matching your criteria
+            </p>
+          </div>
+        )}
           
-          {/* Active Filters Display */}
-          {hasActiveFilters && (
-            <div className="flex flex-wrap items-center justify-center gap-2 mt-4">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Filter className="h-4 w-4" />
-                <span>Active filters:</span>
-              </div>
-              
-              {activeFilters.location && activeFilters.location !== 'all' && (
-                <Badge variant="secondary" className="gap-1">
-                  Location: {activeFilters.location}
-                </Badge>
-              )}
-              
-              {activeFilters.date && (
-                <Badge variant="secondary" className="gap-1">
-                  Date: {new Date(activeFilters.date).toLocaleDateString()}
-                </Badge>
-              )}
-              
-              {activeFilters.type && activeFilters.type !== 'all' && (
-                <Badge variant="secondary" className="gap-1">
-                  Type: {activeFilters.type.charAt(0).toUpperCase() + activeFilters.type.slice(1)}
-                </Badge>
-              )}
-              
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={clearFilters}
-                className="text-muted-foreground hover:text-foreground"
-              >
-                <X className="h-3 w-3 mr-1" />
-                Clear all
-              </Button>
+        {/* Active Filters Display */}
+        {hasActiveFilters && (
+          <div className="flex flex-wrap items-center justify-center gap-2 mt-4">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Filter className="h-4 w-4" />
+              <span>Active filters:</span>
             </div>
-          )}
-        </div>
+            
+            {activeFilters.location && activeFilters.location !== 'all' && (
+              <Badge variant="secondary" className="gap-1">
+                Location: {activeFilters.location}
+              </Badge>
+            )}
+            
+            {activeFilters.date && (
+              <Badge variant="secondary" className="gap-1">
+                Date: {new Date(activeFilters.date).toLocaleDateString()}
+              </Badge>
+            )}
+            
+            {activeFilters.type && activeFilters.type !== 'all' && (
+              <Badge variant="secondary" className="gap-1">
+                Type: {activeFilters.type.charAt(0).toUpperCase() + activeFilters.type.slice(1)}
+              </Badge>
+            )}
+            
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clearFilters}
+              className="text-muted-foreground hover:text-foreground"
+            >
+              <X className="h-3 w-3 mr-1" />
+              Clear all
+            </Button>
+          </div>
+        )}
 
-        {talentsToShow.length === 0 ? (
+        {!hasActiveFilters ? (
+          <div className="text-center py-16">
+            <div className="w-24 h-24 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+              <Search className="h-12 w-12 text-muted-foreground" />
+            </div>
+            <h3 className="text-2xl font-semibold mb-2">Find Amazing Talent</h3>
+            <p className="text-muted-foreground mb-4 max-w-md mx-auto">
+              Use the search form above to discover talented performers by location and type
+            </p>
+          </div>
+        ) : talentsToShow.length === 0 ? (
           <div className="text-center py-12">
             <div className="w-24 h-24 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
               <Music className="h-12 w-12 text-muted-foreground" />
             </div>
-            <h3 className="text-xl font-semibold mb-2">
-              {hasActiveFilters ? 'No talents found' : 'No talents available yet'}
-            </h3>
+            <h3 className="text-xl font-semibold mb-2">No talents found</h3>
             <p className="text-muted-foreground mb-4">
-              {hasActiveFilters 
-                ? 'Try adjusting your search criteria to find more talents'
-                : 'Check back soon for amazing performers!'
-              }
+              Try adjusting your search criteria to find more talents
             </p>
-            {hasActiveFilters && (
-              <Button onClick={clearFilters} variant="outline">
-                View All Talents
-              </Button>
-            )}
+            <Button onClick={clearFilters} variant="outline">
+              Clear Filters
+            </Button>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
