@@ -22,6 +22,7 @@ import {
   Plus,
   X
 } from "lucide-react";
+import { ProFeatureWrapper } from "@/components/ProFeatureWrapper";
 
 interface TalentProfile {
   id: string;
@@ -157,6 +158,17 @@ const TalentProfileEdit = () => {
 
   const handleAutoSave = async (field: string, value: any) => {
     if (!profile || !user) return;
+
+    // Only allow auto-save for Pro subscribers for Pro features
+    const proOnlyFields = ['soundcloud_link', 'youtube_link', 'gallery_images'];
+    if (proOnlyFields.includes(field) && !profile.is_pro_subscriber) {
+      toast({
+        title: "Pro feature required",
+        description: "Upgrade to Pro to save this information",
+        variant: "destructive"
+      });
+      return;
+    }
 
     // Clear existing timer
     if (autoSaveTimer) {
@@ -355,12 +367,18 @@ const TalentProfileEdit = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <SimpleGalleryUpload
-                currentImages={galleryImages}
-                onImagesChange={handleGalleryChange}
-                maxImages={5}
-                disabled={false}
-              />
+              <ProFeatureWrapper 
+                isProFeature={true} 
+                featureType="images" 
+                showProIcon={true}
+              >
+                <SimpleGalleryUpload
+                  currentImages={galleryImages}
+                  onImagesChange={handleGalleryChange}
+                  maxImages={5}
+                  disabled={false}
+                />
+              </ProFeatureWrapper>
             </CardContent>
           </Card>
 
@@ -514,38 +532,44 @@ const TalentProfileEdit = () => {
                 />
               </div>
 
-              <div className="grid md:grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-sm font-medium">SoundCloud Link</Label>
-                  <Input
-                    placeholder="https://soundcloud.com/..."
-                    value={profile.soundcloud_link || ''}
-                    onChange={(e) => {
-                      const newValue = e.target.value;
-                      setProfile({ ...profile, soundcloud_link: newValue });
-                      // Auto-save for Pro users
-                      if (profile.is_pro_subscriber) {
-                        handleAutoSave('soundcloud_link', newValue);
-                      }
-                    }}
-                  />
+              <ProFeatureWrapper 
+                isProFeature={true} 
+                featureType="links" 
+                showProIcon={true}
+              >
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm font-medium">SoundCloud Link</Label>
+                    <Input
+                      placeholder="https://soundcloud.com/..."
+                      value={profile.soundcloud_link || ''}
+                      onChange={(e) => {
+                        const newValue = e.target.value;
+                        setProfile({ ...profile, soundcloud_link: newValue });
+                        // Auto-save for Pro users only
+                        if (profile.is_pro_subscriber) {
+                          handleAutoSave('soundcloud_link', newValue);
+                        }
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium">YouTube Link</Label>
+                    <Input
+                      placeholder="https://youtube.com/..."
+                      value={profile.youtube_link || ''}
+                      onChange={(e) => {
+                        const newValue = e.target.value;
+                        setProfile({ ...profile, youtube_link: newValue });
+                        // Auto-save for Pro users only
+                        if (profile.is_pro_subscriber) {
+                          handleAutoSave('youtube_link', newValue);
+                        }
+                      }}
+                    />
+                  </div>
                 </div>
-                <div>
-                  <Label className="text-sm font-medium">YouTube Link</Label>
-                  <Input
-                    placeholder="https://youtube.com/..."
-                    value={profile.youtube_link || ''}
-                    onChange={(e) => {
-                      const newValue = e.target.value;
-                      setProfile({ ...profile, youtube_link: newValue });
-                      // Auto-save for Pro users
-                      if (profile.is_pro_subscriber) {
-                        handleAutoSave('youtube_link', newValue);
-                      }
-                    }}
-                  />
-                </div>
-              </div>
+              </ProFeatureWrapper>
             </CardContent>
           </Card>
         </div>
