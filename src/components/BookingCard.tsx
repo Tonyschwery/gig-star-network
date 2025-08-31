@@ -54,14 +54,16 @@ export const BookingCard = ({ booking, mode, onUpdate, isProSubscriber, canAccep
     }
     
     try {
-      console.log('Accepting booking:', booking.id);
-      const { error } = await supabase
+      console.log('Accepting booking:', booking.id, 'Current status:', booking.status);
+      
+      const { data, error } = await supabase
         .from('bookings')
         .update({ status: 'accepted' })
-        .eq('id', booking.id);
+        .eq('id', booking.id)
+        .select();
       
       if (error) {
-        console.error('Error accepting booking:', error);
+        console.error('Supabase error accepting booking:', error);
         toast({
           title: "Error",
           description: "Failed to accept booking. Please try again.",
@@ -70,6 +72,8 @@ export const BookingCard = ({ booking, mode, onUpdate, isProSubscriber, canAccep
         return;
       }
       
+      console.log('Successfully accepted booking:', data);
+      
       toast({
         title: "Booking Accepted",
         description: "You have successfully accepted this booking request!",
@@ -77,7 +81,7 @@ export const BookingCard = ({ booking, mode, onUpdate, isProSubscriber, canAccep
       
       onUpdate?.();
     } catch (error) {
-      console.error('Error accepting booking:', error);
+      console.error('Unexpected error accepting booking:', error);
       toast({
         title: "Error", 
         description: "Failed to accept booking. Please try again.",
@@ -88,14 +92,16 @@ export const BookingCard = ({ booking, mode, onUpdate, isProSubscriber, canAccep
 
   const handleDecline = async () => {
     try {
-      console.log('Declining booking:', booking.id);
-      const { error } = await supabase
+      console.log('Declining booking:', booking.id, 'Current status:', booking.status);
+      
+      const { data, error } = await supabase
         .from('bookings')
         .update({ status: 'declined' })
-        .eq('id', booking.id);
+        .eq('id', booking.id)
+        .select();
       
       if (error) {
-        console.error('Error declining booking:', error);
+        console.error('Supabase error declining booking:', error);
         toast({
           title: "Error",
           description: "Failed to decline booking. Please try again.",
@@ -104,6 +110,8 @@ export const BookingCard = ({ booking, mode, onUpdate, isProSubscriber, canAccep
         return;
       }
       
+      console.log('Successfully declined booking:', data);
+      
       toast({
         title: "Booking Declined",
         description: "You have declined this booking request.",
@@ -111,7 +119,12 @@ export const BookingCard = ({ booking, mode, onUpdate, isProSubscriber, canAccep
       
       onUpdate?.();
     } catch (error) {
-      console.error('Error declining booking:', error);
+      console.error('Unexpected error declining booking:', error);
+      toast({
+        title: "Error",
+        description: "Failed to decline booking. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
