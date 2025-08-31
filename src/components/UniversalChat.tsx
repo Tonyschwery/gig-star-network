@@ -21,6 +21,8 @@ interface BookingLite {
   talent_id: string | null;
   event_type: string;
   booker_name: string;
+  booker_email?: string;
+  event_date?: string;
 }
 
 export function UniversalChat() {
@@ -55,7 +57,7 @@ export function UniversalChat() {
       // Fetch bookings where the user is the booker
       const { data: asBooker } = await supabase
         .from('bookings')
-        .select('id, user_id, talent_id, event_type, booker_name')
+        .select('id, user_id, talent_id, event_type, booker_name, booker_email, event_date')
         .eq('user_id', user.id)
         .not('talent_id', 'is', null)
         .order('created_at', { ascending: false })
@@ -66,7 +68,7 @@ export function UniversalChat() {
       if (talentProfile?.id) {
         const { data } = await supabase
           .from('bookings')
-          .select('id, user_id, talent_id, event_type, booker_name')
+          .select('id, user_id, talent_id, event_type, booker_name, booker_email, event_date')
           .eq('talent_id', talentProfile.id)
           .order('created_at', { ascending: false })
           .limit(20);
@@ -206,20 +208,41 @@ export function UniversalChat() {
                     <SelectValue placeholder="Select an event to chat about" />
                   </SelectTrigger>
                   <SelectContent className="bg-card border-border">
-                    {bookings.map((b) => (
-                      <SelectItem 
-                        key={b.id} 
-                        value={b.id} 
-                        className="text-card-foreground text-sm"
-                      >
-                        <div className="flex items-center gap-2">
-                          <div className="h-1.5 w-1.5 bg-accent rounded-full"></div>
-                          <span className="font-medium">{b.event_type}</span>
-                          <span className="text-muted-foreground">•</span>
-                          <span className="text-muted-foreground">{b.booker_name}</span>
-                        </div>
-                      </SelectItem>
-                    ))}
+                    {bookings.map((b) => {
+                      // Check if current user is talent for this booking
+                      const isTalentForBooking = b.talent_id && b.user_id !== user?.id;
+                      
+                      return (
+                        <SelectItem 
+                          key={b.id} 
+                          value={b.id} 
+                          className="text-card-foreground text-sm"
+                        >
+                          <div className="flex items-center gap-2">
+                            <div className="h-1.5 w-1.5 bg-accent rounded-full"></div>
+                            <span className="font-medium">{b.event_type}</span>
+                            <span className="text-muted-foreground">•</span>
+                            <span className="text-muted-foreground">{b.booker_name}</span>
+                            {/* Only show additional details if user is Pro (when they are the talent) */}
+                            {isTalentForBooking && isProUser && b.event_date && (
+                              <>
+                                <span className="text-muted-foreground">•</span>
+                                <span className="text-muted-foreground text-xs">
+                                  {new Date(b.event_date).toLocaleDateString()}
+                                </span>
+                              </>
+                            )}
+                            {/* For free users acting as talent, show limited info */}
+                            {isTalentForBooking && !isProUser && (
+                              <>
+                                <span className="text-muted-foreground">•</span>
+                                <span className="text-muted-foreground text-xs">Pro Feature</span>
+                              </>
+                            )}
+                          </div>
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
               </div>
