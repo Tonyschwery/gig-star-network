@@ -117,7 +117,7 @@ export function Header() {
 
   return (
     <>
-      <header className="fixed top-0 w-full z-50 glass-card border-b border-card-border transform -translate-y-full hover:translate-y-0 transition-transform duration-300 ease-in-out hover:opacity-100 opacity-60">
+      <header className="relative w-full z-50 glass-card border-b border-card-border transition-all duration-300 ease-in-out hover:opacity-100 opacity-90">
         <div className="container mx-auto px-4 py-4">
           <nav className="flex items-center justify-between">
             {/* Logo */}
