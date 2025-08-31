@@ -35,7 +35,8 @@ export function UniversalChat() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [input, setInput] = useState("");
   const [isProUser, setIsProUser] = useState(false);
-  const { filterMessage } = useChatFilterPro(isProUser);
+  const [talentProStatus, setTalentProStatus] = useState<{[key: string]: boolean}>({});
+  const { filterMessage } = useChatFilterPro(false); // We'll set this dynamically
   const { unreadCount } = useUnreadMessages();
   const { showNotification, requestPermission } = useWebPushNotifications();
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -76,6 +77,23 @@ export function UniversalChat() {
       }
 
       const merged = [...((asBooker as any) || []), ...asTalent];
+      
+      // Fetch talent Pro status for each booking to determine chat filtering
+      const talentStatusMap: {[key: string]: boolean} = {};
+      
+      for (const booking of merged) {
+        if (booking.talent_id && !talentStatusMap[booking.talent_id]) {
+          const { data: talentData } = await supabase
+            .from('talent_profiles')
+            .select('is_pro_subscriber')
+            .eq('id', booking.talent_id)
+            .maybeSingle();
+          
+          talentStatusMap[booking.talent_id] = talentData?.is_pro_subscriber || false;
+        }
+      }
+      
+      setTalentProStatus(talentStatusMap);
       setBookings(merged as BookingLite[]);
       if (!selectedId && merged.length) setSelectedId(merged[0].id);
     };
@@ -114,18 +132,25 @@ export function UniversalChat() {
   }, [messages.length, open, unreadCount, showNotification, selectedBooking, user?.id, messages]);
 
   const onSend = () => {
-    if (!input.trim()) return;
+    if (!input.trim() || !selectedBooking) return;
     
-    // Filter the message before sending
-    const filterResult = filterMessage(input);
+    // Determine if chat filtering should be applied based on talent's Pro status
+    const talentId = selectedBooking.talent_id;
+    const isTalentPro = talentId ? talentProStatus[talentId] || false : false;
     
-    if (filterResult.isBlocked) {
-      toast({
-        title: "Message Blocked",
-        description: filterResult.reason + (isProUser ? "" : " Click to upgrade to Pro."),
-        variant: "destructive",
-      });
-      return;
+    // Apply filtering only if talent is NOT Pro
+    if (!isTalentPro) {
+      // Use the existing filterMessage but ensure it's configured for non-pro
+      const filterResult = filterMessage(input);
+      
+      if (filterResult.isBlocked) {
+        toast({
+          title: "Message Blocked",
+          description: filterResult.reason + " The talent in this conversation is on a free plan.",
+          variant: "destructive",
+        });
+        return;
+      }
     }
 
     sendMessage(input);

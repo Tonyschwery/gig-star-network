@@ -562,6 +562,10 @@ export type Database = {
         Args: { user_id_param: string }
         Returns: boolean
       }
+      check_talent_booking_limit: {
+        Args: { talent_id_param: string }
+        Returns: boolean
+      }
       complete_manual_payment: {
         Args: { payment_id_param: string }
         Returns: Json
@@ -573,6 +577,10 @@ export type Database = {
       get_payment_status: {
         Args: { booking_id_param: string }
         Returns: Json
+      }
+      get_talent_accepted_bookings_count: {
+        Args: { talent_id_param: string }
+        Returns: number
       }
       get_user_talent_profile: {
         Args: { user_id_param?: string }

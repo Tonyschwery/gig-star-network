@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Calendar, User, Check, X, Clock3, MapPin } from "lucide-react";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 
 
 export interface Booking {
@@ -31,16 +32,27 @@ interface BookingCardProps {
   mode: 'talent' | 'booker';
   onUpdate?: () => void;
   isProSubscriber?: boolean;
+  canAccept?: boolean;
 }
 
-export const BookingCard = ({ booking, mode, onUpdate, isProSubscriber }: BookingCardProps) => {
+export const BookingCard = ({ booking, mode, onUpdate, isProSubscriber, canAccept = true }: BookingCardProps) => {
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   const safeFormatDate = (date: any, dateFormat: string) => {
     try { return format(new Date(date), dateFormat); } catch { return "Invalid Date"; }
   };
 
   const handleAccept = async () => {
+    if (!canAccept) {
+      toast({
+        title: "Booking Limit Reached",
+        description: "Free talents can only accept 1 booking per month. Upgrade to Pro for unlimited bookings!",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     try {
       const { error } = await supabase
         .from('bookings')
@@ -49,12 +61,27 @@ export const BookingCard = ({ booking, mode, onUpdate, isProSubscriber }: Bookin
       
       if (error) {
         console.error('Error accepting booking:', error);
+        toast({
+          title: "Error",
+          description: "Failed to accept booking. Please try again.",
+          variant: "destructive",
+        });
         return;
       }
+      
+      toast({
+        title: "Booking Accepted",
+        description: "You have successfully accepted this booking request!",
+      });
       
       onUpdate?.();
     } catch (error) {
       console.error('Error accepting booking:', error);
+      toast({
+        title: "Error", 
+        description: "Failed to accept booking. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -153,8 +180,14 @@ export const BookingCard = ({ booking, mode, onUpdate, isProSubscriber }: Bookin
             <Button onClick={handleDecline} variant="outline" size="sm" className="border-red-200 text-red-600">
               <X className="h-4 w-4 mr-2" />Decline
             </Button>
-            <Button onClick={handleAccept} size="sm">
-              <Check className="h-4 w-4 mr-2" />Accept
+            <Button 
+              onClick={handleAccept} 
+              size="sm"
+              disabled={!canAccept}
+              title={!canAccept ? "Booking limit reached - upgrade to Pro for unlimited bookings" : ""}
+            >
+              <Check className="h-4 w-4 mr-2" />
+              {canAccept ? 'Accept' : 'Limit Reached'}
             </Button>
           </>
         )}

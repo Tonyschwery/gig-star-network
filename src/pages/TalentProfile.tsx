@@ -25,7 +25,7 @@ import { ProBadge } from "@/components/ProBadge";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { useBookingLimit } from "@/hooks/useBookingLimit";
+
 
 interface TalentProfile {
   id: string;
@@ -53,7 +53,7 @@ export default function TalentProfile() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
-  const { canCreateBooking, bookingsThisMonth, isProUser } = useBookingLimit();
+  
   const [talent, setTalent] = useState<TalentProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [showBookingForm, setShowBookingForm] = useState(false);
@@ -172,14 +172,6 @@ export default function TalentProfile() {
       return;
     }
 
-    if (!canCreateBooking) {
-      toast({
-        title: "Booking Limit Reached",
-        description: `Free users are limited to 1 booking per month. You have ${bookingsThisMonth} booking(s) this month. Upgrade to Pro for unlimited bookings!`,
-        variant: "destructive",
-      });
-      return;
-    }
     
     setShowBookingForm(true);
   };
@@ -389,21 +381,13 @@ export default function TalentProfile() {
 
                 <div className="space-y-3">
                   {!isOwnProfile && user && (
-                    <>
-                      {!isProUser && (
-                        <div className="text-xs text-muted-foreground text-center p-2 bg-muted rounded">
-                          Free Plan: {bookingsThisMonth}/1 bookings this month
-                        </div>
-                      )}
-                      <Button 
-                        className="w-full hero-button"
-                        onClick={handleBookNow}
-                        disabled={!canCreateBooking}
-                      >
-                        <Calendar className="h-4 w-4 mr-2" />
-                        {canCreateBooking ? 'Book Now' : 'Limit Reached - Upgrade to Pro'}
-                      </Button>
-                    </>
+                    <Button 
+                      className="w-full hero-button"
+                      onClick={handleBookNow}
+                    >
+                      <Calendar className="h-4 w-4 mr-2" />
+                      Book Now
+                    </Button>
                   )}
                   
                   {!user && (
