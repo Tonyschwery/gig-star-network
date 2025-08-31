@@ -173,109 +173,133 @@ export default function SubscriptionSuccess() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-16">
+    <div className="container mx-auto px-4 py-16 min-h-screen">
       <div className="max-w-4xl mx-auto">
-        {/* Hero Congratulations Section */}
-        <div className="text-center mb-8">
-          <div className="relative inline-block">
-            <div className="absolute inset-0 bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 blur-xl opacity-30 animate-pulse"></div>
-            <div className="relative bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 text-black px-8 py-4 rounded-2xl shadow-2xl border-4 border-amber-300">
-              <div className="flex items-center justify-center gap-3 mb-2">
-                <Crown className="h-8 w-8 animate-bounce" />
-                <span className="text-3xl font-black tracking-wider">CONGRATULATIONS!</span>
-                <Crown className="h-8 w-8 animate-bounce" />
-              </div>
-              <p className="text-lg font-bold">You are now a QTalent Pro Artist!</p>
+        {/* Professional Success Header */}
+        <div className="text-center mb-12">
+          <div className="relative inline-flex items-center justify-center w-24 h-24 mb-6">
+            <div className="absolute inset-0 bg-brand-success/20 rounded-full animate-live-glow"></div>
+            <div className="relative w-16 h-16 bg-brand-success rounded-full flex items-center justify-center">
+              <CheckCircle className="h-8 w-8 text-background" />
             </div>
           </div>
+          <h1 className="text-display mb-4 text-foreground">
+            Welcome to Pro
+          </h1>
+          <p className="text-subhead max-w-2xl mx-auto">
+            Your subscription has been confirmed. You now have access to all premium features.
+          </p>
         </div>
 
-        <Card className="border-amber-200 shadow-2xl bg-gradient-to-b from-amber-50 to-white">
-          <CardHeader className="text-center pb-6 bg-gradient-to-r from-amber-100/50 to-yellow-100/50 rounded-t-lg">
-            <div className="flex items-center justify-center gap-3 mb-4">
+        {/* Main Success Card */}
+        <Card className="glass-card border-card-border mb-8">
+          <CardHeader className="text-center pb-8">
+            <div className="flex items-center justify-center mb-6">
               <div className="relative">
-                <CheckCircle className="h-20 w-20 text-green-600" />
-                <div className="absolute -top-3 -right-3">
+                <div className="w-20 h-20 bg-brand-success/10 rounded-full flex items-center justify-center">
+                  <Crown className="h-10 w-10 text-brand-success" />
+                </div>
+                <div className="absolute -top-2 -right-2">
                   <ProBadge size="lg" />
                 </div>
               </div>
             </div>
-            <CardTitle className="text-4xl text-green-700 mb-2">
-              Welcome to QTalent Pro!
+            <CardTitle className="text-headline text-foreground mb-4">
+              Subscription Activated
             </CardTitle>
-            <p className="text-xl text-slate-600">
-              Your Pro subscription is now active and you're ready to maximize your earnings!
+            <p className="text-muted-foreground text-lg leading-relaxed">
+              Your Pro membership is now active. Start maximizing your potential with enhanced features and zero commission fees.
             </p>
           </CardHeader>
 
           <CardContent className="space-y-8 p-8">
-            <div className="bg-gradient-to-r from-amber-50 to-yellow-50 rounded-xl p-8 border-2 border-amber-200">
-              <h3 className="text-2xl font-bold mb-6 flex items-center gap-3 text-center justify-center">
-                <Crown className="h-6 w-6 text-amber-600" />
-                Your Exclusive Pro Benefits Are Now Active
-                <Crown className="h-6 w-6 text-amber-600" />
+            {/* Pro Benefits Section */}
+            <div className="bg-card/50 rounded-xl p-8 border border-border">
+              <h3 className="text-xl font-semibold mb-8 text-center text-foreground">
+                Your Pro Benefits
               </h3>
               <div className="grid md:grid-cols-2 gap-6">
                 <div className="space-y-4">
-                  <div className="flex items-center gap-3 p-3 bg-white rounded-lg shadow-sm">
-                    <CheckCircle className="h-6 w-6 text-green-600 flex-shrink-0" />
-                    <span className="font-semibold">Zero Commission - Keep 100% of Your Earnings</span>
+                  <div className="flex items-start gap-4 p-4 rounded-lg bg-secondary/30 border border-border/50">
+                    <CheckCircle className="h-5 w-5 text-brand-success flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-medium text-foreground">Zero Commission</p>
+                      <p className="text-sm text-muted-foreground">Keep 100% of your earnings</p>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-3 p-3 bg-white rounded-lg shadow-sm">
-                    <CheckCircle className="h-6 w-6 text-green-600 flex-shrink-0" />
-                    <span className="font-semibold">Up to 10 Profile Images</span>
+                  <div className="flex items-start gap-4 p-4 rounded-lg bg-secondary/30 border border-border/50">
+                    <CheckCircle className="h-5 w-5 text-brand-success flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-medium text-foreground">10 Profile Images</p>
+                      <p className="text-sm text-muted-foreground">Showcase your work professionally</p>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-3 p-3 bg-white rounded-lg shadow-sm">
-                    <CheckCircle className="h-6 w-6 text-green-600 flex-shrink-0" />
-                    <span className="font-semibold">Audio & Video Links on Profile</span>
+                  <div className="flex items-start gap-4 p-4 rounded-lg bg-secondary/30 border border-border/50">
+                    <CheckCircle className="h-5 w-5 text-brand-success flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-medium text-foreground">Media Integration</p>
+                      <p className="text-sm text-muted-foreground">Link audio & video content</p>
+                    </div>
                   </div>
                 </div>
                 <div className="space-y-4">
-                  <div className="flex items-center gap-3 p-3 bg-white rounded-lg shadow-sm">
-                    <CheckCircle className="h-6 w-6 text-green-600 flex-shrink-0" />
-                    <span className="font-semibold">Featured in Pro Artists Section</span>
+                  <div className="flex items-start gap-4 p-4 rounded-lg bg-secondary/30 border border-border/50">
+                    <CheckCircle className="h-5 w-5 text-brand-success flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-medium text-foreground">Featured Listing</p>
+                      <p className="text-sm text-muted-foreground">Priority in search results</p>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-3 p-3 bg-white rounded-lg shadow-sm">
-                    <CheckCircle className="h-6 w-6 text-green-600 flex-shrink-0" />
-                    <span className="font-semibold">Unlimited Booking Requests</span>
+                  <div className="flex items-start gap-4 p-4 rounded-lg bg-secondary/30 border border-border/50">
+                    <CheckCircle className="h-5 w-5 text-brand-success flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-medium text-foreground">Unlimited Bookings</p>
+                      <p className="text-sm text-muted-foreground">No monthly booking limits</p>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-3 p-3 bg-white rounded-lg shadow-sm">
-                    <CheckCircle className="h-6 w-6 text-green-600 flex-shrink-0" />
-                    <span className="font-semibold">Priority Customer Support</span>
+                  <div className="flex items-start gap-4 p-4 rounded-lg bg-secondary/30 border border-border/50">
+                    <CheckCircle className="h-5 w-5 text-brand-success flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-medium text-foreground">Priority Support</p>
+                      <p className="text-sm text-muted-foreground">Faster response times</p>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            {/* Action Buttons */}
+            <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
               <Button 
                 onClick={() => navigate('/talent-dashboard')}
-                className="gap-2 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-black font-bold py-3 px-6 text-lg shadow-lg"
+                className="hero-button gap-2"
                 size="lg"
               >
-                Go to Your Pro Dashboard
+                Access Pro Dashboard
                 <ArrowRight className="h-5 w-5" />
               </Button>
               <Button 
                 variant="outline" 
                 onClick={() => navigate('/')}
-                className="gap-2 border-2 border-amber-400 text-amber-700 hover:bg-amber-50 py-3 px-6 text-lg"
+                className="outline-button gap-2"
                 size="lg"
               >
                 <Home className="h-5 w-5" />
-                Back to Home
+                Return Home
               </Button>
-            </div>
-
-            <div className="text-center text-sm text-slate-500 border-t pt-6 bg-slate-50 -mx-8 -mb-8 p-6 rounded-b-lg">
-              <p className="mb-2 font-semibold">🎉 You're now part of an exclusive community of professional artists!</p>
-              <p>
-                Your subscription will automatically renew. You can manage or cancel 
-                your subscription anytime through your PayPal account.
-              </p>
             </div>
           </CardContent>
         </Card>
+
+        {/* Footer Information */}
+        <div className="text-center">
+          <div className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-secondary/50 border border-border">
+            <CheckCircle className="h-4 w-4 text-brand-success" />
+            <span className="text-sm text-muted-foreground">
+              Subscription active • Manage through PayPal account
+            </span>
+          </div>
+        </div>
       </div>
     </div>
   );
