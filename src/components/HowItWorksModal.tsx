@@ -31,17 +31,17 @@ export function HowItWorksModal({ open, onOpenChange }: HowItWorksModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl">
+      <DialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold text-center mb-2">
+          <DialogTitle className="text-xl sm:text-2xl font-bold text-center mb-2">
             How Qtalent.live Works
           </DialogTitle>
-          <p className="text-muted-foreground text-center">
+          <p className="text-muted-foreground text-center text-sm sm:text-base">
             Book talented performers in 3 simple steps
           </p>
         </DialogHeader>
 
-        <div className="grid md:grid-cols-3 gap-6 mt-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mt-4 sm:mt-6 px-2 sm:px-0">
           {steps.map((step) => (
             <Card key={step.step} className="glass-card p-6 text-center hover:shadow-lg transition-all duration-300">
               <div className="mb-4">

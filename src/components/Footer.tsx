@@ -9,16 +9,16 @@ export function Footer() {
   return (
     <footer className="bg-card border-t border-card-border">
       <div className="container mx-auto px-4 py-16">
-        <div className="grid lg:grid-cols-4 md:grid-cols-2 gap-8">
-          {/* Brand */}
-          <div className="space-y-4">
+        <div className="flex flex-col items-center text-center space-y-6">
+          {/* Brand Section */}
+          <div className="space-y-4 max-w-2xl">
             <div className="text-2xl font-bold text-foreground">
               Qtalent.live
             </div>
             <p className="text-muted-foreground">
               The simplest way to connect with exceptional live talent for your events. Book verified performers and creators worldwide.
             </p>
-            <div className="flex space-x-3">
+            <div className="flex justify-center space-x-3">
               <Button variant="ghost" size="sm">
                 <Facebook className="h-4 w-4" />
               </Button>
@@ -31,94 +31,6 @@ export function Footer() {
               <Button variant="ghost" size="sm">
                 <Linkedin className="h-4 w-4" />
               </Button>
-            </div>
-          </div>
-
-          {/* For Clients */}
-          <div className="space-y-4">
-            <h4 className="font-semibold text-lg">For Clients</h4>
-            <nav className="space-y-2">
-              <button 
-                onClick={() => {
-                  const talentsSection = document.getElementById('talents');
-                  if (talentsSection) {
-                    talentsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                  } else {
-                    navigate('/#talents');
-                  }
-                }}
-                className="block text-muted-foreground hover:text-foreground transition-colors text-left"
-              >
-                Find Talent
-              </button>
-              <button 
-                onClick={() => navigate('/how-it-works')}
-                className="block text-muted-foreground hover:text-foreground transition-colors text-left"
-              >
-                How It Works
-              </button>
-              <button 
-                onClick={() => navigate('/your-event')}
-                className="block text-muted-foreground hover:text-foreground transition-colors text-left"
-              >
-                Post Event Request
-              </button>
-              <button 
-                onClick={() => navigate('/trust-safety')}
-                className="block text-muted-foreground hover:text-foreground transition-colors text-left"
-              >
-                Trust & Safety
-              </button>
-            </nav>
-          </div>
-
-          {/* For Talents */}
-          <div className="space-y-4">
-            <h4 className="font-semibold text-lg">For Talents</h4>
-            <nav className="space-y-2">
-              <button 
-                onClick={() => navigate('/auth')}
-                className="block text-muted-foreground hover:text-foreground transition-colors text-left"
-              >
-                Join as Talent
-              </button>
-              <button 
-                onClick={() => navigate('/pricing')}
-                className="block text-muted-foreground hover:text-foreground transition-colors text-left"
-              >
-                Pro Membership
-              </button>
-              <button 
-                onClick={() => navigate('/gigs')}
-                className="block text-muted-foreground hover:text-foreground transition-colors text-left"
-              >
-                Browse Gigs
-              </button>
-              <button 
-                onClick={() => navigate('/how-it-works')}
-                className="block text-muted-foreground hover:text-foreground transition-colors text-left"
-              >
-                Getting Started
-              </button>
-            </nav>
-          </div>
-
-          {/* Newsletter */}
-          <div className="space-y-4">
-            <h4 className="font-semibold text-lg">Stay Updated</h4>
-            <p className="text-muted-foreground text-sm">
-              Get the latest news about new talents and booking opportunities.
-            </p>
-            <div className="space-y-2">
-              <div className="flex space-x-2">
-                <Input 
-                  placeholder="Enter your email" 
-                  className="bg-input border-border"
-                />
-                <Button size="sm" className="hero-button">
-                  <Mail className="h-4 w-4" />
-                </Button>
-              </div>
             </div>
           </div>
         </div>

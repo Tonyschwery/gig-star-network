@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 
 import { Header } from "@/components/Header";
-import { NotificationCenter } from "@/components/NotificationCenter";
+import { NotificationList } from "@/components/NotificationList";
 import { UniversalChat } from "@/components/UniversalChat";
 import { SubscriptionButton } from "@/components/SubscriptionButton";
 import { ModeSwitch } from "@/components/ModeSwitch";
@@ -221,10 +221,8 @@ const TalentDashboard = () => {
           </div>
         </div>
 
-        {/* Notification Center */}
-        <div className="mb-6">
-          <NotificationCenter />
-        </div>
+        {/* Notifications */}
+        <NotificationList />
 
         {/* Profile Summary */}
         <Card className="mb-6">
