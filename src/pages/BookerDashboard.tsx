@@ -7,7 +7,6 @@ import { Header } from "@/components/Header";
 import { BookerDashboardTabs } from "@/components/BookerDashboardTabs";
 import { UniversalChat } from "@/components/UniversalChat";
 import { NotificationCenter } from "@/components/NotificationCenter";
-import { NotificationList } from "@/components/NotificationList";
 import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
 
 const BookerDashboard = () => {
@@ -94,8 +93,6 @@ const BookerDashboard = () => {
           </div>
         </div>
 
-        {/* Notifications */}
-        <NotificationList />
 
         {/* Tabbed Dashboard */}
         <BookerDashboardTabs userId={user.id} />

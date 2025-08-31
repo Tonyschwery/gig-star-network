@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BookingCard, Booking } from "./BookingCard";
 import { useRealtimeBookings } from '@/hooks/useRealtimeBookings';
 import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications';
+import { BookerNotificationBadge } from "./BookerNotificationBadge";
 
 export const BookerDashboardTabs = ({ userId }: { userId: string }) => {
     const [bookings, setBookings] = useState<Booking[]>([]);
@@ -59,6 +60,9 @@ export const BookerDashboardTabs = ({ userId }: { userId: string }) => {
 
     return (
         <>
+            {/* Notification Badge */}
+            <BookerNotificationBadge />
+            
             <Tabs defaultValue="awaiting_response" className="w-full">
                 <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 gap-1 h-auto p-1">
                     <TabsTrigger value="awaiting_response" className="text-xs sm:text-sm px-2 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">

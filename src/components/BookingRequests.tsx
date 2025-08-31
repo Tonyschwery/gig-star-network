@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BookingCard, Booking } from "./BookingCard";
 import { useTalentBookingLimit } from "@/hooks/useTalentBookingLimit";
+import { NotificationBadge } from "./NotificationBadge";
 
 interface BookingRequestsProps {
     talentId: string;
@@ -61,6 +62,11 @@ export const BookingRequests = ({ talentId, isProSubscriber }: BookingRequestsPr
 
     return (
         <div className="space-y-6">
+            {/* Notification Badge */}
+            <div className="flex justify-center">
+                <NotificationBadge />
+            </div>
+            
             {/* Booking limit display for non-pro talents */}
             {!isProUser && (
                 <div className="p-3 bg-muted rounded-lg border">

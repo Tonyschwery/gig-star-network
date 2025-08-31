@@ -17,7 +17,6 @@ import {
 } from "lucide-react";
 
 import { Header } from "@/components/Header";
-import { NotificationList } from "@/components/NotificationList";
 import { UniversalChat } from "@/components/UniversalChat";
 import { SubscriptionButton } from "@/components/SubscriptionButton";
 import { ModeSwitch } from "@/components/ModeSwitch";
@@ -221,8 +220,6 @@ const TalentDashboard = () => {
           </div>
         </div>
 
-        {/* Notifications */}
-        <NotificationList />
 
         {/* Profile Summary */}
         <Card className="mb-6">

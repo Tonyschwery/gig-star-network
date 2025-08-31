@@ -54,6 +54,7 @@ export const BookingCard = ({ booking, mode, onUpdate, isProSubscriber, canAccep
     }
     
     try {
+      console.log('Accepting booking:', booking.id);
       const { error } = await supabase
         .from('bookings')
         .update({ status: 'accepted' })
@@ -87,6 +88,7 @@ export const BookingCard = ({ booking, mode, onUpdate, isProSubscriber, canAccep
 
   const handleDecline = async () => {
     try {
+      console.log('Declining booking:', booking.id);
       const { error } = await supabase
         .from('bookings')
         .update({ status: 'declined' })
@@ -94,8 +96,18 @@ export const BookingCard = ({ booking, mode, onUpdate, isProSubscriber, canAccep
       
       if (error) {
         console.error('Error declining booking:', error);
+        toast({
+          title: "Error",
+          description: "Failed to decline booking. Please try again.",
+          variant: "destructive",
+        });
         return;
       }
+      
+      toast({
+        title: "Booking Declined",
+        description: "You have declined this booking request.",
+      });
       
       onUpdate?.();
     } catch (error) {
