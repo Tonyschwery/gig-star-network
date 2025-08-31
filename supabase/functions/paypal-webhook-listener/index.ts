@@ -107,9 +107,8 @@ serve(async (req) => {
     //   webhook_event: webhookEvent,
     // };
 
-    // Process subscription webhook events
+    // Process subscription webhook events - ONLY when payment is actually made
     if (webhookEvent.event_type === 'BILLING.SUBSCRIPTION.ACTIVATED' || 
-        webhookEvent.event_type === 'BILLING.SUBSCRIPTION.CREATED' ||
         webhookEvent.event_type === 'PAYMENT.SALE.COMPLETED') {
       
       const subscription = webhookEvent.resource;

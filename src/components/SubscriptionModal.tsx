@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Crown, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -37,6 +38,7 @@ declare global {
 export function SubscriptionModal({ open, onOpenChange }: SubscriptionModalProps) {
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [paypalLoaded, setPaypalLoaded] = useState(false);
 
@@ -128,7 +130,9 @@ export function SubscriptionModal({ open, onOpenChange }: SubscriptionModalProps
           application_context: {
             brand_name: "QTalent",
             shipping_preference: "NO_SHIPPING",
-            user_action: "SUBSCRIBE_NOW"
+            user_action: "SUBSCRIBE_NOW",
+            return_url: `${window.location.origin}/subscription-success`,
+            cancel_url: `${window.location.origin}/subscription-cancelled`
           }
         });
       },
@@ -161,8 +165,8 @@ export function SubscriptionModal({ open, onOpenChange }: SubscriptionModalProps
         
         console.log('🔗 Redirecting to:', redirectUrl.toString());
         
-        // Redirect to success page
-        window.location.href = redirectUrl.toString();
+        // Use React Router navigation instead of window.location.href to prevent page refresh
+        navigate(redirectUrl.pathname + redirectUrl.search);
       },
       onError: (err) => {
         console.error('PayPal error:', err);
@@ -187,7 +191,7 @@ export function SubscriptionModal({ open, onOpenChange }: SubscriptionModalProps
         label: 'subscribe'
       }
     }).render(`#${containerId}`);
-  }, [paypalLoaded, selectedPlan, user, plans, toast, onOpenChange]);
+  }, [paypalLoaded, selectedPlan, user, plans, toast, onOpenChange, navigate]);
 
   const handlePlanSelect = (planId: string) => {
     if (!user) {

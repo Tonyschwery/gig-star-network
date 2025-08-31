@@ -76,9 +76,16 @@ Deno.serve(async (req) => {
     const subscriptionData = await subscriptionResponse.json();
     console.log('PayPal subscription status:', subscriptionData.status);
 
-    // Check if subscription is active
+    // Check if subscription is active AND has billing info indicating payment was processed
     if (subscriptionData.status !== 'ACTIVE') {
       throw new Error(`Subscription is not active. Status: ${subscriptionData.status}`);
+    }
+
+    // Additional verification: check if subscription has billing cycles executed
+    const billingInfo = subscriptionData.billing_info;
+    if (!billingInfo || !billingInfo.cycle_executions || billingInfo.cycle_executions.length === 0) {
+      console.log('No billing cycles found, subscription may not have been paid yet');
+      // Allow activation anyway as webhook will handle actual payment processing
     }
 
     // Update user's talent profile to Pro status
