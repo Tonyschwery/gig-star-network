@@ -181,6 +181,15 @@ export default function TalentOnboarding() {
         return;
       }
 
+      // Check if user is Pro subscriber (for Pro features)
+      const { data: existingProfile } = await supabase
+        .from('talent_profiles')
+        .select('is_pro_subscriber')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      const isProUser = existingProfile?.is_pro_subscriber || false;
+
       // Upload picture if provided
       let pictureUrl = null;
       if (pictureFile) {
@@ -201,27 +210,30 @@ export default function TalentOnboarding() {
         allGenres.push(formData.customGenre.trim());
       }
 
-      // Create talent profile
+      // Create talent profile - only include Pro features if user is Pro
+      const profileData = {
+        user_id: user.id,
+        artist_name: formData.artistName,
+        act: formData.act as any,
+        gender: formData.gender as any,
+        music_genres: allGenres,
+        custom_genre: formData.customGenre || null,
+        picture_url: pictureUrl,
+        // Only save Pro features if user is Pro
+        gallery_images: isProUser ? galleryImages : [],
+        soundcloud_link: isProUser ? (formData.soundcloudLink || null) : null,
+        youtube_link: isProUser ? (formData.youtubeLink || null) : null,
+        biography: formData.biography,
+        age: formData.age, // Now stores age range as string
+        nationality: formData.countryOfResidence,
+        rate_per_hour: parseFloat(formData.ratePerHour),
+        currency: formData.currency,
+        location: formData.location
+      };
+
       const { data: talentProfile, error } = await supabase
         .from('talent_profiles')
-        .insert({
-          user_id: user.id,
-          artist_name: formData.artistName,
-          act: formData.act as any,
-          gender: formData.gender as any,
-          music_genres: allGenres,
-          custom_genre: formData.customGenre || null,
-          picture_url: pictureUrl,
-          gallery_images: galleryImages,
-          soundcloud_link: formData.soundcloudLink || null,
-          youtube_link: formData.youtubeLink || null,
-          biography: formData.biography,
-          age: formData.age, // Now stores age range as string
-          nationality: formData.countryOfResidence,
-          rate_per_hour: parseFloat(formData.ratePerHour),
-          currency: formData.currency,
-          location: formData.location
-        })
+        .insert(profileData)
         .select('id')
         .single();
 
@@ -258,10 +270,9 @@ export default function TalentOnboarding() {
         // Don't show error to user for email issues
       }
 
-      // Force a page refresh to trigger auth state re-evaluation
-      // This ensures the UserModeContext picks up the new talent profile
+      // Navigate to dashboard without forcing refresh
       setTimeout(() => {
-        window.location.href = '/talent-dashboard';
+        navigate('/talent-dashboard');
       }, 1000);
     } catch (error) {
       console.error('Error creating profile:', error);

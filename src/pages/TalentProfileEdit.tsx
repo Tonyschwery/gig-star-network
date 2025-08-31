@@ -56,6 +56,7 @@ const TalentProfileEdit = () => {
   const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
   const [customGenre, setCustomGenre] = useState('');
   const [galleryImages, setGalleryImages] = useState<string[]>([]);
+  const [autoSaveTimer, setAutoSaveTimer] = useState<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (!user) {
@@ -152,6 +153,69 @@ const TalentProfileEdit = () => {
         ? prev.filter(g => g !== genre)
         : [...prev, genre]
     );
+  };
+
+  const handleAutoSave = async (field: string, value: any) => {
+    if (!profile || !user) return;
+
+    // Clear existing timer
+    if (autoSaveTimer) {
+      clearTimeout(autoSaveTimer);
+    }
+
+    // Set new timer for debounced auto-save
+    const timer = setTimeout(async () => {
+      try {
+        const { error } = await supabase
+          .from('talent_profiles')
+          .update({ [field]: value })
+          .eq('id', profile.id);
+
+        if (error) throw error;
+
+        toast({
+          title: "Auto-saved",
+          description: `${field.replace('_', ' ')} updated successfully!`,
+        });
+      } catch (error) {
+        console.error('Auto-save error:', error);
+        toast({
+          title: "Auto-save failed",
+          description: `Failed to save ${field.replace('_', ' ')}`,
+          variant: "destructive"
+        });
+      }
+    }, 2000); // 2 second delay
+
+    setAutoSaveTimer(timer);
+  };
+
+  const handleGalleryChange = async (newImages: string[]) => {
+    setGalleryImages(newImages);
+    
+    // Auto-save gallery for Pro users
+    if (profile?.is_pro_subscriber) {
+      try {
+        const { error } = await supabase
+          .from('talent_profiles')
+          .update({ gallery_images: newImages })
+          .eq('id', profile.id);
+
+        if (error) throw error;
+
+        toast({
+          title: "Gallery updated",
+          description: "Images saved successfully!",
+        });
+      } catch (error) {
+        console.error('Error saving gallery:', error);
+        toast({
+          title: "Error",
+          description: "Failed to save gallery images",
+          variant: "destructive"
+        });
+      }
+    }
   };
 
   const handleSaveProfile = async () => {
@@ -293,7 +357,7 @@ const TalentProfileEdit = () => {
             <CardContent>
               <SimpleGalleryUpload
                 currentImages={galleryImages}
-                onImagesChange={setGalleryImages}
+                onImagesChange={handleGalleryChange}
                 maxImages={5}
                 disabled={false}
               />
@@ -456,7 +520,14 @@ const TalentProfileEdit = () => {
                   <Input
                     placeholder="https://soundcloud.com/..."
                     value={profile.soundcloud_link || ''}
-                    onChange={(e) => setProfile({ ...profile, soundcloud_link: e.target.value })}
+                    onChange={(e) => {
+                      const newValue = e.target.value;
+                      setProfile({ ...profile, soundcloud_link: newValue });
+                      // Auto-save for Pro users
+                      if (profile.is_pro_subscriber) {
+                        handleAutoSave('soundcloud_link', newValue);
+                      }
+                    }}
                   />
                 </div>
                 <div>
@@ -464,7 +535,14 @@ const TalentProfileEdit = () => {
                   <Input
                     placeholder="https://youtube.com/..."
                     value={profile.youtube_link || ''}
-                    onChange={(e) => setProfile({ ...profile, youtube_link: e.target.value })}
+                    onChange={(e) => {
+                      const newValue = e.target.value;
+                      setProfile({ ...profile, youtube_link: newValue });
+                      // Auto-save for Pro users
+                      if (profile.is_pro_subscriber) {
+                        handleAutoSave('youtube_link', newValue);
+                      }
+                    }}
                   />
                 </div>
               </div>
