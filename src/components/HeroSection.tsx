@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
-import { Star, MapPin, Search, Music, Crown, HelpCircle } from "lucide-react";
+import { Star, MapPin, Search, Music, Crown, HelpCircle, Calendar } from "lucide-react";
 import { countries } from "@/lib/countries";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -129,18 +129,18 @@ export function HeroSection() {
             </div>
 
             {/* Search Form */}
-            <Card className="p-6 glass-card">
-              <div className="grid md:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-muted-foreground">TALENT LOCATION</label>
+            <Card className="p-8 glass-card border border-border/50 shadow-elevated">
+              <div className="grid md:grid-cols-3 gap-6">
+                <div className="space-y-3">
+                  <label className="text-sm font-semibold text-foreground uppercase tracking-wide">WHERE</label>
                   <div className="relative">
-                    <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground z-10" />
+                    <MapPin className="absolute left-4 top-4 h-5 w-5 text-muted-foreground z-10" />
                     <Select 
                       value={searchFilters.location} 
                       onValueChange={(value) => setSearchFilters(prev => ({ ...prev, location: value }))}
                     >
-                      <SelectTrigger className="pl-10 bg-input border-border">
-                        <SelectValue placeholder="Select country" />
+                      <SelectTrigger className="pl-12 h-12 bg-background/50 border-border/50 hover:border-accent/50 transition-colors">
+                        <SelectValue placeholder="Select location" />
                       </SelectTrigger>
                       <SelectContent className="max-h-60">
                         <SelectItem value="all">All Countries</SelectItem>
@@ -154,16 +154,16 @@ export function HeroSection() {
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-muted-foreground">TALENT TYPE</label>
+                <div className="space-y-3">
+                  <label className="text-sm font-semibold text-foreground uppercase tracking-wide">TALENT TYPE</label>
                   <div className="relative">
-                    <Music className="absolute left-3 top-3 h-4 w-4 text-muted-foreground z-10" />
+                    <Music className="absolute left-4 top-4 h-5 w-5 text-muted-foreground z-10" />
                     <Select 
                       value={searchFilters.talentType} 
                       onValueChange={(value) => setSearchFilters(prev => ({ ...prev, talentType: value }))}
                     >
-                      <SelectTrigger className="pl-10 bg-input border-border">
-                        <SelectValue placeholder="Select talent type" />
+                      <SelectTrigger className="pl-12 h-12 bg-background/50 border-border/50 hover:border-accent/50 transition-colors">
+                        <SelectValue placeholder="What kind of talent?" />
                       </SelectTrigger>
                       <SelectContent>
                         {talentTypes.map((type) => (
@@ -178,26 +178,32 @@ export function HeroSection() {
                 
                 <div className="flex items-end">
                   <Button 
-                    className="w-full hero-button"
+                    className="w-full h-12 hero-button text-base font-semibold"
                     onClick={handleSearch}
                   >
-                    <Search className="h-4 w-4 mr-2" />
-                    Find Talent
+                    <Search className="h-5 w-5 mr-3" />
+                    Find Perfect Talent
                   </Button>
                 </div>
               </div>
             </Card>
 
-            {/* Search Results Info */}
-            <div className="flex items-center space-x-2">
-              <div className="flex">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} className="h-5 w-5 fill-yellow-400 text-yellow-400" />
-                ))}
+            {/* Social Proof */}
+            <div className="flex items-center justify-center space-x-6 text-sm">
+              <div className="flex items-center space-x-2">
+                <div className="flex -space-x-1">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                  ))}
+                </div>
+                <span className="text-muted-foreground">
+                  <strong className="text-foreground">4.9/5</strong> from 2,340+ bookings
+                </span>
               </div>
-              <span className="text-sm text-muted-foreground">
-                Excellent - <strong>4320</strong> five-star reviews by organizers
-              </span>
+              <div className="h-4 w-px bg-border"></div>
+              <div className="text-muted-foreground">
+                <strong className="text-foreground">500+</strong> professional artists
+              </div>
             </div>
             
             {/* Search Status Message */}
@@ -280,32 +286,57 @@ export function HeroSection() {
         </div>
         
         {/* Booker Help Section */}
-        <div className="mt-16 text-center space-y-6">
-          <div className="space-y-3">
-            <div className="flex items-center justify-center">
-              <HelpCircle className="h-8 w-8 text-accent mr-3" />
-              <h2 className="text-headline">
-                Can't find what you're looking for?
-              </h2>
+        <div className="mt-24 text-center space-y-8">
+          <div className="space-y-4">
+            <div className="inline-flex items-center justify-center p-3 bg-accent/10 rounded-full mb-4">
+              <HelpCircle className="h-8 w-8 text-accent" />
             </div>
-            <p className="text-subhead max-w-2xl mx-auto">
-              Let us help you find the perfect talent for your event. Our team will personally reach out with curated recommendations that fit your specific needs and budget.
+            <h2 className="text-3xl md:text-4xl font-bold">
+              Need help finding the perfect talent?
+            </h2>
+            <p className="text-muted-foreground text-lg max-w-2xl mx-auto leading-relaxed">
+              Our expert team personally curates recommendations based on your event type, budget, and style preferences. Get matched with verified performers in 24 hours.
             </p>
           </div>
           
-          <Button 
-            size="lg"
-            className="hero-button px-8 py-6 text-lg"
-            onClick={() => navigate('/your-event')}
-          >
-            {user ? "Tell us about your event" : "Sign up & tell us about your event"}
-          </Button>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <Button 
+              size="lg"
+              className="hero-button px-8 py-4 text-base font-semibold"
+              onClick={() => navigate('/your-event')}
+            >
+              {user ? "Get Personalized Recommendations" : "Start Free Consultation"}
+            </Button>
+            
+            {!user && (
+              <div className="text-sm text-muted-foreground">
+                No account needed • Free consultation • 2 min setup
+              </div>
+            )}
+          </div>
           
-          <div className="text-sm text-muted-foreground">
-            📝 {user 
-              ? "Submit your request and our team will reach out with personalized recommendations" 
-              : "Create an account to submit your event request - it only takes a minute!"
-            }
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12 max-w-4xl mx-auto">
+            <div className="text-center space-y-2">
+              <div className="inline-flex items-center justify-center p-2 bg-accent/10 rounded-full">
+                <Search className="h-5 w-5 text-accent" />
+              </div>
+              <h3 className="font-semibold">Tell us your needs</h3>
+              <p className="text-sm text-muted-foreground">Share your event details and preferences with us</p>
+            </div>
+            <div className="text-center space-y-2">
+              <div className="inline-flex items-center justify-center p-2 bg-accent/10 rounded-full">
+                <Star className="h-5 w-5 text-accent" />
+              </div>
+              <h3 className="font-semibold">Get matched</h3>
+              <p className="text-sm text-muted-foreground">Receive curated talent recommendations within 24h</p>
+            </div>
+            <div className="text-center space-y-2">
+              <div className="inline-flex items-center justify-center p-2 bg-accent/10 rounded-full">
+                <Calendar className="h-5 w-5 text-accent" />
+              </div>
+              <h3 className="font-semibold">Book & celebrate</h3>
+              <p className="text-sm text-muted-foreground">Connect directly and create unforgettable experiences</p>
+            </div>
           </div>
         </div>
       </div>

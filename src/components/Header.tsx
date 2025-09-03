@@ -190,14 +190,6 @@ export function Header() {
 
             {/* Desktop Right Side Actions */}
             <div className="hidden md:flex items-center space-x-4">
-              <Button 
-                variant="ghost" 
-                size="sm"
-                onClick={() => console.log('Search clicked')}
-              >
-                <Search className="h-4 w-4" />
-              </Button>
-              
               {user ? (
                 <div className="flex items-center space-x-4">
                   {/* Mode switch and notifications */}
@@ -238,12 +230,13 @@ export function Header() {
                     variant="outline" 
                     size="sm"
                     onClick={handleAuthAction}
+                    className="font-medium"
                   >
-                    Login
+                    Sign In
                   </Button>
                   
                   <Button 
-                    className="hero-button"
+                    className="hero-button font-medium"
                     onClick={() => navigate("/auth")}
                   >
                     Join as Talent

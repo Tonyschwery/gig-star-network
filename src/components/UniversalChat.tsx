@@ -190,37 +190,45 @@ export function UniversalChat() {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className={`${
           minimized 
-            ? 'h-[400px] w-[320px]' 
-            : 'h-[90vh] max-h-[600px] w-[95vw] max-w-[400px]'
-        } fixed bottom-4 right-4 bg-card border border-border rounded-lg overflow-hidden`}>
+            ? 'h-[400px] w-[350px] sm:w-[380px]' 
+            : 'h-[500px] sm:h-[600px] w-[95vw] max-w-[420px]'
+        } fixed bottom-4 right-4 bg-card border border-border/50 rounded-2xl overflow-hidden shadow-elevated`}>
           
           <div className="flex flex-col h-full">
             {/* Header */}
-            <div className="flex items-center justify-between p-3 bg-card border-b border-border shrink-0">
-              <div className="flex items-center gap-2">
-                <div className="h-2 w-2 bg-accent rounded-full"></div>
-                <DialogTitle className="text-base font-medium text-card-foreground">
+            <div className="flex items-center justify-between p-4 bg-gradient-to-r from-card to-card/80 border-b border-border/50 shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <div className="h-2 w-2 bg-accent rounded-full animate-pulse"></div>
+                  <div className="absolute inset-0 h-2 w-2 bg-accent rounded-full animate-ping"></div>
+                </div>
+                <DialogTitle className="text-base font-semibold text-card-foreground">
                   {minimized ? 'Messages' : 'Live Chat'}
                 </DialogTitle>
+                {unreadCount > 0 && (
+                  <Badge variant="destructive" className="h-5 px-2 text-xs">
+                    {unreadCount}
+                  </Badge>
+                )}
               </div>
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-2">
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => setMinimized(!minimized)}
-                  className="h-7 w-7 p-0 text-muted-foreground hover:text-card-foreground"
-                  title={minimized ? 'Maximize' : 'Minimize'}
+                  className="h-8 w-8 p-0 text-muted-foreground hover:text-card-foreground hover:bg-muted/50"
+                  title={minimized ? 'Expand chat' : 'Minimize chat'}
                 >
-                  {minimized ? <Maximize2 className="h-3 w-3" /> : <Minimize2 className="h-3 w-3" />}
+                  {minimized ? <Maximize2 className="h-4 w-4" /> : <Minimize2 className="h-4 w-4" />}
                 </Button>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => setOpen(false)}
-                  className="h-7 w-7 p-0 text-muted-foreground hover:text-card-foreground"
-                  title="Close"
+                  className="h-8 w-8 p-0 text-muted-foreground hover:text-card-foreground hover:bg-muted/50"
+                  title="Close chat"
                 >
-                  <X className="h-3 w-3" />
+                  <X className="h-4 w-4" />
                 </Button>
               </div>
             </div>
@@ -337,11 +345,11 @@ export function UniversalChat() {
             
             {/* Input Area - Always visible when not minimized */}
             {!minimized && (
-              <div className="shrink-0 p-3 bg-card border-t border-border">
-                <div className="flex items-end gap-2 mb-2">
+              <div className="shrink-0 p-4 bg-gradient-to-r from-card to-card/80 border-t border-border/50">
+                <div className="flex items-end gap-3">
                   <div className="flex-1">
                     <Textarea
-                      placeholder={!selectedId ? 'Select an event to start chatting' : (isReady ? 'Type a message...' : 'Connecting...')}
+                      placeholder={!selectedId ? 'Select an event to start chatting' : (isReady ? 'Type your message...' : 'Connecting...')}
                       value={input}
                       onChange={(e) => setInput(e.target.value)}
                       onKeyDown={(e) => {
@@ -350,7 +358,7 @@ export function UniversalChat() {
                           onSend();
                         }
                       }}
-                      className="min-h-[40px] max-h-20 bg-background border-border text-foreground placeholder:text-muted-foreground resize-none rounded-lg text-sm"
+                      className="min-h-[44px] max-h-24 bg-background/50 border-border/50 text-foreground placeholder:text-muted-foreground resize-none rounded-xl text-sm focus:border-accent/50 transition-colors"
                       disabled={!selectedId || !isReady}
                       rows={1}
                     />
@@ -358,21 +366,23 @@ export function UniversalChat() {
                   <Button 
                     onClick={onSend} 
                     disabled={!input.trim() || !selectedId || !isReady}
-                    className="bg-accent hover:bg-accent/90 text-accent-foreground px-3 py-2 rounded-lg disabled:opacity-50 shrink-0 h-10 text-sm"
+                    className="bg-accent hover:bg-accent/90 text-accent-foreground px-4 py-3 rounded-xl disabled:opacity-50 shrink-0 h-11 font-medium shadow-minimal hover:shadow-card transition-all duration-200"
                   >
                     Send
                   </Button>
                 </div>
                 
                 {/* Connection Status */}
-                <div className="flex items-center justify-center">
-                  <div className={`flex items-center gap-1 text-xs ${
-                    isReady ? 'text-accent' : 'text-muted-foreground'
+                <div className="flex items-center justify-center mt-2">
+                  <div className={`flex items-center gap-2 text-xs px-2 py-1 rounded-full ${
+                    isReady 
+                      ? 'text-accent bg-accent/10' 
+                      : 'text-muted-foreground bg-muted/50'
                   }`}>
-                    <div className={`h-1 w-1 rounded-full ${
-                      isReady ? 'bg-accent' : 'bg-muted-foreground'
+                    <div className={`h-1.5 w-1.5 rounded-full ${
+                      isReady ? 'bg-accent animate-pulse' : 'bg-muted-foreground'
                     }`}></div>
-                    {isReady ? 'Connected' : 'Connecting...'}
+                    {isReady ? 'Live chat active' : 'Connecting...'}
                   </div>
                 </div>
               </div>

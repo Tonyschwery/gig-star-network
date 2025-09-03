@@ -172,35 +172,48 @@ export function TalentGrid() {
   });
 
   if (loading) {
-    return (
-      <section id="talents" className="py-16 bg-muted/30">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4">Loading Amazing Talent...</h2>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[...Array(6)].map((_, i) => (
-              <div key={i} className="animate-pulse">
-                <div className="bg-muted rounded-lg h-64"></div>
+      return (
+        <section id="talents" className="py-20 bg-gradient-to-b from-background to-muted/30">
+          <div className="container mx-auto px-4">
+            <div className="text-center mb-16">
+              <div className="inline-flex items-center gap-2 bg-accent/10 px-4 py-2 rounded-full mb-6">
+                <div className="h-2 w-2 bg-accent rounded-full animate-pulse"></div>
+                <span className="text-sm font-medium text-accent">Discovering Talent</span>
               </div>
-            ))}
+              <h2 className="text-4xl font-bold mb-6">Loading Amazing Talent...</h2>
+              <p className="text-muted-foreground text-lg">
+                Finding the perfect performers for your event
+              </p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="animate-pulse">
+                  <div className="bg-muted/50 rounded-2xl h-80 backdrop-blur-sm"></div>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
-    );
+        </section>
+      );
   }
 
   return (
-    <section id="talents" className="py-16 bg-muted/30">
+    <section id="talents" className="py-20 bg-gradient-to-b from-background to-muted/30">
       <div className="container mx-auto px-4">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold mb-4">
-            {hasActiveFilters ? 'Search Results' : 'All Talent'}
+        <div className="text-center mb-16">
+          <div className="inline-flex items-center gap-2 bg-accent/10 px-4 py-2 rounded-full mb-6">
+            <div className="h-2 w-2 bg-accent rounded-full animate-pulse"></div>
+            <span className="text-sm font-medium text-accent">
+              {hasActiveFilters ? 'Search Results' : 'Featured Talent'}
+            </span>
+          </div>
+          <h2 className="text-4xl font-bold mb-6">
+            {hasActiveFilters ? `Found ${talentsToShow.length} Perfect Match${talentsToShow.length !== 1 ? 'es' : ''}` : 'Discover Exceptional Talent'}
           </h2>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
             {hasActiveFilters 
-              ? `Found ${talentsToShow.length} talent${talentsToShow.length !== 1 ? 's' : ''} matching your criteria`
-              : `Discover ${talentsToShow.length} talented performers ready for your event`
+              ? 'Talented performers ready to make your event unforgettable'
+              : `${talentsToShow.length} verified performers ready to bring your event to life`
             }
           </p>
         </div>
@@ -244,27 +257,33 @@ export function TalentGrid() {
         )}
 
         {talentsToShow.length === 0 ? (
-          <div className="text-center py-12">
-            <div className="w-24 h-24 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
-              <Music className="h-12 w-12 text-muted-foreground" />
+          <div className="text-center py-20">
+            <div className="w-32 h-32 bg-gradient-to-br from-accent/20 to-accent/10 rounded-full flex items-center justify-center mx-auto mb-8">
+              <Music className="h-16 w-16 text-accent" />
             </div>
-            <h3 className="text-xl font-semibold mb-2">No talents found</h3>
-            <p className="text-muted-foreground mb-4">
+            <h3 className="text-2xl font-bold mb-4">No talents found</h3>
+            <p className="text-muted-foreground text-lg mb-8 max-w-md mx-auto">
               {hasActiveFilters 
-                ? 'Try adjusting your search criteria to find more talents'
+                ? 'Try adjusting your search criteria to discover more amazing performers'
                 : 'No talent profiles are available at the moment'
               }
             </p>
             {hasActiveFilters && (
-              <Button onClick={clearFilters} variant="outline">
-                Clear Filters
+              <Button onClick={clearFilters} className="hero-button">
+                Clear Filters & Browse All
               </Button>
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {talentsToShow.map((talent) => (
-              <TalentCard key={talent.id} talent={talent} />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {talentsToShow.map((talent, index) => (
+              <div 
+                key={talent.id} 
+                className="animate-fadeIn"
+                style={{ animationDelay: `${index * 0.1}s` }}
+              >
+                <TalentCard talent={talent} />
+              </div>
             ))}
           </div>
         )}
@@ -327,86 +346,108 @@ function TalentCard({ talent }: TalentCardProps) {
 
   return (
     <Card 
-      className="overflow-hidden glass-card hover:shadow-elevated transition-all duration-300 hover:scale-105 group cursor-pointer"
+      className="group overflow-hidden bg-card/80 backdrop-blur-sm border border-border/50 rounded-2xl shadow-card hover:shadow-elevated transition-all duration-500 hover:scale-[1.02] hover:border-accent/30 cursor-pointer"
       onClick={handleProfileClick}
     >
       <div className="relative">
-        <div className="aspect-square overflow-hidden">
+        <div className="aspect-[4/3] overflow-hidden bg-gradient-to-br from-muted/50 to-muted">
           <img 
             src={talent.picture_url || "/placeholder.svg"} 
             alt={talent.artist_name}
-            className="w-full h-full object-cover object-center group-hover:scale-110 transition-transform duration-500"
+            className="w-full h-full object-cover object-center group-hover:scale-110 transition-transform duration-700"
           />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
         </div>
-        <div className="absolute top-3 left-3 flex items-center space-x-1 bg-black/50 backdrop-blur-sm rounded-lg px-2 py-1">
+        
+        {/* Act Badge */}
+        <div className="absolute top-4 left-4 flex items-center space-x-2 bg-black/70 backdrop-blur-sm rounded-full px-3 py-1.5 text-white">
           {getActIcon(talent.act)}
-          <span className="text-xs text-white">{formatAct(talent.act)}</span>
+          <span className="text-sm font-medium">{formatAct(talent.act)}</span>
         </div>
+        
+        {/* Pro Badge */}
         {talent.is_pro_subscriber && (
-          <div className="absolute top-3 right-3">
+          <div className="absolute top-4 right-4">
             <ProBadge size="sm" />
           </div>
         )}
+        
+        {/* Hover Actions */}
+        <div className="absolute inset-x-4 bottom-4 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
+          <Button 
+            size="sm"
+            className="w-full bg-white/90 hover:bg-white text-black font-medium backdrop-blur-sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleProfileClick();
+            }}
+          >
+            View Profile
+          </Button>
+        </div>
       </div>
       
-      <div className="p-4 space-y-3">
+      <div className="p-6 space-y-4">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <h3 className="font-semibold text-lg">{talent.artist_name}</h3>
+          <div className="flex items-start justify-between mb-2">
+            <h3 className="font-bold text-lg text-foreground group-hover:text-accent transition-colors duration-300 line-clamp-1">
+              {talent.artist_name}
+            </h3>
             {talent.is_pro_subscriber && (
-              <ProBadge size="sm" />
+              <ProBadge size="sm" className="ml-2 flex-shrink-0" />
             )}
           </div>
-          <div className="flex items-center space-x-1 text-sm text-muted-foreground">
-            <MapPin className="h-3 w-3" />
-            <span>{talent.location || 'Location not specified'}</span>
+          <div className="flex items-center space-x-2 text-muted-foreground">
+            <MapPin className="h-4 w-4 flex-shrink-0" />
+            <span className="text-sm truncate">{talent.location || 'Location TBD'}</span>
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-1">
-          {talent.music_genres && talent.music_genres.length > 0 && talent.music_genres.map((genre) => (
-            <Badge key={genre} variant="secondary" className="text-xs">
+        {/* Genres */}
+        <div className="flex flex-wrap gap-2">
+          {talent.music_genres && talent.music_genres.slice(0, 3).map((genre) => (
+            <Badge key={genre} variant="secondary" className="text-xs font-medium">
               {genre}
             </Badge>
           ))}
           {talent.custom_genre && (
-            <Badge variant="secondary" className="text-xs">
+            <Badge variant="secondary" className="text-xs font-medium">
               {talent.custom_genre}
+            </Badge>
+          )}
+          {talent.music_genres && talent.music_genres.length > 3 && (
+            <Badge variant="outline" className="text-xs">
+              +{talent.music_genres.length - 3} more
             </Badge>
           )}
         </div>
 
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-1">
-            <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-            <span className="text-sm font-medium">New</span>
+        {/* Rating & Price */}
+        <div className="flex items-center justify-between pt-2 border-t border-border/50">
+          <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-1 bg-yellow-50 dark:bg-yellow-900/20 px-2 py-1 rounded-full">
+              <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+              <span className="text-xs font-semibold text-yellow-600 dark:text-yellow-400">
+                {talent.is_pro_subscriber ? 'Pro' : 'New'}
+              </span>
+            </div>
           </div>
+          
           <div className="text-right">
             {talent.rate_per_hour ? (
               <>
-                <div className="text-lg font-bold text-brand-primary">
+                <div className="text-lg font-bold text-accent">
                   {getCurrencySymbol(talent.currency)}{talent.rate_per_hour}
                 </div>
                 <div className="text-xs text-muted-foreground">per hour</div>
               </>
             ) : (
               <div className="text-sm text-muted-foreground">
-                Rate not set
+                Contact for rates
               </div>
             )}
           </div>
         </div>
-
-        <Button 
-          variant="outline" 
-          className="w-full"
-          onClick={(e) => {
-            e.stopPropagation();
-            handleProfileClick();
-          }}
-        >
-          View Profile
-        </Button>
       </div>
     </Card>
   );
