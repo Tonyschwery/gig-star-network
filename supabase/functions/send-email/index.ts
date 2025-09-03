@@ -219,9 +219,6 @@ serve(async (req: Request): Promise<Response> => {
             ${data.description ? `<p><strong>Description:</strong> ${data.description}</p>` : '<p><strong>Description:</strong> Not provided</p>'}
           </div>
           
-          <p style="margin-top: 30px;">
-            <a href="${appUrl}/admin/event-requests" style="background-color: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">Manage Event Requests</a>
-          </p>
         `;
         subject = 'New Event Request from Website';
         break;

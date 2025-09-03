@@ -1,5 +1,6 @@
 import { useState, useEffect, createContext, useContext } from 'react';
 import { User, Session } from '@supabase/supabase-js';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 
 interface AuthContextType {
@@ -15,6 +16,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     // Set up auth state listener FIRST
@@ -43,69 +45,66 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       // Only redirect on auth or login pages to avoid interfering with manual navigation
       if (currentPath === '/auth' || currentPath === '/login') {
-        // Use setTimeout to avoid blocking the auth state update
-        setTimeout(async () => {
-          try {
-            // Check if user is admin first
-            console.log('Checking admin status for user:', user.id);
-            const { data: isAdminData, error: adminError } = await supabase
-              .rpc('is_admin', { user_id_param: user.id });
+        try {
+          // Check if user is admin first
+          console.log('Checking admin status for user:', user.id);
+          const { data: isAdminData, error: adminError } = await supabase
+            .rpc('is_admin', { user_id_param: user.id });
 
-            if (adminError) {
-              console.error('Error checking admin status:', adminError);
-              return;
-            }
-
-            console.log('Admin check result:', isAdminData);
-            if (isAdminData) {
-              console.log('Redirecting admin to admin panel');
-              window.location.href = '/admin';
-              return;
-            }
-
-            // Check user type from metadata
-            const userType = user.user_metadata?.user_type;
-            console.log('User type:', userType);
-            
-            if (userType === 'talent') {
-              // Use secure function to check if talent has completed profile
-              const { data: hasProfile, error } = await supabase.rpc('user_has_talent_profile');
-              
-              if (error) {
-                console.error('Error checking talent profile:', error);
-                window.location.href = '/talent-onboarding';
-                return;
-              }
-                
-              if (!hasProfile) {
-                window.location.href = '/talent-onboarding';
-              } else {
-                window.location.href = '/talent-dashboard';
-              }
-            } else {
-              // Non-talent users (bookers) - check if they have bookings
-              try {
-                const { data: bookings, error: bookingsError } = await supabase
-                  .from('bookings')
-                  .select('id')
-                  .eq('user_id', user.id)
-                  .limit(1);
-                
-                if (!bookingsError && bookings && bookings.length > 0) {
-                  window.location.href = '/booker-dashboard';
-                } else {
-                  window.location.href = '/';
-                }
-              } catch (error) {
-                console.error('Error checking bookings:', error);
-                window.location.href = '/';
-              }
-            }
-          } catch (error) {
-            console.error('Error in post-auth redirect:', error);
-            window.location.href = '/';
+          if (adminError) {
+            console.error('Error checking admin status:', adminError);
+            return;
           }
-        }, 100);
+
+          console.log('Admin check result:', isAdminData);
+          if (isAdminData) {
+            console.log('Redirecting admin to admin panel');
+            navigate('/admin');
+            return;
+          }
+
+          // Check user type from metadata
+          const userType = user.user_metadata?.user_type;
+          console.log('User type:', userType);
+          
+          if (userType === 'talent') {
+            // Use secure function to check if talent has completed profile
+            const { data: hasProfile, error } = await supabase.rpc('user_has_talent_profile');
+            
+            if (error) {
+              console.error('Error checking talent profile:', error);
+              navigate('/talent-onboarding');
+              return;
+            }
+              
+            if (!hasProfile) {
+              navigate('/talent-onboarding');
+            } else {
+              navigate('/talent-dashboard');
+            }
+          } else {
+            // Non-talent users (bookers) - check if they have bookings
+            try {
+              const { data: bookings, error: bookingsError } = await supabase
+                .from('bookings')
+                .select('id')
+                .eq('user_id', user.id)
+                .limit(1);
+              
+              if (!bookingsError && bookings && bookings.length > 0) {
+                navigate('/booker-dashboard');
+              } else {
+                navigate('/');
+              }
+            } catch (error) {
+              console.error('Error checking bookings:', error);
+              navigate('/');
+            }
+          }
+        } catch (error) {
+          console.error('Error in post-auth redirect:', error);
+          navigate('/');
+        }
       }
     }
   }, [user, session, loading]);
