@@ -41,10 +41,30 @@ export const useLocationDetection = () => {
     }
   };
 
-  // Get location from browser geolocation
+  // Request location permission explicitly for mobile
+  const requestLocationPermission = async (): Promise<boolean> => {
+    if (!navigator.permissions) return true; // Assume permission if API not available
+    
+    try {
+      const permission = await navigator.permissions.query({ name: 'geolocation' });
+      return permission.state !== 'denied';
+    } catch {
+      return true; // Fallback to assuming permission
+    }
+  };
+
+  // Get location from browser geolocation with mobile-specific handling
   const getLocationFromBrowser = async (): Promise<string | null> => {
-    return new Promise((resolve) => {
+    return new Promise(async (resolve) => {
       if (!navigator.geolocation) {
+        resolve(null);
+        return;
+      }
+
+      // Check permission first, especially important on mobile
+      const hasPermission = await requestLocationPermission();
+      if (!hasPermission) {
+        setState(prev => ({ ...prev, hasPermission: false, error: 'Location permission denied' }));
         resolve(null);
         return;
       }
@@ -52,6 +72,7 @@ export const useLocationDetection = () => {
       navigator.geolocation.getCurrentPosition(
         async (position) => {
           try {
+            setState(prev => ({ ...prev, hasPermission: true }));
             const { latitude, longitude } = position.coords;
             const response = await fetch(
               `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
@@ -65,10 +86,29 @@ export const useLocationDetection = () => {
         },
         (error) => {
           console.error('Geolocation error:', error);
-          setState(prev => ({ ...prev, hasPermission: false }));
+          let errorMsg = 'Location detection failed';
+          
+          switch (error.code) {
+            case error.PERMISSION_DENIED:
+              errorMsg = 'Location permission denied. Please enable location access in your browser settings.';
+              setState(prev => ({ ...prev, hasPermission: false }));
+              break;
+            case error.POSITION_UNAVAILABLE:
+              errorMsg = 'Location information unavailable';
+              break;
+            case error.TIMEOUT:
+              errorMsg = 'Location request timed out';
+              break;
+          }
+          
+          setState(prev => ({ ...prev, error: errorMsg }));
           resolve(null);
         },
-        { timeout: 10000, enableHighAccuracy: false }
+        { 
+          timeout: 15000, // Longer timeout for mobile
+          enableHighAccuracy: false,
+          maximumAge: 60000 // Cache for 1 minute
+        }
       );
     });
   };

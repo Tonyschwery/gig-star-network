@@ -87,10 +87,10 @@ export const AdminEventRequestEmail = ({
 
         <Section style={section}>
           <Link
-            href={`${appUrl}/admin/event-requests`}
+            href={`${appUrl}/admin`}
             style={button}
           >
-            View All Event Requests
+            Open Admin Dashboard
           </Link>
         </Section>
 

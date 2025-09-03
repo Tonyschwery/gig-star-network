@@ -164,8 +164,8 @@ export function UniversalChat() {
 
   return (
     <>
-      {/* Floating chat button */}
-      <div className="fixed bottom-4 right-4 z-50">
+      {/* Floating chat button - Position higher on mobile to avoid hamburger menu */}
+      <div className="fixed bottom-20 md:bottom-4 right-4 z-50">
         <Button
           className="h-14 w-14 rounded-full bg-accent hover:bg-accent/90 border border-border"
           onClick={() => {
