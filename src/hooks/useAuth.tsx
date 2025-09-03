@@ -45,69 +45,73 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       // Only redirect on auth or login pages to avoid interfering with manual navigation
       if (currentPath === '/auth' || currentPath === '/login') {
-        try {
-          // Check if user is admin first
-          console.log('Checking admin status for user:', user.id);
-          const { data: isAdminData, error: adminError } = await supabase
-            .rpc('is_admin', { user_id_param: user.id });
+        const handleRedirect = async () => {
+          try {
+            // Check if user is admin first
+            console.log('Checking admin status for user:', user.id);
+            const { data: isAdminData, error: adminError } = await supabase
+              .rpc('is_admin', { user_id_param: user.id });
 
-          if (adminError) {
-            console.error('Error checking admin status:', adminError);
-            return;
-          }
-
-          console.log('Admin check result:', isAdminData);
-          if (isAdminData) {
-            console.log('Redirecting admin to admin panel');
-            navigate('/admin');
-            return;
-          }
-
-          // Check user type from metadata
-          const userType = user.user_metadata?.user_type;
-          console.log('User type:', userType);
-          
-          if (userType === 'talent') {
-            // Use secure function to check if talent has completed profile
-            const { data: hasProfile, error } = await supabase.rpc('user_has_talent_profile');
-            
-            if (error) {
-              console.error('Error checking talent profile:', error);
-              navigate('/talent-onboarding');
+            if (adminError) {
+              console.error('Error checking admin status:', adminError);
               return;
             }
-              
-            if (!hasProfile) {
-              navigate('/talent-onboarding');
-            } else {
-              navigate('/talent-dashboard');
+
+            console.log('Admin check result:', isAdminData);
+            if (isAdminData) {
+              console.log('Redirecting admin to admin panel');
+              navigate('/admin');
+              return;
             }
-          } else {
-            // Non-talent users (bookers) - check if they have bookings
-            try {
-              const { data: bookings, error: bookingsError } = await supabase
-                .from('bookings')
-                .select('id')
-                .eq('user_id', user.id)
-                .limit(1);
+
+            // Check user type from metadata
+            const userType = user.user_metadata?.user_type;
+            console.log('User type:', userType);
+            
+            if (userType === 'talent') {
+              // Use secure function to check if talent has completed profile
+              const { data: hasProfile, error } = await supabase.rpc('user_has_talent_profile');
               
-              if (!bookingsError && bookings && bookings.length > 0) {
-                navigate('/booker-dashboard');
+              if (error) {
+                console.error('Error checking talent profile:', error);
+                navigate('/talent-onboarding');
+                return;
+              }
+                
+              if (!hasProfile) {
+                navigate('/talent-onboarding');
               } else {
+                navigate('/talent-dashboard');
+              }
+            } else {
+              // Non-talent users (bookers) - check if they have bookings
+              try {
+                const { data: bookings, error: bookingsError } = await supabase
+                  .from('bookings')
+                  .select('id')
+                  .eq('user_id', user.id)
+                  .limit(1);
+                
+                if (!bookingsError && bookings && bookings.length > 0) {
+                  navigate('/booker-dashboard');
+                } else {
+                  navigate('/');
+                }
+              } catch (error) {
+                console.error('Error checking bookings:', error);
                 navigate('/');
               }
-            } catch (error) {
-              console.error('Error checking bookings:', error);
-              navigate('/');
             }
+          } catch (error) {
+            console.error('Error in post-auth redirect:', error);
+            navigate('/');
           }
-        } catch (error) {
-          console.error('Error in post-auth redirect:', error);
-          navigate('/');
-        }
+        };
+        
+        handleRedirect();
       }
     }
-  }, [user, session, loading]);
+  }, [user, session, loading, navigate]);
 
   const signOut = async () => {
     await supabase.auth.signOut();
