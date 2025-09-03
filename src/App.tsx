@@ -93,11 +93,6 @@ const App = () => (
               </ProtectedTalentRoute>
             } />
             <Route path="/your-event" element={<YourEvent />} />
-            <Route path="/your-requests" element={
-              <ProtectedRoute>
-                <YourRequests />
-              </ProtectedRoute>
-            } />
             <Route path="/pricing" element={<Pricing />} />
             <Route path="/subscription-success" element={<SubscriptionSuccess />} />
             <Route path="/subscription-cancelled" element={<SubscriptionCancelled />} />

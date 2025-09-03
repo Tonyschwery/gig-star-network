@@ -609,6 +609,10 @@ export type Database = {
         Args: { payment_id_param: string }
         Returns: Json
       }
+      create_admin_support_booking: {
+        Args: { user_id_param: string }
+        Returns: string
+      }
       get_admin_permissions: {
         Args: { user_id_param?: string }
         Returns: string[]

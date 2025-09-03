@@ -76,7 +76,24 @@ export function UniversalChat() {
         asTalent = (data as any) || [];
       }
 
-      const merged = [...((asBooker as any) || []), ...asTalent];
+      let merged = [...((asBooker as any) || []), ...asTalent];
+      
+      // Create or fetch QTalents Support booking for this user
+      const { data: supportBookingId, error: supportError } = await supabase.rpc('create_admin_support_booking', {
+        user_id_param: user.id
+      });
+
+      if (!supportError && supportBookingId) {
+        // Add QTalents Support booking to the list
+        const supportBooking: BookingLite = {
+          id: supportBookingId,
+          user_id: user.id,
+          talent_id: null,
+          event_type: 'admin_support',
+          booker_name: 'QTalents Support',
+        };
+        merged = [supportBooking, ...merged];
+      }
       
       // Fetch talent Pro status for each booking to determine chat filtering
       const talentStatusMap: {[key: string]: boolean} = {};
@@ -238,7 +255,7 @@ export function UniversalChat() {
               <div className="p-3 bg-muted/30 border-b border-border shrink-0">
                 <Select value={selectedId ?? undefined} onValueChange={(v) => setSelectedId(v)}>
                   <SelectTrigger className="w-full bg-card border-border text-card-foreground text-sm h-9">
-                    <SelectValue placeholder="Select an event to chat about" />
+                    <SelectValue placeholder="Select an event or support chat..." />
                   </SelectTrigger>
                   <SelectContent className="bg-card border-border">
                     {bookings.map((b) => {
@@ -251,28 +268,37 @@ export function UniversalChat() {
                           value={b.id} 
                           className="text-card-foreground text-sm"
                         >
-                          <div className="flex items-center gap-2">
-                            <div className="h-1.5 w-1.5 bg-accent rounded-full"></div>
-                            <span className="font-medium">{b.event_type}</span>
-                            <span className="text-muted-foreground">•</span>
-                            <span className="text-muted-foreground">{b.booker_name}</span>
-                            {/* Only show additional details if user is Pro (when they are the talent) */}
-                            {isTalentForBooking && isProUser && b.event_date && (
-                              <>
-                                <span className="text-muted-foreground">•</span>
-                                <span className="text-muted-foreground text-xs">
-                                  {new Date(b.event_date).toLocaleDateString()}
-                                </span>
-                              </>
-                            )}
-                            {/* For free users acting as talent, show limited info */}
-                            {isTalentForBooking && !isProUser && (
-                              <>
-                                <span className="text-muted-foreground">•</span>
-                                <span className="text-muted-foreground text-xs">Pro Feature</span>
-                              </>
-                            )}
-                          </div>
+                           <div className="flex items-center gap-2">
+                             <div className="h-1.5 w-1.5 bg-accent rounded-full"></div>
+                             {b.event_type === 'admin_support' ? (
+                               <>
+                                 <span className="font-medium">🎯 QTalents Support</span>
+                                 <span className="text-muted-foreground text-xs">• Direct support chat</span>
+                               </>
+                             ) : (
+                               <>
+                                 <span className="font-medium">{b.event_type}</span>
+                                 <span className="text-muted-foreground">•</span>
+                                 <span className="text-muted-foreground">{b.booker_name}</span>
+                                 {/* Only show additional details if user is Pro (when they are the talent) */}
+                                 {isTalentForBooking && isProUser && b.event_date && (
+                                   <>
+                                     <span className="text-muted-foreground">•</span>
+                                     <span className="text-muted-foreground text-xs">
+                                       {new Date(b.event_date).toLocaleDateString()}
+                                     </span>
+                                   </>
+                                 )}
+                                 {/* For free users acting as talent, show limited info */}
+                                 {isTalentForBooking && !isProUser && (
+                                   <>
+                                     <span className="text-muted-foreground">•</span>
+                                     <span className="text-muted-foreground text-xs">Pro Feature</span>
+                                   </>
+                                 )}
+                               </>
+                             )}
+                           </div>
                         </SelectItem>
                       );
                     })}
