@@ -17,25 +17,22 @@ interface EventRequest {
   user_id: string;
   booker_name: string;
   booker_email: string;
+  booker_phone?: string | null;
   event_date: string;
   event_duration: number;
   event_location: string;
   event_type: string;
   description: string | null;
+  talent_type_needed?: string | null;
   status: 'pending' | 'approved' | 'declined' | 'completed';
   created_at: string;
   updated_at: string;
-  admin_reply?: string | null;
-  replied_at?: string | null;
-  replied_by?: string | null;
 }
 
 export default function AdminEventRequests() {
   const [requests, setRequests] = useState<EventRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedRequest, setSelectedRequest] = useState<EventRequest | null>(null);
-  const [replyText, setReplyText] = useState('');
-  const [sendingReply, setSendingReply] = useState(false);
 
   useEffect(() => {
     loadEventRequests();
@@ -79,64 +76,6 @@ export default function AdminEventRequests() {
     } catch (error) {
       console.error('Error updating request status:', error);
       toast.error('Failed to update request status');
-    }
-  };
-
-  const sendReply = async (requestId: string) => {
-    if (!replyText.trim()) {
-      toast.error('Please enter a reply message');
-      return;
-    }
-
-    setSendingReply(true);
-    try {
-      const { error } = await supabase
-        .from('event_requests')
-        .update({ 
-          admin_reply: replyText,
-          replied_at: new Date().toISOString(),
-          replied_by: (await supabase.auth.getUser()).data.user?.id
-        })
-        .eq('id', requestId);
-      
-      if (error) throw error;
-
-      // Send email to booker
-      const request = requests.find(r => r.id === requestId);
-      if (request) {
-        await supabase.functions.invoke('send-notification-email', {
-          body: {
-            eventType: 'admin_reply',
-            userIds: [request.user_id],
-            emailData: {
-              bookerName: request.booker_name,
-              bookerEmail: request.booker_email,
-              eventType: request.event_type,
-              eventDate: request.event_date,
-              eventLocation: request.event_location,
-              adminReply: replyText,
-              requestId: requestId
-            }
-          }
-        });
-      }
-      
-      // Update local state
-      setRequests(prev => prev.map(req => 
-        req.id === requestId ? { 
-          ...req, 
-          admin_reply: replyText,
-          replied_at: new Date().toISOString()
-        } : req
-      ));
-      
-      setReplyText('');
-      toast.success('Reply sent successfully');
-    } catch (error) {
-      console.error('Error sending reply:', error);
-      toast.error('Failed to send reply');
-    } finally {
-      setSendingReply(false);
     }
   };
 
@@ -294,6 +233,11 @@ export default function AdminEventRequests() {
                           <Mail className="h-3 w-3" />
                           <span>{request.booker_email}</span>
                         </div>
+                        {request.booker_phone && (
+                          <div className="flex items-center gap-2 text-sm font-medium text-primary">
+                            <span className="text-xs bg-primary/10 px-2 py-1 rounded">📱 {request.booker_phone}</span>
+                          </div>
+                        )}
                       </div>
                     </TableCell>
                     <TableCell>
@@ -303,6 +247,13 @@ export default function AdminEventRequests() {
                           <MapPin className="h-3 w-3" />
                           <span>{request.event_location}</span>
                         </div>
+                        {request.talent_type_needed && (
+                          <div className="flex items-center gap-2 text-sm font-medium text-blue-600">
+                            <span className="text-xs bg-blue-50 px-2 py-1 rounded border border-blue-200">
+                              Looking for: {request.talent_type_needed}
+                            </span>
+                          </div>
+                        )}
                       </div>
                     </TableCell>
                     <TableCell>
@@ -328,18 +279,17 @@ export default function AdminEventRequests() {
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <Dialog>
-                          <DialogTrigger asChild>
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => {
-                                setSelectedRequest(request);
-                                setReplyText('');
-                              }}
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                          </DialogTrigger>
+                           <DialogTrigger asChild>
+                             <Button 
+                               variant="outline" 
+                               size="sm"
+                               onClick={() => {
+                                 setSelectedRequest(request);
+                               }}
+                             >
+                               <Eye className="h-4 w-4" />
+                             </Button>
+                           </DialogTrigger>
                           <DialogContent className="sm:max-w-2xl">
                             <DialogHeader>
                               <DialogTitle>Event Request Details</DialogTitle>
@@ -352,19 +302,33 @@ export default function AdminEventRequests() {
                                 <div className="grid grid-cols-2 gap-4">
                                   <div>
                                     <h3 className="font-semibold mb-2">Booker Information</h3>
-                                    <div className="space-y-2 text-sm">
-                                      <div><strong>Name:</strong> {selectedRequest.booker_name}</div>
-                                      <div><strong>Email:</strong> {selectedRequest.booker_email}</div>
-                                    </div>
+                                     <div className="space-y-2 text-sm">
+                                       <div><strong>Name:</strong> {selectedRequest.booker_name}</div>
+                                       <div><strong>Email:</strong> {selectedRequest.booker_email}</div>
+                                       {selectedRequest.booker_phone && (
+                                         <div><strong>Phone:</strong> 
+                                           <span className="ml-2 bg-primary/10 px-2 py-1 rounded text-primary font-medium">
+                                             {selectedRequest.booker_phone}
+                                           </span>
+                                         </div>
+                                       )}
+                                     </div>
                                   </div>
                                   <div>
                                     <h3 className="font-semibold mb-2">Event Information</h3>
-                                    <div className="space-y-2 text-sm">
-                                      <div><strong>Type:</strong> {selectedRequest.event_type}</div>
-                                      <div><strong>Location:</strong> {selectedRequest.event_location}</div>
-                                      <div><strong>Date:</strong> {format(new Date(selectedRequest.event_date), 'PPP')}</div>
-                                      <div><strong>Duration:</strong> {selectedRequest.event_duration} hours</div>
-                                    </div>
+                                     <div className="space-y-2 text-sm">
+                                       <div><strong>Type:</strong> {selectedRequest.event_type}</div>
+                                       <div><strong>Location:</strong> {selectedRequest.event_location}</div>
+                                       <div><strong>Date:</strong> {format(new Date(selectedRequest.event_date), 'PPP')}</div>
+                                       <div><strong>Duration:</strong> {selectedRequest.event_duration} hours</div>
+                                       {selectedRequest.talent_type_needed && (
+                                         <div><strong>Talent Needed:</strong> 
+                                           <span className="ml-2 bg-blue-50 px-2 py-1 rounded text-blue-600 font-medium">
+                                             {selectedRequest.talent_type_needed}
+                                           </span>
+                                         </div>
+                                       )}
+                                     </div>
                                   </div>
                                 </div>
                                 
@@ -395,113 +359,66 @@ export default function AdminEventRequests() {
                                       <SelectItem value="declined">Declined</SelectItem>
                                       <SelectItem value="completed">Completed</SelectItem>
                                     </SelectContent>
-                                  </Select>
-                                </div>
-                                
-                                {/* Admin Reply Section */}
-                                <div className="border-t pt-4">
-                                  <h3 className="font-semibold mb-2">Admin Reply</h3>
-                                  {selectedRequest.admin_reply ? (
-                                    <div className="bg-muted p-3 rounded mb-3">
-                                      <p className="text-sm">{selectedRequest.admin_reply}</p>
-                                      {selectedRequest.replied_at && (
-                                        <p className="text-xs text-muted-foreground mt-1">
-                                          Replied on {format(new Date(selectedRequest.replied_at), 'PPP')}
-                                        </p>
-                                      )}
-                                    </div>
-                                  ) : (
-                                    <div className="space-y-3">
-                                      <Textarea
-                                        placeholder="Write your reply to the booker..."
-                                        value={replyText}
-                                        onChange={(e) => setReplyText(e.target.value)}
-                                        rows={4}
-                                      />
-                                      <Button 
-                                        onClick={() => sendReply(selectedRequest.id)}
-                                        disabled={sendingReply || !replyText.trim()}
-                                        className="w-full"
-                                      >
-                                        <Send className="h-4 w-4 mr-2" />
-                                        {sendingReply ? 'Sending...' : 'Send Reply'}
-                                      </Button>
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            )}
-                          </DialogContent>
-                        </Dialog>
-                        
-                        {request.status === 'pending' && (
-                          <div className="flex gap-1">
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => updateRequestStatus(request.id, 'approved')}
-                              className="text-green-600 hover:text-green-700"
-                            >
-                              <CheckCircle className="h-4 w-4" />
-                            </Button>
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => updateRequestStatus(request.id, 'declined')}
-                              className="text-red-600 hover:text-red-700"
-                            >
-                              <XCircle className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        )}
-                        
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              className="text-red-600 hover:text-red-700"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Delete Request</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Are you sure you want to delete this event request? This action cannot be undone.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction 
-                                onClick={() => deleteRequest(request.id)}
-                                className="bg-red-600 hover:bg-red-700"
-                              >
-                                Delete
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-            
-            {requests.length === 0 && (
-              <div className="text-center py-12">
-                <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No Event Requests</h3>
-                <p className="text-muted-foreground">
-                  Event requests will appear here when users submit them through the website.
-                </p>
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
+                                 </Select>
+                                 </div>
+                                 
+                                 <div className="border-t pt-4">
+                                   <p className="text-sm text-muted-foreground">
+                                     💬 To communicate with this user, please use the Universal Chat system by searching for their booking or creating a support ticket.
+                                   </p>
+                                 </div>
+                               </div>
+                             )}
+                           </DialogContent>
+                         </Dialog>
+                         
+                         <AlertDialog>
+                           <AlertDialogTrigger asChild>
+                             <Button 
+                               variant="outline" 
+                               size="sm"
+                               className="text-red-600 hover:text-red-700"
+                             >
+                               <Trash2 className="h-4 w-4" />
+                             </Button>
+                           </AlertDialogTrigger>
+                           <AlertDialogContent>
+                             <AlertDialogHeader>
+                               <AlertDialogTitle>Delete Request</AlertDialogTitle>
+                               <AlertDialogDescription>
+                                 Are you sure you want to delete this event request? This action cannot be undone.
+                               </AlertDialogDescription>
+                             </AlertDialogHeader>
+                             <AlertDialogFooter>
+                               <AlertDialogCancel>Cancel</AlertDialogCancel>
+                               <AlertDialogAction 
+                                 onClick={() => deleteRequest(request.id)}
+                                 className="bg-red-600 hover:bg-red-700"
+                               >
+                                 Delete
+                               </AlertDialogAction>
+                             </AlertDialogFooter>
+                           </AlertDialogContent>
+                         </AlertDialog>
+                       </div>
+                     </TableCell>
+                   </TableRow>
+                 ))}
+               </TableBody>
+             </Table>
+             
+             {requests.length === 0 && (
+               <div className="text-center py-12">
+                 <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                 <h3 className="text-lg font-semibold mb-2">No Event Requests</h3>
+                 <p className="text-muted-foreground">
+                   Event requests will appear here when users submit them through the website.
+                 </p>
+               </div>
+             )}
+           </div>
+         </CardContent>
+       </Card>
+     </div>
+   );
+ }

@@ -39,6 +39,7 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
   const [eventLocation, setEventLocation] = useState("");
   const [eventType, setEventType] = useState("");
   const [description, setDescription] = useState("");
+  const [talentTypeNeeded, setTalentTypeNeeded] = useState("");
   
   
   // Auth fields for non-authenticated users
@@ -54,6 +55,20 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
     "club",
     "school",
     "festival"
+  ];
+
+  const talentTypes = [
+    "Singer",
+    "Guitarist", 
+    "Pianist",
+    "DJ",
+    "Band",
+    "Violinist",
+    "Saxophonist",
+    "Drummer",
+    "Flutist",
+    "Oud Player",
+    "Other"
   ];
 
 
@@ -182,6 +197,16 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
       return;
     }
 
+    // For admin requests, talent type is also required
+    if (talentId === "admin-request" && !talentTypeNeeded) {
+      toast({
+        title: "Missing Information", 
+        description: "Please select what type of talent you're looking for.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -199,6 +224,7 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
           event_location: eventLocation.trim(),
           event_type: eventType,
           description: description?.trim() || null,
+          talent_type_needed: talentTypeNeeded || null,
         };
 
         // Insert into event_requests table
@@ -534,6 +560,28 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Talent Type Needed - Only for admin requests */}
+            {talentId === "admin-request" && (
+              <div className="space-y-2">
+                <Label htmlFor="talent-type">What Type of Talent Are You Looking For? *</Label>
+                <Select onValueChange={setTalentTypeNeeded}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select talent type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {talentTypes.map((type) => (
+                      <SelectItem key={type} value={type}>
+                        {type}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  This helps our team match you with the right talent for your event
+                </p>
+              </div>
+            )}
 
 
             {/* Description */}
