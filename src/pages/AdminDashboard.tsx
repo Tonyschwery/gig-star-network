@@ -11,9 +11,9 @@ interface DashboardStats {
   totalUsers: number;
   totalTalents: number;
   totalBookings: number;
-  totalPayments: number;
   pendingBookings: number;
   activeChats: number;
+  proSubscribers: number;
 }
 
 export default function AdminDashboard() {
@@ -23,9 +23,9 @@ export default function AdminDashboard() {
     totalUsers: 0,
     totalTalents: 0,
     totalBookings: 0,
-    totalPayments: 0,
     pendingBookings: 0,
     activeChats: 0,
+    proSubscribers: 0,
   });
   const [loading, setLoading] = useState(true);
 
@@ -37,21 +37,22 @@ export default function AdminDashboard() {
     try {
       const [usersData, talentsData, bookingsData, chatData] = await Promise.all([
         supabase.from('admin_users').select('id').limit(1000),
-        supabase.from('talent_profiles').select('id'),
+        supabase.from('talent_profiles').select('id, is_pro_subscriber'),
         supabase.from('bookings').select('id, status'),
         supabase.from('chat_messages').select('booking_id').limit(1000),
       ]);
 
       const pendingBookings = bookingsData.data?.filter(b => b.status === 'pending').length || 0;
       const uniqueChats = new Set(chatData?.data?.map(c => c.booking_id)).size;
+      const proSubscribers = talentsData.data?.filter(t => t.is_pro_subscriber).length || 0;
 
       setStats({
         totalUsers: usersData.data?.length || 0,
         totalTalents: talentsData.data?.length || 0,
         totalBookings: bookingsData.data?.length || 0,
-        totalPayments: 0, // No longer tracking payments
         pendingBookings,
         activeChats: uniqueChats,
+        proSubscribers,
       });
     } catch (error) {
       console.error('Error loading dashboard stats:', error);
@@ -126,11 +127,14 @@ export default function AdminDashboard() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Active Chats</CardTitle>
-              <MessageSquare className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium">Pro Subscribers</CardTitle>
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.activeChats}</div>
+              <div className="text-2xl font-bold">{stats.proSubscribers}</div>
+              <p className="text-xs text-muted-foreground">
+                Active subscriptions
+              </p>
             </CardContent>
           </Card>
         </div>
@@ -225,9 +229,9 @@ export default function AdminDashboard() {
             <CardHeader>
               <CardTitle className="flex items-center">
                 <DollarSign className="h-5 w-5 mr-2" />
-                Payments
+                Pro Subscriptions
               </CardTitle>
-              <CardDescription>Monitor subscription revenue</CardDescription>
+              <CardDescription>Monitor Pro subscription metrics</CardDescription>
             </CardHeader>
             <CardContent>
               <Button 
@@ -236,7 +240,7 @@ export default function AdminDashboard() {
                 onClick={() => navigate('/admin/payments')}
               >
                 <DollarSign className="h-4 w-4 mr-2" />
-                View Payments
+                View Subscriptions
               </Button>
             </CardContent>
           </Card>

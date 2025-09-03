@@ -6,7 +6,9 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, Clock, MapPin, User, Mail, FileText, Eye, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Calendar, Clock, MapPin, User, Mail, FileText, Eye, CheckCircle, XCircle, AlertCircle, Reply, Trash2, Send } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 
@@ -23,12 +25,17 @@ interface EventRequest {
   status: 'pending' | 'approved' | 'declined' | 'completed';
   created_at: string;
   updated_at: string;
+  admin_reply?: string | null;
+  replied_at?: string | null;
+  replied_by?: string | null;
 }
 
 export default function AdminEventRequests() {
   const [requests, setRequests] = useState<EventRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedRequest, setSelectedRequest] = useState<EventRequest | null>(null);
+  const [replyText, setReplyText] = useState('');
+  const [sendingReply, setSendingReply] = useState(false);
 
   useEffect(() => {
     loadEventRequests();
@@ -72,6 +79,83 @@ export default function AdminEventRequests() {
     } catch (error) {
       console.error('Error updating request status:', error);
       toast.error('Failed to update request status');
+    }
+  };
+
+  const sendReply = async (requestId: string) => {
+    if (!replyText.trim()) {
+      toast.error('Please enter a reply message');
+      return;
+    }
+
+    setSendingReply(true);
+    try {
+      const { error } = await supabase
+        .from('event_requests')
+        .update({ 
+          admin_reply: replyText,
+          replied_at: new Date().toISOString(),
+          replied_by: (await supabase.auth.getUser()).data.user?.id
+        })
+        .eq('id', requestId);
+      
+      if (error) throw error;
+
+      // Send email to booker
+      const request = requests.find(r => r.id === requestId);
+      if (request) {
+        await supabase.functions.invoke('send-notification-email', {
+          body: {
+            eventType: 'admin_reply',
+            userIds: [request.user_id],
+            emailData: {
+              bookerName: request.booker_name,
+              bookerEmail: request.booker_email,
+              eventType: request.event_type,
+              eventDate: request.event_date,
+              eventLocation: request.event_location,
+              adminReply: replyText,
+              requestId: requestId
+            }
+          }
+        });
+      }
+      
+      // Update local state
+      setRequests(prev => prev.map(req => 
+        req.id === requestId ? { 
+          ...req, 
+          admin_reply: replyText,
+          replied_at: new Date().toISOString()
+        } : req
+      ));
+      
+      setReplyText('');
+      toast.success('Reply sent successfully');
+    } catch (error) {
+      console.error('Error sending reply:', error);
+      toast.error('Failed to send reply');
+    } finally {
+      setSendingReply(false);
+    }
+  };
+
+  const deleteRequest = async (requestId: string) => {
+    try {
+      const { error } = await supabase
+        .from('event_requests')
+        .delete()
+        .eq('id', requestId);
+      
+      if (error) throw error;
+      
+      // Update local state
+      setRequests(prev => prev.filter(req => req.id !== requestId));
+      
+      toast.success('Request deleted successfully');
+    } catch (error) {
+      console.error('Error deleting request:', error);
+      toast.error('Failed to delete request');
     }
   };
 
@@ -248,7 +332,10 @@ export default function AdminEventRequests() {
                             <Button 
                               variant="outline" 
                               size="sm"
-                              onClick={() => setSelectedRequest(request)}
+                              onClick={() => {
+                                setSelectedRequest(request);
+                                setReplyText('');
+                              }}
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
@@ -310,6 +397,38 @@ export default function AdminEventRequests() {
                                     </SelectContent>
                                   </Select>
                                 </div>
+                                
+                                {/* Admin Reply Section */}
+                                <div className="border-t pt-4">
+                                  <h3 className="font-semibold mb-2">Admin Reply</h3>
+                                  {selectedRequest.admin_reply ? (
+                                    <div className="bg-muted p-3 rounded mb-3">
+                                      <p className="text-sm">{selectedRequest.admin_reply}</p>
+                                      {selectedRequest.replied_at && (
+                                        <p className="text-xs text-muted-foreground mt-1">
+                                          Replied on {format(new Date(selectedRequest.replied_at), 'PPP')}
+                                        </p>
+                                      )}
+                                    </div>
+                                  ) : (
+                                    <div className="space-y-3">
+                                      <Textarea
+                                        placeholder="Write your reply to the booker..."
+                                        value={replyText}
+                                        onChange={(e) => setReplyText(e.target.value)}
+                                        rows={4}
+                                      />
+                                      <Button 
+                                        onClick={() => sendReply(selectedRequest.id)}
+                                        disabled={sendingReply || !replyText.trim()}
+                                        className="w-full"
+                                      >
+                                        <Send className="h-4 w-4 mr-2" />
+                                        {sendingReply ? 'Sending...' : 'Send Reply'}
+                                      </Button>
+                                    </div>
+                                  )}
+                                </div>
                               </div>
                             )}
                           </DialogContent>
@@ -335,6 +454,35 @@ export default function AdminEventRequests() {
                             </Button>
                           </div>
                         )}
+                        
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              className="text-red-600 hover:text-red-700"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete Request</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure you want to delete this event request? This action cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction 
+                                onClick={() => deleteRequest(request.id)}
+                                className="bg-red-600 hover:bg-red-700"
+                              >
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </div>
                     </TableCell>
                   </TableRow>

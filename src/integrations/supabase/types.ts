@@ -306,6 +306,7 @@ export type Database = {
       }
       event_requests: {
         Row: {
+          admin_reply: string | null
           booker_email: string
           booker_name: string
           booker_phone: string | null
@@ -316,11 +317,14 @@ export type Database = {
           event_location: string
           event_type: string
           id: string
+          replied_at: string | null
+          replied_by: string | null
           status: string
           updated_at: string
           user_id: string
         }
         Insert: {
+          admin_reply?: string | null
           booker_email: string
           booker_name: string
           booker_phone?: string | null
@@ -331,11 +335,14 @@ export type Database = {
           event_location: string
           event_type: string
           id?: string
+          replied_at?: string | null
+          replied_by?: string | null
           status?: string
           updated_at?: string
           user_id: string
         }
         Update: {
+          admin_reply?: string | null
           booker_email?: string
           booker_name?: string
           booker_phone?: string | null
@@ -346,6 +353,8 @@ export type Database = {
           event_location?: string
           event_type?: string
           id?: string
+          replied_at?: string | null
+          replied_by?: string | null
           status?: string
           updated_at?: string
           user_id?: string
