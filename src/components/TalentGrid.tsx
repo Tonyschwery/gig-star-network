@@ -7,6 +7,7 @@ import { Star, MapPin, Music, Mic, Camera, Brush, User, Filter, X, Crown, Search
 import { ProBadge } from "@/components/ProBadge";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useLocationDetection } from "@/hooks/useLocationDetection";
 
 interface TalentProfile {
   id: string;
@@ -31,6 +32,7 @@ interface TalentProfile {
 
 export function TalentGrid() {
   const [searchParams] = useSearchParams();
+  const { userLocation } = useLocationDetection();
   const [talents, setTalents] = useState<TalentProfile[]>([]);
   const [filteredTalents, setFilteredTalents] = useState<TalentProfile[]>([]);
   const [loading, setLoading] = useState(true);
@@ -58,7 +60,7 @@ export function TalentGrid() {
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  }, [userLocation]);
 
   // Update filters when URL parameters change
   useEffect(() => {
@@ -208,8 +210,13 @@ export function TalentGrid() {
             </span>
           </div>
           <h2 className="text-4xl font-bold mb-6">
-            {hasActiveFilters ? `Found ${talentsToShow.length} Perfect Match${talentsToShow.length !== 1 ? 'es' : ''}` : 'Discover Exceptional Talent'}
+            {userLocation && userLocation !== 'Worldwide' ? `Discover Talent in ${userLocation}` : 'Discover Exceptional Talent'}
           </h2>
+          {userLocation && userLocation !== 'Worldwide' && (
+            <p className="text-center text-muted-foreground mb-4">
+              📍 Showing local talent first • <span className="text-xs">Change location in header</span>
+            </p>
+          )}
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
             {hasActiveFilters 
               ? 'Talented performers ready to make your event unforgettable'

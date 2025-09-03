@@ -1,0 +1,98 @@
+import { useState } from 'react';
+import { MapPin, ChevronDown, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { useLocationDetection } from '@/hooks/useLocationDetection';
+import { countries } from '@/lib/countries';
+
+export const LocationSelector = () => {
+  const { 
+    userLocation, 
+    detectedLocation, 
+    isDetecting, 
+    saveLocation, 
+    detectLocation 
+  } = useLocationDetection();
+  
+  const [isOpen, setIsOpen] = useState(false);
+
+  const handleLocationSelect = (location: string) => {
+    saveLocation(location, true);
+    setIsOpen(false);
+  };
+
+  const handleDetectLocation = () => {
+    detectLocation();
+    setIsOpen(false);
+  };
+
+  const currentLocation = userLocation || detectedLocation || 'Worldwide';
+  const isDetected = userLocation === detectedLocation;
+
+  return (
+    <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
+      <DropdownMenuTrigger asChild>
+        <Button 
+          variant="outline" 
+          className="gap-2 bg-background/80 backdrop-blur-sm border-border/50 hover:bg-accent/80"
+        >
+          <MapPin className="h-4 w-4" />
+          <span className="text-sm font-medium">{currentLocation}</span>
+          {isDetecting ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <ChevronDown className="h-4 w-4" />
+          )}
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-64 max-h-80 overflow-y-auto">
+        <div className="p-2">
+          <p className="text-xs text-muted-foreground mb-2">
+            {isDetected ? '📍 Auto-detected' : '📍 Manual selection'}
+          </p>
+        </div>
+        
+        <DropdownMenuItem onClick={handleDetectLocation} disabled={isDetecting}>
+          <MapPin className="h-4 w-4 mr-2" />
+          {isDetecting ? 'Detecting...' : 'Detect My Location'}
+        </DropdownMenuItem>
+        
+        <DropdownMenuItem onClick={() => handleLocationSelect('Worldwide')}>
+          <span className="mr-2">🌍</span>
+          Worldwide
+        </DropdownMenuItem>
+        
+        <DropdownMenuSeparator />
+        
+        {detectedLocation && detectedLocation !== userLocation && (
+          <>
+            <DropdownMenuItem onClick={() => handleLocationSelect(detectedLocation)}>
+              <span className="mr-2">📍</span>
+              {detectedLocation} (detected)
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+          </>
+        )}
+        
+        <div className="max-h-48 overflow-y-auto">
+          {countries.map((country) => (
+            <DropdownMenuItem
+              key={country.code}
+              onClick={() => handleLocationSelect(country.name)}
+              className={userLocation === country.name ? 'bg-accent' : ''}
+            >
+              <span className="mr-2">{country.flag}</span>
+              {country.name}
+            </DropdownMenuItem>
+          ))}
+        </div>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+};

@@ -492,6 +492,36 @@ export type Database = {
         }
         Relationships: []
       }
+      user_preferences: {
+        Row: {
+          created_at: string
+          detected_location: string | null
+          id: string
+          location_override: boolean | null
+          preferred_location: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          detected_location?: string | null
+          id?: string
+          location_override?: boolean | null
+          preferred_location?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          detected_location?: string | null
+          id?: string
+          location_override?: boolean | null
+          preferred_location?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       talent_profiles_public: {
@@ -590,6 +620,10 @@ export type Database = {
       get_talent_accepted_bookings_count: {
         Args: { talent_id_param: string }
         Returns: number
+      }
+      get_user_location_preference: {
+        Args: { user_id_param?: string }
+        Returns: string
       }
       get_user_talent_profile: {
         Args: { user_id_param?: string }

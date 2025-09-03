@@ -9,6 +9,7 @@ import { QtalentLogo } from "@/components/QtalentLogo";
 import { MobileMenu } from "@/components/ui/mobile-menu";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { HowItWorksModal } from "@/components/HowItWorksModal";
+import { LocationSelector } from "@/components/LocationSelector";
 
 import { ProfileMenu } from "@/components/ProfileMenu";
 import { SubscriptionButton } from "@/components/SubscriptionButton";
@@ -192,7 +193,8 @@ export function Header() {
             <div className="hidden md:flex items-center space-x-4">
               {user ? (
                 <div className="flex items-center space-x-4">
-                  {/* Mode switch and notifications */}
+                  {/* Location selector and mode switch and notifications */}
+                  <LocationSelector />
                   {talentName && <ModeSwitch />}
                   <NotificationCenter />
                   
@@ -226,6 +228,7 @@ export function Header() {
                 </div>
               ) : (
                 <>
+                  <LocationSelector />
                   <Button 
                     variant="outline" 
                     size="sm"
