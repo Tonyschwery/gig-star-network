@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MapPin, ChevronDown, Loader2 } from 'lucide-react';
+import { MapPin, ChevronDown, Loader2, Smartphone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -9,6 +9,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useLocationDetection } from '@/hooks/useLocationDetection';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { countries } from '@/lib/countries';
 
 export const LocationSelector = () => {
@@ -16,10 +17,13 @@ export const LocationSelector = () => {
     userLocation, 
     detectedLocation, 
     isDetecting, 
+    hasPermission,
+    error,
     saveLocation, 
     detectLocation 
   } = useLocationDetection();
   
+  const isMobile = useIsMobile();
   const [isOpen, setIsOpen] = useState(false);
 
   const handleLocationSelect = (location: string) => {
@@ -56,11 +60,22 @@ export const LocationSelector = () => {
           <p className="text-xs text-muted-foreground mb-2">
             {isDetected ? '📍 Auto-detected' : '📍 Manual selection'}
           </p>
+          {isMobile && !userLocation && (
+            <p className="text-xs text-accent mb-2 flex items-center gap-1">
+              <Smartphone className="h-3 w-3" />
+              Tap to detect location
+            </p>
+          )}
+          {error && hasPermission === false && (
+            <p className="text-xs text-destructive mb-2">
+              {isMobile ? 'Enable location in browser settings' : error}
+            </p>
+          )}
         </div>
         
         <DropdownMenuItem onClick={handleDetectLocation} disabled={isDetecting}>
           <MapPin className="h-4 w-4 mr-2" />
-          {isDetecting ? 'Detecting...' : 'Detect My Location'}
+          {isDetecting ? 'Detecting...' : isMobile ? 'Tap to Detect Location' : 'Detect My Location'}
         </DropdownMenuItem>
         
         <DropdownMenuItem onClick={() => handleLocationSelect('Worldwide')}>

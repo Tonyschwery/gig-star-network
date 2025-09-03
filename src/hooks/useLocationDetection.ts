@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface LocationData {
   country: string;
@@ -18,6 +19,7 @@ interface LocationState {
 
 export const useLocationDetection = () => {
   const { user } = useAuth();
+  const isMobile = useIsMobile();
   const [state, setState] = useState<LocationState>({
     userLocation: null,
     detectedLocation: null,
@@ -41,15 +43,19 @@ export const useLocationDetection = () => {
     }
   };
 
-  // Request location permission explicitly for mobile
+  // Enhanced permission checking for mobile browsers
   const requestLocationPermission = async (): Promise<boolean> => {
-    if (!navigator.permissions) return true; // Assume permission if API not available
+    if (!navigator.permissions) return true;
     
     try {
       const permission = await navigator.permissions.query({ name: 'geolocation' });
+      setState(prev => ({ 
+        ...prev, 
+        hasPermission: permission.state === 'granted' ? true : permission.state === 'denied' ? false : null 
+      }));
       return permission.state !== 'denied';
     } catch {
-      return true; // Fallback to assuming permission
+      return true;
     }
   };
 
@@ -68,6 +74,13 @@ export const useLocationDetection = () => {
         resolve(null);
         return;
       }
+
+      // Mobile-optimized geolocation options
+      const options = {
+        timeout: isMobile ? 10000 : 15000,
+        enableHighAccuracy: false,
+        maximumAge: isMobile ? 300000 : 60000 // 5 min cache on mobile, 1 min on desktop
+      };
 
       navigator.geolocation.getCurrentPosition(
         async (position) => {
@@ -90,25 +103,23 @@ export const useLocationDetection = () => {
           
           switch (error.code) {
             case error.PERMISSION_DENIED:
-              errorMsg = 'Location permission denied. Please enable location access in your browser settings.';
+              errorMsg = isMobile 
+                ? 'Location access denied. To enable: Settings > Safari > Location Services > Safari Websites > Allow'
+                : 'Location permission denied. Please enable location access in your browser settings.';
               setState(prev => ({ ...prev, hasPermission: false }));
               break;
             case error.POSITION_UNAVAILABLE:
               errorMsg = 'Location information unavailable';
               break;
             case error.TIMEOUT:
-              errorMsg = 'Location request timed out';
+              errorMsg = isMobile ? 'Location request timed out. Please try again.' : 'Location request timed out';
               break;
           }
           
           setState(prev => ({ ...prev, error: errorMsg }));
           resolve(null);
         },
-        { 
-          timeout: 15000, // Longer timeout for mobile
-          enableHighAccuracy: false,
-          maximumAge: 60000 // Cache for 1 minute
-        }
+        options
       );
     });
   };
@@ -210,7 +221,7 @@ export const useLocationDetection = () => {
     }
   }, [user, state.isDetecting, state.userLocation]);
 
-  // Initialize on mount
+  // Initialize on mount - NO auto-detection for mobile compatibility
   useEffect(() => {
     // Load from localStorage first
     const savedLocation = localStorage.getItem('userLocation');
@@ -225,11 +236,12 @@ export const useLocationDetection = () => {
       loadUserPreferences();
     }
 
-    // Auto-detect if no location is set
-    if (!savedLocation && !state.detectedLocation) {
+    // Only auto-detect on desktop and if no location is set
+    // Mobile browsers require user interaction for location access
+    if (!isMobile && !savedLocation && !state.detectedLocation) {
       detectLocation();
     }
-  }, [user, detectLocation, loadUserPreferences, state.detectedLocation]);
+  }, [user, loadUserPreferences, isMobile]);
 
   return {
     userLocation: state.userLocation,
