@@ -180,7 +180,7 @@ export function TalentGrid() {
             <div className="text-center mb-16">
               <div className="inline-flex items-center gap-2 bg-accent/10 px-4 py-2 rounded-full mb-6">
                 <div className="h-2 w-2 bg-accent rounded-full animate-pulse"></div>
-                <span className="text-sm font-medium text-accent">Discovering Talent</span>
+                <span className="text-sm font-medium text-accent">Discovering Talents</span>
               </div>
               <h2 className="text-4xl font-bold mb-6">Loading Amazing Talent...</h2>
               <p className="text-muted-foreground text-lg">
@@ -206,11 +206,11 @@ export function TalentGrid() {
           <div className="inline-flex items-center gap-2 bg-accent/10 px-4 py-2 rounded-full mb-6">
             <div className="h-2 w-2 bg-accent rounded-full animate-pulse"></div>
             <span className="text-sm font-medium text-accent">
-              {hasActiveFilters ? 'Search Results' : 'Featured Talent'}
+              {hasActiveFilters ? 'Search Results' : 'Featured Talents'}
             </span>
           </div>
           <h2 className="text-4xl font-bold mb-6">
-            {userLocation && userLocation !== 'Worldwide' ? `Discover Talent in ${userLocation}` : 'Discover Exceptional Talent'}
+            {userLocation && userLocation !== 'Worldwide' ? `Discover Talents in ${userLocation}` : 'Discover Exceptional Talents'}
           </h2>
           {userLocation && userLocation !== 'Worldwide' && (
             <p className="text-center text-muted-foreground mb-4">

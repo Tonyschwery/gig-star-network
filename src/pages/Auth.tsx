@@ -145,7 +145,7 @@ const Auth = () => {
 
         <Card className="glass-card">
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl text-foreground">Join as Talent</CardTitle>
+            <CardTitle className="text-2xl text-foreground">Join as a Talent</CardTitle>
             <CardDescription>
               Create your talent profile and start getting booked for events
             </CardDescription>

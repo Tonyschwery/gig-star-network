@@ -120,7 +120,7 @@ export function HeroSection() {
               </div>
               
               <h1 className="text-display">
-                Book <span className="text-accent">live talent</span> for your event
+                Book <span className="text-accent">live talents</span> for your event
               </h1>
               
                <p className="text-subhead max-w-lg">
@@ -182,7 +182,7 @@ export function HeroSection() {
                     onClick={handleSearch}
                   >
                     <Search className="h-5 w-5 mr-3" />
-                    Find Perfect Talent
+                    Find Perfect Talents
                   </Button>
                 </div>
               </div>
@@ -292,7 +292,7 @@ export function HeroSection() {
               <HelpCircle className="h-8 w-8 text-accent" />
             </div>
             <h2 className="text-3xl md:text-4xl font-bold">
-              Need help finding the perfect talent?
+              Need help finding the perfect talents?
             </h2>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto leading-relaxed">
               Our expert team personally curates recommendations based on your event type, budget, and style preferences. Get matched with verified performers in 24 hours.

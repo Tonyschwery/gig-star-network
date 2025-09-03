@@ -9,7 +9,7 @@ export default function HowItWorks() {
   const steps = [
     {
       icon: <Search className="h-8 w-8 text-accent" />,
-      title: "Discover Talent",
+      title: "Discover Talents",
       description: "Browse our curated selection of verified performers, musicians, and creators. Filter by location, type, and budget to find the perfect match for your event."
     },
     {
@@ -135,7 +135,7 @@ export default function HowItWorks() {
               className="hero-button"
               onClick={() => navigate('/auth')}
             >
-              Join as Talent
+              Join as a Talent
             </Button>
           </div>
         </div>
@@ -201,14 +201,14 @@ export default function HowItWorks() {
                   className="hero-button w-full"
                   onClick={() => navigate('/your-event')}
                 >
-                  Book Talent
+                  Book Talents
                 </Button>
                 <Button 
                   variant="outline"
                   className="w-full"
                   onClick={() => navigate('/auth')}
                 >
-                  Join as Talent
+                  Join as a Talent
                 </Button>
               </div>
             </CardContent>

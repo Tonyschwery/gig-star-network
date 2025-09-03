@@ -157,7 +157,7 @@ export function Header() {
                     }}
                     className="text-foreground hover:text-accent transition-colors font-medium"
                   >
-                    Find Talent
+                    Find Talents
                   </button>
                   {user && isProTalent && (
                     <button 
@@ -243,7 +243,7 @@ export function Header() {
                     className="hero-button font-medium"
                     onClick={() => navigate("/auth")}
                   >
-                    Join as Talent
+                    Join as a Talent
                   </Button>
                 </>
               )}
@@ -291,7 +291,7 @@ export function Header() {
                       }}
                       className="text-left text-foreground hover:text-accent transition-colors font-medium py-2"
                     >
-                      Find Talent
+                      Find Talents
                     </button>
                     
                     {user && isProTalent && (
@@ -409,7 +409,7 @@ export function Header() {
                        className="w-full hero-button"
                        onClick={() => navigate("/auth")}
                      >
-                       Join as Talent
+                       Join as a Talent
                      </Button>
                    </div>
                  )}
