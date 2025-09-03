@@ -26,6 +26,7 @@ import AdminPayments from "./pages/admin/AdminPayments";
 import AdminSettings from "./pages/admin/AdminSettings";
 import AdminReports from "./pages/admin/AdminReports";
 import YourEvent from "./pages/YourEvent";
+import YourRequests from "./pages/YourRequests";
 
 
 import SubscriptionSuccess from "./pages/SubscriptionSuccess";
@@ -92,6 +93,11 @@ const App = () => (
               </ProtectedTalentRoute>
             } />
             <Route path="/your-event" element={<YourEvent />} />
+            <Route path="/your-requests" element={
+              <ProtectedRoute>
+                <YourRequests />
+              </ProtectedRoute>
+            } />
             <Route path="/pricing" element={<Pricing />} />
             <Route path="/subscription-success" element={<SubscriptionSuccess />} />
             <Route path="/subscription-cancelled" element={<SubscriptionCancelled />} />

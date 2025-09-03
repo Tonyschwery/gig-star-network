@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { NotificationCenter } from "@/components/NotificationCenter";
+import { UniversalChat } from "@/components/UniversalChat";
 import { QtalentLogo } from "@/components/QtalentLogo";
 import { MobileMenu } from "@/components/ui/mobile-menu";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -196,6 +197,14 @@ export function Header() {
                   {/* Location selector and mode switch and notifications */}
                   <LocationSelector />
                   {talentName && <ModeSwitch />}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => navigate('/your-requests')}
+                    className="text-muted-foreground hover:text-foreground"
+                  >
+                    My Requests
+                  </Button>
                   <NotificationCenter />
                   
                   {user && !talentName && user.user_metadata?.user_type === 'talent' && (
@@ -247,6 +256,13 @@ export function Header() {
                 </>
               )}
             </div>
+
+            {/* Universal Chat - Outside conditional rendering to ensure it's always visible for authenticated users */}
+            {user && (
+              <div className="hidden md:block">
+                <UniversalChat />
+              </div>
+            )}
 
             {/* Mobile Menu */}
             <div className="md:hidden">
@@ -341,8 +357,22 @@ export function Header() {
                           Welcome, {talentName || user.user_metadata?.name || user.email?.split('@')[0] || 'User'}
                         </span>
                         {/* Only show switch to artist dashboard when talent is in booking mode */}
-                        {talentName && <ModeSwitch size="sm" />}
-                      </div>
+                      {talentName && <ModeSwitch size="sm" />}
+                    </div>
+                    
+                    <button 
+                      onClick={() => {
+                        navigate('/your-requests');
+                        // Close mobile menu
+                        const mobileMenuClose = document.querySelector('[data-mobile-menu-close]') as HTMLElement;
+                        if (mobileMenuClose) {
+                          mobileMenuClose.click();
+                        }
+                      }}
+                      className="text-left text-sm text-muted-foreground hover:text-foreground transition-colors py-1"
+                    >
+                      My Event Requests
+                    </button>
                       
                       {user && !talentName && user.user_metadata?.user_type === 'talent' && (
                         <Button 
@@ -381,31 +411,36 @@ export function Header() {
                       >
                         <LogOut className="h-4 w-4 mr-2" />
                         Logout
-                      </Button>
-                    </div>
-                  </>
-                )}
+                       </Button>
+                     </div>
+                   </>
+                 )}
 
-                {!user && (
-                  <div className="border-t pt-4 mt-4 space-y-2">
-                    <Button 
-                      variant="outline" 
-                      className="w-full"
-                      onClick={() => navigate("/login")}
-                    >
-                      Login
-                    </Button>
-                    
-                    <Button 
-                      className="w-full hero-button"
-                      onClick={() => navigate("/auth")}
-                    >
-                      Join as Talent
-                    </Button>
-                  </div>
-                )}
-              </MobileMenu>
-            </div>
+                 {!user && (
+                   <div className="border-t pt-4 mt-4 space-y-2">
+                     <Button 
+                       variant="outline" 
+                       className="w-full"
+                       onClick={() => navigate("/login")}
+                     >
+                       Login
+                     </Button>
+                     
+                     <Button 
+                       className="w-full hero-button"
+                       onClick={() => navigate("/auth")}
+                     >
+                       Join as Talent
+                     </Button>
+                   </div>
+                 )}
+               </MobileMenu>
+               
+               {/* Universal Chat for Mobile - Always available for authenticated users */}
+               {user && (
+                 <UniversalChat />
+               )}
+             </div>
           </nav>
         </div>
       </header>
