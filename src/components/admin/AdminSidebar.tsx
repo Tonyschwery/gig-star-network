@@ -21,13 +21,12 @@ import { useIsMobile } from '@/hooks/use-mobile';
 
 const adminRoutes = [
   { path: '/admin', label: 'Dashboard', icon: Home },
-  { path: '/admin/users', label: 'User Management', icon: Users },
-  { path: '/admin/bookings', label: 'Booking Management', icon: Calendar },
-  { path: '/admin/payments', label: 'Payment Management', icon: DollarSign },
-  { path: '/admin/messages', label: 'Message Center', icon: MessageSquare },
-  { path: '/admin/event-requests', label: 'Event Requests', icon: FileText },
-  { path: '/admin/reports', label: 'Reports & Analytics', icon: BarChart3 },
-  { path: '/admin/settings', label: 'System Settings', icon: Settings },
+  { path: '/admin/users', label: 'Users & Talents', icon: Users },
+  { path: '/admin/bookings', label: 'Bookings', icon: Calendar },
+  { path: '/admin/messages', label: 'Chat Messages', icon: MessageSquare },
+  { path: '/admin/event-requests', label: 'Direct Inbox', icon: FileText },
+  { path: '/admin/payments', label: 'Payments', icon: DollarSign },
+  { path: '/admin/settings', label: 'Settings', icon: Settings },
 ];
 
 export function AdminSidebar() {

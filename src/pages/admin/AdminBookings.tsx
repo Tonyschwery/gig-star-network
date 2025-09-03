@@ -6,9 +6,10 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Calendar, DollarSign, Trash2, CheckCircle, XCircle, Clock, MapPin } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Calendar, DollarSign, Trash2, CheckCircle, XCircle, Clock, MapPin, Archive } from 'lucide-react';
 import { toast } from 'sonner';
-import { format } from 'date-fns';
+import { format, isBefore, subDays } from 'date-fns';
 
 interface Booking {
   id: string;
@@ -35,6 +36,8 @@ export default function AdminBookings() {
   const [talents, setTalents] = useState<Record<string, TalentProfile>>({});
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('all');
+  const [selectedBookingIds, setSelectedBookingIds] = useState<Set<string>>(new Set());
+  const [bulkDeleteLoading, setBulkDeleteLoading] = useState(false);
 
   useEffect(() => {
     loadBookings();
@@ -133,6 +136,92 @@ export default function AdminBookings() {
     );
   };
 
+  const toggleBookingSelection = (bookingId: string) => {
+    const newSelected = new Set(selectedBookingIds);
+    if (newSelected.has(bookingId)) {
+      newSelected.delete(bookingId);
+    } else {
+      newSelected.add(bookingId);
+    }
+    setSelectedBookingIds(newSelected);
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedBookingIds.size === filteredBookings.length) {
+      setSelectedBookingIds(new Set());
+    } else {
+      setSelectedBookingIds(new Set(filteredBookings.map(b => b.id)));
+    }
+  };
+
+  const deleteSelectedBookings = async () => {
+    if (selectedBookingIds.size === 0) {
+      toast.error('No bookings selected');
+      return;
+    }
+
+    setBulkDeleteLoading(true);
+    try {
+      const { error } = await supabase
+        .from('bookings')
+        .delete()
+        .in('id', Array.from(selectedBookingIds));
+      
+      if (error) throw error;
+      
+      // Update local state
+      setBookings(prev => prev.filter(b => !selectedBookingIds.has(b.id)));
+      setSelectedBookingIds(new Set());
+      
+      toast.success(`${selectedBookingIds.size} bookings deleted successfully`);
+    } catch (error) {
+      console.error('Error deleting bookings:', error);
+      toast.error('Failed to delete bookings');
+    } finally {
+      setBulkDeleteLoading(false);
+    }
+  };
+
+  const deleteOldBookings = async (criteria: string) => {
+    try {
+      let query = supabase.from('bookings').select('id');
+      
+      if (criteria === 'cancelled_declined') {
+        query = query.in('status', ['cancelled', 'declined']);
+      } else if (criteria === 'completed_old') {
+        const cutoffDate = subDays(new Date(), 90);
+        query = query.eq('status', 'completed').lt('event_date', cutoffDate.toISOString());
+      } else if (criteria === 'expired_pending') {
+        const cutoffDate = subDays(new Date(), 30);
+        query = query.eq('status', 'pending').lt('created_at', cutoffDate.toISOString());
+      }
+      
+      const { data: oldBookings, error: fetchError } = await query;
+      
+      if (fetchError) throw fetchError;
+      
+      if (!oldBookings || oldBookings.length === 0) {
+        toast.info('No bookings found matching the criteria');
+        return;
+      }
+
+      const { error } = await supabase
+        .from('bookings')
+        .delete()
+        .in('id', oldBookings.map(b => b.id));
+      
+      if (error) throw error;
+      
+      // Refresh bookings
+      await loadBookings();
+      
+      toast.success(`${oldBookings.length} old bookings deleted successfully`);
+    } catch (error) {
+      console.error('Error deleting old bookings:', error);
+      toast.error('Failed to delete old bookings');
+    }
+  };
+
   const filteredBookings = bookings.filter(booking => 
     statusFilter === 'all' || booking.status === statusFilter
   );
@@ -150,9 +239,74 @@ export default function AdminBookings() {
 
   return (
     <div className="p-6 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold mb-2">Booking Management</h1>
-        <p className="text-muted-foreground">Manage all platform bookings and their status</p>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 className="text-3xl font-bold mb-2">Booking Management</h1>
+          <p className="text-muted-foreground">Manage all platform bookings and their status</p>
+        </div>
+        
+        <div className="flex items-center gap-2 flex-wrap">
+          {selectedBookingIds.size > 0 && (
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary">
+                {selectedBookingIds.size} selected
+              </Badge>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" size="sm" disabled={bulkDeleteLoading}>
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete Selected
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete Selected Bookings</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to delete {selectedBookingIds.size} selected bookings? This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={deleteSelectedBookings} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                      Delete Bookings
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+          )}
+          
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Archive className="h-4 w-4 mr-2" />
+                Clean Old Bookings
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete Old Bookings</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Choose which type of old bookings to clean up. This will help keep the database organized.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <div className="flex flex-col gap-2 my-4">
+                <Button variant="outline" onClick={() => deleteOldBookings('cancelled_declined')}>
+                  All Cancelled & Declined
+                </Button>
+                <Button variant="outline" onClick={() => deleteOldBookings('completed_old')}>
+                  Completed (90+ days old)
+                </Button>
+                <Button variant="outline" onClick={() => deleteOldBookings('expired_pending')}>
+                  Expired Pending (30+ days old)
+                </Button>
+              </div>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
       </div>
 
       {/* Stats Cards */}
@@ -238,6 +392,12 @@ export default function AdminBookings() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-12">
+                    <Checkbox 
+                      checked={selectedBookingIds.size === filteredBookings.length && filteredBookings.length > 0}
+                      onCheckedChange={toggleSelectAll}
+                    />
+                  </TableHead>
                   <TableHead>Booker</TableHead>
                   <TableHead>Event</TableHead>
                   <TableHead>Talent</TableHead>
@@ -250,6 +410,12 @@ export default function AdminBookings() {
               <TableBody>
                 {filteredBookings.map((booking) => (
                   <TableRow key={booking.id}>
+                    <TableCell>
+                      <Checkbox 
+                        checked={selectedBookingIds.has(booking.id)}
+                        onCheckedChange={() => toggleBookingSelection(booking.id)}
+                      />
+                    </TableCell>
                     <TableCell>
                       <div>
                         <div className="font-medium">{booking.booker_name}</div>

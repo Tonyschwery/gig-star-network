@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Users, Calendar, DollarSign, MessageSquare, Settings, Shield, BarChart3 } from 'lucide-react';
+import { Users, Calendar, DollarSign, MessageSquare, Settings, Shield, BarChart3, FileText } from 'lucide-react';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 
 interface DashboardStats {
@@ -140,37 +140,19 @@ export default function AdminDashboard() {
             <CardHeader>
               <CardTitle className="flex items-center">
                 <Users className="h-5 w-5 mr-2" />
-                User Management
+                Users & Talents
               </CardTitle>
-              <CardDescription>Manage all users, talents, and bookers</CardDescription>
+              <CardDescription>Manage users, talents, and Pro subscriptions</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-2">
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start"
-                  onClick={() => navigate('/admin/users')}
-                >
-                  <Users className="h-4 w-4 mr-2" />
-                  View All Users
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start"
-                  onClick={() => navigate('/admin/users')}
-                >
-                  <Users className="h-4 w-4 mr-2" />
-                  Manage Talents
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start"
-                  onClick={() => navigate('/admin/users')}
-                >
-                  <Users className="h-4 w-4 mr-2" />
-                  Manage Bookers
-                </Button>
-              </div>
+              <Button 
+                variant="outline" 
+                className="w-full justify-start"
+                onClick={() => navigate('/admin/users')}
+              >
+                <Users className="h-4 w-4 mr-2" />
+                Manage All Users
+              </Button>
             </CardContent>
           </Card>
 
@@ -178,37 +160,19 @@ export default function AdminDashboard() {
             <CardHeader>
               <CardTitle className="flex items-center">
                 <Calendar className="h-5 w-5 mr-2" />
-                Booking Management
+                Bookings
               </CardTitle>
-              <CardDescription>Oversee all bookings and payments</CardDescription>
+              <CardDescription>Oversee all bookings and statuses</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-2">
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start"
-                  onClick={() => navigate('/admin/bookings')}
-                >
-                  <Calendar className="h-4 w-4 mr-2" />
-                  All Bookings
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start"
-                  onClick={() => navigate('/admin/payments')}
-                >
-                  <DollarSign className="h-4 w-4 mr-2" />
-                  Payment History
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start"
-                  onClick={() => navigate('/admin/bookings')}
-                >
-                  <Calendar className="h-4 w-4 mr-2" />
-                  Pending Approvals
-                </Button>
-              </div>
+              <Button 
+                variant="outline" 
+                className="w-full justify-start"
+                onClick={() => navigate('/admin/bookings')}
+              >
+                <Calendar className="h-4 w-4 mr-2" />
+                View All Bookings
+              </Button>
             </CardContent>
           </Card>
 
@@ -216,37 +180,64 @@ export default function AdminDashboard() {
             <CardHeader>
               <CardTitle className="flex items-center">
                 <MessageSquare className="h-5 w-5 mr-2" />
-                Communication
+                Chat Messages
               </CardTitle>
-              <CardDescription>Monitor and manage platform communications</CardDescription>
+              <CardDescription>Monitor chats and send broadcasts</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-2">
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start"
-                  onClick={() => navigate('/admin/messages')}
-                >
-                  <MessageSquare className="h-4 w-4 mr-2" />
-                  Message Center
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start"
-                  onClick={() => navigate('/admin/messages')}
-                >
-                  <MessageSquare className="h-4 w-4 mr-2" />
-                  Chat Monitoring
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start"
-                  onClick={() => navigate('/admin/messages')}
-                >
-                  <MessageSquare className="h-4 w-4 mr-2" />
-                  Broadcast Message
-                </Button>
-              </div>
+              <Button 
+                variant="outline" 
+                className="w-full justify-start"
+                onClick={() => navigate('/admin/messages')}
+              >
+                <MessageSquare className="h-4 w-4 mr-2" />
+                Message Center
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <FileText className="h-5 w-5 mr-2" />
+                Direct Inbox
+              </CardTitle>
+              <CardDescription>Handle direct booking requests</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button 
+                variant="outline" 
+                className="w-full justify-start"
+                onClick={() => navigate('/admin/event-requests')}
+              >
+                <FileText className="h-4 w-4 mr-2" />
+                Event Requests
+                {stats.pendingBookings > 0 && (
+                  <Badge variant="destructive" className="ml-auto">
+                    {stats.pendingBookings}
+                  </Badge>
+                )}
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <DollarSign className="h-5 w-5 mr-2" />
+                Payments
+              </CardTitle>
+              <CardDescription>Monitor subscription revenue</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button 
+                variant="outline" 
+                className="w-full justify-start"
+                onClick={() => navigate('/admin/payments')}
+              >
+                <DollarSign className="h-4 w-4 mr-2" />
+                View Payments
+              </Button>
             </CardContent>
           </Card>
 
@@ -254,75 +245,19 @@ export default function AdminDashboard() {
             <CardHeader>
               <CardTitle className="flex items-center">
                 <Settings className="h-5 w-5 mr-2" />
-                System Settings
+                Settings
               </CardTitle>
-              <CardDescription>Configure platform settings and policies</CardDescription>
+              <CardDescription>Configure platform settings</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-2">
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start"
-                  onClick={() => navigate('/admin/settings')}
-                >
-                  <Settings className="h-4 w-4 mr-2" />
-                  Platform Settings
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start"
-                  onClick={() => navigate('/admin/settings')}
-                >
-                  <Settings className="h-4 w-4 mr-2" />
-                  Email Templates
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start"
-                  onClick={() => navigate('/admin/settings')}
-                >
-                  <DollarSign className="h-4 w-4 mr-2" />
-                  Commission Rates
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <BarChart3 className="h-5 w-5 mr-2" />
-                Analytics & Reports
-              </CardTitle>
-              <CardDescription>View platform performance and insights</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start"
-                  onClick={() => navigate('/admin/reports')}
-                >
-                  <BarChart3 className="h-4 w-4 mr-2" />
-                  Revenue Reports
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start"
-                  onClick={() => navigate('/admin/reports')}
-                >
-                  <BarChart3 className="h-4 w-4 mr-2" />
-                  User Analytics
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start"
-                  onClick={() => navigate('/admin/reports')}
-                >
-                  <BarChart3 className="h-4 w-4 mr-2" />
-                  Export Data
-                </Button>
-              </div>
+              <Button 
+                variant="outline" 
+                className="w-full justify-start"
+                onClick={() => navigate('/admin/settings')}
+              >
+                <Settings className="h-4 w-4 mr-2" />
+                Platform Settings
+              </Button>
             </CardContent>
           </Card>
         </div>
