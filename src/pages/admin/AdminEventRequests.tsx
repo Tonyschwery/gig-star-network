@@ -27,12 +27,15 @@ interface EventRequest {
   status: 'pending' | 'approved' | 'declined' | 'completed';
   created_at: string;
   updated_at: string;
+  admin_reply?: string | null;
+  replied_at?: string | null;
 }
 
 export default function AdminEventRequests() {
   const [requests, setRequests] = useState<EventRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedRequest, setSelectedRequest] = useState<EventRequest | null>(null);
+  const [adminReply, setAdminReply] = useState('');
 
   useEffect(() => {
     loadEventRequests();
@@ -58,21 +61,45 @@ export default function AdminEventRequests() {
     }
   };
 
-  const updateRequestStatus = async (requestId: string, status: EventRequest['status']) => {
+  const updateRequestStatus = async (requestId: string, status: EventRequest['status'], adminReply?: string) => {
     try {
+      const updateData: any = { 
+        status,
+        updated_at: new Date().toISOString()
+      };
+      
+      // Add admin reply if provided
+      if (adminReply !== undefined) {
+        updateData.admin_reply = adminReply;
+      }
+
       const { error } = await supabase
         .from('event_requests')
-        .update({ status, updated_at: new Date().toISOString() })
+        .update(updateData)
         .eq('id', requestId);
-      
+
       if (error) throw error;
-      
-      // Update local state
-      setRequests(prev => prev.map(req => 
-        req.id === requestId ? { ...req, status } : req
-      ));
-      
-      toast.success(`Request ${status} successfully`);
+
+      // Create notification for the user
+      const request = requests.find(r => r.id === requestId);
+      if (request) {
+        await supabase
+          .from('notifications')
+          .insert({
+            user_id: request.user_id,
+            type: 'event_request_update',
+            title: `Event Request ${status.charAt(0).toUpperCase() + status.slice(1)}`,
+            message: adminReply 
+              ? `Your event request has been ${status}. Response: ${adminReply}`
+              : `Your event request has been ${status}.`,
+            created_at: new Date().toISOString()
+          });
+      }
+
+      // Reload requests to get updated data
+      await loadEventRequests();
+
+      toast.success(`Request ${status} successfully${adminReply ? ' with response' : ''}`);
     } catch (error) {
       console.error('Error updating request status:', error);
       toast.error('Failed to update request status');
@@ -341,31 +368,82 @@ export default function AdminEventRequests() {
                                   </div>
                                 )}
                                 
-                                <div className="flex items-center gap-2">
-                                  <span className="text-sm font-medium">Status:</span>
-                                  <Select
-                                    value={selectedRequest.status}
-                                    onValueChange={(value: EventRequest['status']) => {
-                                      updateRequestStatus(selectedRequest.id, value);
-                                      setSelectedRequest({ ...selectedRequest, status: value });
-                                    }}
-                                  >
-                                    <SelectTrigger className="w-40">
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="pending">Pending</SelectItem>
-                                      <SelectItem value="approved">Approved</SelectItem>
-                                      <SelectItem value="declined">Declined</SelectItem>
-                                      <SelectItem value="completed">Completed</SelectItem>
-                                    </SelectContent>
-                                 </Select>
-                                 </div>
                                  
-                                 <div className="border-t pt-4">
-                                   <p className="text-sm text-muted-foreground">
-                                     💬 To communicate with this user, please use the Universal Chat system by searching for their booking or creating a support ticket.
-                                   </p>
+                                 {/* Admin Reply Section */}
+                                 <div className="border-t pt-4 space-y-4">
+                                   <h3 className="font-semibold mb-2">Admin Response</h3>
+                                   
+                                   {selectedRequest.admin_reply ? (
+                                     <div className="bg-green-50 border border-green-200 rounded p-3">
+                                       <div className="flex items-center gap-2 mb-2">
+                                         <Reply className="h-4 w-4 text-green-600" />
+                                         <span className="font-medium text-green-800">Previous Response</span>
+                                         {selectedRequest.replied_at && (
+                                           <span className="text-xs text-green-600">
+                                             {format(new Date(selectedRequest.replied_at), 'MMM dd, yyyy HH:mm')}
+                                           </span>
+                                         )}
+                                       </div>
+                                       <p className="text-sm text-green-700">{selectedRequest.admin_reply}</p>
+                                     </div>
+                                   ) : (
+                                     <p className="text-sm text-muted-foreground">No response sent yet</p>
+                                   )}
+                                   
+                                   <div className="space-y-3">
+                                     <Textarea
+                                       placeholder="Write a response to the user about their event request..."
+                                       value={adminReply}
+                                       onChange={(e) => setAdminReply(e.target.value)}
+                                       rows={3}
+                                       className="resize-none"
+                                     />
+                                     
+                                     <div className="flex items-center gap-3">
+                                       <div className="flex items-center gap-2">
+                                         <span className="text-sm font-medium">Update Status:</span>
+                                         <Select
+                                           value={selectedRequest.status}
+                                           onValueChange={(value: EventRequest['status']) => {
+                                             setSelectedRequest({ ...selectedRequest, status: value });
+                                           }}
+                                         >
+                                           <SelectTrigger className="w-32">
+                                             <SelectValue />
+                                           </SelectTrigger>
+                                           <SelectContent>
+                                             <SelectItem value="pending">Pending</SelectItem>
+                                             <SelectItem value="approved">Approved</SelectItem>
+                                             <SelectItem value="declined">Declined</SelectItem>
+                                             <SelectItem value="completed">Completed</SelectItem>
+                                           </SelectContent>
+                                         </Select>
+                                       </div>
+                                       
+                                       <Button
+                                         onClick={() => {
+                                           updateRequestStatus(
+                                             selectedRequest.id,
+                                             selectedRequest.status,
+                                             adminReply || undefined
+                                           );
+                                           setAdminReply('');
+                                         }}
+                                         disabled={!adminReply.trim() && selectedRequest.status === requests.find(r => r.id === selectedRequest.id)?.status}
+                                         size="sm"
+                                         className="ml-auto"
+                                       >
+                                         <Send className="h-4 w-4 mr-2" />
+                                         {adminReply.trim() ? 'Send Response' : 'Update Status'}
+                                       </Button>
+                                     </div>
+                                     
+                                     {adminReply.trim() && (
+                                       <p className="text-xs text-muted-foreground">
+                                         This response will be sent to the user via notification and will be visible in their event requests dashboard.
+                                       </p>
+                                     )}
+                                   </div>
                                  </div>
                                </div>
                              )}

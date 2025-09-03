@@ -197,14 +197,6 @@ export function Header() {
                   {/* Location selector and mode switch and notifications */}
                   <LocationSelector />
                   {talentName && <ModeSwitch />}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => navigate('/your-requests')}
-                    className="text-muted-foreground hover:text-foreground"
-                  >
-                    My Requests
-                  </Button>
                   <NotificationCenter />
                   
                   {user && !talentName && user.user_metadata?.user_type === 'talent' && (
@@ -360,19 +352,6 @@ export function Header() {
                       {talentName && <ModeSwitch size="sm" />}
                     </div>
                     
-                    <button 
-                      onClick={() => {
-                        navigate('/your-requests');
-                        // Close mobile menu
-                        const mobileMenuClose = document.querySelector('[data-mobile-menu-close]') as HTMLElement;
-                        if (mobileMenuClose) {
-                          mobileMenuClose.click();
-                        }
-                      }}
-                      className="text-left text-sm text-muted-foreground hover:text-foreground transition-colors py-1"
-                    >
-                      My Event Requests
-                    </button>
                       
                       {user && !talentName && user.user_metadata?.user_type === 'talent' && (
                         <Button 

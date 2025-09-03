@@ -306,6 +306,7 @@ export type Database = {
       }
       event_requests: {
         Row: {
+          admin_reply: string | null
           booker_email: string
           booker_name: string
           booker_phone: string | null
@@ -316,12 +317,14 @@ export type Database = {
           event_location: string
           event_type: string
           id: string
+          replied_at: string | null
           status: string
           talent_type_needed: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          admin_reply?: string | null
           booker_email: string
           booker_name: string
           booker_phone?: string | null
@@ -332,12 +335,14 @@ export type Database = {
           event_location: string
           event_type: string
           id?: string
+          replied_at?: string | null
           status?: string
           talent_type_needed?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          admin_reply?: string | null
           booker_email?: string
           booker_name?: string
           booker_phone?: string | null
@@ -348,6 +353,7 @@ export type Database = {
           event_location?: string
           event_type?: string
           id?: string
+          replied_at?: string | null
           status?: string
           talent_type_needed?: string | null
           updated_at?: string
