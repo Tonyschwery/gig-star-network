@@ -12,7 +12,9 @@ export function AdminRoute({ children, requiredPermissions = [] }: AdminRoutePro
   const navigate = useNavigate();
 
   useEffect(() => {
+    console.log('AdminRoute: useEffect - loading:', loading, 'isAdmin:', isAdmin);
     if (!loading && !isAdmin) {
+      console.log('AdminRoute: Redirecting to auth - user is not admin');
       navigate('/auth');
     }
   }, [isAdmin, loading, navigate]);
@@ -22,7 +24,10 @@ export function AdminRoute({ children, requiredPermissions = [] }: AdminRoutePro
       adminPermissions.includes('all') || adminPermissions.includes(perm)
     );
 
+  console.log('AdminRoute: Rendering - loading:', loading, 'isAdmin:', isAdmin, 'hasRequiredPermissions:', hasRequiredPermissions);
+
   if (loading) {
+    console.log('AdminRoute: Showing loading state');
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-pulse text-muted-foreground">Loading admin access...</div>
@@ -31,6 +36,7 @@ export function AdminRoute({ children, requiredPermissions = [] }: AdminRoutePro
   }
 
   if (!isAdmin) {
+    console.log('AdminRoute: User is not admin, returning null (will redirect)');
     return null; // Will redirect to auth
   }
 

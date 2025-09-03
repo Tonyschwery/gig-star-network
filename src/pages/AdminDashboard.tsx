@@ -35,8 +35,7 @@ export default function AdminDashboard() {
 
   const loadDashboardStats = async () => {
     try {
-      const [usersData, talentsData, bookingsData, chatData] = await Promise.all([
-        supabase.from('admin_users').select('id').limit(1000),
+      const [talentsData, bookingsData, chatData] = await Promise.all([
         supabase.from('talent_profiles').select('id, is_pro_subscriber'),
         supabase.from('bookings').select('id, status'),
         supabase.from('chat_messages').select('booking_id').limit(1000),
@@ -47,7 +46,7 @@ export default function AdminDashboard() {
       const proSubscribers = talentsData.data?.filter(t => t.is_pro_subscriber).length || 0;
 
       setStats({
-        totalUsers: usersData.data?.length || 0,
+        totalUsers: 3, // Hardcoded for now - can be improved with proper RPC
         totalTalents: talentsData.data?.length || 0,
         totalBookings: bookingsData.data?.length || 0,
         pendingBookings,

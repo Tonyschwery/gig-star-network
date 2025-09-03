@@ -19,88 +19,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
-        
-        // Handle successful sign in - check user type and existing profiles
-        if (event === 'SIGNED_IN' && session?.user) {
-          const currentPath = window.location.pathname;
-          
-          // Small delay to ensure state is updated
-          setTimeout(async () => {
-            try {
-              // Check if user is admin first
-              const { data: isAdminData } = await supabase
-                .rpc('is_admin', { user_id_param: session.user.id });
-
-              if (isAdminData) {
-                // Admin user - redirect to admin dashboard
-                if (currentPath === '/auth' || currentPath === '/login') {
-                  window.location.href = '/admin';
-                }
-                return;
-              }
-
-              // Check user type from metadata
-              const userType = session.user.user_metadata?.user_type;
-              
-              if (userType === 'talent') {
-                // Use secure function to check if talent has completed profile
-                const { data: hasProfile, error } = await supabase.rpc('user_has_talent_profile');
-                
-                if (error) {
-                  console.error('Error checking talent profile:', error);
-                  // On error, default to safe behavior (show onboarding)
-                  if (currentPath !== '/talent-onboarding') {
-                    window.location.href = '/talent-onboarding';
-                  }
-                  return;
-                }
-                  
-                if (!hasProfile && currentPath !== '/talent-onboarding') {
-                  // New talent without profile - redirect to onboarding
-                  window.location.href = '/talent-onboarding';
-                } else if (hasProfile && currentPath !== '/talent-dashboard') {
-                  // Existing talent with profile - always redirect to talent dashboard unless already there
-                  window.location.href = '/talent-dashboard';
-                }
-              } else {
-                // Non-talent users (bookers) - check if they have bookings
-                try {
-                  const { data: bookings, error: bookingsError } = await supabase
-                    .from('bookings')
-                    .select('id')
-                    .eq('user_id', session.user.id)
-                    .limit(1);
-                  
-                  if (!bookingsError && bookings && bookings.length > 0) {
-                    // Booker has bookings - redirect to booker dashboard
-                    if (currentPath !== '/booker-dashboard') {
-                      window.location.href = '/booker-dashboard';
-                    }
-                  } else if (currentPath === '/auth' || currentPath === '/talent-onboarding') {
-                    // New booker or coming from auth pages - redirect to homepage
-                    window.location.href = '/';
-                  }
-                } catch (error) {
-                  console.error('Error checking bookings:', error);
-                  // Fallback: redirect based on current path
-                  if (currentPath === '/auth' || currentPath === '/talent-onboarding') {
-                    window.location.href = '/';
-                  }
-                }
-              }
-            } catch (error) {
-              console.error('Error checking user profile:', error);
-              // Fallback: redirect based on current path
-              if (currentPath === '/auth') {
-                window.location.href = '/';
-              }
-            }
-          }, 100);
-        }
       }
     );
 
@@ -113,6 +35,80 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // Handle post-auth redirects in a separate effect
+  useEffect(() => {
+    if (!loading && user && session) {
+      const currentPath = window.location.pathname;
+      
+      // Only redirect on auth or login pages to avoid interfering with manual navigation
+      if (currentPath === '/auth' || currentPath === '/login') {
+        // Use setTimeout to avoid blocking the auth state update
+        setTimeout(async () => {
+          try {
+            // Check if user is admin first
+            console.log('Checking admin status for user:', user.id);
+            const { data: isAdminData, error: adminError } = await supabase
+              .rpc('is_admin', { user_id_param: user.id });
+
+            if (adminError) {
+              console.error('Error checking admin status:', adminError);
+              return;
+            }
+
+            console.log('Admin check result:', isAdminData);
+            if (isAdminData) {
+              console.log('Redirecting admin to admin panel');
+              window.location.href = '/admin';
+              return;
+            }
+
+            // Check user type from metadata
+            const userType = user.user_metadata?.user_type;
+            console.log('User type:', userType);
+            
+            if (userType === 'talent') {
+              // Use secure function to check if talent has completed profile
+              const { data: hasProfile, error } = await supabase.rpc('user_has_talent_profile');
+              
+              if (error) {
+                console.error('Error checking talent profile:', error);
+                window.location.href = '/talent-onboarding';
+                return;
+              }
+                
+              if (!hasProfile) {
+                window.location.href = '/talent-onboarding';
+              } else {
+                window.location.href = '/talent-dashboard';
+              }
+            } else {
+              // Non-talent users (bookers) - check if they have bookings
+              try {
+                const { data: bookings, error: bookingsError } = await supabase
+                  .from('bookings')
+                  .select('id')
+                  .eq('user_id', user.id)
+                  .limit(1);
+                
+                if (!bookingsError && bookings && bookings.length > 0) {
+                  window.location.href = '/booker-dashboard';
+                } else {
+                  window.location.href = '/';
+                }
+              } catch (error) {
+                console.error('Error checking bookings:', error);
+                window.location.href = '/';
+              }
+            }
+          } catch (error) {
+            console.error('Error in post-auth redirect:', error);
+            window.location.href = '/';
+          }
+        }, 100);
+      }
+    }
+  }, [user, session, loading]);
 
   const signOut = async () => {
     await supabase.auth.signOut();
