@@ -208,7 +208,7 @@ export default function SubscriptionSuccess() {
               Subscription Activated
             </CardTitle>
             <p className="text-muted-foreground text-lg leading-relaxed">
-              Your Pro membership is now active. Start maximizing your potential with enhanced features and zero commission fees.
+              Your Pro membership is now active. Start maximizing your potential with enhanced features.
             </p>
           </CardHeader>
 
@@ -220,13 +220,6 @@ export default function SubscriptionSuccess() {
               </h3>
               <div className="grid md:grid-cols-2 gap-6">
                 <div className="space-y-4">
-                  <div className="flex items-start gap-4 p-4 rounded-lg bg-secondary/30 border border-border/50">
-                    <CheckCircle className="h-5 w-5 text-brand-success flex-shrink-0 mt-0.5" />
-                    <div>
-                      <p className="font-medium text-foreground">Zero Commission</p>
-                      <p className="text-sm text-muted-foreground">Keep 100% of your earnings</p>
-                    </div>
-                  </div>
                   <div className="flex items-start gap-4 p-4 rounded-lg bg-secondary/30 border border-border/50">
                     <CheckCircle className="h-5 w-5 text-brand-success flex-shrink-0 mt-0.5" />
                     <div>
