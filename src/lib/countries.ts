@@ -18,6 +18,69 @@ export const currencies = [
   "HUF", // Hungarian Forint
 ];
 
+// Geographic regions for proximity sorting
+const regions = {
+  gulf: ["Qatar", "United Arab Emirates", "Bahrain", "Saudi Arabia", "Kuwait", "Oman"],
+  middleEast: ["Iran", "Iraq", "Jordan", "Lebanon", "Syria", "Yemen", "Palestine", "Israel"],
+  northAfrica: ["Egypt", "Libya", "Tunisia", "Algeria", "Morocco", "Sudan"],
+  southAsia: ["India", "Pakistan", "Bangladesh", "Sri Lanka", "Nepal", "Afghanistan"],
+  europe: ["United Kingdom", "Germany", "France", "Italy", "Spain", "Netherlands", "Belgium", "Switzerland", "Austria", "Sweden", "Norway", "Denmark", "Finland", "Poland", "Czech Republic", "Hungary", "Romania", "Bulgaria", "Greece", "Portugal", "Ireland", "Croatia", "Slovenia", "Slovakia", "Estonia", "Latvia", "Lithuania"],
+  northAmerica: ["United States", "Canada", "Mexico"],
+  eastAsia: ["China", "Japan", "South Korea", "Taiwan", "Hong Kong", "Singapore", "Malaysia", "Thailand", "Vietnam", "Philippines", "Indonesia"],
+  oceania: ["Australia", "New Zealand", "Fiji"],
+  africa: ["South Africa", "Nigeria", "Kenya", "Ghana", "Ethiopia", "Tanzania", "Uganda", "Zimbabwe", "Zambia", "Botswana"],
+  southAmerica: ["Brazil", "Argentina", "Chile", "Colombia", "Peru", "Venezuela", "Uruguay", "Paraguay", "Ecuador", "Bolivia"]
+};
+
+// Function to get country's region
+const getCountryRegion = (countryName: string): string => {
+  for (const [region, countries] of Object.entries(regions)) {
+    if (countries.includes(countryName)) {
+      return region;
+    }
+  }
+  return 'other';
+};
+
+// Function to sort countries by proximity to user's location
+export const sortCountriesByProximity = (userLocation: string | null, countryList: typeof countries): typeof countries => {
+  if (!userLocation || userLocation === 'Worldwide') {
+    return countryList;
+  }
+
+  const userRegion = getCountryRegion(userLocation);
+  
+  return [...countryList].sort((a, b) => {
+    // User's country comes first
+    if (a.name === userLocation) return -1;
+    if (b.name === userLocation) return 1;
+    
+    const aRegion = getCountryRegion(a.name);
+    const bRegion = getCountryRegion(b.name);
+    
+    // Same region as user comes next
+    if (aRegion === userRegion && bRegion !== userRegion) return -1;
+    if (bRegion === userRegion && aRegion !== userRegion) return 1;
+    
+    // Gulf countries priority (since many users are from this region)
+    if (userRegion === 'gulf') {
+      const aIsGulf = regions.gulf.includes(a.name);
+      const bIsGulf = regions.gulf.includes(b.name);
+      if (aIsGulf && !bIsGulf) return -1;
+      if (bIsGulf && !aIsGulf) return 1;
+      
+      // Within Gulf region, maintain specific order
+      if (aIsGulf && bIsGulf) {
+        const gulfOrder = regions.gulf;
+        return gulfOrder.indexOf(a.name) - gulfOrder.indexOf(b.name);
+      }
+    }
+    
+    // Alphabetical order for same region or different regions
+    return a.name.localeCompare(b.name);
+  });
+};
+
 export const countries = [
   { code: "AD", name: "Andorra", flag: "🇦🇩" },
   { code: "AE", name: "United Arab Emirates", flag: "🇦🇪" },

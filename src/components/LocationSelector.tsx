@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useLocationDetection } from '@/hooks/useLocationDetection';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { countries } from '@/lib/countries';
+import { countries, sortCountriesByProximity } from '@/lib/countries';
 
 export const LocationSelector = () => {
   const { 
@@ -38,6 +38,9 @@ export const LocationSelector = () => {
 
   const currentLocation = userLocation || detectedLocation || 'Worldwide';
   const isDetected = userLocation === detectedLocation;
+  
+  // Sort countries by proximity to user's location
+  const sortedCountries = sortCountriesByProximity(detectedLocation || userLocation, countries);
 
   return (
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
@@ -96,7 +99,7 @@ export const LocationSelector = () => {
         )}
         
         <div className="max-h-48 overflow-y-auto">
-          {countries.map((country) => (
+          {sortedCountries.map((country) => (
             <DropdownMenuItem
               key={country.code}
               onClick={() => handleLocationSelect(country.name)}

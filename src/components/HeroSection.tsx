@@ -182,7 +182,7 @@ export function HeroSection() {
                     onClick={handleSearch}
                   >
                     <Search className="h-4 w-4 sm:h-5 sm:w-5 mr-2 sm:mr-3 flex-shrink-0" />
-                    <span className="truncate">Find Perfect Talents</span>
+                    <span className="truncate">Explore</span>
                   </Button>
                 </div>
               </div>
