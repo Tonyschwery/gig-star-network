@@ -207,7 +207,14 @@ export const BookingCard = ({ booking, mode, onUpdate, isProSubscriber, canAccep
               <X className="h-4 w-4 mr-2" />Decline
             </Button>
             <Button 
-              onClick={() => onChatOpen?.(booking.id)} 
+              onClick={() => {
+                console.log('Chat Before Accepting clicked for booking:', booking.id);
+                onChatOpen?.(booking.id);
+                // Also dispatch a custom event as a fallback
+                window.dispatchEvent(new CustomEvent('openChatWithBooking', { 
+                  detail: { bookingId: booking.id } 
+                }));
+              }} 
               variant="outline" 
               size="sm"
               className="border-accent/30 text-accent hover:bg-accent/10"

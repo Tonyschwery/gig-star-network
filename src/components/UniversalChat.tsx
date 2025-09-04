@@ -23,6 +23,7 @@ interface BookingLite {
   booker_name: string;
   booker_email?: string;
   event_date?: string;
+  status?: string;
 }
 
 interface UniversalChatProps {
@@ -62,7 +63,7 @@ export function UniversalChat({ openWithBooking }: UniversalChatProps = {}) {
       // Fetch bookings where the user is the booker
       const { data: asBooker } = await supabase
         .from('bookings')
-        .select('id, user_id, talent_id, event_type, booker_name, booker_email, event_date')
+        .select('id, user_id, talent_id, event_type, booker_name, booker_email, event_date, status')
         .eq('user_id', user.id)
         .not('talent_id', 'is', null)
         .order('created_at', { ascending: false })
@@ -73,7 +74,7 @@ export function UniversalChat({ openWithBooking }: UniversalChatProps = {}) {
       if (talentProfile?.id) {
         const { data } = await supabase
           .from('bookings')
-          .select('id, user_id, talent_id, event_type, booker_name, booker_email, event_date')
+          .select('id, user_id, talent_id, event_type, booker_name, booker_email, event_date, status')
           .eq('talent_id', talentProfile.id)
           .order('created_at', { ascending: false })
           .limit(20);
@@ -119,7 +120,6 @@ export function UniversalChat({ openWithBooking }: UniversalChatProps = {}) {
       // Extend the bookings with talent Pro status for filtering
       const bookingsWithProStatus = merged.map(booking => ({
         ...booking,
-        status: 'pending', // Default status for new bookings
         talentProStatus: booking.talent_id ? talentStatusMap[booking.talent_id] || false : true // Admin support is always available
       }));
 
@@ -151,12 +151,68 @@ export function UniversalChat({ openWithBooking }: UniversalChatProps = {}) {
     load();
   }, [user?.id, openWithBooking]);
 
+  // Real-time subscription for booking status changes
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel(`booking-status-updates-${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'bookings'
+        },
+        (payload) => {
+          const updatedBooking = payload.new as any;
+          
+          // Check if this booking involves the current user
+          const isUserBooking = updatedBooking.user_id === user.id;
+          
+          // Check if this is a talent booking (we'll need to compare with talent profile)
+          setBookings(prevBookings => {
+            const existingBooking = prevBookings.find(b => b.id === updatedBooking.id);
+            if (!existingBooking) return prevBookings;
+            
+            // If booking was declined, remove it from the list
+            if (updatedBooking.status === 'declined') {
+              const filtered = prevBookings.filter(b => b.id !== updatedBooking.id);
+              // If this was the selected booking, select the first available one
+              if (selectedId === updatedBooking.id && filtered.length > 0) {
+                setSelectedId(filtered[0].id);
+              }
+              return filtered;
+            }
+            
+            // Otherwise update the booking status
+            return prevBookings.map(b => 
+              b.id === updatedBooking.id 
+                ? { ...b, status: updatedBooking.status }
+                : b
+            );
+          });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, selectedId]);
+
   // Open chat when openWithBooking prop changes
   useEffect(() => {
-    if (openWithBooking && bookings.find(b => b.id === openWithBooking)) {
-      setSelectedId(openWithBooking);
+    if (openWithBooking) {
+      // Force open the chat even if booking isn't loaded yet
       setOpen(true);
       setMinimized(false);
+      
+      // Check if booking exists in current list
+      const targetBooking = bookings.find(b => b.id === openWithBooking);
+      if (targetBooking) {
+        setSelectedId(openWithBooking);
+      }
     }
   }, [openWithBooking, bookings]);
 

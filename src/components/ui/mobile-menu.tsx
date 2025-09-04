@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { Menu, X } from "lucide-react"
 import { useIsMobile } from "@/hooks/use-mobile"
+import { useUnreadNotifications } from "@/hooks/useUnreadNotifications"
 
 interface MobileMenuProps {
   children: React.ReactNode
@@ -12,6 +13,7 @@ interface MobileMenuProps {
 export function MobileMenu({ children }: MobileMenuProps) {
   const [open, setOpen] = React.useState(false)
   const isMobile = useIsMobile()
+  const { unreadCount } = useUnreadNotifications()
 
   // Only render on mobile
   if (!isMobile) {
@@ -21,8 +23,11 @@ export function MobileMenu({ children }: MobileMenuProps) {
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <Button variant="ghost" size="sm" className="md:hidden">
+        <Button variant="ghost" size="sm" className="md:hidden relative">
           <Menu className="h-4 w-4" />
+          {unreadCount > 0 && (
+            <div className="absolute -top-1 -right-1 h-2 w-2 bg-destructive rounded-full"></div>
+          )}
           <span className="sr-only">Open menu</span>
         </Button>
       </SheetTrigger>
