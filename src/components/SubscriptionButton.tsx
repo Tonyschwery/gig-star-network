@@ -1,11 +1,13 @@
-import { useState } from "react";
-import { Crown } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Crown, Settings, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ProBadge } from "@/components/ProBadge";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { SubscriptionModal } from "@/components/SubscriptionModal";
+import { SubscriptionManagementModal } from "@/components/SubscriptionManagementModal";
+import { supabase } from "@/integrations/supabase/client";
 
 interface SubscriptionButtonProps {
   isProSubscriber?: boolean;
@@ -13,6 +15,14 @@ interface SubscriptionButtonProps {
   variant?: "default" | "outline" | "ghost";
   size?: "default" | "sm" | "lg";
   className?: string;
+}
+
+interface SubscriptionData {
+  isProSubscriber: boolean;
+  subscriptionStatus: string;
+  planId?: string;
+  currentPeriodEnd?: string;
+  subscriptionStartedAt?: string;
 }
 
 export function SubscriptionButton({ 
@@ -25,6 +35,54 @@ export function SubscriptionButton({
   const { user } = useAuth();
   const { toast } = useToast();
   const [showModal, setShowModal] = useState(false);
+  const [showManagementModal, setShowManagementModal] = useState(false);
+  const [subscriptionData, setSubscriptionData] = useState<SubscriptionData | null>(null);
+
+  useEffect(() => {
+    if (user && isProSubscriber) {
+      fetchSubscriptionData();
+    }
+  }, [user, isProSubscriber]);
+
+  const fetchSubscriptionData = async () => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('talent_profiles')
+        .select('is_pro_subscriber, subscription_status, plan_id, current_period_end, subscription_started_at')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error fetching subscription data:', error);
+        return;
+      }
+
+      if (data) {
+        setSubscriptionData({
+          isProSubscriber: data.is_pro_subscriber || false,
+          subscriptionStatus: data.subscription_status || 'free',
+          planId: data.plan_id || undefined,
+          currentPeriodEnd: data.current_period_end || undefined,
+          subscriptionStartedAt: data.subscription_started_at || undefined,
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching subscription data:', error);
+    }
+  };
+
+  const calculateDaysRemaining = (endDate?: string) => {
+    if (!endDate) return null;
+    const today = new Date();
+    const end = new Date(endDate);
+    const diffTime = end.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return Math.max(0, diffDays);
+  };
+
+  const daysRemaining = calculateDaysRemaining(subscriptionData?.currentPeriodEnd);
 
   const handleSubscriptionAction = () => {
     if (!user) {
@@ -37,8 +95,8 @@ export function SubscriptionButton({
     }
 
     if (isProSubscriber) {
-      // For managing existing subscription - open PayPal management
-      window.open('https://www.paypal.com/myaccount/autopay/', '_blank');
+      // Open subscription management modal
+      setShowManagementModal(true);
     } else {
       // Open subscription modal
       setShowModal(true);
@@ -47,16 +105,31 @@ export function SubscriptionButton({
 
   if (isProSubscriber) {
     return (
-      <Button
-        variant={variant}
-        size={size}
-        onClick={handleSubscriptionAction}
-        className={`${className} gap-2`}
-      >
-        <Crown className="h-4 w-4" />
-        Manage Pro
-        <ProBadge size="sm" showIcon={false} />
-      </Button>
+      <>
+        <Button
+          variant={variant}
+          size={size}
+          onClick={handleSubscriptionAction}
+          className={`${className} gap-2 relative`}
+        >
+          <Settings className="h-4 w-4" />
+          <div className="flex flex-col items-start">
+            <span>Manage Pro</span>
+            {daysRemaining !== null && (
+              <span className="text-xs opacity-80">
+                {daysRemaining} days left
+              </span>
+            )}
+          </div>
+          <ProBadge size="sm" showIcon={false} />
+        </Button>
+
+        <SubscriptionManagementModal
+          open={showManagementModal}
+          onOpenChange={setShowManagementModal}
+          subscriptionData={subscriptionData || undefined}
+        />
+      </>
     );
   }
 

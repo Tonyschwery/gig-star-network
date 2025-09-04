@@ -112,8 +112,8 @@ export function Header() {
 
 
   const handleManageSubscription = () => {
-    // For PayPal subscriptions, direct to PayPal management
-    window.open('https://www.paypal.com/myaccount/autopay/', '_blank');
+    // This will be handled by the SubscriptionButton/ProfileMenu components
+    // No direct PayPal redirect needed here anymore
   };
 
 
