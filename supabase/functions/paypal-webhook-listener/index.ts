@@ -57,8 +57,8 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Get PayPal credentials
-    const paypalClientId = Deno.env.get('PAYPAL_SANDBOX_CLIENT_ID');
-    const paypalClientSecret = Deno.env.get('PAYPAL_SANDBOX_CLIENT_SECRET');
+    const paypalClientId = Deno.env.get('PAYPAL_LIVE_CLIENT_ID');
+    const paypalClientSecret = Deno.env.get('PAYPAL_LIVE_CLIENT_SECRET');
     const webhookId = Deno.env.get('PAYPAL_WEBHOOK_ID');
 
     if (!paypalClientId || !paypalClientSecret || !webhookId) {
@@ -74,7 +74,7 @@ serve(async (req) => {
     console.log('Received webhook event:', webhookEvent.event_type, 'ID:', webhookEvent.id);
 
     // Get PayPal access token for verification
-    const tokenResponse = await fetch('https://api.sandbox.paypal.com/v1/oauth2/token', {
+    const tokenResponse = await fetch('https://api.paypal.com/v1/oauth2/token', {
       method: 'POST',
       headers: {
         'Authorization': `Basic ${btoa(`${paypalClientId}:${paypalClientSecret}`)}`,

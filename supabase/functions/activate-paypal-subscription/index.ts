@@ -34,15 +34,15 @@ Deno.serve(async (req) => {
     console.log('Activating PayPal subscription for user:', user.id, 'subscription:', subscriptionId);
 
     // Get PayPal credentials
-    const clientId = Deno.env.get('PAYPAL_SANDBOX_CLIENT_ID');
-    const clientSecret = Deno.env.get('PAYPAL_SANDBOX_CLIENT_SECRET');
+    const clientId = Deno.env.get('PAYPAL_LIVE_CLIENT_ID');
+    const clientSecret = Deno.env.get('PAYPAL_LIVE_CLIENT_SECRET');
 
     if (!clientId || !clientSecret) {
       throw new Error('PayPal credentials not configured');
     }
 
-    // PayPal API endpoints (sandbox)
-    const paypalBaseUrl = 'https://api-m.sandbox.paypal.com';
+    // PayPal API endpoints (live)
+    const paypalBaseUrl = 'https://api-m.paypal.com';
 
     // Get PayPal access token
     const tokenResponse = await fetch(`${paypalBaseUrl}/v1/oauth2/token`, {

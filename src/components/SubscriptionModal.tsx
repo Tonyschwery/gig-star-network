@@ -48,7 +48,7 @@ export function SubscriptionModal({ open, onOpenChange }: SubscriptionModalProps
       name: "Monthly Pro",
       price: "$19.99",
       period: "/month",
-      planId: "P-5DD48036RS5113705NCY45IY",
+      planId: "P-9NW37063VU373363ENCYI3LY",
       features: [
         "Zero commission - keep 100% of earnings",
         "Up to 10 profile images",
@@ -66,7 +66,7 @@ export function SubscriptionModal({ open, onOpenChange }: SubscriptionModalProps
       name: "Yearly Pro", 
       price: "$179.88",
       period: "/year",
-      planId: "P-8R7404252P6382316NCY46DA",
+      planId: "P-83U36288W1589964ANCYI6QQ",
       features: [
         "Everything in Monthly Pro",
         "Save $60 per year",
@@ -89,7 +89,7 @@ export function SubscriptionModal({ open, onOpenChange }: SubscriptionModalProps
       }
 
       const script = document.createElement('script');
-      script.src = `https://www.paypal.com/sdk/js?client-id=AU8JVXx6NV6vgdQ1CEtIdlKs_L_4tJQp6r-wyoJ_1X2iVAM7Z4WOyYjUBKgWTH9p7A0Ks4kVrYP1z7cS&vault=true&intent=subscription`;
+      script.src = `https://www.paypal.com/sdk/js?client-id=AX6bUOWtKGKAaD0Ry62rtK3jhTDGfzpSMuJCABbUeVENyKdBAei_-xGiY8wT1vvXTypXkHWijfJHENcA&vault=true&intent=subscription`;
       script.async = true;
       script.onload = () => setPaypalLoaded(true);
       script.onerror = () => {
