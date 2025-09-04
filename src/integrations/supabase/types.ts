@@ -593,6 +593,19 @@ export type Database = {
         Args: { user_id_to_delete: string }
         Returns: Json
       }
+      admin_get_all_users: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          created_at: string
+          email: string
+          has_talent_profile: boolean
+          id: string
+          last_sign_in_at: string
+          total_bookings: number
+          user_metadata: Json
+          user_type: string
+        }[]
+      }
       admin_update_subscription: {
         Args: { is_pro: boolean; talent_id_param: string }
         Returns: Json
