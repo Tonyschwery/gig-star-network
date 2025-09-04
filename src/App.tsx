@@ -19,6 +19,7 @@ import TalentProfileEdit from "./pages/TalentProfileEdit";
 import AdminDashboard from "./pages/AdminDashboard";
 import { AdminLayout } from "./components/admin/AdminLayout";
 import AdminEventRequests from "./pages/admin/AdminEventRequests";
+import AdminDirectMessages from "./pages/admin/AdminDirectMessages";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminBookings from "./pages/admin/AdminBookings";
 import AdminMessages from "./pages/admin/AdminMessages";
@@ -62,6 +63,7 @@ const App = () => (
               <Route path="bookings" element={<AdminBookings />} />
               <Route path="payments" element={<AdminPayments />} />
               <Route path="messages" element={<AdminMessages />} />
+              <Route path="direct-messages" element={<AdminDirectMessages />} />
               <Route path="event-requests" element={<AdminEventRequests />} />
               <Route path="settings" element={<AdminSettings />} />
               <Route path="reports" element={<AdminReports />} />

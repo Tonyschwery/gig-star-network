@@ -24,6 +24,7 @@ const adminRoutes = [
   { path: '/admin/users', label: 'Users & Talents', icon: Users },
   { path: '/admin/bookings', label: 'Bookings', icon: Calendar },
   { path: '/admin/messages', label: 'Chat Messages', icon: MessageSquare },
+  { path: '/admin/direct-messages', label: 'Direct Messages', icon: MessageSquare },
   { path: '/admin/event-requests', label: 'Direct Inbox', icon: FileText },
   { path: '/admin/payments', label: 'Payments', icon: DollarSign },
   { path: '/admin/settings', label: 'Settings', icon: Settings },
