@@ -74,7 +74,7 @@ serve(async (req) => {
     console.log('Received webhook event:', webhookEvent.event_type, 'ID:', webhookEvent.id);
 
     // Get PayPal access token for verification
-    const tokenResponse = await fetch('https://api.paypal.com/v1/oauth2/token', {
+    const tokenResponse = await fetch('https://api-m.paypal.com/v1/oauth2/token', {
       method: 'POST',
       headers: {
         'Authorization': `Basic ${btoa(`${paypalClientId}:${paypalClientSecret}`)}`,
@@ -93,19 +93,44 @@ serve(async (req) => {
 
     const tokenData: PayPalAccessTokenResponse = await tokenResponse.json();
 
-    // Skip webhook verification for now to fix the MALFORMED_REQUEST_JSON issue
-    // The verification payload structure might need adjustment for the sandbox environment
-    console.log('Webhook verification skipped for sandbox testing');
-    
-    // For production, you would implement proper webhook verification
-    // const verificationPayload = {
-    //   transmission_id: req.headers.get('PAYPAL-TRANSMISSION-ID'),
-    //   cert_id: req.headers.get('PAYPAL-CERT-ID'), 
-    //   auth_algo: req.headers.get('PAYPAL-AUTH-ALGO'),
-    //   transmission_time: req.headers.get('PAYPAL-TRANSMISSION-TIME'),
-    //   webhook_id: webhookId,
-    //   webhook_event: webhookEvent,
-    // };
+    // Verify webhook signature for security
+    console.log('Verifying PayPal webhook signature...');
+    const verificationPayload = {
+      transmission_id: req.headers.get('PAYPAL-TRANSMISSION-ID'),
+      cert_id: req.headers.get('PAYPAL-CERT-ID'),
+      auth_algo: req.headers.get('PAYPAL-AUTH-ALGO'),
+      transmission_time: req.headers.get('PAYPAL-TRANSMISSION-TIME'),
+      webhook_id: webhookId,
+      webhook_event: webhookEvent,
+    };
+
+    const verifyResponse = await fetch('https://api-m.paypal.com/v1/notifications/verify-webhook-signature', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${tokenData.access_token}`,
+      },
+      body: JSON.stringify(verificationPayload),
+    });
+
+    if (!verifyResponse.ok) {
+      console.error('Webhook verification failed:', await verifyResponse.text());
+      return new Response(JSON.stringify({ error: 'Webhook verification failed' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const verificationResult: PayPalWebhookVerificationResponse = await verifyResponse.json();
+    if (verificationResult.verification_status !== 'SUCCESS') {
+      console.error('Webhook signature invalid:', verificationResult);
+      return new Response(JSON.stringify({ error: 'Invalid webhook signature' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    console.log('Webhook verification successful');
 
     // Process subscription webhook events - ONLY when payment is actually made
     if (webhookEvent.event_type === 'BILLING.SUBSCRIPTION.ACTIVATED' || 
