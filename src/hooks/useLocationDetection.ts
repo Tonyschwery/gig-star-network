@@ -221,7 +221,7 @@ export const useLocationDetection = () => {
     }
   }, [user, state.isDetecting, state.userLocation]);
 
-  // Initialize on mount - NO auto-detection for mobile compatibility
+  // Initialize on mount - Always try IP detection for proximity sorting
   useEffect(() => {
     // Load from localStorage first
     const savedLocation = localStorage.getItem('userLocation');
@@ -236,7 +236,16 @@ export const useLocationDetection = () => {
       loadUserPreferences();
     }
 
-    // Only auto-detect on desktop and if no location is set
+    // Always try IP-based detection for proximity sorting (non-intrusive)
+    if (!state.detectedLocation) {
+      getLocationFromIP().then(ipLocation => {
+        if (ipLocation) {
+          setState(prev => ({ ...prev, detectedLocation: ipLocation }));
+        }
+      });
+    }
+
+    // Only auto-detect GPS on desktop and if no location is set
     // Mobile browsers require user interaction for location access
     if (!isMobile && !savedLocation && !state.detectedLocation) {
       detectLocation();

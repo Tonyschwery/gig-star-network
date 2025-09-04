@@ -2,9 +2,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Facebook, Twitter, Instagram, Linkedin, Mail } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 export function Footer() {
   const navigate = useNavigate();
+
+  const handleSocialClick = (platform: string) => {
+    toast.info(`${platform} integration coming soon!`);
+  };
 
   return (
     <footer className="bg-card border-t border-card-border">
@@ -19,16 +24,16 @@ export function Footer() {
               The simplest way to connect with exceptional live talent for your events. Book verified performers and creators worldwide.
             </p>
             <div className="flex justify-center space-x-3">
-              <Button variant="ghost" size="sm">
+              <Button variant="ghost" size="sm" onClick={() => handleSocialClick('Facebook')}>
                 <Facebook className="h-4 w-4" />
               </Button>
-              <Button variant="ghost" size="sm">
+              <Button variant="ghost" size="sm" onClick={() => handleSocialClick('Twitter')}>
                 <Twitter className="h-4 w-4" />
               </Button>
-              <Button variant="ghost" size="sm">
+              <Button variant="ghost" size="sm" onClick={() => handleSocialClick('Instagram')}>
                 <Instagram className="h-4 w-4" />
               </Button>
-              <Button variant="ghost" size="sm">
+              <Button variant="ghost" size="sm" onClick={() => handleSocialClick('LinkedIn')}>
                 <Linkedin className="h-4 w-4" />
               </Button>
             </div>
