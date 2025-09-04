@@ -349,9 +349,13 @@ export function Header() {
                           Welcome, {talentName || user.user_metadata?.name || user.email?.split('@')[0] || 'User'}
                         </span>
                         {/* Only show switch to artist dashboard when talent is in booking mode */}
-                      {talentName && <ModeSwitch size="sm" />}
+                       {talentName && <ModeSwitch size="sm" />}
                     </div>
                     
+                    {/* Notifications in mobile menu */}
+                    <div className="py-2">
+                      <NotificationCenter />
+                    </div>
                       
                       {user && !talentName && user.user_metadata?.user_type === 'talent' && (
                         <Button 

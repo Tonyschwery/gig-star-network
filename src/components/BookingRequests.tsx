@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BookingCard, Booking } from "./BookingCard";
+import { UniversalChat } from "@/components/UniversalChat";
 import { useTalentBookingLimit } from "@/hooks/useTalentBookingLimit";
 import { NotificationBadge } from "./NotificationBadge";
 
@@ -13,6 +14,7 @@ interface BookingRequestsProps {
 export const BookingRequests = ({ talentId, isProSubscriber }: BookingRequestsProps) => {
     const [bookings, setBookings] = useState<Booking[]>([]);
     const [loading, setLoading] = useState(true);
+    const [chatOpenBooking, setChatOpenBooking] = useState<string | undefined>();
     const { acceptedBookingsThisMonth, canAcceptBooking, isProUser } = useTalentBookingLimit();
 
     const fetchBookings = useCallback(async () => {
@@ -54,6 +56,7 @@ export const BookingRequests = ({ talentId, isProSubscriber }: BookingRequestsPr
                 onUpdate={fetchBookings}
                 isProSubscriber={isProSubscriber}
                 canAccept={allowAccept}
+                onChatOpen={(bookingId) => setChatOpenBooking(bookingId)}
             />
         ));
     };
@@ -100,6 +103,9 @@ export const BookingRequests = ({ talentId, isProSubscriber }: BookingRequestsPr
                     {renderBookings(pastBookings)}
                 </TabsContent>
             </Tabs>
+            
+            {/* Universal Chat with booking-specific opening */}
+            <UniversalChat openWithBooking={chatOpenBooking} />
         </div>
     );
 };

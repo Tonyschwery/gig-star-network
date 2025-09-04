@@ -25,7 +25,11 @@ interface BookingLite {
   event_date?: string;
 }
 
-export function UniversalChat() {
+interface UniversalChatProps {
+  openWithBooking?: string;
+}
+
+export function UniversalChat({ openWithBooking }: UniversalChatProps = {}) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -112,10 +116,26 @@ export function UniversalChat() {
       
       setTalentProStatus(talentStatusMap);
       setBookings(merged as BookingLite[]);
-      if (!selectedId && merged.length) setSelectedId(merged[0].id);
+      if (!selectedId && merged.length) {
+        // If openWithBooking is provided and exists in the list, select it
+        if (openWithBooking && merged.find(b => b.id === openWithBooking)) {
+          setSelectedId(openWithBooking);
+        } else {
+          setSelectedId(merged[0].id);
+        }
+      }
     };
     load();
-  }, [user?.id]);
+  }, [user?.id, openWithBooking]);
+
+  // Open chat when openWithBooking prop changes
+  useEffect(() => {
+    if (openWithBooking && bookings.find(b => b.id === openWithBooking)) {
+      setSelectedId(openWithBooking);
+      setOpen(true);
+      setMinimized(false);
+    }
+  }, [openWithBooking, bookings]);
 
   const selectedBooking = useMemo(() => bookings.find(b => b.id === selectedId) || null, [bookings, selectedId]);
 
@@ -161,9 +181,14 @@ export function UniversalChat() {
       const filterResult = filterMessage(input);
       
       if (filterResult.isBlocked) {
+        // Determine if current user is booker or talent in this conversation
+        const isUserBooker = selectedBooking.user_id === user?.id;
+        
         toast({
           title: "Message Blocked",
-          description: filterResult.reason + " The talent in this conversation is on a free plan.",
+          description: isUserBooker 
+            ? "Message filtered because talent is not Pro" 
+            : filterResult.reason + " Subscribe to Pro to unlock messaging",
           variant: "destructive",
         });
         return;

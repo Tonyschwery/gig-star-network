@@ -4,7 +4,7 @@ import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
-import { Calendar, User, Check, X, Clock3, MapPin } from "lucide-react";
+import { Calendar, User, Check, X, Clock3, MapPin, MessageCircle } from "lucide-react";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -33,9 +33,10 @@ interface BookingCardProps {
   onUpdate?: () => void;
   isProSubscriber?: boolean;
   canAccept?: boolean;
+  onChatOpen?: (bookingId: string) => void;
 }
 
-export const BookingCard = ({ booking, mode, onUpdate, isProSubscriber, canAccept = true }: BookingCardProps) => {
+export const BookingCard = ({ booking, mode, onUpdate, isProSubscriber, canAccept = true, onChatOpen }: BookingCardProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -204,6 +205,14 @@ export const BookingCard = ({ booking, mode, onUpdate, isProSubscriber, canAccep
           <>
             <Button onClick={handleDecline} variant="outline" size="sm" className="border-red-200 text-red-600">
               <X className="h-4 w-4 mr-2" />Decline
+            </Button>
+            <Button 
+              onClick={() => onChatOpen?.(booking.id)} 
+              variant="outline" 
+              size="sm"
+              className="border-accent/30 text-accent hover:bg-accent/10"
+            >
+              <MessageCircle className="h-4 w-4 mr-2" />Chat Before Accepting
             </Button>
             <Button 
               onClick={handleAccept} 
