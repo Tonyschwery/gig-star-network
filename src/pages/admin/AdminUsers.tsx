@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -33,6 +34,7 @@ interface TalentProfile {
 }
 
 export default function AdminUsers() {
+  const { isAdmin, loading: adminLoading } = useAdminAuth();
   const [allUsers, setAllUsers] = useState<AllUser[]>([]);
   const [talents, setTalents] = useState<TalentProfile[]>([]);
   const [loading, setLoading] = useState(true);
@@ -43,9 +45,12 @@ export default function AdminUsers() {
   const [sendingMessage, setSendingMessage] = useState(false);
 
   useEffect(() => {
-    loadAllUsers();
-    loadTalents();
-  }, []);
+    // Only load data when admin authentication is confirmed
+    if (!adminLoading && isAdmin) {
+      loadAllUsers();
+      loadTalents();
+    }
+  }, [isAdmin, adminLoading]);
 
   const loadAllUsers = async () => {
     try {
@@ -248,12 +253,23 @@ export default function AdminUsers() {
     return matchesSearch && matchesFilter;
   });
 
-  if (loading) {
+  if (loading || adminLoading) {
     return (
       <div className="p-6">
         <div className="animate-pulse space-y-4">
           <div className="h-8 bg-muted rounded w-1/4"></div>
           <div className="h-64 bg-muted rounded"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <div className="p-6">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-destructive mb-2">Access Denied</h1>
+          <p className="text-muted-foreground">You don't have admin privileges to view this page.</p>
         </div>
       </div>
     );
