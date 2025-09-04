@@ -193,13 +193,22 @@ export function NotificationCenter() {
       return;
     }
 
-    // Handle navigation based on notification type and user role
+    // Handle message notifications with seamless chat opening
     if (notification.type === 'new_message' && notification.booking_id) {
+      console.log('NotificationCenter: Opening chat for booking:', notification.booking_id);
+      
       // Create a custom event to open chat with specific booking
       const chatEvent = new CustomEvent('openChatWithBooking', { 
         detail: { bookingId: notification.booking_id }
       });
       window.dispatchEvent(chatEvent);
+      
+      // Close the notification popover for better UX
+      const popoverTrigger = document.querySelector('[data-state="open"]');
+      if (popoverTrigger) {
+        (popoverTrigger as HTMLElement).click();
+      }
+      
       return;
     }
 
@@ -270,7 +279,11 @@ export function NotificationCenter() {
                     {notifications.map((notification) => (
                       <div
                         key={notification.id}
-                        className={`p-4 border-b hover:bg-muted/50 transition-colors cursor-pointer ${
+                        className={`p-4 border-b transition-colors cursor-pointer ${
+                          notification.type === 'new_message' 
+                            ? 'hover:bg-accent/10 border-l-2 border-l-accent' 
+                            : 'hover:bg-muted/50'
+                        } ${
                           !notification.is_read ? 'bg-muted/30' : ''
                         }`}
                         onClick={() => handleNotificationClick(notification)}
@@ -281,6 +294,9 @@ export function NotificationCenter() {
                               {getNotificationIcon(notification.type)}
                               <p className="font-medium text-sm truncate">
                                 {notification.title}
+                                {notification.type === 'new_message' && (
+                                  <span className="ml-2 text-xs text-accent font-normal">• Click to open chat</span>
+                                )}
                               </p>
                               {!notification.is_read && (
                                 <div className="h-2 w-2 bg-primary rounded-full" />
