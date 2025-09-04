@@ -35,7 +35,8 @@ export default function AdminDashboard() {
 
   const loadDashboardStats = async () => {
     try {
-      const [talentsData, bookingsData, chatData] = await Promise.all([
+      const [usersData, talentsData, bookingsData, chatData] = await Promise.all([
+        supabase.rpc('admin_get_all_users'),
         supabase.from('talent_profiles').select('id, is_pro_subscriber'),
         supabase.from('bookings').select('id, status'),
         supabase.from('chat_messages').select('booking_id').limit(1000),
@@ -46,7 +47,7 @@ export default function AdminDashboard() {
       const proSubscribers = talentsData.data?.filter(t => t.is_pro_subscriber).length || 0;
 
       setStats({
-        totalUsers: 3, // Hardcoded for now - can be improved with proper RPC
+        totalUsers: usersData.data?.length || 0,
         totalTalents: talentsData.data?.length || 0,
         totalBookings: bookingsData.data?.length || 0,
         pendingBookings,
@@ -55,6 +56,24 @@ export default function AdminDashboard() {
       });
     } catch (error) {
       console.error('Error loading dashboard stats:', error);
+      // Fallback to basic stats if admin function fails
+      try {
+        const [talentsData, bookingsData] = await Promise.all([
+          supabase.from('talent_profiles').select('id, is_pro_subscriber'),
+          supabase.from('bookings').select('id, status'),
+        ]);
+        
+        setStats({
+          totalUsers: 0, // Can't get user count without admin access
+          totalTalents: talentsData.data?.length || 0,
+          totalBookings: bookingsData.data?.length || 0,
+          pendingBookings: bookingsData.data?.filter(b => b.status === 'pending').length || 0,
+          activeChats: 0,
+          proSubscribers: talentsData.data?.filter(t => t.is_pro_subscriber).length || 0,
+        });
+      } catch (fallbackError) {
+        console.error('Error loading fallback stats:', fallbackError);
+      }
     } finally {
       setLoading(false);
     }

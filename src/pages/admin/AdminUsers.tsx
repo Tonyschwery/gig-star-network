@@ -51,45 +51,26 @@ export default function AdminUsers() {
     try {
       console.log('Loading all users via admin function...');
       
-      // First check if user is admin
-      const { data: isAdminData, error: adminError } = await supabase.rpc('is_admin');
-      if (adminError) {
-        console.error('Error checking admin status:', adminError);
-        throw new Error('Failed to verify admin permissions');
-      }
-      
-      if (!isAdminData) {
-        throw new Error('Unauthorized: Admin access required');
-      }
-      
       const { data, error } = await supabase.rpc('admin_get_all_users');
       
       if (error) {
         console.error('Error loading all users:', error);
-        // If RPC fails, try alternative approach
-        if (error.message.includes('permission denied') || error.message.includes('insufficient_privilege')) {
-          console.log('Trying alternative approach to load users...');
-          // Load users from profiles and bookings tables as fallback
-          const { data: profiles, error: profileError } = await supabase
-            .from('talent_profiles')
-            .select('user_id')
-            .order('created_at', { ascending: false });
-            
-          if (profileError) {
-            console.error('Error loading user profiles:', profileError);
-            throw profileError;
-          }
-          
-          // For now, show error and empty state
-          setAllUsers([]);
-          toast.error('Limited user data available. Some admin functions may be restricted.');
-          return;
-        }
-        throw error;
+        toast.error(`Failed to load users: ${error.message}`);
+        setAllUsers([]);
+        return;
       }
       
-      console.log('All users loaded:', data?.length, 'users');
-      setAllUsers(data || []);
+      console.log('All users loaded successfully:', data?.length, 'users');
+      
+      // Process the data to ensure proper formatting
+      const formattedUsers = data?.map(user => ({
+        ...user,
+        user_metadata: user.user_metadata || {},
+        user_type: user.user_type || 'booker'
+      })) || [];
+      
+      setAllUsers(formattedUsers);
+      toast.success(`Successfully loaded ${formattedUsers.length} users`);
     } catch (error: any) {
       console.error('Error loading users:', error);
       toast.error(`Failed to load users: ${error.message}`);
@@ -231,11 +212,29 @@ export default function AdminUsers() {
 
   const filteredAllUsers = allUsers.filter(user => {
     const matchesSearch = user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (user.user_metadata?.user_type || '').toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFilter = filterType === 'all' || 
-      (filterType === 'talent' && user.has_talent_profile) ||
-      (filterType === 'booker' && !user.has_talent_profile) ||
-      (filterType === 'pro' && user.has_talent_profile && talents.find(t => t.user_id === user.id)?.is_pro_subscriber);
+      user.user_type.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (user.user_metadata?.name || '').toLowerCase().includes(searchTerm.toLowerCase());
+    
+    let matchesFilter = false;
+    switch (filterType) {
+      case 'all':
+        matchesFilter = true;
+        break;
+      case 'talent':
+        matchesFilter = user.has_talent_profile;
+        break;
+      case 'booker':
+        matchesFilter = !user.has_talent_profile;
+        break;
+      case 'pro':
+        matchesFilter = user.has_talent_profile && talents.find(t => t.user_id === user.id)?.is_pro_subscriber;
+        break;
+      case 'free':
+        matchesFilter = !user.has_talent_profile || !talents.find(t => t.user_id === user.id)?.is_pro_subscriber;
+        break;
+      default:
+        matchesFilter = true;
+    }
     
     return matchesSearch && matchesFilter;
   });
@@ -330,18 +329,23 @@ export default function AdminUsers() {
                   <TableBody>
                     {filteredAllUsers.map((user) => (
                       <TableRow key={user.id}>
-                        <TableCell>
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-2">
-                              <Mail className="h-4 w-4 text-muted-foreground" />
-                              <span className="font-medium">{user.email}</span>
-                            </div>
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                              <Calendar className="h-3 w-3" />
-                              <span>Joined {formatDistanceToNow(new Date(user.created_at))} ago</span>
-                            </div>
-                          </div>
-                        </TableCell>
+                         <TableCell>
+                           <div className="space-y-1">
+                             <div className="flex items-center gap-2">
+                               <Mail className="h-4 w-4 text-muted-foreground" />
+                               <span className="font-medium">{user.email}</span>
+                             </div>
+                             {user.user_metadata?.name && (
+                               <div className="text-sm text-muted-foreground">
+                                 Name: {user.user_metadata.name}
+                               </div>
+                             )}
+                             <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                               <Calendar className="h-3 w-3" />
+                               <span>Joined {formatDistanceToNow(new Date(user.created_at))} ago</span>
+                             </div>
+                           </div>
+                         </TableCell>
                         <TableCell>
                           <div className="space-y-1">
                             <Badge variant={user.has_talent_profile ? "default" : "secondary"}>
