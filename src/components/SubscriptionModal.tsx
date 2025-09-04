@@ -120,21 +120,38 @@ export function SubscriptionModal({ open, onOpenChange }: SubscriptionModalProps
     container.innerHTML = '';
 
     window.paypal.Buttons({
-      createSubscription: (data, actions) => {
-        return actions.subscription.create({
-          plan_id: plan.planId,
-          custom_id: user.id, // Pass Supabase User ID
-          subscriber: {
-            email_address: user.email
-          },
-          application_context: {
-            brand_name: "QTalent",
-            shipping_preference: "NO_SHIPPING",
-            user_action: "SUBSCRIBE_NOW",
-            return_url: `${window.location.origin}/subscription-success`,
-            cancel_url: `${window.location.origin}/subscription-cancelled`
-          }
-        });
+      createSubscription: async (data, actions) => {
+        console.log('🔄 Creating subscription with plan:', plan);
+        console.log('📧 User email:', user.email);
+        console.log('🆔 User ID (custom_id):', user.id);
+        console.log('🏷️ Plan ID:', plan.planId);
+        
+        try {
+          const subscriptionData = {
+            plan_id: plan.planId,
+            custom_id: user.id, // Pass Supabase User ID
+            subscriber: {
+              email_address: user.email
+            },
+            application_context: {
+              brand_name: "QTalent",
+              shipping_preference: "NO_SHIPPING",
+              user_action: "SUBSCRIBE_NOW",
+              return_url: `${window.location.origin}/subscription-success`,
+              cancel_url: `${window.location.origin}/subscription-cancelled`
+            }
+          };
+          
+          console.log('📤 Sending subscription data to PayPal:', JSON.stringify(subscriptionData, null, 2));
+          
+          const result = await actions.subscription.create(subscriptionData);
+          console.log('✅ PayPal subscription creation successful:', result);
+          return result;
+        } catch (error) {
+          console.error('❌ Error creating PayPal subscription:', error);
+          console.error('Error details:', JSON.stringify(error, null, 2));
+          throw error;
+        }
       },
       onApprove: async (data, actions) => {
         console.log('🎉 PayPal onApprove called with data:', data);
@@ -169,10 +186,35 @@ export function SubscriptionModal({ open, onOpenChange }: SubscriptionModalProps
         navigate(redirectUrl.pathname + redirectUrl.search);
       },
       onError: (err) => {
-        console.error('PayPal error:', err);
+        console.error('❌ PayPal onError handler triggered');
+        console.error('Error object:', err);
+        console.error('Error type:', typeof err);
+        console.error('Error message:', err?.message || 'Unknown error');
+        console.error('Error name:', err?.name || 'Unknown');
+        console.error('Error stack:', err?.stack || 'No stack trace');
+        console.error('Full error details:', JSON.stringify(err, Object.getOwnPropertyNames(err), 2));
+        
+        // More specific error messages based on error type
+        let errorMessage = "There was an issue processing your subscription. Please try again.";
+        let errorTitle = "Subscription Error";
+        
+        if (err?.message?.includes('RESOURCE_NOT_FOUND')) {
+          errorMessage = "The subscription plan is not available. Please contact support.";
+          errorTitle = "Plan Not Available";
+        } else if (err?.message?.includes('INVALID_REQUEST')) {
+          errorMessage = "Invalid subscription request. Please try refreshing the page.";
+          errorTitle = "Invalid Request";
+        } else if (err?.message?.includes('AUTHENTICATION_FAILURE')) {
+          errorMessage = "Payment authentication failed. Please try again.";
+          errorTitle = "Authentication Failed";
+        } else if (err?.message?.includes('INSTRUMENT_DECLINED')) {
+          errorMessage = "Your payment method was declined. Please try a different payment method.";
+          errorTitle = "Payment Declined";
+        }
+        
         toast({
-          title: "Subscription Error",
-          description: "There was an issue processing your subscription. Please try again.",
+          title: errorTitle,
+          description: errorMessage,
           variant: "destructive",
         });
         setSelectedPlan(null);
