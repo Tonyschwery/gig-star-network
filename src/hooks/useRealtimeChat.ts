@@ -21,9 +21,6 @@ export const useRealtimeChat = (bookingId?: string, userId?: string) => {
     }
 
     let mounted = true;
-    
-    // Set ready immediately when we have valid IDs
-    setIsReady(true);
 
     const setupChat = async () => {
       try {
@@ -52,6 +49,11 @@ export const useRealtimeChat = (bookingId?: string, userId?: string) => {
           .subscribe();
 
         channelRef.current = channel;
+        
+        // Set ready immediately after channel subscription
+        if (mounted) {
+          setIsReady(true);
+        }
 
         // Load existing messages in background
         const messagesResponse = await supabase

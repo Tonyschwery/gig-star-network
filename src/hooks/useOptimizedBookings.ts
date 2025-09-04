@@ -26,28 +26,42 @@ export const useOptimizedBookings = (userId?: string) => {
 
     const loadBookingsOptimized = async () => {
       try {
-        // Single optimized query with joins to get all data at once
-        const [talentProfileResponse, bookingsResponse, supportBookingResponse] = await Promise.all([
-          // Get user's talent profile
+        console.log('Loading bookings for user:', userId);
+        
+        // Get user's talent profile and support booking in parallel
+        const [talentProfileResponse, supportBookingResponse] = await Promise.all([
           supabase
             .from('talent_profiles')
             .select('id, is_pro_subscriber')
             .eq('user_id', userId)
             .maybeSingle(),
           
-          // Get all bookings with talent info - use LEFT JOIN to include unassigned bookings
+          supabase.rpc('create_admin_support_booking', { user_id_param: userId })
+        ]);
+
+        // Get separate booking queries to ensure we get ALL relevant bookings
+        const [bookerBookingsResponse, talentBookingsResponse] = await Promise.all([
+          // Bookings where user is the booker
           supabase
             .from('bookings')
             .select(`
               id, user_id, talent_id, event_type, booker_name, booker_email, event_date, status,
               talent_profiles(is_pro_subscriber)
             `)
-            .or(`user_id.eq.${userId},talent_profiles.user_id.eq.${userId}`)
+            .eq('user_id', userId)
             .order('created_at', { ascending: false })
             .limit(20),
           
-          // Create support booking
-          supabase.rpc('create_admin_support_booking', { user_id_param: userId })
+          // Bookings where user is the talent (if they have a talent profile)
+          talentProfileResponse.data ? supabase
+            .from('bookings')
+            .select(`
+              id, user_id, talent_id, event_type, booker_name, booker_email, event_date, status,
+              talent_profiles(is_pro_subscriber)
+            `)
+            .eq('talent_id', talentProfileResponse.data.id)
+            .order('created_at', { ascending: false })
+            .limit(20) : Promise.resolve({ data: [], error: null })
         ]);
 
         if (talentProfileResponse.error && talentProfileResponse.error.code !== 'PGRST116') {
@@ -57,11 +71,12 @@ export const useOptimizedBookings = (userId?: string) => {
         const talentProfile = talentProfileResponse.data;
         setIsProUser(talentProfile?.is_pro_subscriber || false);
 
-        // Process bookings
+        // Combine all bookings from both queries
         let allBookings: BookingWithTalent[] = [];
         
-        if (!bookingsResponse.error && bookingsResponse.data) {
-          allBookings = bookingsResponse.data.map((booking: any) => ({
+        // Add booker bookings
+        if (!bookerBookingsResponse.error && bookerBookingsResponse.data) {
+          const bookerBookings = bookerBookingsResponse.data.map((booking: any) => ({
             id: booking.id,
             user_id: booking.user_id,
             talent_id: booking.talent_id,
@@ -72,7 +87,32 @@ export const useOptimizedBookings = (userId?: string) => {
             status: booking.status,
             talent_is_pro: booking.talent_profiles?.is_pro_subscriber || false
           }));
+          allBookings.push(...bookerBookings);
         }
+        
+        // Add talent bookings (avoid duplicates)
+        if (!talentBookingsResponse.error && talentBookingsResponse.data) {
+          const talentBookings = talentBookingsResponse.data.map((booking: any) => ({
+            id: booking.id,
+            user_id: booking.user_id,
+            talent_id: booking.talent_id,
+            event_type: booking.event_type,
+            booker_name: booking.booker_name,
+            booker_email: booking.booker_email,
+            event_date: booking.event_date,
+            status: booking.status,
+            talent_is_pro: booking.talent_profiles?.is_pro_subscriber || false
+          }));
+          
+          // Only add talent bookings that aren't already in the array
+          talentBookings.forEach(talentBooking => {
+            if (!allBookings.find(b => b.id === talentBooking.id)) {
+              allBookings.push(talentBooking);
+            }
+          });
+        }
+        
+        console.log('Found bookings:', allBookings.length, allBookings);
 
         // Add support booking
         if (!supportBookingResponse.error && supportBookingResponse.data) {

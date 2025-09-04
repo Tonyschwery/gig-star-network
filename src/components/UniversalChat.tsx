@@ -54,8 +54,12 @@ export function UniversalChat({ openWithBooking }: UniversalChatProps = {}) {
     const globalBookingId = (window as any).openChatBookingId;
     const targetBookingId = openWithBooking || globalBookingId;
     
+    console.log('UniversalChat: Checking for booking to open:', { targetBookingId, bookingsCount: bookings.length, bookings });
+    
     if (targetBookingId) {
       const targetBooking = bookings.find(b => b.id === targetBookingId);
+      console.log('UniversalChat: Found target booking:', targetBooking);
+      
       if (targetBooking) {
         setSelectedId(targetBookingId);
         setOpen(true);
@@ -65,6 +69,8 @@ export function UniversalChat({ openWithBooking }: UniversalChatProps = {}) {
         if (globalBookingId) {
           delete (window as any).openChatBookingId;
         }
+      } else {
+        console.warn('UniversalChat: Target booking not found in bookings list');
       }
     } else if (!selectedId && bookings.length) {
       setSelectedId(bookings[0].id);
@@ -75,11 +81,17 @@ export function UniversalChat({ openWithBooking }: UniversalChatProps = {}) {
   useEffect(() => {
     const handleOpenChat = (event: CustomEvent) => {
       const { bookingId } = event.detail;
+      console.log('UniversalChat: Custom event received for booking:', bookingId);
+      
       const targetBooking = bookings.find(b => b.id === bookingId);
+      console.log('UniversalChat: Found booking from event:', targetBooking);
+      
       if (targetBooking) {
         setSelectedId(bookingId);
         setOpen(true);
         setMinimized(false);
+      } else {
+        console.warn('UniversalChat: Booking from custom event not found:', bookingId);
       }
     };
 
