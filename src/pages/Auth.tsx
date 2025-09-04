@@ -34,7 +34,10 @@ const Auth = () => {
     setLoading(true);
 
     try {
-      const redirectUrl = `${window.location.origin}/`;
+      // Use the deployed URL or preview URL, not localhost
+      const redirectUrl = window.location.hostname === 'localhost' 
+        ? 'https://lovable.dev' // Fallback for development
+        : `${window.location.origin}/`;
       
       const { error } = await supabase.auth.signUp({
         email,

@@ -50,10 +50,41 @@ export default function AdminUsers() {
   const loadAllUsers = async () => {
     try {
       console.log('Loading all users via admin function...');
+      
+      // First check if user is admin
+      const { data: isAdminData, error: adminError } = await supabase.rpc('is_admin');
+      if (adminError) {
+        console.error('Error checking admin status:', adminError);
+        throw new Error('Failed to verify admin permissions');
+      }
+      
+      if (!isAdminData) {
+        throw new Error('Unauthorized: Admin access required');
+      }
+      
       const { data, error } = await supabase.rpc('admin_get_all_users');
       
       if (error) {
         console.error('Error loading all users:', error);
+        // If RPC fails, try alternative approach
+        if (error.message.includes('permission denied') || error.message.includes('insufficient_privilege')) {
+          console.log('Trying alternative approach to load users...');
+          // Load users from profiles and bookings tables as fallback
+          const { data: profiles, error: profileError } = await supabase
+            .from('talent_profiles')
+            .select('user_id')
+            .order('created_at', { ascending: false });
+            
+          if (profileError) {
+            console.error('Error loading user profiles:', profileError);
+            throw profileError;
+          }
+          
+          // For now, show error and empty state
+          setAllUsers([]);
+          toast.error('Limited user data available. Some admin functions may be restricted.');
+          return;
+        }
         throw error;
       }
       
@@ -62,6 +93,7 @@ export default function AdminUsers() {
     } catch (error: any) {
       console.error('Error loading users:', error);
       toast.error(`Failed to load users: ${error.message}`);
+      setAllUsers([]);
     }
   };
 
