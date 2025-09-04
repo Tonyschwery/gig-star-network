@@ -5,15 +5,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { MessageCircle, X, Minimize2, Maximize2 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { useNavigate } from "react-router-dom";
+import { MessageCircle, X, Minimize2, Maximize2, Wifi } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useRealtimeChat } from "@/hooks/useRealtimeChat";
 import { useChatFilterPro } from "@/hooks/useChatFilterPro";
 import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 import { useToast } from "@/hooks/use-toast";
 import { useWebPushNotifications } from "@/hooks/useWebPushNotifications";
+import { useOptimizedBookings } from "@/hooks/useOptimizedBookings";
 
 interface BookingLite {
   id: string;
@@ -24,6 +23,7 @@ interface BookingLite {
   booker_email?: string;
   event_date?: string;
   status?: string;
+  talent_is_pro?: boolean;
 }
 
 interface UniversalChatProps {
@@ -32,243 +32,54 @@ interface UniversalChatProps {
 
 export function UniversalChat({ openWithBooking }: UniversalChatProps = {}) {
   const { user } = useAuth();
-  const navigate = useNavigate();
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [minimized, setMinimized] = useState(false);
-  const [bookings, setBookings] = useState<BookingLite[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [input, setInput] = useState("");
-  const [isProUser, setIsProUser] = useState(false);
-  const [talentProStatus, setTalentProStatus] = useState<{[key: string]: boolean}>({});
-  const { filterMessage } = useChatFilterPro(false); // We'll set this dynamically
+  const { filterMessage } = useChatFilterPro(false);
   const { unreadCount } = useUnreadMessages();
   const { showNotification, requestPermission } = useWebPushNotifications();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const previousMessageCountRef = useRef(0);
+  
+  // Use optimized bookings hook
+  const { bookings, isProUser, loading } = useOptimizedBookings(user?.id);
 
+  // Handle booking selection and opening
   useEffect(() => {
-    const load = async () => {
-      if (!user) return;
-      
-      console.log('UniversalChat: Loading bookings for user:', user.id);
-      console.log('UniversalChat: openWithBooking prop:', openWithBooking);
-      
-      // Check for global booking ID from notifications
-      const globalBookingId = (window as any).openChatBookingId;
-      const targetBookingId = openWithBooking || globalBookingId;
-      console.log('UniversalChat: targetBookingId:', targetBookingId);
-      
-      // Check if user is Pro subscriber
-      const { data: talentProfile } = await supabase
-        .from('talent_profiles')
-        .select('id, is_pro_subscriber')
-        .eq('user_id', user.id)
-        .maybeSingle();
-      
-      console.log('UniversalChat: Talent profile:', talentProfile);
-      setIsProUser(talentProfile?.is_pro_subscriber || false);
-      
-      // Fetch bookings where the user is the booker
-      const { data: asBooker } = await supabase
-        .from('bookings')
-        .select('id, user_id, talent_id, event_type, booker_name, booker_email, event_date, status')
-        .eq('user_id', user.id)
-        .not('talent_id', 'is', null)
-        .order('created_at', { ascending: false })
-        .limit(20);
+    if (!user?.id || loading) return;
 
-      console.log('UniversalChat: Bookings as booker:', asBooker);
-
-      // Fetch bookings where the user is the talent
-      let asTalent: BookingLite[] = [];
-      if (talentProfile?.id) {
-        const { data } = await supabase
-          .from('bookings')
-          .select('id, user_id, talent_id, event_type, booker_name, booker_email, event_date, status')
-          .eq('talent_id', talentProfile.id)
-          .order('created_at', { ascending: false })
-          .limit(20);
-        asTalent = (data as any) || [];
-        console.log('UniversalChat: Bookings as talent:', asTalent);
-      }
-
-      let merged = [...((asBooker as any) || []), ...asTalent];
-      console.log('UniversalChat: Merged bookings before support booking:', merged);
-      
-      // Create or fetch QTalents Support booking for this user
-      const { data: supportBookingId, error: supportError } = await supabase.rpc('create_admin_support_booking', {
-        user_id_param: user.id
-      });
-
-      if (!supportError && supportBookingId) {
-        // Add QTalents Support booking to the list
-        const supportBooking: BookingLite = {
-          id: supportBookingId,
-          user_id: user.id,
-          talent_id: null,
-          event_type: 'admin_support',
-          booker_name: 'QTalents Support',
-          status: 'confirmed'
-        };
-        merged = [supportBooking, ...merged];
-      }
-      
-      console.log('UniversalChat: Merged bookings after support booking:', merged);
-      
-      // Fetch talent Pro status for each booking to determine chat filtering
-      const talentStatusMap: {[key: string]: boolean} = {};
-      
-      for (const booking of merged) {
-        if (booking.talent_id && !talentStatusMap[booking.talent_id]) {
-          const { data: talentData } = await supabase
-            .from('talent_profiles')
-            .select('is_pro_subscriber')
-            .eq('id', booking.talent_id)
-            .maybeSingle();
-          
-          talentStatusMap[booking.talent_id] = talentData?.is_pro_subscriber || false;
-        }
-      }
-      
-      setTalentProStatus(talentStatusMap);
-      
-      // Extend the bookings with talent Pro status for filtering
-      const bookingsWithProStatus = merged.map(booking => ({
-        ...booking,
-        talentProStatus: booking.talent_id ? talentStatusMap[booking.talent_id] || false : true // Admin support is always available
-      }));
-
-      // Filter out declined/expired bookings and non-Pro talent chats
-      const filteredBookings = bookingsWithProStatus.filter(booking => {
-        // Always include QTalents Support
-        if (booking.event_type === 'admin_support') return true;
-        
-        // CRITICAL: Always include the booking if it's the one being opened
-        if (targetBookingId && booking.id === targetBookingId) {
-          console.log('UniversalChat: Including booking because it matches targetBookingId:', booking);
-          return true;
-        }
-        
-        // Filter out declined or expired bookings
-        if (booking.status === 'declined') return false;
-        if (booking.status === 'completed' && booking.event_date && new Date(booking.event_date) < new Date()) return false;
-        
-        // Filter out chats for non-Pro talents (but allow if user is opening specific booking)
-        if (!booking.talentProStatus) return false;
-        
-        return true;
-      });
-
-      console.log('UniversalChat: Filtered bookings:', filteredBookings);
-      console.log('UniversalChat: openWithBooking:', openWithBooking, 'Found in filtered:', filteredBookings.find(b => b.id === openWithBooking));
-
-      setBookings(filteredBookings);
-      
-      // Always prioritize targetBookingId (from prop or global)
-      if (targetBookingId && filteredBookings.find(b => b.id === targetBookingId)) {
-        console.log('UniversalChat: Setting selectedId to targetBookingId:', targetBookingId);
+    // Check for global booking ID from notifications
+    const globalBookingId = (window as any).openChatBookingId;
+    const targetBookingId = openWithBooking || globalBookingId;
+    
+    if (targetBookingId) {
+      const targetBooking = bookings.find(b => b.id === targetBookingId);
+      if (targetBooking) {
         setSelectedId(targetBookingId);
         setOpen(true);
         setMinimized(false);
+        
         // Clear global booking ID after use
         if (globalBookingId) {
           delete (window as any).openChatBookingId;
         }
-      } else if (!selectedId && filteredBookings.length) {
-        console.log('UniversalChat: Setting selectedId to first booking:', filteredBookings[0].id);
-        setSelectedId(filteredBookings[0].id);
       }
-    };
-    load();
-  }, [user?.id, openWithBooking]);
-
-  // Real-time subscription for booking status changes
-  useEffect(() => {
-    if (!user) return;
-
-    const channel = supabase
-      .channel(`booking-status-updates-${user.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'bookings'
-        },
-        (payload) => {
-          const updatedBooking = payload.new as any;
-          
-          // Check if this booking involves the current user
-          const isUserBooking = updatedBooking.user_id === user.id;
-          
-          // Check if this is a talent booking (we'll need to compare with talent profile)
-          setBookings(prevBookings => {
-            const existingBooking = prevBookings.find(b => b.id === updatedBooking.id);
-            if (!existingBooking) return prevBookings;
-            
-            // If booking was declined, remove it from the list
-            if (updatedBooking.status === 'declined') {
-              const filtered = prevBookings.filter(b => b.id !== updatedBooking.id);
-              // If this was the selected booking, select the first available one
-              if (selectedId === updatedBooking.id && filtered.length > 0) {
-                setSelectedId(filtered[0].id);
-              }
-              return filtered;
-            }
-            
-            // Otherwise update the booking status
-            return prevBookings.map(b => 
-              b.id === updatedBooking.id 
-                ? { ...b, status: updatedBooking.status }
-                : b
-            );
-          });
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [user, selectedId]);
-
-  // Open chat when openWithBooking prop changes
-  useEffect(() => {
-    console.log('UniversalChat: openWithBooking useEffect triggered with:', openWithBooking);
-    if (openWithBooking) {
-      // Force open the chat even if booking isn't loaded yet
-      console.log('UniversalChat: Opening chat for booking:', openWithBooking);
-      setOpen(true);
-      setMinimized(false);
-      
-      // Check if booking exists in current list
-      const targetBooking = bookings.find(b => b.id === openWithBooking);
-      console.log('UniversalChat: Target booking found:', targetBooking);
-      if (targetBooking) {
-        console.log('UniversalChat: Setting selectedId to:', openWithBooking);
-        setSelectedId(openWithBooking);
-      }
+    } else if (!selectedId && bookings.length) {
+      setSelectedId(bookings[0].id);
     }
-  }, [openWithBooking, bookings]);
+  }, [user?.id, openWithBooking, bookings, loading, selectedId]);
 
   // Listen for custom events to open chat with specific booking
   useEffect(() => {
     const handleOpenChat = (event: CustomEvent) => {
-      console.log('UniversalChat: Custom event received:', event.detail);
       const { bookingId } = event.detail;
-      console.log('UniversalChat: Looking for booking:', bookingId, 'in bookings:', bookings.map(b => b.id));
       const targetBooking = bookings.find(b => b.id === bookingId);
-      console.log('UniversalChat: Target booking from event:', targetBooking);
       if (targetBooking) {
-        console.log('UniversalChat: Setting selectedId from event to:', bookingId);
         setSelectedId(bookingId);
         setOpen(true);
         setMinimized(false);
-      } else {
-        console.log('UniversalChat: Booking not found in list, forcing reload');
-        // If booking not found, maybe we need to reload bookings
-        // This can happen if the booking was filtered out
       }
     };
 
@@ -279,8 +90,6 @@ export function UniversalChat({ openWithBooking }: UniversalChatProps = {}) {
   const selectedBooking = useMemo(() => bookings.find(b => b.id === selectedId) || null, [bookings, selectedId]);
 
   const { messages, sendMessage, isReady } = useRealtimeChat(selectedId, user?.id);
-
-  console.log('UniversalChat: selectedId:', selectedId, 'isReady:', isReady, 'messages count:', messages.length);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -312,17 +121,11 @@ export function UniversalChat({ openWithBooking }: UniversalChatProps = {}) {
   const onSend = () => {
     if (!input.trim() || !selectedBooking) return;
     
-    // Determine if chat filtering should be applied based on talent's Pro status
-    const talentId = selectedBooking.talent_id;
-    const isTalentPro = talentId ? talentProStatus[talentId] || false : false;
-    
     // Apply filtering only if talent is NOT Pro
-    if (!isTalentPro) {
-      // Use the existing filterMessage but ensure it's configured for non-pro
+    if (selectedBooking.talent_is_pro === false) {
       const filterResult = filterMessage(input);
       
       if (filterResult.isBlocked) {
-        // Determine if current user is booker or talent in this conversation
         const isUserBooker = selectedBooking.user_id === user?.id;
         
         toast({
@@ -381,9 +184,18 @@ export function UniversalChat({ openWithBooking }: UniversalChatProps = {}) {
             {/* Header */}
             <div className="flex items-center justify-between p-4 bg-gradient-to-r from-card to-card/80 border-b border-border/50 shrink-0">
               <div className="flex items-center gap-3">
-                <div className="relative">
-                  <div className="h-2 w-2 bg-accent rounded-full animate-pulse"></div>
-                  <div className="absolute inset-0 h-2 w-2 bg-accent rounded-full animate-ping"></div>
+                <div className="flex items-center gap-2">
+                  {isReady ? (
+                    <div className="flex items-center gap-1">
+                      <Wifi className="h-3 w-3 text-green-500" />
+                      <span className="text-xs text-green-500">Connected</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1">
+                      <div className="h-2 w-2 bg-accent rounded-full animate-pulse"></div>
+                      <span className="text-xs text-muted-foreground">Connecting...</span>
+                    </div>
+                  )}
                 </div>
                 <DialogTitle className="text-base font-semibold text-card-foreground">
                   {minimized ? 'Messages' : 'Live Chat'}

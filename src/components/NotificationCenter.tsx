@@ -186,46 +186,29 @@ export function NotificationCenter() {
       await markAsRead(notification.id);
     }
 
-    // Handle subscription-related notifications first
+    // Handle subscription-related notifications
     if (notification.type === 'subscription_activated' || notification.type === 'payment_completed') {
       setShowCongratulations(true);
       setShowProBenefitsModal(true);
       return;
     }
 
-    // Handle message notifications with seamless chat opening
+    // Handle message notifications with instant chat opening
     if (notification.type === 'new_message' && notification.booking_id) {
-      console.log('NotificationCenter: Opening chat for booking:', notification.booking_id);
-      
-      // FORCE open the UniversalChat by directly manipulating the component
-      // First, try to find and click the chat button to open it
-      const chatButton = document.querySelector('[aria-label="Open chat"]') as HTMLElement;
-      if (chatButton) {
-        console.log('NotificationCenter: Found chat button, clicking it');
-        chatButton.click();
-      }
-      
-      // Create multiple event types to ensure it works
-      const chatEvent = new CustomEvent('openChatWithBooking', { 
-        detail: { bookingId: notification.booking_id }
-      });
-      window.dispatchEvent(chatEvent);
-      
-      // Also try a direct approach - set a global variable
+      // Set global booking ID for instant access
       (window as any).openChatBookingId = notification.booking_id;
       
-      // Close the notification popover for better UX
-      setTimeout(() => {
-        const popoverTrigger = document.querySelector('[data-state="open"]') as HTMLElement;
-        if (popoverTrigger) {
-          popoverTrigger.click();
-        }
-      }, 100);
+      // Dispatch event to open chat
+      window.dispatchEvent(new CustomEvent('openChatWithBooking', { 
+        detail: { bookingId: notification.booking_id }
+      }));
       
+      // Close popover immediately
+      document.querySelector('[data-state="open"]')?.dispatchEvent(new Event('click'));
       return;
     }
 
-    // Default navigation for other types
+    // Default navigation
     try {
       const { data: talentProfile } = await supabase
         .from('talent_profiles')
