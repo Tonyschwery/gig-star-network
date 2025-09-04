@@ -18,9 +18,14 @@ export const useRealtimeChat = (bookingId?: string, userId?: string) => {
   const [isReady, setIsReady] = useState(false);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
+  console.log('useRealtimeChat: Called with bookingId:', bookingId, 'userId:', userId);
+
   // Load existing messages and set up real-time subscription
   useEffect(() => {
+    console.log('useRealtimeChat: useEffect triggered, bookingId:', bookingId, 'userId:', userId);
+    
     if (!bookingId || !userId) {
+      console.log('useRealtimeChat: Missing bookingId or userId, resetting state');
       setIsReady(false);
       setMessages([]);
       return;
@@ -28,14 +33,19 @@ export const useRealtimeChat = (bookingId?: string, userId?: string) => {
 
     const loadMessages = async () => {
       try {
+        console.log('useRealtimeChat: Loading messages for booking:', bookingId);
         const { data, error } = await supabase
           .from('chat_messages')
           .select('id, content, sender_id, created_at')
           .eq('booking_id', bookingId)
           .order('created_at', { ascending: true });
 
-        if (error) throw error;
+        if (error) {
+          console.error('useRealtimeChat: Error loading messages:', error);
+          throw error;
+        }
 
+        console.log('useRealtimeChat: Loaded messages:', data);
         setMessages(data?.map(msg => ({
           id: msg.id,
           content: msg.content,
@@ -50,6 +60,7 @@ export const useRealtimeChat = (bookingId?: string, userId?: string) => {
     loadMessages();
 
     // Set up real-time subscription for new messages
+    console.log('useRealtimeChat: Setting up real-time subscription for booking:', bookingId);
     const channel = supabase
       .channel(`chat_messages:booking_id=eq.${bookingId}`)
       .on(
@@ -61,6 +72,7 @@ export const useRealtimeChat = (bookingId?: string, userId?: string) => {
           filter: `booking_id=eq.${bookingId}`
         },
         (payload) => {
+          console.log('useRealtimeChat: Received new message:', payload);
           const newMessage = payload.new;
           const msg: RealtimeMessage = {
             id: newMessage.id,
@@ -76,16 +88,25 @@ export const useRealtimeChat = (bookingId?: string, userId?: string) => {
         }
       )
       .subscribe((status) => {
-        if (status === 'SUBSCRIBED') setIsReady(true);
+        console.log('useRealtimeChat: Subscription status:', status);
+        if (status === 'SUBSCRIBED') {
+          console.log('useRealtimeChat: Successfully subscribed, setting isReady to true');
+          setIsReady(true);
+        } else {
+          console.log('useRealtimeChat: Not subscribed, setting isReady to false');
+          setIsReady(false);
+        }
       });
 
     channelRef.current = channel;
 
     return () => {
+      console.log('useRealtimeChat: Cleaning up subscription for booking:', bookingId);
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
       }
+      setIsReady(false);
     };
   }, [bookingId, userId]);
 

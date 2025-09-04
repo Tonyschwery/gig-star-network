@@ -51,6 +51,9 @@ export function UniversalChat({ openWithBooking }: UniversalChatProps = {}) {
     const load = async () => {
       if (!user) return;
       
+      console.log('UniversalChat: Loading bookings for user:', user.id);
+      console.log('UniversalChat: openWithBooking prop:', openWithBooking);
+      
       // Check if user is Pro subscriber
       const { data: talentProfile } = await supabase
         .from('talent_profiles')
@@ -58,6 +61,7 @@ export function UniversalChat({ openWithBooking }: UniversalChatProps = {}) {
         .eq('user_id', user.id)
         .maybeSingle();
       
+      console.log('UniversalChat: Talent profile:', talentProfile);
       setIsProUser(talentProfile?.is_pro_subscriber || false);
       
       // Fetch bookings where the user is the booker
@@ -69,6 +73,8 @@ export function UniversalChat({ openWithBooking }: UniversalChatProps = {}) {
         .order('created_at', { ascending: false })
         .limit(20);
 
+      console.log('UniversalChat: Bookings as booker:', asBooker);
+
       // Fetch bookings where the user is the talent
       let asTalent: BookingLite[] = [];
       if (talentProfile?.id) {
@@ -79,9 +85,11 @@ export function UniversalChat({ openWithBooking }: UniversalChatProps = {}) {
           .order('created_at', { ascending: false })
           .limit(20);
         asTalent = (data as any) || [];
+        console.log('UniversalChat: Bookings as talent:', asTalent);
       }
 
       let merged = [...((asBooker as any) || []), ...asTalent];
+      console.log('UniversalChat: Merged bookings before support booking:', merged);
       
       // Create or fetch QTalents Support booking for this user
       const { data: supportBookingId, error: supportError } = await supabase.rpc('create_admin_support_booking', {
@@ -96,9 +104,12 @@ export function UniversalChat({ openWithBooking }: UniversalChatProps = {}) {
           talent_id: null,
           event_type: 'admin_support',
           booker_name: 'QTalents Support',
+          status: 'confirmed'
         };
         merged = [supportBooking, ...merged];
       }
+      
+      console.log('UniversalChat: Merged bookings after support booking:', merged);
       
       // Fetch talent Pro status for each booking to determine chat filtering
       const talentStatusMap: {[key: string]: boolean} = {};
@@ -128,22 +139,33 @@ export function UniversalChat({ openWithBooking }: UniversalChatProps = {}) {
         // Always include QTalents Support
         if (booking.event_type === 'admin_support') return true;
         
+        // CRITICAL: Always include the booking if it's the one being opened via openWithBooking
+        if (openWithBooking && booking.id === openWithBooking) {
+          console.log('UniversalChat: Including booking because it matches openWithBooking:', booking);
+          return true;
+        }
+        
         // Filter out declined or expired bookings
         if (booking.status === 'declined') return false;
         if (booking.status === 'completed' && booking.event_date && new Date(booking.event_date) < new Date()) return false;
         
-        // Filter out chats for non-Pro talents
+        // Filter out chats for non-Pro talents (but allow if user is opening specific booking)
         if (!booking.talentProStatus) return false;
         
         return true;
       });
 
+      console.log('UniversalChat: Filtered bookings:', filteredBookings);
+      console.log('UniversalChat: openWithBooking:', openWithBooking, 'Found in filtered:', filteredBookings.find(b => b.id === openWithBooking));
+
       setBookings(filteredBookings);
       if (!selectedId && filteredBookings.length) {
         // If openWithBooking is provided and exists in the list, select it
         if (openWithBooking && filteredBookings.find(b => b.id === openWithBooking)) {
+          console.log('UniversalChat: Setting selectedId to openWithBooking:', openWithBooking);
           setSelectedId(openWithBooking);
         } else {
+          console.log('UniversalChat: Setting selectedId to first booking:', filteredBookings[0].id);
           setSelectedId(filteredBookings[0].id);
         }
       }
@@ -203,14 +225,18 @@ export function UniversalChat({ openWithBooking }: UniversalChatProps = {}) {
 
   // Open chat when openWithBooking prop changes
   useEffect(() => {
+    console.log('UniversalChat: openWithBooking useEffect triggered with:', openWithBooking);
     if (openWithBooking) {
       // Force open the chat even if booking isn't loaded yet
+      console.log('UniversalChat: Opening chat for booking:', openWithBooking);
       setOpen(true);
       setMinimized(false);
       
       // Check if booking exists in current list
       const targetBooking = bookings.find(b => b.id === openWithBooking);
+      console.log('UniversalChat: Target booking found:', targetBooking);
       if (targetBooking) {
+        console.log('UniversalChat: Setting selectedId to:', openWithBooking);
         setSelectedId(openWithBooking);
       }
     }
@@ -219,12 +245,20 @@ export function UniversalChat({ openWithBooking }: UniversalChatProps = {}) {
   // Listen for custom events to open chat with specific booking
   useEffect(() => {
     const handleOpenChat = (event: CustomEvent) => {
+      console.log('UniversalChat: Custom event received:', event.detail);
       const { bookingId } = event.detail;
+      console.log('UniversalChat: Looking for booking:', bookingId, 'in bookings:', bookings.map(b => b.id));
       const targetBooking = bookings.find(b => b.id === bookingId);
+      console.log('UniversalChat: Target booking from event:', targetBooking);
       if (targetBooking) {
+        console.log('UniversalChat: Setting selectedId from event to:', bookingId);
         setSelectedId(bookingId);
         setOpen(true);
         setMinimized(false);
+      } else {
+        console.log('UniversalChat: Booking not found in list, forcing reload');
+        // If booking not found, maybe we need to reload bookings
+        // This can happen if the booking was filtered out
       }
     };
 
@@ -235,6 +269,8 @@ export function UniversalChat({ openWithBooking }: UniversalChatProps = {}) {
   const selectedBooking = useMemo(() => bookings.find(b => b.id === selectedId) || null, [bookings, selectedId]);
 
   const { messages, sendMessage, isReady } = useRealtimeChat(selectedId, user?.id);
+
+  console.log('UniversalChat: selectedId:', selectedId, 'isReady:', isReady, 'messages count:', messages.length);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
