@@ -606,6 +606,10 @@ export type Database = {
           user_type: string
         }[]
       }
+      admin_send_direct_message: {
+        Args: { message_content: string; target_user_id: string }
+        Returns: string
+      }
       admin_update_subscription: {
         Args: { is_pro: boolean; talent_id_param: string }
         Returns: Json
