@@ -11,12 +11,13 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Upload, Music } from 'lucide-react';
-import { countries } from '@/lib/countries';
+import { countries, sortCountriesByProximity } from '@/lib/countries';
 import { SimpleGalleryUpload } from '@/components/SimpleGalleryUpload';
 import { SimpleAvatarUpload } from '@/components/SimpleAvatarUpload';
 import { ProFeatureWrapper } from '@/components/ProFeatureWrapper';
 import { SubscriptionModal } from '@/components/SubscriptionModal';
 import { useEmailNotifications } from '@/hooks/useEmailNotifications';
+import { useLocationDetection } from '@/hooks/useLocationDetection';
 
 const MUSIC_GENRES = [
   'afro-house',
@@ -100,6 +101,7 @@ export default function TalentOnboarding() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { sendTalentProfileEmails } = useEmailNotifications();
+  const { userLocation, detectedLocation } = useLocationDetection();
   const [loading, setLoading] = useState(false);
   const [pictureFile, setPictureFile] = useState<File | null>(null);
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
@@ -298,6 +300,10 @@ export default function TalentOnboarding() {
     }, 1000);
   };
 
+  // Sort countries by proximity for location dropdowns
+  const currentLocation = userLocation || detectedLocation;
+  const sortedCountries = sortCountriesByProximity(currentLocation, countries);
+
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <Card className="w-full max-w-2xl form-card border-0">
@@ -395,7 +401,7 @@ export default function TalentOnboarding() {
             {/* Gallery Photos */}
             <div className="space-y-2">
               <Label>Additional Photos (Optional)</Label>
-              <ProFeatureWrapper isProFeature={true}>
+              <ProFeatureWrapper isProFeature={true} context="onboarding">
                 <SimpleGalleryUpload
                   currentImages={galleryImages}
                   onImagesChange={setGalleryImages}
@@ -407,7 +413,7 @@ export default function TalentOnboarding() {
 
             {/* Links */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <ProFeatureWrapper isProFeature={true}>
+              <ProFeatureWrapper isProFeature={true} context="onboarding">
                 <div className="space-y-2">
                   <Label htmlFor="soundcloud">SoundCloud Link</Label>
                   <Input
@@ -419,7 +425,7 @@ export default function TalentOnboarding() {
                   />
                 </div>
               </ProFeatureWrapper>
-              <ProFeatureWrapper isProFeature={true}>
+              <ProFeatureWrapper isProFeature={true} context="onboarding">
                 <div className="space-y-2">
                   <Label htmlFor="youtube">YouTube Link</Label>
                   <Input
@@ -469,7 +475,7 @@ export default function TalentOnboarding() {
                     <SelectValue placeholder="Select your nationality" />
                   </SelectTrigger>
                   <SelectContent className="max-h-60">
-                    {countries.map((country) => (
+                    {sortedCountries.map((country) => (
                       <SelectItem key={country.code} value={country.name}>
                         {country.name}
                       </SelectItem>
@@ -519,7 +525,7 @@ export default function TalentOnboarding() {
                   <SelectValue placeholder="Select your talent location" />
                 </SelectTrigger>
                 <SelectContent className="max-h-60">
-                  {countries.map((country) => (
+                  {sortedCountries.map((country) => (
                     <SelectItem key={country.code} value={country.name}>
                       {country.name}
                     </SelectItem>

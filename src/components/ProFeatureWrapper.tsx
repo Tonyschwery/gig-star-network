@@ -13,6 +13,7 @@ interface ProFeatureWrapperProps {
   className?: string;
   showProIcon?: boolean;
   featureType?: 'images' | 'links' | 'messaging' | 'bookings' | 'general';
+  context?: 'onboarding' | 'dashboard';
 }
 
 export function ProFeatureWrapper({ 
@@ -20,7 +21,8 @@ export function ProFeatureWrapper({
   isProFeature = false, 
   className,
   showProIcon = true,
-  featureType = 'general'
+  featureType = 'general',
+  context = 'dashboard'
 }: ProFeatureWrapperProps) {
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const [profileId, setProfileId] = useState<string | null>(null);
@@ -51,7 +53,14 @@ export function ProFeatureWrapper({
 
 
   const handleUpgradeClick = () => {
-    setShowSubscriptionModal(true);
+    if (context === 'onboarding') {
+      toast({
+        title: "Complete your profile first",
+        description: "Finish creating your profile, then upgrade to Pro from your dashboard to unlock this feature",
+      });
+    } else {
+      setShowSubscriptionModal(true);
+    }
   };
 
   // If user is already Pro, don't restrict anything
