@@ -21,57 +21,58 @@ export const useRealtimeChat = (bookingId?: string, userId?: string) => {
     }
 
     let mounted = true;
+    
+    // Set ready immediately when we have valid IDs
+    setIsReady(true);
 
     const setupChat = async () => {
       try {
-        // Load messages and setup subscription in parallel
-        const [messagesResponse, channel] = await Promise.all([
-          supabase
-            .from('chat_messages')
-            .select('id, content, sender_id, created_at')
-            .eq('booking_id', bookingId)
-            .order('created_at', { ascending: true }),
-          
-          // Setup real-time subscription immediately
-          supabase
-            .channel(`chat-${bookingId}`)
-            .on('postgres_changes', {
-              event: 'INSERT',
-              schema: 'public',
-              table: 'chat_messages',
-              filter: `booking_id=eq.${bookingId}`
-            }, (payload) => {
-              const newMessage = payload.new;
-              const msg: RealtimeMessage = {
-                id: newMessage.id,
-                content: newMessage.content,
-                senderId: newMessage.sender_id,
-                createdAt: newMessage.created_at,
-              };
-              
-              setMessages((prev) => {
-                if (prev.some((m) => m.id === msg.id)) return prev;
-                return [...prev, msg];
-              });
-            })
-            .subscribe()
-        ]);
+        // Setup real-time subscription first for instant connection
+        const channel = supabase
+          .channel(`chat-${bookingId}`)
+          .on('postgres_changes', {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'chat_messages',
+            filter: `booking_id=eq.${bookingId}`
+          }, (payload) => {
+            const newMessage = payload.new;
+            const msg: RealtimeMessage = {
+              id: newMessage.id,
+              content: newMessage.content,
+              senderId: newMessage.sender_id,
+              createdAt: newMessage.created_at,
+            };
+            
+            setMessages((prev) => {
+              if (prev.some((m) => m.id === msg.id)) return prev;
+              return [...prev, msg];
+            });
+          })
+          .subscribe();
+
+        channelRef.current = channel;
+
+        // Load existing messages in background
+        const messagesResponse = await supabase
+          .from('chat_messages')
+          .select('id, content, sender_id, created_at')
+          .eq('booking_id', bookingId)
+          .order('created_at', { ascending: true });
 
         if (!mounted) return;
 
-        if (messagesResponse.error) throw messagesResponse.error;
-
-        setMessages(messagesResponse.data?.map(msg => ({
-          id: msg.id,
-          content: msg.content,
-          senderId: msg.sender_id,
-          createdAt: msg.created_at,
-        })) || []);
-
-        channelRef.current = channel;
-        setIsReady(true);
+        if (!messagesResponse.error && messagesResponse.data) {
+          setMessages(messagesResponse.data.map(msg => ({
+            id: msg.id,
+            content: msg.content,
+            senderId: msg.sender_id,
+            createdAt: msg.created_at,
+          })));
+        }
 
       } catch (error) {
+        console.error('Chat setup error:', error);
         if (mounted) {
           setIsReady(false);
         }

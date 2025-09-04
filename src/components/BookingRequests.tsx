@@ -17,6 +17,14 @@ export const BookingRequests = ({ talentId, isProSubscriber }: BookingRequestsPr
     const [chatOpenBooking, setChatOpenBooking] = useState<string | undefined>();
     const { acceptedBookingsThisMonth, canAcceptBooking, isProUser } = useTalentBookingLimit();
 
+    // Clear chatOpenBooking after it's been processed
+    useEffect(() => {
+        if (chatOpenBooking) {
+            const timer = setTimeout(() => setChatOpenBooking(undefined), 150);
+            return () => clearTimeout(timer);
+        }
+    }, [chatOpenBooking]);
+
     const fetchBookings = useCallback(async () => {
         if (!talentId) return;
         const { data, error } = await supabase.from('bookings').select(`*`).eq('talent_id', talentId).eq('is_gig_opportunity', false).order('event_date', { ascending: false });
@@ -105,7 +113,10 @@ export const BookingRequests = ({ talentId, isProSubscriber }: BookingRequestsPr
             </Tabs>
             
             {/* Universal Chat with booking-specific opening */}
-            <UniversalChat openWithBooking={chatOpenBooking} />
+            <UniversalChat 
+                openWithBooking={chatOpenBooking} 
+                key={chatOpenBooking} // Force re-render when booking changes
+            />
         </div>
     );
 };
