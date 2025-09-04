@@ -605,6 +605,10 @@ export type Database = {
         Args: { talent_id_param: string }
         Returns: boolean
       }
+      cleanup_expired_chat_messages: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       complete_manual_payment: {
         Args: { payment_id_param: string }
         Returns: Json
