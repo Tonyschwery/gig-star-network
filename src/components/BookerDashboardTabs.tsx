@@ -34,6 +34,19 @@ export const BookerDashboardTabs = ({ userId }: { userId: string }) => {
     const [bookings, setBookings] = useState<Booking[]>([]);
     const [eventRequests, setEventRequests] = useState<EventRequest[]>([]);
     const [loading, setLoading] = useState(true);
+    const [activeTab, setActiveTab] = useState('awaiting_response');
+
+    // Check for tab parameter in URL
+    useEffect(() => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const tabParam = urlParams.get('tab');
+        if (tabParam) {
+            setActiveTab(tabParam);
+            // Clean up URL by removing the tab parameter
+            const newUrl = window.location.pathname;
+            window.history.replaceState({}, '', newUrl);
+        }
+    }, []);
 
     const fetchBookings = useCallback(async () => {
         if (!userId) return;
@@ -270,7 +283,7 @@ export const BookerDashboardTabs = ({ userId }: { userId: string }) => {
             {/* Notification Badge */}
             <BookerNotificationBadge />
             
-            <Tabs defaultValue="awaiting_response" className="w-full">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <TabsList className="grid w-full grid-cols-5 gap-1 h-auto p-1">
                     <TabsTrigger value="event_requests" className="text-xs sm:text-sm px-1 sm:px-2 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                         <span className="hidden sm:inline">Event Requests</span>

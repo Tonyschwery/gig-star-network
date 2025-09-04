@@ -178,11 +178,11 @@ export function HeroSection() {
                 
                 <div className="flex items-end">
                   <Button 
-                    className="w-full h-12 hero-button text-base font-semibold"
+                    className="w-full h-12 bg-accent text-accent-foreground font-bold text-sm sm:text-base shadow-minimal hover:shadow-elevated transition-all duration-300 hover:scale-[1.02] hover:bg-accent/90 rounded-xl"
                     onClick={handleSearch}
                   >
-                    <Search className="h-5 w-5 mr-3" />
-                    Find Perfect Talents
+                    <Search className="h-4 w-4 sm:h-5 sm:w-5 mr-2 sm:mr-3 flex-shrink-0" />
+                    <span className="truncate">Find Perfect Talents</span>
                   </Button>
                 </div>
               </div>

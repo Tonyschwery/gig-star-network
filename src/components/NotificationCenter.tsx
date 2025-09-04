@@ -237,7 +237,7 @@ export function NotificationCenter() {
           navigate('/talent-dashboard');
         }
       } else {
-        // User is a booker
+        // User is a booker - navigate to specific dashboard tabs based on notification type
         if (notification.booking_id) {
           if (notification.type === 'new_message') {
             // Navigate to booker dashboard and open chat
@@ -262,13 +262,27 @@ export function NotificationCenter() {
                 }, 200);
               }
             }, 300);
+          } else if (notification.type === 'booking_approved' || notification.type === 'booking_declined') {
+            // Navigate to booker dashboard and switch to awaiting response tab
+            navigate('/booker-dashboard?tab=awaiting_response');
+          } else if (notification.type === 'invoice_received' || notification.type === 'payment_completed') {
+            // Navigate to booker dashboard and switch to accepted bookings tab  
+            navigate('/booker-dashboard?tab=accepted');
+          } else if (notification.type === 'new_booking') {
+            // Navigate to booker dashboard and switch to awaiting response tab
+            navigate('/booker-dashboard?tab=awaiting_response');
           } else {
             // For other booking-related notifications, go to booker dashboard
             navigate('/booker-dashboard');
           }
         } else {
-          // Default to booker dashboard
-          navigate('/booker-dashboard');
+          // For event request notifications, switch to event requests tab
+          if (notification.type.includes('event_request') || notification.message.includes('event request')) {
+            navigate('/booker-dashboard?tab=event_requests');
+          } else {
+            // Default to booker dashboard
+            navigate('/booker-dashboard');
+          }
         }
       }
     } catch (error) {
