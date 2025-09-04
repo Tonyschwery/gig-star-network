@@ -115,13 +115,36 @@ export function UniversalChat({ openWithBooking }: UniversalChatProps = {}) {
       }
       
       setTalentProStatus(talentStatusMap);
-      setBookings(merged as BookingLite[]);
-      if (!selectedId && merged.length) {
+      
+      // Extend the bookings with talent Pro status for filtering
+      const bookingsWithProStatus = merged.map(booking => ({
+        ...booking,
+        status: 'pending', // Default status for new bookings
+        talentProStatus: booking.talent_id ? talentStatusMap[booking.talent_id] || false : true // Admin support is always available
+      }));
+
+      // Filter out declined/expired bookings and non-Pro talent chats
+      const filteredBookings = bookingsWithProStatus.filter(booking => {
+        // Always include QTalents Support
+        if (booking.event_type === 'admin_support') return true;
+        
+        // Filter out declined or expired bookings
+        if (booking.status === 'declined') return false;
+        if (booking.status === 'completed' && booking.event_date && new Date(booking.event_date) < new Date()) return false;
+        
+        // Filter out chats for non-Pro talents
+        if (!booking.talentProStatus) return false;
+        
+        return true;
+      });
+
+      setBookings(filteredBookings);
+      if (!selectedId && filteredBookings.length) {
         // If openWithBooking is provided and exists in the list, select it
-        if (openWithBooking && merged.find(b => b.id === openWithBooking)) {
+        if (openWithBooking && filteredBookings.find(b => b.id === openWithBooking)) {
           setSelectedId(openWithBooking);
         } else {
-          setSelectedId(merged[0].id);
+          setSelectedId(filteredBookings[0].id);
         }
       }
     };
@@ -136,6 +159,22 @@ export function UniversalChat({ openWithBooking }: UniversalChatProps = {}) {
       setMinimized(false);
     }
   }, [openWithBooking, bookings]);
+
+  // Listen for custom events to open chat with specific booking
+  useEffect(() => {
+    const handleOpenChat = (event: CustomEvent) => {
+      const { bookingId } = event.detail;
+      const targetBooking = bookings.find(b => b.id === bookingId);
+      if (targetBooking) {
+        setSelectedId(bookingId);
+        setOpen(true);
+        setMinimized(false);
+      }
+    };
+
+    window.addEventListener('openChatWithBooking', handleOpenChat as EventListener);
+    return () => window.removeEventListener('openChatWithBooking', handleOpenChat as EventListener);
+  }, [bookings]);
 
   const selectedBooking = useMemo(() => bookings.find(b => b.id === selectedId) || null, [bookings, selectedId]);
 

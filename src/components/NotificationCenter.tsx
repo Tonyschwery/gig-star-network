@@ -181,9 +181,7 @@ export function NotificationCenter() {
     }
   };
 
-  // Enhanced handleNotificationClick function with proper navigation
   const handleNotificationClick = async (notification: Notification) => {
-    // Mark as read when clicked
     if (!notification.is_read) {
       await markAsRead(notification.id);
     }
@@ -195,9 +193,18 @@ export function NotificationCenter() {
       return;
     }
 
-    // Navigate based on notification type and user role
+    // Handle navigation based on notification type and user role
+    if (notification.type === 'new_message' && notification.booking_id) {
+      // Create a custom event to open chat with specific booking
+      const chatEvent = new CustomEvent('openChatWithBooking', { 
+        detail: { bookingId: notification.booking_id }
+      });
+      window.dispatchEvent(chatEvent);
+      return;
+    }
+
+    // Default navigation for other types
     try {
-      // Check if user is a talent
       const { data: talentProfile } = await supabase
         .from('talent_profiles')
         .select('id')
@@ -205,89 +212,11 @@ export function NotificationCenter() {
         .maybeSingle();
 
       if (talentProfile) {
-        // User is a talent
-        if (notification.type === 'new_booking' && notification.booking_id) {
-          // Navigate to talent bookings dashboard for new booking requests
-          navigate('/talent-dashboard/bookings');
-        } else if (notification.type === 'new_message' && notification.booking_id) {
-          // Navigate to talent dashboard and open chat
-          navigate('/talent-dashboard');
-          setTimeout(() => {
-            const chatButton = document.querySelector('[aria-label="Open chat"]') as HTMLElement;
-            if (chatButton) {
-              chatButton.click();
-              setTimeout(() => {
-                const selectTrigger = document.querySelector('[role="combobox"]') as HTMLElement;
-                if (selectTrigger) {
-                  selectTrigger.click();
-                  setTimeout(() => {
-                    const bookingOption = Array.from(document.querySelectorAll('[role="option"]')).find(
-                      (option) => option.getAttribute('data-value') === notification.booking_id
-                    ) as HTMLElement;
-                    if (bookingOption) {
-                      bookingOption.click();
-                    }
-                  }, 100);
-                }
-              }, 200);
-            }
-          }, 300);
-        } else {
-          // Default to talent dashboard
-          navigate('/talent-dashboard');
-        }
+        navigate('/talent-dashboard');
       } else {
-        // User is a booker - navigate to specific dashboard tabs based on notification type
-        if (notification.booking_id) {
-          if (notification.type === 'new_message') {
-            // Navigate to booker dashboard and open chat
-            navigate('/booker-dashboard');
-            setTimeout(() => {
-              const chatButton = document.querySelector('[aria-label="Open chat"]') as HTMLElement;
-              if (chatButton) {
-                chatButton.click();
-                setTimeout(() => {
-                  const selectTrigger = document.querySelector('[role="combobox"]') as HTMLElement;
-                  if (selectTrigger) {
-                    selectTrigger.click();
-                    setTimeout(() => {
-                      const bookingOption = Array.from(document.querySelectorAll('[role="option"]')).find(
-                        (option) => option.getAttribute('data-value') === notification.booking_id
-                      ) as HTMLElement;
-                      if (bookingOption) {
-                        bookingOption.click();
-                      }
-                    }, 100);
-                  }
-                }, 200);
-              }
-            }, 300);
-          } else if (notification.type === 'booking_approved' || notification.type === 'booking_declined') {
-            // Navigate to booker dashboard and switch to awaiting response tab
-            navigate('/booker-dashboard?tab=awaiting_response');
-          } else if (notification.type === 'invoice_received' || notification.type === 'payment_completed') {
-            // Navigate to booker dashboard and switch to accepted bookings tab  
-            navigate('/booker-dashboard?tab=accepted');
-          } else if (notification.type === 'new_booking') {
-            // Navigate to booker dashboard and switch to awaiting response tab
-            navigate('/booker-dashboard?tab=awaiting_response');
-          } else {
-            // For other booking-related notifications, go to booker dashboard
-            navigate('/booker-dashboard');
-          }
-        } else {
-          // For event request notifications, switch to event requests tab
-          if (notification.type.includes('event_request') || notification.message.includes('event request')) {
-            navigate('/booker-dashboard?tab=event_requests');
-          } else {
-            // Default to booker dashboard
-            navigate('/booker-dashboard');
-          }
-        }
+        navigate('/booker-dashboard');
       }
     } catch (error) {
-      console.error('Error determining user role:', error);
-      // Default fallback
       navigate('/booker-dashboard');
     }
   };

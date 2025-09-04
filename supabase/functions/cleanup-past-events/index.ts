@@ -61,6 +61,17 @@ serve(async (req) => {
 
       console.log('CLEANUP - Successfully updated', pastBookings.length, 'past events to completed status');
 
+      // Delete chat messages for completed past events
+      const { error: chatCleanupError } = await supabase
+        .rpc('cleanup_expired_chat_messages');
+
+      if (chatCleanupError) {
+        console.error('CLEANUP - Error cleaning up expired chat messages:', chatCleanupError);
+        // Don't fail the entire function if chat cleanup fails
+      } else {
+        console.log('CLEANUP - Successfully cleaned up expired chat messages');
+      }
+
       // Log details of what was updated
       pastBookings.forEach(booking => {
         console.log(`CLEANUP - Updated booking ${booking.id}: ${booking.event_type} on ${booking.event_date} from ${booking.status} to completed`);
