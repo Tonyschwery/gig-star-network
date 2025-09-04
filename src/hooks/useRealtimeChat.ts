@@ -31,6 +31,9 @@ export const useRealtimeChat = (bookingId?: string, userId?: string) => {
       return;
     }
 
+    // Set ready to true immediately for better UX, then load messages
+    setIsReady(true);
+
     const loadMessages = async () => {
       try {
         console.log('useRealtimeChat: Loading messages for booking:', bookingId);
@@ -89,12 +92,11 @@ export const useRealtimeChat = (bookingId?: string, userId?: string) => {
       )
       .subscribe((status) => {
         console.log('useRealtimeChat: Subscription status:', status);
+        // Keep isReady true for better UX - we already set it above
         if (status === 'SUBSCRIBED') {
-          console.log('useRealtimeChat: Successfully subscribed, setting isReady to true');
-          setIsReady(true);
-        } else {
-          console.log('useRealtimeChat: Not subscribed, setting isReady to false');
-          setIsReady(false);
+          console.log('useRealtimeChat: Successfully subscribed');
+        } else if (status === 'CHANNEL_ERROR') {
+          console.log('useRealtimeChat: Subscription error, but keeping ready state');
         }
       });
 

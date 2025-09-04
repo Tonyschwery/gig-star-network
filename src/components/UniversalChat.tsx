@@ -54,6 +54,11 @@ export function UniversalChat({ openWithBooking }: UniversalChatProps = {}) {
       console.log('UniversalChat: Loading bookings for user:', user.id);
       console.log('UniversalChat: openWithBooking prop:', openWithBooking);
       
+      // Check for global booking ID from notifications
+      const globalBookingId = (window as any).openChatBookingId;
+      const targetBookingId = openWithBooking || globalBookingId;
+      console.log('UniversalChat: targetBookingId:', targetBookingId);
+      
       // Check if user is Pro subscriber
       const { data: talentProfile } = await supabase
         .from('talent_profiles')
@@ -139,9 +144,9 @@ export function UniversalChat({ openWithBooking }: UniversalChatProps = {}) {
         // Always include QTalents Support
         if (booking.event_type === 'admin_support') return true;
         
-        // CRITICAL: Always include the booking if it's the one being opened via openWithBooking
-        if (openWithBooking && booking.id === openWithBooking) {
-          console.log('UniversalChat: Including booking because it matches openWithBooking:', booking);
+        // CRITICAL: Always include the booking if it's the one being opened
+        if (targetBookingId && booking.id === targetBookingId) {
+          console.log('UniversalChat: Including booking because it matches targetBookingId:', booking);
           return true;
         }
         
@@ -159,15 +164,20 @@ export function UniversalChat({ openWithBooking }: UniversalChatProps = {}) {
       console.log('UniversalChat: openWithBooking:', openWithBooking, 'Found in filtered:', filteredBookings.find(b => b.id === openWithBooking));
 
       setBookings(filteredBookings);
-      if (!selectedId && filteredBookings.length) {
-        // If openWithBooking is provided and exists in the list, select it
-        if (openWithBooking && filteredBookings.find(b => b.id === openWithBooking)) {
-          console.log('UniversalChat: Setting selectedId to openWithBooking:', openWithBooking);
-          setSelectedId(openWithBooking);
-        } else {
-          console.log('UniversalChat: Setting selectedId to first booking:', filteredBookings[0].id);
-          setSelectedId(filteredBookings[0].id);
+      
+      // Always prioritize targetBookingId (from prop or global)
+      if (targetBookingId && filteredBookings.find(b => b.id === targetBookingId)) {
+        console.log('UniversalChat: Setting selectedId to targetBookingId:', targetBookingId);
+        setSelectedId(targetBookingId);
+        setOpen(true);
+        setMinimized(false);
+        // Clear global booking ID after use
+        if (globalBookingId) {
+          delete (window as any).openChatBookingId;
         }
+      } else if (!selectedId && filteredBookings.length) {
+        console.log('UniversalChat: Setting selectedId to first booking:', filteredBookings[0].id);
+        setSelectedId(filteredBookings[0].id);
       }
     };
     load();
@@ -481,7 +491,19 @@ export function UniversalChat({ openWithBooking }: UniversalChatProps = {}) {
                     </div>
                   ) : (
                     <>
-                      {messages.map((m, index) => (
+                          {messages.length === 0 ? (
+                            <div className="text-center py-4 text-muted-foreground text-xs">
+                              {!isReady ? (
+                                <div className="flex items-center justify-center">
+                                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-accent mr-2"></div>
+                                  Connecting...
+                                </div>
+                              ) : (
+                                "No messages yet. Start the conversation!"
+                              )}
+                            </div>
+                          ) : (
+                            messages.map((m, index) => (
                         <div 
                           key={m.id} 
                           className={`flex ${m.senderId === user?.id ? 'justify-end' : 'justify-start'}`}
@@ -506,21 +528,12 @@ export function UniversalChat({ openWithBooking }: UniversalChatProps = {}) {
                               })}
                             </div>
                           </div>
-                        </div>
-                      ))}
-                      
-                      {!messages.length && (
-                        <div className="flex flex-col items-center justify-center py-8 text-center">
-                          <div className="h-12 w-12 bg-accent/10 rounded-full flex items-center justify-center mb-3">
-                            <MessageCircle className="h-6 w-6 text-accent" />
-                          </div>
-                          <h3 className="text-card-foreground font-medium mb-1 text-sm">Start the conversation</h3>
-                          <p className="text-muted-foreground text-xs">Send your first message below</p>
-                        </div>
+                         </div>
+                        ))
                       )}
-                    </>
-                  )}
-                  <div ref={messagesEndRef} />
+                     </>
+                   )}
+                   <div ref={messagesEndRef} />
                 </div>
               </ScrollArea>
             </div>

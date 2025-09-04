@@ -197,17 +197,30 @@ export function NotificationCenter() {
     if (notification.type === 'new_message' && notification.booking_id) {
       console.log('NotificationCenter: Opening chat for booking:', notification.booking_id);
       
-      // Create a custom event to open chat with specific booking
+      // FORCE open the UniversalChat by directly manipulating the component
+      // First, try to find and click the chat button to open it
+      const chatButton = document.querySelector('[aria-label="Open chat"]') as HTMLElement;
+      if (chatButton) {
+        console.log('NotificationCenter: Found chat button, clicking it');
+        chatButton.click();
+      }
+      
+      // Create multiple event types to ensure it works
       const chatEvent = new CustomEvent('openChatWithBooking', { 
         detail: { bookingId: notification.booking_id }
       });
       window.dispatchEvent(chatEvent);
       
+      // Also try a direct approach - set a global variable
+      (window as any).openChatBookingId = notification.booking_id;
+      
       // Close the notification popover for better UX
-      const popoverTrigger = document.querySelector('[data-state="open"]');
-      if (popoverTrigger) {
-        (popoverTrigger as HTMLElement).click();
-      }
+      setTimeout(() => {
+        const popoverTrigger = document.querySelector('[data-state="open"]') as HTMLElement;
+        if (popoverTrigger) {
+          popoverTrigger.click();
+        }
+      }, 100);
       
       return;
     }
