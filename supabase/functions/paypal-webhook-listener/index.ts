@@ -71,7 +71,11 @@ serve(async (req) => {
 
     // Parse the webhook event
     const webhookEvent: PayPalWebhookEvent = await req.json();
-    console.log('Received webhook event:', webhookEvent.event_type, 'ID:', webhookEvent.id);
+    console.log('=== PAYPAL WEBHOOK DEBUG ===');
+    console.log('Event Type:', webhookEvent.event_type);
+    console.log('Event ID:', webhookEvent.id);
+    console.log('Full PayPal Payload:', JSON.stringify(webhookEvent, null, 2));
+    console.log('Resource Object:', JSON.stringify(webhookEvent.resource, null, 2));
 
     // Get PayPal access token for verification
     const tokenResponse = await fetch('https://api-m.paypal.com/v1/oauth2/token', {
@@ -132,60 +136,145 @@ serve(async (req) => {
 
     console.log('Webhook verification successful');
 
-    // Process subscription webhook events - ONLY when payment is actually made
+    // Process subscription webhook events - Handle multiple event types for live mode
+    console.log('=== CHECKING EVENT TYPE ===');
+    console.log('Event type received:', webhookEvent.event_type);
+    
     if (webhookEvent.event_type === 'BILLING.SUBSCRIPTION.ACTIVATED' || 
-        webhookEvent.event_type === 'PAYMENT.SALE.COMPLETED') {
+        webhookEvent.event_type === 'PAYMENT.SUBSCRIPTION.ACTIVATED' ||
+        webhookEvent.event_type === 'PAYMENT.SALE.COMPLETED' ||
+        webhookEvent.event_type.includes('SUBSCRIPTION.ACTIVATED')) {
       
       const subscription = webhookEvent.resource;
-      console.log('Processing subscription event:', webhookEvent.event_type, 'ID:', subscription.id);
+      console.log('=== PROCESSING SUBSCRIPTION EVENT ===');
+      console.log('Event Type:', webhookEvent.event_type);
+      console.log('Subscription ID:', subscription.id);
+      console.log('Subscription Status:', subscription.status);
+      console.log('Plan ID:', subscription.plan_id);
 
-      // Extract user ID from custom_id field
-      const customId = subscription.custom_id;
+      // Extract user ID - check multiple possible locations
+      let customId = subscription.custom_id;
+      
+      // Try alternative locations for custom_id in live mode
+      if (!customId && subscription.subscriber?.email_address) {
+        // Sometimes custom_id is in different location
+        customId = (subscription as any).subscriber?.custom_id;
+      }
+      
+      // Try application_context or other nested locations
+      if (!customId && (subscription as any).application_context) {
+        customId = (subscription as any).application_context.custom_id;
+      }
+
+      console.log('=== CUSTOM ID EXTRACTION ===');
+      console.log('Found custom_id:', customId);
+      console.log('Subscriber info:', JSON.stringify(subscription.subscriber, null, 2));
+      
       if (!customId) {
-        console.error('No custom_id found in subscription');
-        return new Response(JSON.stringify({ error: 'No user ID found in subscription' }), {
+        console.error('=== ERROR: No custom_id found ===');
+        console.error('Full subscription object:', JSON.stringify(subscription, null, 2));
+        return new Response(JSON.stringify({ 
+          error: 'No user ID found in subscription',
+          event_type: webhookEvent.event_type,
+          subscription_id: subscription.id 
+        }), {
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
 
-      console.log('Updating subscription for user:', customId);
+      console.log('=== SUBSCRIPTION UPDATE PROCESS ===');
+      console.log('Updating subscription for user ID:', customId);
+
+      // First verify user exists in talent_profiles
+      const { data: existingProfile, error: checkError } = await supabase
+        .from('talent_profiles')
+        .select('id, user_id, artist_name')
+        .eq('user_id', customId)
+        .single();
+
+      console.log('=== USER VERIFICATION ===');
+      console.log('User lookup result:', existingProfile);
+      console.log('User lookup error:', checkError);
+
+      if (checkError || !existingProfile) {
+        console.error('=== ERROR: User not found in talent_profiles ===');
+        console.error('Searched for user_id:', customId);
+        console.error('Error details:', checkError);
+        return new Response(JSON.stringify({ 
+          error: 'User profile not found',
+          user_id: customId,
+          check_error: checkError?.message 
+        }), {
+          status: 404,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
 
       // Determine subscription period based on plan_id
       let periodEndDate = new Date();
-      if (subscription.plan_id?.includes('monthly') || subscription.plan_id?.includes('P-5DD48036RS5113705NCY45IY')) {
+      const planId = subscription.plan_id || '';
+      
+      console.log('=== PLAN DETECTION ===');
+      console.log('Plan ID received:', planId);
+      
+      if (planId.includes('monthly') || planId.includes('P-5DD48036RS5113705NCY45IY') || planId.toLowerCase().includes('month')) {
         // Monthly plan - 30 days
         periodEndDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+        console.log('Detected: Monthly plan');
       } else {
         // Yearly plan - 365 days
         periodEndDate = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
+        console.log('Detected: Yearly plan');
       }
 
+      console.log('Subscription period end date:', periodEndDate.toISOString());
+
       // Update user's subscription status in talent_profiles
+      const updateData = {
+        subscription_status: 'active',
+        paypal_subscription_id: subscription.id,
+        plan_id: planId || 'basic_plan',
+        current_period_end: periodEndDate.toISOString(),
+        is_pro_subscriber: true,
+        subscription_started_at: new Date().toISOString(),
+        will_renew: true,
+        cancelled_at: null,
+        cancellation_reason: null
+      };
+
+      console.log('=== SUPABASE UPDATE ===');
+      console.log('Update data:', JSON.stringify(updateData, null, 2));
+
       const { data, error } = await supabase
         .from('talent_profiles')
-        .update({
-          subscription_status: 'active',
-          paypal_subscription_id: subscription.id,
-          plan_id: subscription.plan_id || 'basic_plan',
-          current_period_end: periodEndDate.toISOString(),
-          is_pro_subscriber: true,
-          subscription_started_at: new Date().toISOString(),
-        })
-        .eq('user_id', customId);
+        .update(updateData)
+        .eq('user_id', customId)
+        .select();
+
+      console.log('=== UPDATE RESULT ===');
+      console.log('Update success data:', data);
+      console.log('Update error:', error);
 
       if (error) {
-        console.error('Failed to update talent profile:', error);
-        return new Response(JSON.stringify({ error: 'Failed to update subscription' }), {
+        console.error('=== ERROR: Failed to update talent profile ===');
+        console.error('Error details:', error);
+        return new Response(JSON.stringify({ 
+          error: 'Failed to update subscription',
+          supabase_error: error.message,
+          user_id: customId 
+        }), {
           status: 500,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
 
-      console.log('Successfully updated subscription for user:', customId);
+      console.log('=== SUCCESS: Subscription activated successfully ===');
+      console.log('Updated user:', customId);
+      console.log('Subscription ID:', subscription.id);
 
-      // Create notification for the user with better messaging
-      await supabase
+      // Create notification for the user
+      const notificationResult = await supabase
         .from('notifications')
         .insert({
           user_id: customId,
@@ -193,6 +282,8 @@ serve(async (req) => {
           title: 'Pro Subscription Activated! 🎉',
           message: 'Welcome to Pro! You can now upload up to 10 photos, add SoundCloud & YouTube links, get priority listing, and enjoy unlimited bookings. Click to start enhancing your profile!'
         });
+
+      console.log('Notification created:', notificationResult.error ? 'Failed' : 'Success');
 
       return new Response(JSON.stringify({ 
         success: true, 
