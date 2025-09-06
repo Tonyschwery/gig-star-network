@@ -35,9 +35,9 @@ declare global {
   }
 }
 
-// --- IMPORTANT: Get the Live Client ID from your environment variables ---
-// This is a more secure and flexible way to handle your credentials.
-const PAYPAL_LIVE_CLIENT_ID = process.env.REACT_APP_PAYPAL_LIVE_CLIENT_ID || process.env.NEXT_PUBLIC_PAYPAL_LIVE_CLIENT_ID;
+// --- IMPORTANT: Paste your Live Client ID here ---
+// Since you cannot use environment variables on your platform, we will set the ID directly.
+const PAYPAL_LIVE_CLIENT_ID = "AX6bUOWtKGKAaD0Ry62rtK3jhTDGfzpSMuJCABbUeVENyKdBAei_-xGiY8wT1vvXTypXkHWijfJHENcA";
 
 
 export function SubscriptionModal({ open, onOpenChange }: SubscriptionModalProps) {
@@ -86,7 +86,7 @@ export function SubscriptionModal({ open, onOpenChange }: SubscriptionModalProps
 
   // Load PayPal SDK
   useEffect(() => {
-    if (!open || !PAYPAL_LIVE_CLIENT_ID) return;
+    if (!open || !PAYPAL_LIVE_CLIENT_ID || PAYPAL_LIVE_CLIENT_ID.includes("REPLACE_WITH")) return;
 
     const loadPayPalScript = () => {
       if (window.paypal) {
@@ -95,7 +95,7 @@ export function SubscriptionModal({ open, onOpenChange }: SubscriptionModalProps
       }
 
       const script = document.createElement('script');
-      // ### FIX #3: Use your Live Client ID from environment variables ###
+      // Use your Live Client ID from the constant above
       script.src = `https://www.paypal.com/sdk/js?client-id=${PAYPAL_LIVE_CLIENT_ID}&vault=true&intent=subscription`;
       script.async = true;
       script.onload = () => setPaypalLoaded(true);
@@ -182,7 +182,6 @@ export function SubscriptionModal({ open, onOpenChange }: SubscriptionModalProps
   }, [paypalLoaded, selectedPlan, user, plans, toast, onOpenChange, navigate]);
   
   // The rest of your UI code is perfect and does not need to be changed.
-  // ... (JSX for rendering the modal)
   const handlePlanSelect = (planId: string) => {
     if (!user) {
       toast({
@@ -290,3 +289,4 @@ export function SubscriptionModal({ open, onOpenChange }: SubscriptionModalProps
     </Dialog>
   );
 }
+
