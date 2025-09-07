@@ -62,24 +62,13 @@ export function SubscriptionManagementModal({
   const isExpiringSoon = daysRemaining <= 7 && daysRemaining > 0;
   
   const handleCancelSubscription = () => {
-    // This now builds a specific URL for the user's subscription
-    if (subscriptionData?.paypal_subscription_id) {
-        const subscriptionId = subscriptionData.paypal_subscription_id;
-        const managementUrl = `https://www.paypal.com/cgi-bin/customerprofileweb?cmd=_manage-subscription&id=${subscriptionId}`;
-        window.open(managementUrl, '_blank');
-        toast({
-          title: "Redirected to PayPal",
-          description: "Manage your subscription directly in your PayPal account.",
-        });
-    } else {
-        // Fallback to the generic page if the ID is not found
-        window.open('https://www.paypal.com/myaccount/autopay/', '_blank');
-        toast({
-          title: "Redirected to PayPal",
-          description: "Could not find a specific subscription ID. Please find the subscription in your PayPal account to manage it.",
-          variant: "destructive"
-        });
-    }
+    // This is the modern, reliable URL for managing all automatic payments.
+    const managementUrl = 'https://www.paypal.com/myaccount/autopay/';
+    window.open(managementUrl, '_blank');
+    toast({
+      title: "Redirected to PayPal",
+      description: "Please find your QTalent subscription in the list to manage it.",
+    });
   };
 
   const getPlanDisplayName = (planId?: string) => {
@@ -215,3 +204,4 @@ export function SubscriptionManagementModal({
     </Dialog>
   );
 }
+
