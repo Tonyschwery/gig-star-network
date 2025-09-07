@@ -1,12 +1,11 @@
-import { useState, useEffect } from "react";
-import { Crown, Calendar, CreditCard, AlertTriangle, X } from "lucide-react";
+import { useState } from "react";
+import { Crown, Calendar, CreditCard, AlertTriangle } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 
 interface SubscriptionManagementModalProps {
   open: boolean;
@@ -17,6 +16,7 @@ interface SubscriptionManagementModalProps {
     planId?: string;
     currentPeriodEnd?: string;
     subscriptionStartedAt?: string;
+    paypal_subscription_id?: string; // Added this ID
   };
 }
 
@@ -26,8 +26,7 @@ export function SubscriptionManagementModal({
   subscriptionData 
 }: SubscriptionManagementModalProps) {
   const { toast } = useToast();
-  const [loading, setLoading] = useState(false);
-  
+
   const formatDate = (dateString?: string) => {
     if (!dateString) return 'N/A';
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -63,17 +62,30 @@ export function SubscriptionManagementModal({
   const isExpiringSoon = daysRemaining <= 7 && daysRemaining > 0;
   
   const handleCancelSubscription = () => {
-    // Open PayPal subscription management
-    window.open('https://www.paypal.com/myaccount/autopay/', '_blank');
-    toast({
-      title: "Redirected to PayPal",
-      description: "Manage your subscription directly in your PayPal account. Your Pro access will continue until the end of your current billing period.",
-    });
+    // This now builds a specific URL for the user's subscription
+    if (subscriptionData?.paypal_subscription_id) {
+        const subscriptionId = subscriptionData.paypal_subscription_id;
+        const managementUrl = `https://www.paypal.com/cgi-bin/customerprofileweb?cmd=_manage-subscription&id=${subscriptionId}`;
+        window.open(managementUrl, '_blank');
+        toast({
+          title: "Redirected to PayPal",
+          description: "Manage your subscription directly in your PayPal account.",
+        });
+    } else {
+        // Fallback to the generic page if the ID is not found
+        window.open('https://www.paypal.com/myaccount/autopay/', '_blank');
+        toast({
+          title: "Redirected to PayPal",
+          description: "Could not find a specific subscription ID. Please find the subscription in your PayPal account to manage it.",
+          variant: "destructive"
+        });
+    }
   };
 
   const getPlanDisplayName = (planId?: string) => {
-    if (planId?.includes('monthly')) return 'Monthly Pro';
-    if (planId?.includes('yearly')) return 'Yearly Pro';
+    if (!planId) return 'Pro Plan';
+    if (planId.toLowerCase().includes('month')) return 'Monthly Pro';
+    if (planId.toLowerCase().includes('year')) return 'Yearly Pro';
     return 'Pro Plan';
   };
 
@@ -127,7 +139,6 @@ export function SubscriptionManagementModal({
                   </div>
                 </div>
 
-                {/* Expiration Warning */}
                 {isExpiringSoon && (
                   <div className="mt-4 p-3 bg-brand-warning/10 border border-brand-warning/20 rounded-lg flex items-center gap-2">
                     <AlertTriangle className="h-4 w-4 text-brand-warning" />
@@ -188,7 +199,6 @@ export function SubscriptionManagementModal({
               </Card>
             </>
           ) : (
-            /* Not subscribed - shouldn't happen in this modal */
             <Card className="p-6 text-center">
               <Crown className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-semibold mb-2">No Active Subscription</h3>
