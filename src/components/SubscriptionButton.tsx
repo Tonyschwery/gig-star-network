@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
-import { Crown, Settings, Clock } from "lucide-react";
+import { Crown, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { ProBadge } from "@/components/ProBadge";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -23,6 +22,7 @@ interface SubscriptionData {
   planId?: string;
   currentPeriodEnd?: string;
   subscriptionStartedAt?: string;
+  paypal_subscription_id?: string; // We need this ID for the cancellation link
 }
 
 export function SubscriptionButton({ 
@@ -48,9 +48,10 @@ export function SubscriptionButton({
     if (!user) return;
 
     try {
+      // Fetch the paypal_subscription_id along with other data
       const { data, error } = await supabase
         .from('talent_profiles')
-        .select('is_pro_subscriber, subscription_status, plan_id, current_period_end, subscription_started_at')
+        .select('is_pro_subscriber, subscription_status, plan_id, current_period_end, subscription_started_at, paypal_subscription_id')
         .eq('user_id', user.id)
         .maybeSingle();
 
@@ -66,6 +67,7 @@ export function SubscriptionButton({
           planId: data.plan_id || undefined,
           currentPeriodEnd: data.current_period_end || undefined,
           subscriptionStartedAt: data.subscription_started_at || undefined,
+          paypal_subscription_id: data.paypal_subscription_id || undefined,
         });
       }
     } catch (error) {
@@ -95,10 +97,8 @@ export function SubscriptionButton({
     }
 
     if (isProSubscriber) {
-      // Open subscription management modal
       setShowManagementModal(true);
     } else {
-      // Open subscription modal
       setShowModal(true);
     }
   };
