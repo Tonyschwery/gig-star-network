@@ -159,7 +159,7 @@ export function Header() {
                   >
                     Find Talents
                   </button>
-                  {user && isProTalent && (
+                  {user && isProTalent && mode === 'artist' && (
                     <button 
                       onClick={() => navigate('/gigs')}
                       className="text-foreground hover:text-accent transition-colors font-medium"
@@ -249,12 +249,6 @@ export function Header() {
               )}
             </div>
 
-            {/* Universal Chat - Outside conditional rendering to ensure it's always visible for authenticated users */}
-            {user && (
-              <div className="hidden md:block">
-                <UniversalChat />
-              </div>
-            )}
 
             {/* Mobile Menu */}
             <div className="md:hidden">
@@ -294,7 +288,7 @@ export function Header() {
                       Find Talents
                     </button>
                     
-                    {user && isProTalent && (
+                    {user && isProTalent && mode === 'artist' && (
                       <button 
                         onClick={() => navigate('/gigs')}
                         className="text-left text-foreground hover:text-accent transition-colors font-medium py-2"
@@ -419,10 +413,10 @@ export function Header() {
                  )}
                </MobileMenu>
                
-               {/* Universal Chat for Mobile - Always available for authenticated users */}
-               {user && (
-                 <UniversalChat />
-               )}
+                {/* Universal Chat - Always available for authenticated users */}
+                {user && (
+                  <UniversalChat />
+                )}
              </div>
           </nav>
         </div>
