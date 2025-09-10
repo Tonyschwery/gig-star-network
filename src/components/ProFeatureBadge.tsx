@@ -24,14 +24,18 @@ export function ProFeatureBadge({
   if (isPro) {
     return (
       <Badge 
-        variant="secondary" 
         className={cn(
-          "bg-brand-success/20 text-brand-success border-brand-success/30 gap-1",
+          "bg-brand-secondary text-primary-foreground border border-brand-gold gap-1 hover:bg-brand-secondary/80 transition-colors",
           sizeClasses[size],
           className
         )}
+        style={{
+          background: 'hsl(var(--brand-secondary))',
+          borderColor: 'hsl(var(--brand-gold))',
+          color: 'hsl(var(--primary-foreground))'
+        }}
       >
-        <Crown className="h-3 w-3" />
+        <Crown className="h-3 w-3" style={{ color: 'hsl(var(--brand-gold))' }} />
         {feature}
       </Badge>
     );
@@ -75,8 +79,8 @@ export function ProComparisonList() {
                 <div className="text-sm font-medium">{feature.free}</div>
               </div>
               <div className="text-right">
-                <div className="text-xs text-brand-primary">Pro</div>
-                <div className="text-sm font-medium text-brand-success">{feature.pro}</div>
+                <div className="text-xs" style={{ color: 'hsl(var(--brand-gold))' }}>Pro</div>
+                <div className="text-sm font-medium" style={{ color: 'hsl(var(--brand-gold))' }}>{feature.pro}</div>
               </div>
             </div>
           </div>

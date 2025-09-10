@@ -11,17 +11,20 @@ All colors MUST be HSL.
     --background: 0 0% 4%;
     --foreground: 0 0% 98%;
     
-    /* Live dot - subtle energetic glow */
-    --live-dot: 142 84% 47%;
-    --live-glow: 142 84% 47%;
+    /* Live dot - neon green accent (logo only) */
+    --live-dot: 142 100% 50%;
+    --live-glow: 142 100% 50%;
     
-    /* Brand Colors - Minimal palette */
-    --brand-primary: 0 0% 98%;
-    --brand-secondary: 0 0% 15%;
-    --brand-accent: 142 84% 47%;
-    --brand-success: 142 76% 36%;
-    --brand-warning: 38 92% 50%;
-    --brand-error: 0 84% 60%;
+    /* Brand Colors - Premium palette */
+    --brand-primary: 217 91% 60%;        /* Deep blue for primary actions */
+    --brand-primary-dark: 225 65% 33%;   /* Darker blue for hover states */
+    --brand-secondary: 0 0% 12%;         /* Dark gray backgrounds */
+    --brand-accent: 142 100% 50%;        /* Neon green - minimal use only */
+    --brand-gold: 45 68% 53%;            /* Gold for premium indicators */
+    --brand-gold-light: 37 94% 50%;      /* Light gold variant */
+    --brand-success: 142 76% 36%;        /* Success states */
+    --brand-warning: 38 92% 50%;         /* Warning states */
+    --brand-error: 0 84% 60%;            /* Error states */
     
   /* Elegant shadows */
     --shadow-minimal: 0 2px 10px hsl(0 0% 0% / 0.1);
@@ -41,8 +44,8 @@ All colors MUST be HSL.
     --popover: 0 0% 6%;
     --popover-foreground: 0 0% 98%;
     
-    --primary: 0 0% 98%;
-    --primary-foreground: 0 0% 4%;
+    --primary: 217 91% 60%;
+    --primary-foreground: 0 0% 98%;
 
     --secondary: 0 0% 12%;
     --secondary-foreground: 0 0% 98%;
@@ -50,7 +53,7 @@ All colors MUST be HSL.
     --muted: 0 0% 8%;
     --muted-foreground: 0 0% 65%;
 
-    --accent: 142 84% 47%;
+    --accent: 142 100% 50%;
     --accent-foreground: 0 0% 4%;
 
     --destructive: 0 84% 60%;
@@ -83,8 +86,8 @@ All colors MUST be HSL.
     --popover: 0 0% 6%;
     --popover-foreground: 0 0% 98%;
 
-    --primary: 0 0% 98%;
-    --primary-foreground: 0 0% 4%;
+    --primary: 217 91% 60%;
+    --primary-foreground: 0 0% 98%;
 
     --secondary: 0 0% 12%;
     --secondary-foreground: 0 0% 98%;
@@ -92,7 +95,7 @@ All colors MUST be HSL.
     --muted: 0 0% 8%;
     --muted-foreground: 0 0% 65%;
 
-    --accent: 142 84% 47%;
+    --accent: 142 100% 50%;
     --accent-foreground: 0 0% 4%;
 
     --destructive: 0 84% 60%;
@@ -141,13 +144,16 @@ All colors MUST be HSL.
     animation: slideUp 0.5s ease-out forwards;
   }
   
-  /* Enhanced buttons */
+  /* Enhanced buttons - Professional deep blue */
   .hero-button {
-    @apply bg-accent text-accent-foreground font-semibold py-3 px-8 rounded-xl shadow-minimal hover:shadow-elevated transition-all duration-300 hover:scale-[1.02] hover:bg-accent/90;
+    @apply bg-brand-primary text-primary-foreground font-semibold py-3 px-8 rounded-xl shadow-minimal hover:shadow-elevated transition-all duration-300 hover:scale-[1.02];
+    background: hsl(var(--brand-primary));
+    color: hsl(var(--primary-foreground));
   }
   
   .hero-button:hover {
-    box-shadow: 0 8px 30px hsl(var(--accent) / 0.3);
+    background: hsl(var(--brand-primary-dark));
+    box-shadow: 0 8px 30px hsl(var(--brand-primary) / 0.3);
   }
   
   .outline-button {
