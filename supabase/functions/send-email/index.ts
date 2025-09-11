@@ -412,30 +412,66 @@ serve(async (req: Request): Promise<Response> => {
 
       case 'booking_request_talent':
         emailHtml = `
-          <h1>New Booking Request</h1>
-          <p>Hi ${data.recipient_name},</p>
-          <p>You have received a new booking request from a client!</p>
+          <h1>New Booking Request for Your Services</h1>
+          <p>Hello ${data.recipient_name},</p>
+          <p>You have received a new booking request!</p>
           
           <div style="background-color: #f0f9ff; padding: 20px; border-radius: 8px; margin: 20px 0;">
             <h3>🎉 Event Details:</h3>
+            <p><strong>Booker:</strong> ${data.booker_name || 'Not provided'}</p>
+            ${data.is_pro_subscriber && data.booker_email ? `<p><strong>Email:</strong> ${data.booker_email}</p>` : ''}
+            ${data.is_pro_subscriber && data.booker_phone ? `<p><strong>Phone:</strong> ${data.booker_phone}</p>` : ''}
             <p><strong>Event Type:</strong> ${data.event_type || 'Not specified'}</p>
-            <p><strong>Client Name:</strong> ${data.booker_name || 'Not provided'}</p>
             <p><strong>Event Date:</strong> ${data.event_date || 'Not set'}</p>
             <p><strong>Duration:</strong> ${data.event_duration ? data.event_duration + ' hours' : 'Not specified'}</p>
-            <p><strong>Event Location:</strong> ${data.event_location || 'Not provided'}</p>
-            ${data.description ? `<p><strong>Event Description:</strong> ${data.description}</p>` : ''}
-            ${data.budget ? `<p><strong>Budget:</strong> ${data.budget} ${data.budget_currency || 'USD'}</p>` : ''}
+            <p><strong>Location:</strong> ${data.event_location || 'Not provided'}</p>
+            ${data.is_pro_subscriber && data.event_address ? `<p><strong>Full Address:</strong> ${data.event_address}</p>` : ''}
+            ${data.description ? `<p><strong>Description:</strong> ${data.description}</p>` : ''}
           </div>
           
-          <p><strong>Next Steps:</strong> Please review the complete request details in your dashboard and respond to the client promptly.</p>
+          ${!data.is_pro_subscriber ? `<div style="background-color: #fef3c7; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #f59e0b;">
+            <p style="margin: 0;"><strong>💎 Pro Feature:</strong> Full client contact details and complete address are available with Pro subscription. <a href="${appUrl}/pricing" style="color: #d97706;">Upgrade now</a> to access all booking details!</p>
+          </div>` : ''}
           
-          <p style="margin-top: 30px;">
-            <a href="${appUrl}/talent-dashboard" style="background-color: #28a745; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">Review & Respond to Request</a>
-          </p>
-          
+          <p><a href="${appUrl}/talent-dashboard" style="background: #28a745; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">View Booking Request</a></p>
           <p>Best regards,<br>The Qtalent Team</p>
         `;
-        subject = data.subject || 'New Booking Request for Your Services';
+        subject = 'New Booking Request for Your Services';
+        break;
+
+      case 'booking_approved_booker':
+        emailHtml = `
+          <h1>Great News! Your Booking Request Has Been Accepted</h1>
+          <p>Hello ${data.recipient_name},</p>
+          <p>Excellent news! <strong>${data.talent_name}</strong> has accepted your booking request!</p>
+          
+          <div style="background-color: #dcfce7; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #22c55e;">
+            <h3>✅ Confirmed Event Details:</h3>
+            <p><strong>Talent:</strong> ${data.talent_name}</p>
+            <p><strong>Event Type:</strong> ${data.event_type || 'Not specified'}</p>
+            <p><strong>Event Date:</strong> ${data.event_date || 'Not set'}</p>
+            <p><strong>Duration:</strong> ${data.event_duration ? data.event_duration + ' hours' : 'Not specified'}</p>
+            <p><strong>Location:</strong> ${data.event_location || 'Not provided'}</p>
+          </div>
+          
+          <div style="background-color: #e0f2fe; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h3>📋 Next Steps:</h3>
+            <ul style="margin: 10px 0; padding-left: 20px;">
+              <li>Your booking is now <strong>accepted</strong> and needs confirmation</li>
+              <li>Click "Confirm Booking" in your dashboard to finalize</li>
+              <li>You can message the talent directly through our chat system</li>
+              <li>Payment will be processed once you confirm the booking</li>
+            </ul>
+          </div>
+          
+          <p style="text-align: center; margin: 30px 0;">
+            <a href="${appUrl}/booker-dashboard" style="background: #1e40af; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; display: inline-block; margin-right: 10px;">Confirm Booking</a>
+            <a href="${appUrl}/booker-dashboard" style="background: #059669; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; display: inline-block;">Chat with Talent</a>
+          </p>
+          
+          <p>We're excited to help make your event amazing!<br>The Qtalent Team</p>
+        `;
+        subject = 'Great News! Your Booking Request Has Been Accepted';
         break;
 
       default:

@@ -42,9 +42,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!loading && user && session) {
       const currentPath = window.location.pathname;
+      const urlParams = new URLSearchParams(window.location.search);
+      const isEmailConfirmation = urlParams.get('type') === 'email_confirmation' || urlParams.get('type') === 'signup';
       
-      // Only redirect on auth or login pages to avoid interfering with manual navigation
-      if (currentPath === '/auth' || currentPath === '/login') {
+      // Redirect on auth/login pages OR if this is an email confirmation
+      if (currentPath === '/auth' || currentPath === '/login' || isEmailConfirmation) {
         const handleRedirect = async () => {
           try {
             // Check if user is admin first

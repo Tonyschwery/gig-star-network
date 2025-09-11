@@ -208,7 +208,42 @@ export function NotificationCenter() {
       return;
     }
 
-    // Default navigation
+    // Handle booking-related notifications with proper navigation and highlighting
+    if (notification.booking_id) {
+      try {
+        const { data: talentProfile } = await supabase
+          .from('talent_profiles')
+          .select('id')
+          .eq('user_id', user?.id)
+          .maybeSingle();
+
+        // Navigate to appropriate dashboard
+        if (talentProfile) {
+          navigate('/talent-dashboard');
+        } else {
+          navigate('/booker-dashboard');
+        }
+
+        // Scroll to and highlight the specific booking after navigation
+        setTimeout(() => {
+          const bookingElement = document.querySelector(`[data-booking-id="${notification.booking_id}"]`);
+          if (bookingElement) {
+            bookingElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            // Add temporary highlight effect
+            bookingElement.classList.add('ring-2', 'ring-primary', 'ring-opacity-50');
+            setTimeout(() => {
+              bookingElement.classList.remove('ring-2', 'ring-primary', 'ring-opacity-50');
+            }, 3000);
+          }
+        }, 500);
+      } catch (error) {
+        console.error('Error navigating to booking:', error);
+        navigate('/booker-dashboard');
+      }
+      return;
+    }
+
+    // Default navigation for non-booking notifications
     try {
       const { data: talentProfile } = await supabase
         .from('talent_profiles')

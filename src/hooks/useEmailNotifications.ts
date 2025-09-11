@@ -123,19 +123,16 @@ export const useEmailNotifications = () => {
 
   const sendBookingEmails = async (bookingData: any) => {
     try {
-      // Get talent email for admin notification
-      let talentEmail = null;
+      // Get talent profile details including Pro status
+      let talentProfile = null;
       if (bookingData.talent_id) {
-        const { data: talentProfile } = await supabase
+        const { data } = await supabase
           .from('talent_profiles')
-          .select('user_id')
+          .select('user_id, artist_name, is_pro_subscriber')
           .eq('id', bookingData.talent_id)
           .single();
-
-        if (talentProfile) {
-          // We can't get email from auth.users directly in client-side code
-          // The send-notification-email function will handle getting the email via service role
-        }
+        
+        talentProfile = data;
       }
 
       // Send admin notification for new booking with complete information
@@ -159,31 +156,56 @@ export const useEmailNotifications = () => {
         admin_emails: adminEmails
       });
 
-      // Send notification to talent if talent is assigned (hide sensitive client info)
-      if (bookingData.talent_id) {
-        const { data: talentProfile } = await supabase
-          .from('talent_profiles')
-          .select('user_id, artist_name')
-          .eq('id', bookingData.talent_id)
-          .single();
+      // Send notification to talent if talent is assigned
+      if (bookingData.talent_id && talentProfile) {
+        // Prepare email data based on Pro status
+        const emailData: any = {
+          recipient_name: talentProfile.artist_name,
+          booker_name: bookingData.booker_name,
+          event_type: bookingData.event_type,
+          event_date: bookingData.event_date,
+          event_duration: bookingData.event_duration,
+          description: bookingData.description,
+          booking_id: bookingData.id,
+          is_pro_subscriber: talentProfile.is_pro_subscriber,
+          subject: 'New Booking Request for Your Services'
+        };
 
-        if (talentProfile) {
-          await sendNotificationEmail('booking_request_talent', [talentProfile.user_id], {
-            recipient_name: talentProfile.artist_name,
-            booker_name: bookingData.booker_name, // Only name, no email/phone
-            event_type: bookingData.event_type,
-            event_date: bookingData.event_date,
-            event_location: bookingData.event_location,
-            event_duration: bookingData.event_duration,
-            description: bookingData.description,
-            booking_id: bookingData.id,
-            subject: 'New Booking Request for Your Services'
-          });
+        // Include sensitive details only for Pro subscribers
+        if (talentProfile.is_pro_subscriber) {
+          emailData.booker_email = bookingData.booker_email;
+          emailData.booker_phone = bookingData.booker_phone;
+          emailData.event_location = bookingData.event_location;
+          emailData.event_address = bookingData.event_address;
+        } else {
+          // For non-Pro, show general location only
+          emailData.event_location = bookingData.event_location?.split(',')[0] + ' (Upgrade to Pro for full details)';
         }
+
+        await sendNotificationEmail('booking_request_talent', [talentProfile.user_id], emailData);
       }
 
     } catch (error) {
       console.error('Error sending booking emails:', error);
+    }
+  };
+
+  const sendBookingApprovalEmails = async (bookingData: any, talentName: string) => {
+    try {
+      // Send notification to booker that talent has accepted their booking
+      await sendNotificationEmail('booking_approved_booker', [bookingData.user_id], {
+        recipient_name: bookingData.booker_name,
+        talent_name: talentName,
+        event_type: bookingData.event_type,
+        event_date: bookingData.event_date,
+        event_location: bookingData.event_location,
+        event_duration: bookingData.event_duration,
+        booking_id: bookingData.id,
+        subject: 'Great News! Your Booking Request Has Been Accepted'
+      });
+
+    } catch (error) {
+      console.error('Error sending booking approval emails:', error);
     }
   };
 
@@ -192,6 +214,7 @@ export const useEmailNotifications = () => {
     sendUserSignupEmails,
     sendTalentProfileEmails,
     sendEventRequestEmails,
-    sendBookingEmails
+    sendBookingEmails,
+    sendBookingApprovalEmails
   };
 };

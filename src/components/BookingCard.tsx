@@ -8,6 +8,7 @@ import { Calendar, User, Check, X, Clock3, MapPin, MessageCircle } from "lucide-
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { useEmailNotifications } from "@/hooks/useEmailNotifications";
 
 
 export interface Booking {
@@ -39,6 +40,7 @@ interface BookingCardProps {
 export const BookingCard = ({ booking, mode, onUpdate, isProSubscriber, canAccept = true, onChatOpen }: BookingCardProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { sendBookingApprovalEmails } = useEmailNotifications();
 
   const safeFormatDate = (date: any, dateFormat: string) => {
     try { return format(new Date(date), dateFormat); } catch { return "Invalid Date"; }
@@ -74,6 +76,10 @@ export const BookingCard = ({ booking, mode, onUpdate, isProSubscriber, canAccep
       }
       
       console.log('Successfully accepted booking:', data);
+      
+      // Send email notification to booker
+      const talentName = booking.talent_profiles?.artist_name || 'Talent';
+      await sendBookingApprovalEmails(booking, talentName);
       
       toast({
         title: "Booking Accepted",
