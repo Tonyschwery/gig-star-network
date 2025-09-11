@@ -2,12 +2,15 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 import { BookingCard, Booking } from "./BookingCard";
 import { useRealtimeBookings } from '@/hooks/useRealtimeBookings';
 import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications';
+import { useUnreadNotifications } from '@/hooks/useUnreadNotifications';
 
 export const TalentDashboardTabs = () => {
     const { user } = useAuth();
+    const { unreadCount } = useUnreadNotifications();
     const [talentProfile, setTalentProfile] = useState<any>(null);
     const [allBookings, setAllBookings] = useState<Booking[]>([]);
     const [loading, setLoading] = useState(true);
@@ -84,18 +87,36 @@ export const TalentDashboardTabs = () => {
     );
 
     return (
-        <Tabs defaultValue="pending" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
-                <TabsTrigger value="pending">New ({newRequests.length})</TabsTrigger>
-                <TabsTrigger value="accepted">Accepted ({acceptedBookings.length})</TabsTrigger>
-                <TabsTrigger value="upcoming">Upcoming ({upcomingBookings.length})</TabsTrigger>
-                <TabsTrigger value="past">Past ({pastBookings.length})</TabsTrigger>
-            </TabsList>
-            <TabsContent value="pending">{renderBookings(newRequests)}</TabsContent>
-            <TabsContent value="accepted">{renderBookings(acceptedBookings)}</TabsContent>
-            <TabsContent value="upcoming">{renderBookings(upcomingBookings)}</TabsContent>
-            <TabsContent value="past">{renderBookings(pastBookings)}</TabsContent>
-        </Tabs>
+        <div className="w-full">
+            {/* Notification Badge */}
+            {unreadCount > 0 && (
+                <div className="flex justify-center mb-4">
+                    <Badge variant="destructive" className="bg-red-500 hover:bg-red-600 text-white animate-pulse px-3 py-1">
+                        {unreadCount} New Notification{unreadCount > 1 ? 's' : ''}
+                    </Badge>
+                </div>
+            )}
+            
+            <Tabs defaultValue="pending" className="w-full">
+                <TabsList className="grid w-full grid-cols-4">
+                    <TabsTrigger value="pending" className="relative">
+                        New ({newRequests.length})
+                        {newRequests.length > 0 && (
+                            <Badge variant="destructive" className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center text-xs">
+                                {newRequests.length}
+                            </Badge>
+                        )}
+                    </TabsTrigger>
+                    <TabsTrigger value="accepted">Accepted ({acceptedBookings.length})</TabsTrigger>
+                    <TabsTrigger value="upcoming">Upcoming ({upcomingBookings.length})</TabsTrigger>
+                    <TabsTrigger value="past">Past ({pastBookings.length})</TabsTrigger>
+                </TabsList>
+                <TabsContent value="pending">{renderBookings(newRequests)}</TabsContent>
+                <TabsContent value="accepted">{renderBookings(acceptedBookings)}</TabsContent>
+                <TabsContent value="upcoming">{renderBookings(upcomingBookings)}</TabsContent>
+                <TabsContent value="past">{renderBookings(pastBookings)}</TabsContent>
+            </Tabs>
+        </div>
     );
 };
 

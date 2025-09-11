@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Search, LogOut, Crown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -219,13 +220,23 @@ export function Header() {
                     />
                   )}
                   
-                  <ProfileMenu
-                    talentName={talentName || undefined}
-                    isProSubscriber={isProTalent}
-                    profilePictureUrl={profilePictureUrl || undefined}
-                    onManageSubscription={handleManageSubscription}
-                    isTalent={!!talentName}
-                  />
+                  <div className="relative">
+                    <ProfileMenu
+                      talentName={talentName || undefined}
+                      isProSubscriber={isProTalent}
+                      profilePictureUrl={profilePictureUrl || undefined}
+                      onManageSubscription={handleManageSubscription}
+                      isTalent={!!talentName}
+                    />
+                    {unreadCount > 0 && (
+                      <Badge 
+                        variant="destructive" 
+                        className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs animate-pulse"
+                      >
+                        {unreadCount > 9 ? '9+' : unreadCount}
+                      </Badge>
+                    )}
+                  </div>
                 </div>
               ) : (
                 <>
@@ -257,19 +268,24 @@ export function Header() {
                 {showArtistDashboardNav ? (
                   // Artist Dashboard Mobile Navigation
                   <>
-                    <button 
-                      onClick={() => {
-                        navigate('/talent-dashboard');
-                        // Close mobile menu
-                        const mobileMenuClose = document.querySelector('[data-mobile-menu-close]') as HTMLElement;
-                        if (mobileMenuClose) {
-                          mobileMenuClose.click();
-                        }
-                      }}
-                      className="text-left text-foreground hover:text-accent transition-colors font-medium py-2"
-                    >
-                      Dashboard
-                    </button>
+                      <button 
+                        onClick={() => {
+                          navigate('/talent-dashboard');
+                          // Close mobile menu
+                          const mobileMenuClose = document.querySelector('[data-mobile-menu-close]') as HTMLElement;
+                          if (mobileMenuClose) {
+                            mobileMenuClose.click();
+                          }
+                        }}
+                        className="text-left text-foreground hover:text-accent transition-colors font-medium py-2 relative flex items-center justify-between w-full"
+                      >
+                        <span>Dashboard</span>
+                        {unreadCount > 0 && (
+                          <Badge variant="destructive" className="h-5 w-5 p-0 flex items-center justify-center text-xs animate-pulse">
+                            {unreadCount > 9 ? '9+' : unreadCount}
+                          </Badge>
+                        )}
+                      </button>
                   </>
                 ) : (
                   // Public Mobile Navigation
@@ -336,12 +352,22 @@ export function Header() {
                   <>
                     <div className="border-t pt-4 mt-4">
                       <div className="flex items-center justify-between mb-2">
-                        <span 
-                          className="text-sm font-bold text-foreground cursor-pointer hover:text-primary transition-colors"
-                          onClick={handleWelcomeClick}
-                        >
-                          Welcome, {talentName || user.user_metadata?.name || user.email?.split('@')[0] || 'User'}
-                        </span>
+                        <div className="relative flex items-center">
+                          <span 
+                            className="text-sm font-bold text-foreground cursor-pointer hover:text-primary transition-colors"
+                            onClick={handleWelcomeClick}
+                          >
+                            Welcome, {talentName || user.user_metadata?.name || user.email?.split('@')[0] || 'User'}
+                          </span>
+                          {unreadCount > 0 && (
+                            <Badge 
+                              variant="destructive" 
+                              className="ml-2 h-5 w-5 p-0 flex items-center justify-center text-xs animate-pulse"
+                            >
+                              {unreadCount > 9 ? '9+' : unreadCount}
+                            </Badge>
+                          )}
+                        </div>
                         {/* Only show switch to artist dashboard when talent is in booking mode */}
                        {talentName && <ModeSwitch size="sm" />}
                     </div>
