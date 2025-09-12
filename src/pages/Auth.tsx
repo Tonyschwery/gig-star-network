@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/useAuth"; // Import useAuth
+import { useAuth } from "@/hooks/useAuth";
 import { User, Mail, Lock, ArrowLeft } from "lucide-react";
 import { useEmailNotifications } from "@/hooks/useEmailNotifications";
 
@@ -18,50 +18,33 @@ const Auth = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { sendUserSignupEmails } = useEmailNotifications();
-  const { authStatus } = useAuth(); // Get the centralized auth status
+  const { user, loading: authLoading } = useAuth();
 
   useEffect(() => {
-    // If the user is no longer in a 'LOGGED_OUT' state, they should not be on this page.
-    if (authStatus !== 'LOGGED_OUT' && authStatus !== 'LOADING') {
-      // Redirect to the appropriate dashboard
-      if (authStatus === 'TALENT_AUTHENTICATED' || authStatus === 'TALENT_NEEDS_ONBOARDING') {
-        navigate('/talent-dashboard');
-      } else if (authStatus === 'BOOKER_AUTHENTICATED') {
-        navigate('/booker-dashboard');
-      } else {
-        navigate('/'); // Fallback to homepage
-      }
+    // If the main auth check is done and we have a user, they shouldn't be on this page.
+    if (!authLoading && user) {
+      navigate("/"); // Redirect logged-in users to the homepage.
     }
-  }, [authStatus, navigate]);
+  }, [user, authLoading, navigate]);
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     const redirectUrl = `${window.location.origin}/`;
-
+    
     const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         emailRedirectTo: redirectUrl,
-        data: {
-          name: name,
-          user_type: 'talent'
-        }
+        data: { name, user_type: 'talent' }
       }
     });
 
     if (error) {
-      toast({
-        title: "Error signing up",
-        description: error.message,
-        variant: "destructive"
-      });
+      toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
-      toast({
-        title: "Account created successfully!",
-        description: "Please check your email to verify your account.",
-      });
+      toast({ title: "Account created!", description: "Please check your email to verify your account." });
     }
     setLoading(false);
   };
@@ -69,23 +52,15 @@ const Auth = () => {
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password
-    });
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
-      toast({
-        title: "Error signing in",
-        description: error.message,
-        variant: "destructive"
-      });
+      toast({ title: "Error", description: error.message, variant: "destructive" });
     }
-    // No need for a toast or navigation on success, the AuthProvider will handle it.
+    // On success, the useAuth hook will detect the new session and handle the redirect.
     setLoading(false);
   };
 
-  // While the auth status is being determined, we can show a loader or nothing
-  if (authStatus !== 'LOGGED_OUT') {
+  if (authLoading || user) {
     return (
         <div className="min-h-screen bg-background flex items-center justify-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -105,9 +80,7 @@ const Auth = () => {
         <Card className="glass-card">
           <CardHeader className="text-center">
             <CardTitle className="text-2xl text-foreground">Join as a Talent</CardTitle>
-            <CardDescription>
-              Create your talent profile and start getting booked for events
-            </CardDescription>
+            <CardDescription>Create your profile and start getting booked</CardDescription>
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="signup" className="w-full">
@@ -123,7 +96,7 @@ const Auth = () => {
                       <Input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} className="pl-10" required />
                     </div>
                     <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Lock className="absolute left-3 top-1/-2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} className="pl-10" required />
                     </div>
                   </div>
