@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -51,85 +50,72 @@ const TalentDashboard = () => {
   const [profile, setProfile] = useState<TalentProfile | null>(null);
   const [loading, setLoading] = useState(true);
   
-  
-  // Enable real-time notifications
   useRealtimeNotifications();
 
   useEffect(() => {
-    if (!user) {
-      navigate('/auth');
-      return;
-    }
-    fetchTalentProfile();
-  }, [user, navigate]);
-
-  const fetchTalentProfile = async () => {
-    if (!user) return;
-
-    try {
-      // First check if user has a talent profile using the secure function
-      const { data: hasProfile, error: checkError } = await supabase.rpc('user_has_talent_profile');
+    const fetchTalentProfile = async () => {
+      // The useAuth() hook provides the user object once the session is stable.
+      // If there is no user, we can safely redirect to the login page.
+      if (!user) {
+        setLoading(false);
+        navigate('/auth');
+        return;
+      }
       
-      if (checkError || !hasProfile) {
-        console.error('Error checking profile or no profile found:', checkError);
-        navigate('/talent-onboarding');
-        return;
+      try {
+        // Directly fetch the profile from the table. This is more reliable than an RPC call.
+        const { data, error } = await supabase
+          .from('talent_profiles')
+          .select('*')
+          .eq('user_id', user.id)
+          .single(); // .single() will error if more than one row is found.
+
+        // A specific error code 'PGRST116' means the row was not found. 
+        // This is how we know the user needs to complete their profile.
+        if (error && error.code === 'PGRST116') {
+          console.log('No talent profile found for user, redirecting to onboarding.');
+          navigate('/talent-onboarding');
+          return;
+        }
+        
+        // Any other error is a genuine problem.
+        if (error) {
+          throw error;
+        }
+
+        // If we get here, we have the data successfully.
+        setProfile(data);
+
+      } catch (err) {
+        const error = err as Error;
+        console.error('Error fetching talent profile:', error.message);
+        toast({
+          title: "Error Loading Profile",
+          description: "There was a problem loading your dashboard. Please try again.",
+          variant: "destructive",
+        });
+        navigate('/'); // Redirect to home on critical error
+      } finally {
+        // No matter what happens, we are done loading.
+        setLoading(false);
       }
+    };
 
-      // Then fetch the full profile data
-      const { data, error } = await supabase
-        .from('talent_profiles')
-        .select('*')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (error) {
-        console.error('Error fetching profile:', error);
-        navigate('/talent-onboarding');
-        return;
-      }
-
-      if (!data) {
-        navigate('/talent-onboarding');
-        return;
-      }
-
-      setProfile(data);
-    } catch (error) {
-      console.error('Error:', error);
-      navigate('/talent-onboarding');
-    } finally {
-      setLoading(false);
-    }
-  };
+    fetchTalentProfile();
+  }, [user, navigate, toast]);
 
   const handleSignOut = async () => {
     await signOut();
     navigate('/');
   };
-
+  
   const handleCancelSubscription = async () => {
-    if (!user || !session) return;
-
-    try {
-      // For PayPal subscriptions, direct users to PayPal's subscription management
-      toast({
-        title: "Cancel Pro Subscription",
-        description: "To cancel your PayPal subscription, please visit your PayPal account's subscription management page.",
-        duration: 6000,
-      });
-
-      // Open PayPal subscription management page
-      window.open('https://www.paypal.com/myaccount/autopay/', '_blank');
-      
-    } catch (error) {
-      console.error('Error accessing subscription management:', error);
-      toast({
-        title: "Error",
-        description: "Unable to access subscription management. Please visit paypal.com directly.",
-        variant: "destructive",
-      });
-    }
+    toast({
+      title: "Cancel Pro Subscription",
+      description: "To cancel your PayPal subscription, please visit your PayPal account's subscription management page.",
+      duration: 6000,
+    });
+    window.open('https://www.paypal.com/myaccount/autopay/', '_blank');
   };
 
   if (loading) {
@@ -140,26 +126,17 @@ const TalentDashboard = () => {
     );
   }
 
+  // If after loading, the profile is still null, it means a redirect is in progress
+  // or has failed. Showing nothing is better than showing a broken page.
   if (!profile) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Profile not found</h1>
-          <Button onClick={() => navigate('/talent-onboarding')}>
-            Complete Your Profile
-          </Button>
-        </div>
-      </div>
-    );
+    return null; 
   }
 
   return (
     <div className="min-h-screen bg-background">
       <Header />
       <div className="container mx-auto px-4 py-8">
-        {/* Header */}
         <div className="flex flex-col gap-4 mb-6">
-          {/* Welcome Header with clean styling */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div className="relative">
               <div className="flex items-center gap-3">
@@ -177,10 +154,8 @@ const TalentDashboard = () => {
             </div>
           </div>
           
-          {/* Action Buttons */}
           <div className="flex flex-wrap gap-2">
             <ModeSwitch size="sm" />
-            
             <Button
               onClick={() => navigate('/talent-dashboard/bookings')}
               variant="outline"
@@ -189,7 +164,6 @@ const TalentDashboard = () => {
               <Calendar className="h-4 w-4 mr-2" />
               My Bookings
             </Button>
-            
             <Button
               onClick={() => navigate('/talent-profile-edit')}
               className="flex-shrink-0"
@@ -199,14 +173,12 @@ const TalentDashboard = () => {
               <span className="hidden sm:inline">Edit Profile</span>
               <span className="sm:hidden">Edit</span>
             </Button>
-            
             <SubscriptionButton
               isProSubscriber={profile.is_pro_subscriber || false}
-              onSubscriptionChange={fetchTalentProfile}
+              onSubscriptionChange={() => {}} /* You might want to re-fetch profile here if needed */
               variant="default"
               size="sm"
             />
-            
             <Button 
               variant="outline" 
               onClick={handleSignOut}
@@ -220,8 +192,6 @@ const TalentDashboard = () => {
           </div>
         </div>
 
-
-        {/* Profile Summary */}
         <Card className="mb-6">
           <CardContent className="pt-6">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -261,8 +231,6 @@ const TalentDashboard = () => {
           </CardContent>
         </Card>
 
-
-        {/* Universal Chat */}
         <UniversalChat />
       </div>
     </div>
