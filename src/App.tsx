@@ -44,19 +44,32 @@ import { AdminRoute } from "./components/AdminRoute";
 
 const App = () => (
   <AuthProvider>
-    <AdminProvider>
-      <UserModeProvider>
-        <TooltipProvider>
+    <UserModeProvider>
+      <TooltipProvider>
         <Toaster />
         <Sonner />
         <Routes>
+            {/* Public Routes */}
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/talent/:id" element={<TalentProfile />} />
+            <Route path="/your-event" element={<YourEvent />} />
+            <Route path="/pricing" element={<Pricing />} />
+            <Route path="/how-it-works" element={<HowItWorks />} />
+            <Route path="/trust-safety" element={<TrustSafety />} />
+            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+            <Route path="/terms-of-service" element={<TermsOfService />} />
+            <Route path="/subscription-success" element={<SubscriptionSuccess />} />
+            <Route path="/subscription-cancelled" element={<SubscriptionCancelled />} />
+
+            {/* Admin Routes - The AdminProvider now only wraps these routes */}
             <Route path="/admin" element={
-              <AdminRoute>
-                <AdminLayout />
-              </AdminRoute>
+              <AdminProvider>
+                <AdminRoute>
+                  <AdminLayout />
+                </AdminRoute>
+              </AdminProvider>
             }>
               <Route index element={<AdminDashboard />} />
               <Route path="users" element={<AdminUsers />} />
@@ -68,6 +81,8 @@ const App = () => (
               <Route path="settings" element={<AdminSettings />} />
               <Route path="reports" element={<AdminReports />} />
             </Route>
+            
+            {/* Protected User Routes */}
             <Route path="/booker-dashboard" element={
               <ProtectedRoute>
                 <BookerDashboard />
@@ -78,7 +93,6 @@ const App = () => (
                 <TalentOnboarding />
               </ProtectedTalentRoute>
             } />
-            <Route path="/talent/:id" element={<TalentProfile />} />
             <Route path="/talent-dashboard" element={
               <ProtectedTalentRoute>
                 <TalentDashboard />
@@ -94,20 +108,12 @@ const App = () => (
                 <TalentProfileEdit />
               </ProtectedTalentRoute>
             } />
-            <Route path="/your-event" element={<YourEvent />} />
-            <Route path="/pricing" element={<Pricing />} />
-            <Route path="/subscription-success" element={<SubscriptionSuccess />} />
-            <Route path="/subscription-cancelled" element={<SubscriptionCancelled />} />
-            <Route path="/how-it-works" element={<HowItWorks />} />
-            <Route path="/trust-safety" element={<TrustSafety />} />
-            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-            <Route path="/terms-of-service" element={<TermsOfService />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            
+            {/* Catch-all Not Found Route */}
             <Route path="*" element={<NotFound />} />
         </Routes>
-        </TooltipProvider>
-      </UserModeProvider>
-    </AdminProvider>
+      </TooltipProvider>
+    </UserModeProvider>
   </AuthProvider>
 );
 
