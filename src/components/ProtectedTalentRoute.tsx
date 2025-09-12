@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { AlertTriangle } from 'lucide-react';
+
+// Define a type for the component's state for clarity
+type AuthState = 'LOADING' | 'AUTHENTICATED_WITH_PROFILE' | 'NEEDS_ONBOARDING' | 'LOGGED_OUT';
 
 interface ProtectedTalentRouteProps {
   children: React.ReactNode;
@@ -15,77 +15,70 @@ export function ProtectedTalentRoute({
   children, 
   requireProfile = true 
 }: ProtectedTalentRouteProps) {
-  const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-  const [profileExists, setProfileExists] = useState<boolean | null>(null);
-  const [loading, setLoading] = useState(true);
+  const location = useLocation();
+  const [authState, setAuthState] = useState<AuthState>('LOADING');
 
   useEffect(() => {
-    const checkProfile = async () => {
-      // First, wait for the main authentication to finish loading.
-      if (authLoading) {
-        return;
-      }
-      
-      // If authentication is done and there's no user, redirect to login.
-      if (!user) {
-        navigate('/auth');
-        return;
-      }
+    // This listener is the most reliable way to handle auth state.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        // This will fire when the initial session is loaded, on sign-in, and on sign-out.
+        if (session?.user) {
+          if (!requireProfile) {
+            setAuthState('AUTHENTICATED_WITH_PROFILE');
+            return;
+          }
 
-      // If this route doesn't require a profile (like the onboarding page itself), allow access.
-      if (!requireProfile) {
-        setLoading(false);
-        return;
-      }
+          // We have a stable user session, now we can safely query the database.
+          const { data, error } = await supabase
+            .from('talent_profiles')
+            .select('id')
+            .eq('user_id', session.user.id)
+            .maybeSingle();
 
-      try {
-        // **THE FIX:** Instead of an RPC, we do a direct, more reliable query.
-        // We just check for the existence of a single column, which is very fast.
-        const { data, error } = await supabase
-          .from('talent_profiles')
-          .select('id')
-          .eq('user_id', user.id)
-          .maybeSingle(); // .maybeSingle() returns data if found, or null if not found.
-        
-        if (error) {
-          // If a real database error occurs, block access.
-          console.error('Error checking for talent profile:', error);
-          setProfileExists(false);
-        } else if (data) {
-          // If data is not null, it means we found the profile.
-          setProfileExists(true);
+          if (error) {
+            console.error("Database error checking for profile:", error);
+            // On error, we assume the worst and redirect to login.
+            navigate('/auth'); 
+          } else if (data) {
+            // Profile exists, user is fully authenticated.
+            setAuthState('AUTHENTICATED_WITH_PROFILE');
+          } else {
+            // No profile found, user needs to onboard.
+            setAuthState('NEEDS_ONBOARDING');
+          }
         } else {
-          // If data is null, no profile was found. User needs to onboard.
-          setProfileExists(false);
+          // No user session found.
+          setAuthState('LOGGED_OUT');
         }
-      } catch (err) {
-        console.error('An unexpected error occurred while checking profile:', err);
-        setProfileExists(false);
-      } finally {
-        setLoading(false);
       }
-    };
-
-    checkProfile();
-  }, [user, authLoading, requireProfile, navigate]);
-
-  if (authLoading || loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        {/* Using a more subtle loader */}
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
     );
-  }
 
-  // After loading, if a profile is required but doesn't exist, show the prompt.
-  if (requireProfile && !profileExists) {
-      // Redirecting is cleaner than showing a component that then redirects.
+    // Cleanup the listener when the component unmounts
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [requireProfile, navigate]);
+
+  // Handle redirects based on the final authentication state
+  useEffect(() => {
+    if (authState === 'NEEDS_ONBOARDING') {
       navigate('/talent-onboarding');
-      return null;
+    } else if (authState === 'LOGGED_OUT') {
+      navigate('/auth', { state: { from: location } });
+    }
+  }, [authState, navigate, location]);
+
+  // Render content based on state
+  if (authState === 'AUTHENTICATED_WITH_PROFILE') {
+    return <>{children}</>;
   }
 
-  // If all checks pass, show the actual page content.
-  return <>{children}</>;
+  // Show a loading spinner while we determine the auth state.
+  return (
+    <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+    </div>
+  );
 }
