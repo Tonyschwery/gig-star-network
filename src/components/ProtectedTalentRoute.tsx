@@ -1,7 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
+import { useAuth, AuthStatus } from '@/hooks/useAuth';
 
 interface ProtectedTalentRouteProps {
   children: React.ReactNode;
@@ -12,70 +11,46 @@ export function ProtectedTalentRoute({
   children, 
   requireProfile = true 
 }: ProtectedTalentRouteProps) {
-  const { user, loading: authLoading } = useAuth();
+  const { authStatus, loading } = useAuth();
   const navigate = useNavigate();
-  const [status, setStatus] = useState<'CHECKING' | 'AUTHORIZED' | 'UNAUTHORIZED'>('CHECKING');
 
   useEffect(() => {
-    // We do nothing until the primary authentication check is complete.
-    if (authLoading) {
-      return;
-    }
-
-    // If no user is found after loading, they are unauthorized.
-    if (!user) {
-      setStatus('UNAUTHORIZED');
+    // We don't need to do anything while the AuthProvider is figuring things out.
+    if (loading || authStatus === 'LOADING') {
       return;
     }
     
-    // If the page doesn't require a profile, they are authorized.
+    // Define which statuses are allowed for a talent route
+    const authorizedStatuses: AuthStatus[] = ['TALENT_AUTHENTICATED'];
     if (!requireProfile) {
-      setStatus('AUTHORIZED');
-      return;
+      // If the page doesn't require a full profile (like the onboarding page),
+      // we also allow talents who need to onboard.
+      authorizedStatuses.push('TALENT_NEEDS_ONBOARDING');
     }
     
-    // If we have a user and require a profile, we perform the check.
-    const checkProfile = async () => {
-      // This is the simpler, more reliable direct query.
-      const { data, error } = await supabase
-        .from('talent_profiles')
-        .select('id') // We only need to check if a row exists.
-        .eq('user_id', user.id)
-        .maybeSingle(); // Returns the row or null, doesn't error if not found.
-
-      if (data && !error) {
-        // If we found data, the profile exists.
-        setStatus('AUTHORIZED');
-      } else {
-        // If data is null or an error occurred, the profile does not exist for this user.
-        if (error) console.error("Error checking profile:", error);
-        setStatus('UNAUTHORIZED');
-      }
-    };
-    checkProfile();
-
-  }, [user, authLoading, requireProfile]);
-
-  // A separate effect to handle navigation based on the final status.
-  useEffect(() => {
-    if (status === 'UNAUTHORIZED') {
-      if (user) {
+    // If the user's status is not in the allowed list, redirect them.
+    if (!authorizedStatuses.includes(authStatus)) {
+      if (authStatus === 'LOGGED_OUT') {
+        navigate('/auth');
+      } else if (authStatus === 'TALENT_NEEDS_ONBOARDING') {
         navigate('/talent-onboarding');
       } else {
-        navigate('/auth');
+        // If they are a booker or in an unknown state, send to homepage.
+        navigate('/');
       }
     }
-  }, [status, user, navigate]);
+  }, [authStatus, loading, requireProfile, navigate]);
+  
+  const isAuthorized = authStatus === 'TALENT_AUTHENTICATED' || 
+                       (authStatus === 'TALENT_NEEDS_ONBOARDING' && !requireProfile);
 
-  // If we are authorized, show the page content.
-  if (status === 'AUTHORIZED') {
-    return <>{children}</>;
+  if (loading || authStatus === 'LOADING') {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
   }
 
-  // Otherwise, show a loading spinner.
-  return (
-    <div className="min-h-screen bg-background flex items-center justify-center">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-    </div>
-  );
+  return isAuthorized ? <>{children}</> : null;
 }
