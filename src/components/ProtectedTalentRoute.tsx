@@ -22,30 +22,45 @@ export function ProtectedTalentRoute({
 
   useEffect(() => {
     const checkProfile = async () => {
-      if (authLoading) return;
+      // First, wait for the main authentication to finish loading.
+      if (authLoading) {
+        return;
+      }
       
+      // If authentication is done and there's no user, redirect to login.
       if (!user) {
         navigate('/auth');
         return;
       }
 
+      // If this route doesn't require a profile (like the onboarding page itself), allow access.
       if (!requireProfile) {
         setLoading(false);
         return;
       }
 
       try {
-        // Use secure function to check if user has talent profile
-        const { data: hasProfile, error } = await supabase.rpc('user_has_talent_profile');
+        // **THE FIX:** Instead of an RPC, we do a direct, more reliable query.
+        // We just check for the existence of a single column, which is very fast.
+        const { data, error } = await supabase
+          .from('talent_profiles')
+          .select('id')
+          .eq('user_id', user.id)
+          .maybeSingle(); // .maybeSingle() returns data if found, or null if not found.
         
         if (error) {
-          console.error('Error checking profile:', error);
+          // If a real database error occurs, block access.
+          console.error('Error checking for talent profile:', error);
           setProfileExists(false);
+        } else if (data) {
+          // If data is not null, it means we found the profile.
+          setProfileExists(true);
         } else {
-          setProfileExists(hasProfile);
+          // If data is null, no profile was found. User needs to onboard.
+          setProfileExists(false);
         }
-      } catch (error) {
-        console.error('Error checking profile:', error);
+      } catch (err) {
+        console.error('An unexpected error occurred while checking profile:', err);
         setProfileExists(false);
       } finally {
         setLoading(false);
@@ -58,49 +73,19 @@ export function ProtectedTalentRoute({
   if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-pulse text-muted-foreground">Loading...</div>
+        {/* Using a more subtle loader */}
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
     );
   }
 
-  if (!user) {
-    return null; // Will redirect to auth
+  // After loading, if a profile is required but doesn't exist, show the prompt.
+  if (requireProfile && !profileExists) {
+      // Redirecting is cleaner than showing a component that then redirects.
+      navigate('/talent-onboarding');
+      return null;
   }
 
-  if (requireProfile && profileExists === false) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <Card className="w-full max-w-md glass-card">
-          <CardHeader className="text-center">
-            <CardTitle className="flex items-center justify-center gap-2 text-destructive">
-              <AlertTriangle className="h-6 w-6" />
-              Profile Required
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="text-center space-y-4">
-            <p className="text-muted-foreground">
-              You need to complete your talent profile to access this page.
-            </p>
-            <div className="space-y-2">
-              <Button 
-                onClick={() => navigate('/talent-onboarding')} 
-                className="w-full hero-button"
-              >
-                Complete Profile
-              </Button>
-              <Button 
-                onClick={() => navigate('/auth')} 
-                variant="outline" 
-                className="w-full"
-              >
-                Sign Out
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
+  // If all checks pass, show the actual page content.
   return <>{children}</>;
 }
