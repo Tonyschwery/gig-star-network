@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth"; // Import useAuth
 import { User, Mail, Lock, ArrowLeft } from "lucide-react";
 import { useEmailNotifications } from "@/hooks/useEmailNotifications";
 
@@ -17,135 +18,90 @@ const Auth = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { sendUserSignupEmails } = useEmailNotifications();
+  const { authStatus } = useAuth(); // Get the centralized auth status
 
   useEffect(() => {
-    // Check if user is already logged in
-    const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        navigate("/");
+    // If the user is no longer in a 'LOGGED_OUT' state, they should not be on this page.
+    if (authStatus !== 'LOGGED_OUT' && authStatus !== 'LOADING') {
+      // Redirect to the appropriate dashboard
+      if (authStatus === 'TALENT_AUTHENTICATED' || authStatus === 'TALENT_NEEDS_ONBOARDING') {
+        navigate('/talent-dashboard');
+      } else if (authStatus === 'BOOKER_AUTHENTICATED') {
+        navigate('/booker-dashboard');
+      } else {
+        navigate('/'); // Fallback to homepage
       }
-    };
-    checkSession();
-  }, [navigate]);
+    }
+  }, [authStatus, navigate]);
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    const redirectUrl = `${window.location.origin}/`;
 
-    try {
-      // Use the deployed URL or preview URL, not localhost
-      const redirectUrl = window.location.hostname === 'localhost' 
-        ? 'https://lovable.dev' // Fallback for development
-        : `${window.location.origin}/`;
-      
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: redirectUrl,
-          data: {
-            name: name,
-            user_type: 'talent'
-          }
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: redirectUrl,
+        data: {
+          name: name,
+          user_type: 'talent'
         }
-      });
-
-      if (error) {
-        if (error.message.includes("already registered")) {
-          toast({
-            title: "Account exists",
-            description: "This email is already registered. Please try logging in instead.",
-            variant: "destructive"
-          });
-        } else {
-          toast({
-            title: "Error",
-            description: error.message,
-            variant: "destructive"
-          });
-        }
-      } else {
-        toast({
-          title: "Account created successfully!",
-          description: "Please check your email to verify your account, then complete your talent profile.",
-        });
-
-        // Send welcome emails via frontend
-        try {
-          // Get user info from the signup response if available
-          const { data: { user: newUser } } = await supabase.auth.getUser();
-          if (newUser) {
-            await sendUserSignupEmails(newUser.id, name, email);
-          }
-        } catch (emailError) {
-          console.error('Error sending welcome emails:', emailError);
-          // Don't show error to user for email issues
-        }
-        
-        // Don't navigate immediately, wait for email verification
-        // User will be redirected after email verification through useAuth
       }
-    } catch (error) {
+    });
+
+    if (error) {
       toast({
-        title: "Error",
-        description: "An unexpected error occurred",
+        title: "Error signing up",
+        description: error.message,
         variant: "destructive"
       });
-    } finally {
-      setLoading(false);
+    } else {
+      toast({
+        title: "Account created successfully!",
+        description: "Please check your email to verify your account.",
+      });
     }
+    setLoading(false);
   };
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-
-    try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
-
-      if (error) {
-        toast({
-          title: "Error",
-          description: error.message,
-          variant: "destructive"
-        });
-      } else {
-        toast({
-          title: "Welcome back!",
-          description: "You have successfully logged in.",
-        });
-        
-        // Redirect will be handled by useAuth hook to prevent state issues
-      }
-    } catch (error) {
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
+    if (error) {
       toast({
-        title: "Error",
-        description: "An unexpected error occurred",
+        title: "Error signing in",
+        description: error.message,
         variant: "destructive"
       });
-    } finally {
-      setLoading(false);
     }
+    // No need for a toast or navigation on success, the AuthProvider will handle it.
+    setLoading(false);
   };
+
+  // While the auth status is being determined, we can show a loader or nothing
+  if (authStatus !== 'LOGGED_OUT') {
+    return (
+        <div className="min-h-screen bg-background flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="mb-6">
-          <Button
-            variant="ghost"
-            onClick={() => navigate("/")}
-            className="mb-4"
-          >
+          <Button variant="ghost" onClick={() => navigate("/")} className="mb-4">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Home
           </Button>
         </div>
-
         <Card className="glass-card">
           <CardHeader className="text-center">
             <CardTitle className="text-2xl text-foreground">Join as a Talent</CardTitle>
@@ -159,31 +115,16 @@ const Auth = () => {
                 <TabsTrigger value="login">Login</TabsTrigger>
                 <TabsTrigger value="signup">Sign Up</TabsTrigger>
               </TabsList>
-              
               <TabsContent value="login">
                 <form onSubmit={handleSignIn} className="space-y-4">
                   <div className="space-y-2">
                     <div className="relative">
                       <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        type="email"
-                        placeholder="Email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className="pl-10"
-                        required
-                      />
+                      <Input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} className="pl-10" required />
                     </div>
                     <div className="relative">
                       <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        type="password"
-                        placeholder="Password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className="pl-10"
-                        required
-                      />
+                      <Input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} className="pl-10" required />
                     </div>
                   </div>
                   <Button type="submit" className="w-full hero-button" disabled={loading}>
@@ -191,42 +132,20 @@ const Auth = () => {
                   </Button>
                 </form>
               </TabsContent>
-              
               <TabsContent value="signup">
                 <form onSubmit={handleSignUp} className="space-y-4">
                   <div className="space-y-2">
                     <div className="relative">
                       <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        type="text"
-                        placeholder="Full Name"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        className="pl-10"
-                        required
-                      />
+                      <Input type="text" placeholder="Full Name" value={name} onChange={(e) => setName(e.target.value)} className="pl-10" required />
                     </div>
                     <div className="relative">
                       <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        type="email"
-                        placeholder="Email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className="pl-10"
-                        required
-                      />
+                      <Input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} className="pl-10" required />
                     </div>
                     <div className="relative">
                       <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        type="password"
-                        placeholder="Password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className="pl-10"
-                        required
-                      />
+                      <Input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} className="pl-10" required />
                     </div>
                   </div>
                   <Button type="submit" className="w-full hero-button" disabled={loading}>
@@ -235,7 +154,6 @@ const Auth = () => {
                 </form>
               </TabsContent>
             </Tabs>
-            
           </CardContent>
         </Card>
       </div>
