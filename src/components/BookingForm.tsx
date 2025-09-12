@@ -91,7 +91,10 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
         email,
         password,
         options: {
-          emailRedirectTo: redirectUrl
+          emailRedirectTo: redirectUrl,
+          data: {
+            user_type: 'booker'
+          }
         }
       });
 

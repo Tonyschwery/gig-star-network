@@ -86,7 +86,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 navigate('/talent-dashboard');
               }
             } else {
-              // Non-talent users (bookers) - check if they have bookings
+              // Non-talent users (bookers) - check for next parameter first
+              const urlParams = new URLSearchParams(window.location.search);
+              const nextPath = urlParams.get('next');
+              
+              if (nextPath) {
+                // Clear the URL parameters and redirect to the intended page
+                window.history.replaceState(null, '', window.location.pathname);
+                navigate(nextPath);
+                return;
+              }
+              
+              // Check if they have bookings for dashboard redirect
               try {
                 const { data: bookings, error: bookingsError } = await supabase
                   .from('bookings')

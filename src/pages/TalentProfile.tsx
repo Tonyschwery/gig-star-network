@@ -393,7 +393,7 @@ export default function TalentProfile() {
                   {!user && (
                     <Button 
                       className="w-full hero-button"
-                      onClick={() => navigate('/auth')}
+                      onClick={() => navigate(`/login?next=${encodeURIComponent(window.location.pathname)}&intent=book`)}
                     >
                       <Calendar className="h-4 w-4 mr-2" />
                       Sign In to Book
