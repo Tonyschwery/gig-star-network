@@ -1,10 +1,7 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-
-// Define a type for the component's state for clarity
-type AuthState = 'LOADING' | 'AUTHENTICATED_WITH_PROFILE' | 'NEEDS_ONBOARDING' | 'LOGGED_OUT';
 
 interface ProtectedTalentRouteProps {
   children: React.ReactNode;
@@ -15,70 +12,75 @@ export function ProtectedTalentRoute({
   children, 
   requireProfile = true 
 }: ProtectedTalentRouteProps) {
+  const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
-  const [authState, setAuthState] = useState<AuthState>('LOADING');
+  
+  // We use a single state to track the status: loading, authorized, or unauthorized.
+  const [status, setStatus] = useState<'loading' | 'authorized' | 'unauthorized'>('loading');
 
   useEffect(() => {
-    // This listener is the most reliable way to handle auth state.
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        // This will fire when the initial session is loaded, on sign-in, and on sign-out.
-        if (session?.user) {
-          if (!requireProfile) {
-            setAuthState('AUTHENTICATED_WITH_PROFILE');
-            return;
-          }
-
-          // We have a stable user session, now we can safely query the database.
-          const { data, error } = await supabase
-            .from('talent_profiles')
-            .select('id')
-            .eq('user_id', session.user.id)
-            .maybeSingle();
-
-          if (error) {
-            console.error("Database error checking for profile:", error);
-            // On error, we assume the worst and redirect to login.
-            navigate('/auth'); 
-          } else if (data) {
-            // Profile exists, user is fully authenticated.
-            setAuthState('AUTHENTICATED_WITH_PROFILE');
-          } else {
-            // No profile found, user needs to onboard.
-            setAuthState('NEEDS_ONBOARDING');
-          }
-        } else {
-          // No user session found.
-          setAuthState('LOGGED_OUT');
-        }
-      }
-    );
-
-    // Cleanup the listener when the component unmounts
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [requireProfile, navigate]);
-
-  // Handle redirects based on the final authentication state
-  useEffect(() => {
-    if (authState === 'NEEDS_ONBOARDING') {
-      navigate('/talent-onboarding');
-    } else if (authState === 'LOGGED_OUT') {
-      navigate('/auth', { state: { from: location } });
+    // 1. We don't do anything until the main authentication check is complete.
+    if (authLoading) {
+      return;
     }
-  }, [authState, navigate, location]);
 
-  // Render content based on state
-  if (authState === 'AUTHENTICATED_WITH_PROFILE') {
-    return <>{children}</>;
+    // 2. If authentication is finished and there's no user, they are unauthorized.
+    if (!user) {
+      setStatus('unauthorized');
+      return;
+    }
+
+    // 3. If the route doesn't require a profile (like the onboarding page), they are authorized.
+    if (!requireProfile) {
+      setStatus('authorized');
+      return;
+    }
+
+    // 4. If we get here, we have a user and need to check for a profile.
+    const checkProfile = async () => {
+      const { data, error } = await supabase
+        .from('talent_profiles')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (data && !error) {
+        // Profile exists, they are fully authorized.
+        setStatus('authorized');
+      } else {
+        // No profile found or an error occurred, they are unauthorized for this page.
+        setStatus('unauthorized');
+      }
+    };
+
+    checkProfile();
+
+  }, [user, authLoading, requireProfile, navigate]);
+
+
+  // Handle redirection based on the final status.
+  useEffect(() => {
+    if (status === 'unauthorized') {
+      // If a user exists but has no profile, send to onboarding.
+      // If no user exists, send to the main auth page.
+      if (user) {
+        navigate('/talent-onboarding');
+      } else {
+        navigate('/auth');
+      }
+    }
+  }, [status, user, navigate]);
+
+
+  // Show the loading spinner only while the status is 'loading'.
+  if (status === 'loading') {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
   }
 
-  // Show a loading spinner while we determine the auth state.
-  return (
-    <div className="min-h-screen bg-background flex items-center justify-center">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-    </div>
-  );
+  // If authorized, show the page. Otherwise, show nothing while redirecting.
+  return status === 'authorized' ? <>{children}</> : null;
 }
