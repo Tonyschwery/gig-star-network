@@ -14,66 +14,50 @@ export function ProtectedTalentRoute({
 }: ProtectedTalentRouteProps) {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-  
-  // We use a single state to track the status: loading, authorized, or unauthorized.
-  const [status, setStatus] = useState<'loading' | 'authorized' | 'unauthorized'>('loading');
+  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
-    // 1. We don't do anything until the main authentication check is complete.
-    if (authLoading) {
-      return;
-    }
-
-    // 2. If authentication is finished and there's no user, they are unauthorized.
-    if (!user) {
-      setStatus('unauthorized');
-      return;
-    }
-
-    // 3. If the route doesn't require a profile (like the onboarding page), they are authorized.
-    if (!requireProfile) {
-      setStatus('authorized');
-      return;
-    }
-
-    // 4. If we get here, we have a user and need to check for a profile.
-    const checkProfile = async () => {
-      const { data, error } = await supabase
-        .from('talent_profiles')
-        .select('id')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (data && !error) {
-        // Profile exists, they are fully authorized.
-        setStatus('authorized');
-      } else {
-        // No profile found or an error occurred, they are unauthorized for this page.
-        setStatus('unauthorized');
+    const performCheck = async () => {
+      if (authLoading) {
+        return; 
       }
+
+      if (!user) {
+        navigate('/auth');
+        return;
+      }
+
+      if (!requireProfile) {
+        setIsAuthorized(true);
+        setIsChecking(false);
+        return;
+      }
+
+      // **THE FIX:** We now call the new, reliable database function.
+      const { data: hasProfile, error } = await supabase.rpc('check_talent_profile_exists', {
+        user_id_to_check: user.id
+      });
+
+      if (error) {
+        console.error("Error calling check_talent_profile_exists:", error);
+        navigate('/auth'); // On error, redirect to be safe.
+        return;
+      }
+      
+      if (hasProfile) {
+        setIsAuthorized(true);
+      } else {
+        navigate('/talent-onboarding');
+      }
+      
+      setIsChecking(false);
     };
 
-    checkProfile();
-
+    performCheck();
   }, [user, authLoading, requireProfile, navigate]);
 
-
-  // Handle redirection based on the final status.
-  useEffect(() => {
-    if (status === 'unauthorized') {
-      // If a user exists but has no profile, send to onboarding.
-      // If no user exists, send to the main auth page.
-      if (user) {
-        navigate('/talent-onboarding');
-      } else {
-        navigate('/auth');
-      }
-    }
-  }, [status, user, navigate]);
-
-
-  // Show the loading spinner only while the status is 'loading'.
-  if (status === 'loading') {
+  if (isChecking) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -81,6 +65,5 @@ export function ProtectedTalentRoute({
     );
   }
 
-  // If authorized, show the page. Otherwise, show nothing while redirecting.
-  return status === 'authorized' ? <>{children}</> : null;
+  return isAuthorized ? <>{children}</> : null;
 }
