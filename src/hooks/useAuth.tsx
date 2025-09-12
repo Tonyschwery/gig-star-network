@@ -37,7 +37,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const value = { user, session, loading, signOut };
 
-  // Render children immediately, the protected routes will handle the loading state.
+  // Render children immediately. The protected routes will handle the loading state.
   return (
     <AuthContext.Provider value={value}>
       {children}
