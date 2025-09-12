@@ -34,13 +34,15 @@ export function ProtectedTalentRoute({
         return;
       }
 
-      const { data: hasProfile, error } = await supabase.rpc('check_talent_profile_exists', {
+      // THE FIX for the outdated "dictionary" (TypeScript) error is to tell the code
+      // to treat the function call as valid. This is the '(supabase.rpc as any)' part.
+      const { data: hasProfile, error } = await (supabase.rpc as any)('check_talent_profile_exists', {
         user_id_to_check: user.id
       });
 
       if (error) {
         console.error("Error calling check_talent_profile_exists:", error);
-        navigate('/auth');
+        navigate('/auth'); // On error, redirect to be safe.
         return;
       }
       
