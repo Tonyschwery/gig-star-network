@@ -1,6 +1,7 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth, AuthStatus } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ProtectedTalentRouteProps {
   children: React.ReactNode;
@@ -11,40 +12,51 @@ export function ProtectedTalentRoute({
   children, 
   requireProfile = true 
 }: ProtectedTalentRouteProps) {
-  const { authStatus, loading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
-    // We don't need to do anything while the AuthProvider is figuring things out.
-    if (loading || authStatus === 'LOADING') {
-      return;
-    }
-    
-    // Define which statuses are allowed for a talent route
-    const authorizedStatuses: AuthStatus[] = ['TALENT_AUTHENTICATED'];
-    if (!requireProfile) {
-      // If the page doesn't require a full profile (like the onboarding page),
-      // we also allow talents who need to onboard.
-      authorizedStatuses.push('TALENT_NEEDS_ONBOARDING');
-    }
-    
-    // If the user's status is not in the allowed list, redirect them.
-    if (!authorizedStatuses.includes(authStatus)) {
-      if (authStatus === 'LOGGED_OUT') {
-        navigate('/auth');
-      } else if (authStatus === 'TALENT_NEEDS_ONBOARDING') {
-        navigate('/talent-onboarding');
-      } else {
-        // If they are a booker or in an unknown state, send to homepage.
-        navigate('/');
+    const performCheck = async () => {
+      if (authLoading) {
+        return; 
       }
-    }
-  }, [authStatus, loading, requireProfile, navigate]);
-  
-  const isAuthorized = authStatus === 'TALENT_AUTHENTICATED' || 
-                       (authStatus === 'TALENT_NEEDS_ONBOARDING' && !requireProfile);
 
-  if (loading || authStatus === 'LOADING') {
+      if (!user) {
+        navigate('/auth');
+        return;
+      }
+
+      if (!requireProfile) {
+        setIsAuthorized(true);
+        setIsChecking(false);
+        return;
+      }
+
+      const { data: hasProfile, error } = await supabase.rpc('check_talent_profile_exists', {
+        user_id_to_check: user.id
+      });
+
+      if (error) {
+        console.error("Error calling check_talent_profile_exists:", error);
+        navigate('/auth');
+        return;
+      }
+      
+      if (hasProfile) {
+        setIsAuthorized(true);
+      } else {
+        navigate('/talent-onboarding');
+      }
+      
+      setIsChecking(false);
+    };
+
+    performCheck();
+  }, [user, authLoading, requireProfile, navigate]);
+
+  if (isChecking) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
