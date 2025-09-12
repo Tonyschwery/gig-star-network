@@ -1,6 +1,5 @@
 import { useState, useEffect, createContext, useContext } from 'react';
 import { User, Session } from '@supabase/supabase-js';
-import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 
 interface AuthContextType {
@@ -16,119 +15,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
 
   useEffect(() => {
-    // Set up auth state listener FIRST
+    // onAuthStateChange is the single source of truth. It fires immediately
+    // with the initial session state, and then for any changes.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      (_event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
+        // Once the first event has fired, we know the user's auth state. We can stop loading.
         setLoading(false);
       }
     );
 
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  // Handle post-auth redirects in a separate effect
-  useEffect(() => {
-    if (!loading && user && session) {
-      const currentPath = window.location.pathname;
-      const urlParams = new URLSearchParams(window.location.search);
-      const isEmailConfirmation = urlParams.get('type') === 'email_confirmation' || urlParams.get('type') === 'signup';
-      
-      // Redirect on auth/login pages OR if this is an email confirmation
-      if (currentPath === '/auth' || currentPath === '/login' || isEmailConfirmation) {
-        const handleRedirect = async () => {
-          try {
-            // Check if user is admin first
-            console.log('Checking admin status for user:', user.id);
-            const { data: isAdminData, error: adminError } = await supabase
-              .rpc('is_admin', { user_id_param: user.id });
-
-            if (adminError) {
-              console.error('Error checking admin status:', adminError);
-              return;
-            }
-
-            console.log('Admin check result:', isAdminData);
-            if (isAdminData) {
-              console.log('Redirecting admin to admin panel');
-              navigate('/admin');
-              return;
-            }
-
-            // Check user type from metadata
-            const userType = user.user_metadata?.user_type;
-            console.log('User type:', userType);
-            
-            if (userType === 'talent') {
-              // Use secure function to check if talent has completed profile
-              const { data: hasProfile, error } = await supabase.rpc('user_has_talent_profile');
-              
-              if (error) {
-                console.error('Error checking talent profile:', error);
-                navigate('/talent-onboarding');
-                return;
-              }
-                
-              if (!hasProfile) {
-                navigate('/talent-onboarding');
-              } else {
-                navigate('/talent-dashboard');
-              }
-            } else {
-              // Non-talent users (bookers) - check for next parameter first
-              const urlParams = new URLSearchParams(window.location.search);
-              const nextPath = urlParams.get('next');
-              
-              if (nextPath) {
-                // Clear the URL parameters and redirect to the intended page
-                window.history.replaceState(null, '', window.location.pathname);
-                navigate(nextPath);
-                return;
-              }
-              
-              // Check if they have bookings for dashboard redirect
-              try {
-                const { data: bookings, error: bookingsError } = await supabase
-                  .from('bookings')
-                  .select('id')
-                  .eq('user_id', user.id)
-                  .limit(1);
-                
-                if (!bookingsError && bookings && bookings.length > 0) {
-                  navigate('/booker-dashboard');
-                } else {
-                  navigate('/');
-                }
-              } catch (error) {
-                console.error('Error checking bookings:', error);
-                navigate('/');
-              }
-            }
-          } catch (error) {
-            console.error('Error in post-auth redirect:', error);
-            navigate('/');
-          }
-        };
-        
-        handleRedirect();
-      }
-    }
-  }, [user, session, loading, navigate]);
+    // This is the standard cleanup function to remove the listener when it's no longer needed.
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []); // The empty array ensures this effect runs only once when the app starts.
 
   const signOut = async () => {
     await supabase.auth.signOut();
-    // Redirect to homepage after sign out
+    // Using window.location.href ensures a full page refresh, clearing all state.
     window.location.href = '/';
   };
 
@@ -139,7 +47,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signOut,
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  // CRITICAL FIX: We do not render the rest of the application (`children`)
+  // until the initial authentication check is complete (`loading` is false).
+  // This prevents all the race conditions and deadlocks we have been seeing.
+  return (
+    <AuthContext.Provider value={value}>
+      {!loading && children}
+    </AuthContext.Provider>
+  );
 }
 
 export function useAuth() {
