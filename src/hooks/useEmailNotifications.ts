@@ -189,6 +189,8 @@ export const useEmailNotifications = () => {
           emailData.booker_phone = bookingData.booker_phone;
           emailData.event_location = bookingData.event_location;
           emailData.event_address = bookingData.event_address;
+          emailData.budget = bookingData.budget;
+          emailData.budget_currency = bookingData.budget_currency;
         } else {
           console.log('Talent is not Pro - limiting details');
           // For non-Pro, show general location only
