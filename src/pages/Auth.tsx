@@ -8,7 +8,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { User, Mail, Lock, ArrowLeft, Briefcase } from "lucide-react";
-//gemini 13 sep
+
+//gemini 13 september
 // Define types for clarity
 type UserType = 'talent' | 'booker';
 type AuthMode = 'login' | 'signup';
