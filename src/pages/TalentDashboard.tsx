@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { useUserMode } from "@/contexts/UserModeContext"; // Import the hook for the switch
+import { useUserMode } from "@/contexts/UserModeContext";
 import { supabase } from "@/integrations/supabase/client";
 import { 
   Edit3, 
@@ -14,13 +14,11 @@ import {
   Crown,
   Calendar,
   Music,
-  Briefcase // Import icon for the new button
+  Briefcase
 } from "lucide-react";
 import { Header } from "@/components/Header";
 import { UniversalChat } from "@/components/UniversalChat";
 import { SubscriptionButton } from "@/components/SubscriptionButton";
-// We are no longer using ModeSwitch as it is the source of the bug.
-// import { ModeSwitch } from "@/components/ModeSwitch"; 
 import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
 //7pm
 interface TalentProfile {
@@ -35,7 +33,7 @@ interface TalentProfile {
 
 const TalentDashboard = () => {
   const { user, signOut } = useAuth();
-  const { setMode } = useUserMode(); // Get the setMode function from our context
+  const { setMode } = useUserMode();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [profile, setProfile] = useState<TalentProfile | null>(null);
@@ -111,7 +109,6 @@ const TalentDashboard = () => {
           </div>
           
           <div className="flex flex-wrap gap-2">
-            {/* THE FIX: The broken <ModeSwitch /> component is replaced with a simple, reliable Button */}
             <Button
               onClick={() => setMode('booking')}
               variant="outline"
@@ -193,7 +190,7 @@ const TalentDashboard = () => {
               </Button>
             </div>
           </CardContent>
-        </-Card>
+        </Card> {/* <-- THE TYPO WAS HERE. IT IS NOW FIXED. */}
 
         <UniversalChat />
       </div>
