@@ -8,8 +8,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { User, Mail, Lock, ArrowLeft, Briefcase } from "lucide-react";
-//8pm
+//8.5pm
 type UserType = 'talent' | 'booker';
+type AuthMode = 'login' | 'signup';
 
 const Auth = () => {
   const [email, setEmail] = useState("");
@@ -17,15 +18,20 @@ const Auth = () => {
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
   const [userType, setUserType] = useState<UserType>('talent');
+  const [authMode, setAuthMode] = useState<AuthMode>('signup');
   const navigate = useNavigate();
   const { toast } = useToast();
   const { status } = useAuth();
 
   useEffect(() => {
-    // If the user is logged in (i.e., status is not LOGGED_OUT or LOADING),
-    // they should not be on this page. Send them home.
     if (status !== 'LOGGED_OUT' && status !== 'LOADING') {
-      navigate("/");
+      if (status === 'TALENT_COMPLETE' || status === 'TALENT_NEEDS_ONBOARDING') {
+        navigate('/talent-dashboard');
+      } else if (status === 'BOOKER') {
+        navigate('/booker-dashboard');
+      } else {
+        navigate('/');
+      }
     }
   }, [status, navigate]);
 
@@ -56,7 +62,6 @@ const Auth = () => {
     setLoading(false);
   };
 
-  // If the status isn't LOGGED_OUT yet, it means we are either loading or about to redirect.
   if (status !== 'LOGGED_OUT') {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -65,10 +70,9 @@ const Auth = () => {
     );
   }
 
-  // Only render the form if the user is confirmed to be logged out.
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      {/* Auth page JSX from your previous version, which was well-structured */}
+      {/* Your Auth page JSX, including the Talent/Booker switch */}
     </div>
   );
 };
