@@ -1,10 +1,10 @@
-import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 
 type UserMode = 'booking' | 'artist';
-//gemini 13 7pm
+//7pm
 interface UserModeContextType {
   mode: UserMode;
   setMode: (mode: UserMode) => void;
@@ -14,74 +14,61 @@ interface UserModeContextType {
 const UserModeContext = createContext<UserModeContextType | undefined>(undefined);
 
 export function UserModeProvider({ children }: { children: React.ReactNode }) {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-  const [mode, setMode] = useState<UserMode>('booking');
+  const [mode, setModeState] = useState<UserMode>('booking');
   const [canSwitchToArtist, setCanSwitchToArtist] = useState(false);
-  
-  // A ref to track if this is the initial, automatic mode setting
-  const isInitialLoad = useRef(true);
 
-  // Effect 1: This effect runs only when the user logs in or out.
-  // Its job is to determine the user's capabilities and set their default mode.
+  // This effect has ONE job: set the user's default mode when they log in.
+  // It does NOT perform any navigation.
   useEffect(() => {
-    const checkTalentProfile = async () => {
-      if (!user) {
-        setCanSwitchToArtist(false);
-        setMode('booking');
-        isInitialLoad.current = true; // Reset for next login
-        return;
-      }
-
-      try {
-        const { data: hasProfile, error } = await supabase.rpc('check_talent_profile_exists', {
-          user_id_to_check: user.id
-        });
-        
-        if (error) throw error;
-
-        setCanSwitchToArtist(hasProfile);
-        
-        if (hasProfile) {
-          setMode('artist');
-        } else {
-          setMode('booking');
-        }
-      } catch (error) {
-        console.error('Error checking talent profile in UserModeProvider:', error);
-        setCanSwitchToArtist(false);
-        setMode('booking');
-      } finally {
-        // After the initial check is done, we allow navigation side-effects
-        setTimeout(() => { isInitialLoad.current = false; }, 0);
-      }
-    };
-
-    checkTalentProfile();
-  }, [user]);
-
-  // Effect 2 (THE FIX): This effect is now solely responsible for navigation
-  // when the mode is changed *by the user*.
-  useEffect(() => {
-    // We do NOT navigate on the initial, automatic mode setting.
-    // We only navigate on subsequent, user-initiated changes.
-    if (isInitialLoad.current) {
+    // We wait until the main authentication check is complete.
+    if (authLoading) {
       return;
     }
 
-    if (mode === 'booking') {
+    if (!user) {
+      setCanSwitchToArtist(false);
+      setModeState('booking');
+      return;
+    }
+    
+    // Once we have a user, check if they have a talent profile.
+    const checkTalentProfile = async () => {
+      const { data: hasProfile, error } = await supabase.rpc('check_talent_profile_exists', {
+        user_id_to_check: user.id
+      });
+
+      if (error) {
+        console.error('Error checking talent profile:', error);
+        setCanSwitchToArtist(false);
+        setModeState('booking');
+        return;
+      }
+      
+      setCanSwitchToArtist(hasProfile);
+      if (hasProfile) {
+        setModeState('artist');
+      } else {
+        setModeState('booking');
+      }
+    };
+    
+    checkTalentProfile();
+  }, [user, authLoading]);
+
+  // This is the function the <ModeSwitch> button will call.
+  // It has ONE job: update the mode and navigate immediately.
+  const setMode = (newMode: UserMode) => {
+    setModeState(newMode);
+    if (newMode === 'booking') {
       navigate('/');
-    } else if (mode === 'artist' && canSwitchToArtist) {
+    } else if (newMode === 'artist' && canSwitchToArtist) {
       navigate('/talent-dashboard');
     }
-  }, [mode, canSwitchToArtist, navigate]);
-
-
-  const value = {
-    mode,
-    setMode, // The switch button will call this, which updates the 'mode' state, triggering the effect above.
-    canSwitchToArtist,
   };
+
+  const value = { mode, setMode, canSwitchToArtist };
 
   return (
     <UserModeContext.Provider value={value}>
