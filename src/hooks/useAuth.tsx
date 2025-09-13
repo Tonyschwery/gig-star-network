@@ -8,7 +8,7 @@ interface AuthContextType {
   loading: boolean;
   signOut: () => Promise<void>;
 }
-
+//gemini 13 september
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
