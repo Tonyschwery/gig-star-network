@@ -7,28 +7,27 @@ type UserMode = 'booking' | 'artist';
 
 interface UserModeContextType {
   mode: UserMode;
-  switchMode: (newMode: UserMode) => void; // Changed from setMode for clarity
+  setMode: (mode: UserMode) => void; // THE FIX: Name is changed back to 'setMode'
   canSwitchToArtist: boolean;
 }
-//gemini sep 13
+//gemini 13
 const UserModeContext = createContext<UserModeContextType | undefined>(undefined);
 
 export function UserModeProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
-  const navigate = useNavigate(); // Get the navigate function from the router
-  const [mode, setMode] = useState<UserMode>('booking');
+  const navigate = useNavigate();
+  const [mode, setModeState] = useState<UserMode>('booking'); // Internal state setter
   const [canSwitchToArtist, setCanSwitchToArtist] = useState(false);
 
   useEffect(() => {
     const checkTalentProfile = async () => {
       if (!user) {
         setCanSwitchToArtist(false);
-        setMode('booking');
+        setModeState('booking');
         return;
       }
 
       try {
-        // Using our more reliable, secure RPC function
         const { data: hasProfile, error } = await supabase.rpc('check_talent_profile_exists', {
           user_id_to_check: user.id
         });
@@ -37,37 +36,36 @@ export function UserModeProvider({ children }: { children: React.ReactNode }) {
 
         setCanSwitchToArtist(hasProfile);
         
-        // Auto-set the default mode when the user logs in
         if (hasProfile) {
-          setMode('artist');
+          setModeState('artist');
         } else {
-          setMode('booking');
+          setModeState('booking');
         }
       } catch (error) {
         console.error('Error checking talent profile in UserModeProvider:', error);
         setCanSwitchToArtist(false);
-        setMode('booking');
+        setModeState('booking');
       }
     };
 
     checkTalentProfile();
   }, [user]);
 
-  // THE FIX: A new function that handles both the state change AND the navigation.
-  const switchMode = (newMode: UserMode) => {
-    setMode(newMode);
+  // THE FIX: A new function, named 'setMode', that handles both state and navigation.
+  const setMode = (newMode: UserMode) => {
+    setModeState(newMode); // Update the state
     if (newMode === 'booking') {
-      // When a talent switches to booker view, send them to the homepage to browse.
+      // When switching to booking mode, navigate to the homepage.
       navigate('/');
     } else if (newMode === 'artist') {
-      // When they switch back to artist view, send them to their dashboard.
+      // When switching back to artist mode, navigate to the talent dashboard.
       navigate('/talent-dashboard');
     }
   };
 
   const value = {
     mode,
-    switchMode, // Provide the new function to the rest of the app
+    setMode, // Provide the function with the correct name 'setMode'
     canSwitchToArtist,
   };
 
