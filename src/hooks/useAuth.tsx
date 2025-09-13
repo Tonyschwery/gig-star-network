@@ -25,12 +25,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     );
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
     return () => {
       subscription.unsubscribe();
     };
@@ -43,9 +37,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const value = { user, session, loading, signOut };
 
+  // This prevents the rest of the app from rendering until the auth state is known.
   return (
     <AuthContext.Provider value={value}>
-      {children}
+      {!loading && children}
     </AuthContext.Provider>
   );
 }
