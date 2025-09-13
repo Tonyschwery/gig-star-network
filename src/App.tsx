@@ -40,11 +40,11 @@ import NotFound from "./pages/NotFound";
 import { ProtectedTalentRoute } from "./components/ProtectedTalentRoute";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AdminRoute } from "./components/AdminRoute";
-
+//gemini 13 sep
 const App = () => {
   const navigate = useNavigate();
 
-  // This handles the automatic login and redirect from email links
+  // This handles the automatic login and redirect from email confirmation links
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       // This event fires specifically after a new user clicks their confirmation link
@@ -92,7 +92,7 @@ const App = () => {
               <Route path="/subscription-success" element={<SubscriptionSuccess />} />
               <Route path="/subscription-cancelled" element={<SubscriptionCancelled />} />
 
-              {/* Admin Routes */}
+              {/* Admin Routes - The AdminProvider now only wraps these routes */}
               <Route path="/admin" element={
                 <AdminProvider>
                   <AdminRoute>
