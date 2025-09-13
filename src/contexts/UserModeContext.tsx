@@ -20,14 +20,21 @@ export function UserModeProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // This logic now safely determines the user's role based on their metadata
-    const userType = user?.user_metadata?.user_type;
-    const hasTalentProfile = userType === 'talent';
-    
-    setCanSwitchToArtist(hasTalentProfile);
-    
-    if (hasTalentProfile) {
-      setModeState('artist');
+    // It will only run AFTER useAuth has loaded the user.
+    if (user) {
+      const userType = user.user_metadata?.user_type;
+      const hasTalentProfile = userType === 'talent';
+      
+      setCanSwitchToArtist(hasTalentProfile);
+      
+      if (hasTalentProfile) {
+        setModeState('artist');
+      } else {
+        setModeState('booking');
+      }
     } else {
+      // If no user, default to booking mode and disable switching.
+      setCanSwitchToArtist(false);
       setModeState('booking');
     }
   }, [user]);
