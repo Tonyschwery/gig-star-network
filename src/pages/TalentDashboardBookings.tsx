@@ -3,125 +3,67 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { 
-  User, 
   Edit3, 
-  MapPin, 
-  DollarSign, 
-  LogOut,
-  Camera,
   Crown
 } from "lucide-react";
 
-
-import { NotificationCenter } from "@/components/NotificationCenter";
-import { ModeSwitch } from "@/components/ModeSwitch";
-import { BookingRequests } from "@/components/BookingRequests";
 import { Header } from "@/components/Header";
 import { UniversalChat } from "@/components/UniversalChat";
+import { NotificationCenter } from "@/components/NotificationCenter";
+import { BookingRequests } from "@/components/BookingRequests";
 import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
-
+//gemini 13 september
 interface TalentProfile {
   id: string;
   artist_name: string;
-  act: string;
-  gender: string;
-  age: string;
-  location?: string;
-  rate_per_hour?: number;
-  currency: string;
-  music_genres: string[];
-  custom_genre?: string;
-  picture_url?: string;
-  gallery_images?: string[];
-  soundcloud_link?: string;
-  youtube_link?: string;
-  biography: string;
-  nationality: string;
-  created_at: string;
   is_pro_subscriber?: boolean;
-  subscription_started_at?: string;
+  // Add any other fields you need from the profile here
 }
 
 const TalentDashboardBookings = () => {
-  const { user, session, signOut } = useAuth();
+  const { user } = useAuth(); // We only need the user object from our stable auth hook
   const navigate = useNavigate();
   const { toast } = useToast();
   const [profile, setProfile] = useState<TalentProfile | null>(null);
   const [loading, setLoading] = useState(true);
   
-  
-  // Enable real-time notifications
   useRealtimeNotifications();
 
   useEffect(() => {
-    if (!user) {
-      navigate('/auth');
-      return;
+    // This component can assume the user exists because the `ProtectedTalentRoute` is guarding it.
+    // Its only job is to fetch the full profile data it needs to display.
+    if (user) {
+      const fetchFullProfile = async () => {
+        try {
+          const { data, error } = await supabase
+            .from('talent_profiles')
+            .select('id, artist_name, is_pro_subscriber') // Only fetch the data this page needs
+            .eq('user_id', user.id)
+            .single();
+
+          if (error) throw error; // Let the catch block handle any errors
+
+          setProfile(data);
+        } catch (err) {
+          const error = err as Error;
+          console.error("Failed to fetch talent profile data:", error.message);
+          toast({
+            title: "Error",
+            description: "Could not load your bookings data. Redirecting to your dashboard.",
+            variant: "destructive",
+          });
+          navigate('/talent-dashboard'); // Redirect on error
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchFullProfile();
     }
-    fetchTalentProfile();
-  }, [user, navigate]);
-
-  const fetchTalentProfile = async () => {
-    if (!user) return;
-
-    try {
-      const { data, error } = await supabase
-        .from('talent_profiles')
-        .select('*')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (error) {
-        console.error('Error fetching profile:', error);
-        return;
-      }
-
-      if (!data) {
-        navigate('/talent-onboarding');
-        return;
-      }
-
-      setProfile(data);
-    } catch (error) {
-      console.error('Error:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSignOut = async () => {
-    await signOut();
-    navigate('/');
-  };
-
-  const handleCancelSubscription = async () => {
-    if (!user || !session) return;
-
-    try {
-      // For PayPal subscriptions, direct users to PayPal's subscription management
-      toast({
-        title: "Cancel Pro Subscription",
-        description: "To cancel your PayPal subscription, please visit your PayPal account's subscription management page.",
-        duration: 6000,
-      });
-
-      // Open PayPal subscription management page
-      window.open('https://www.paypal.com/myaccount/autopay/', '_blank');
-      
-    } catch (error) {
-      console.error('Error accessing subscription management:', error);
-      toast({
-        title: "Error",
-        description: "Unable to access subscription management. Please visit paypal.com directly.",
-        variant: "destructive",
-      });
-    }
-  };
+  }, [user, navigate, toast]);
 
   if (loading) {
     return (
@@ -131,24 +73,16 @@ const TalentDashboardBookings = () => {
     );
   }
 
+  // If loading is done and there's still no profile, something went wrong.
+  // The useEffect hook will have already started a redirect.
   if (!profile) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Profile not found</h1>
-          <Button onClick={() => navigate('/talent-onboarding')}>
-            Complete Your Profile
-          </Button>
-        </div>
-      </div>
-    );
+    return null; 
   }
 
   return (
     <div className="min-h-screen bg-background">
       <Header />
       <div className="container mx-auto px-4 py-8">
-        {/* Header */}
         <div className="flex flex-col gap-4 mb-6">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
@@ -167,7 +101,6 @@ const TalentDashboardBookings = () => {
             </div>
           </div>
           
-          {/* Action Buttons */}
           <div className="flex flex-wrap gap-2">
             <Button
               onClick={() => navigate('/talent-dashboard')}
@@ -176,32 +109,26 @@ const TalentDashboardBookings = () => {
             >
               ← Back to Dashboard
             </Button>
-            
             <Button
               onClick={() => navigate('/talent-profile-edit')}
               className="flex-shrink-0"
               size="sm"
             >
               <Edit3 className="h-4 w-4 mr-2" />
-              <span className="hidden sm:inline">Edit Profile</span>
-              <span className="sm:hidden">Edit</span>
+              Edit Profile
             </Button>
           </div>
         </div>
 
-        {/* Notification Center */}
         <div className="mb-6">
           <NotificationCenter />
         </div>
 
-        {/* Direct Bookings Component */}
         <BookingRequests 
           talentId={profile.id}
           isProSubscriber={profile.is_pro_subscriber || false}
         />
 
-
-        {/* Universal Chat */}
         <UniversalChat />
       </div>
     </div>
