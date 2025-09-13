@@ -2,9 +2,9 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-
-type UserMode = 'booking' | 'artist';
 //7pm
+type UserMode = 'booking' | 'artist';
+
 interface UserModeContextType {
   mode: UserMode;
   setMode: (mode: UserMode) => void;
@@ -14,58 +14,51 @@ interface UserModeContextType {
 const UserModeContext = createContext<UserModeContextType | undefined>(undefined);
 
 export function UserModeProvider({ children }: { children: React.ReactNode }) {
-  const { user, loading: authLoading } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [mode, setModeState] = useState<UserMode>('booking');
   const [canSwitchToArtist, setCanSwitchToArtist] = useState(false);
 
-  // This effect has ONE job: set the user's default mode when they log in.
-  // It does NOT perform any navigation.
   useEffect(() => {
-    // We wait until the main authentication check is complete.
-    if (authLoading) {
-      return;
-    }
-
-    if (!user) {
-      setCanSwitchToArtist(false);
-      setModeState('booking');
-      return;
-    }
-    
-    // Once we have a user, check if they have a talent profile.
     const checkTalentProfile = async () => {
-      const { data: hasProfile, error } = await supabase.rpc('check_talent_profile_exists', {
-        user_id_to_check: user.id
-      });
-
-      if (error) {
-        console.error('Error checking talent profile:', error);
+      if (!user) {
         setCanSwitchToArtist(false);
         setModeState('booking');
         return;
       }
-      
-      setCanSwitchToArtist(hasProfile);
-      if (hasProfile) {
-        setModeState('artist');
-      } else {
+      try {
+        const { data: hasProfile, error } = await supabase.rpc('check_talent_profile_exists', {
+          user_id_to_check: user.id
+        });
+        if (error) throw error;
+        setCanSwitchToArtist(hasProfile);
+        if (hasProfile) {
+          setModeState('artist');
+        } else {
+          setModeState('booking');
+        }
+      } catch (error) {
+        console.error('Error checking talent profile in UserModeProvider:', error);
+        setCanSwitchToArtist(false);
         setModeState('booking');
       }
     };
-    
     checkTalentProfile();
-  }, [user, authLoading]);
+  }, [user]);
 
-  // This is the function the <ModeSwitch> button will call.
-  // It has ONE job: update the mode and navigate immediately.
   const setMode = (newMode: UserMode) => {
+    // This is the simplest logic: first, update the state.
     setModeState(newMode);
-    if (newMode === 'booking') {
-      navigate('/');
-    } else if (newMode === 'artist' && canSwitchToArtist) {
-      navigate('/talent-dashboard');
-    }
+    
+    // Then, use a small delay to allow React to process the state update
+    // before we navigate. This prevents the refresh loop.
+    setTimeout(() => {
+      if (newMode === 'booking') {
+        navigate('/');
+      } else if (newMode === 'artist' && canSwitchToArtist) {
+        navigate('/talent-dashboard');
+      }
+    }, 0);
   };
 
   const value = { mode, setMode, canSwitchToArtist };
