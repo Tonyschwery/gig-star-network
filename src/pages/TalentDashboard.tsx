@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,13 +14,12 @@ import {
   Calendar,
   Music
 } from "lucide-react";
-
 import { Header } from "@/components/Header";
 import { UniversalChat } from "@/components/UniversalChat";
 import { SubscriptionButton } from "@/components/SubscriptionButton";
 import { ModeSwitch } from "@/components/ModeSwitch";
 import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
-//gemini 13 september
+
 interface TalentProfile {
   id: string;
   artist_name: string;
@@ -29,7 +28,7 @@ interface TalentProfile {
   music_genres: string[];
   picture_url?: string;
   is_pro_subscriber?: boolean;
-  // Add any other fields you need for display here
+  // Add any other fields you need for display
 }
 
 const TalentDashboard = () => {
@@ -41,41 +40,41 @@ const TalentDashboard = () => {
   
   useRealtimeNotifications();
 
-  useEffect(() => {
-    // This component is wrapped by `ProtectedTalentRoute`, so we can assume a `user` with a profile exists.
-    // Its only job is to fetch the full profile data needed for display.
-    const fetchTalentProfile = async () => {
-      if (!user) {
-        setLoading(false);
-        return; // Failsafe, should be handled by the protected route.
-      }
+  // THE FIX: The fetch function is now defined here and wrapped in useCallback
+  // so it can be safely used by both useEffect and the SubscriptionButton.
+  const fetchTalentProfile = useCallback(async () => {
+    if (!user) {
+      return; // Should be handled by ProtectedTalentRoute, but good practice.
+    }
 
-      try {
-        const { data, error } = await supabase
-          .from('talent_profiles')
-          .select('*') // Select all columns for the dashboard display
-          .eq('user_id', user.id)
-          .single();
+    setLoading(true); // Ensure loading state is true when we re-fetch
+    try {
+      const { data, error } = await supabase
+        .from('talent_profiles')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
 
-        if (error) throw error; // Let the catch block handle any errors.
-
-        setProfile(data);
-      } catch (err) {
-        const error = err as Error;
-        console.error('Error fetching full talent profile:', error.message);
-        toast({
-          title: "Error",
-          description: "Could not load your dashboard. Please try again.",
-          variant: "destructive",
-        });
-        navigate('/'); // Redirect to a safe page on failure.
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchTalentProfile();
+      if (error) throw error;
+      setProfile(data);
+    } catch (err) {
+      const error = err as Error;
+      console.error('Error fetching talent profile:', error.message);
+      toast({
+        title: "Error Loading Profile",
+        description: "There was a problem loading your dashboard. Please try again.",
+        variant: "destructive",
+      });
+      navigate('/');
+    } finally {
+      setLoading(false);
+    }
   }, [user, navigate, toast]);
+
+  // This useEffect now has the simple job of calling the function on initial load.
+  useEffect(() => {
+    fetchTalentProfile();
+  }, [fetchTalentProfile]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -90,9 +89,14 @@ const TalentDashboard = () => {
     );
   }
 
-  // If after loading the profile is still null, a redirect is likely in progress.
   if (!profile) {
-    return null; 
+    // This state should not be reached if ProtectedTalentRoute is working correctly,
+    // but it's a safe fallback to prevent a crash.
+    return (
+        <div className="min-h-screen bg-background flex items-center justify-center">
+            <p>Could not load profile. You may be redirected.</p>
+        </div>
+    );
   }
 
   return (
@@ -118,9 +122,7 @@ const TalentDashboard = () => {
           </div>
           
           <div className="flex flex-wrap gap-2">
-            {/* This is the switch you wanted to restore */}
             <ModeSwitch size="sm" />
-            
             <Button
               onClick={() => navigate('/talent-dashboard/bookings')}
               variant="outline"
@@ -129,7 +131,6 @@ const TalentDashboard = () => {
               <Calendar className="h-4 w-4 mr-2" />
               My Bookings
             </Button>
-            
             <Button
               onClick={() => navigate('/talent-profile-edit')}
               className="flex-shrink-0"
@@ -138,12 +139,10 @@ const TalentDashboard = () => {
               <Edit3 className="h-4 w-4 mr-2" />
               Edit Profile
             </Button>
-            
             <SubscriptionButton
               isProSubscriber={profile.is_pro_subscriber || false}
-              onSubscriptionChange={fetchTalentProfile}
+              onSubscriptionChange={fetchTalentProfile} // Now this works correctly
             />
-            
             <Button 
               variant="outline" 
               onClick={handleSignOut}
