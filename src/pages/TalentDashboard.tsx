@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { useUserMode } from "@/contexts/UserModeContext"; // Import the hook for the switch
 import { supabase } from "@/integrations/supabase/client";
 import { 
   Edit3, 
@@ -12,14 +13,16 @@ import {
   LogOut,
   Crown,
   Calendar,
-  Music
+  Music,
+  Briefcase // Import icon for the new button
 } from "lucide-react";
 import { Header } from "@/components/Header";
 import { UniversalChat } from "@/components/UniversalChat";
 import { SubscriptionButton } from "@/components/SubscriptionButton";
-import { ModeSwitch } from "@/components/ModeSwitch";
+// We are no longer using ModeSwitch as it is the source of the bug.
+// import { ModeSwitch } from "@/components/ModeSwitch"; 
 import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
-
+//7pm
 interface TalentProfile {
   id: string;
   artist_name: string;
@@ -28,11 +31,11 @@ interface TalentProfile {
   music_genres: string[];
   picture_url?: string;
   is_pro_subscriber?: boolean;
-  // Add any other fields you need for display
 }
 
 const TalentDashboard = () => {
   const { user, signOut } = useAuth();
+  const { setMode } = useUserMode(); // Get the setMode function from our context
   const navigate = useNavigate();
   const { toast } = useToast();
   const [profile, setProfile] = useState<TalentProfile | null>(null);
@@ -40,21 +43,15 @@ const TalentDashboard = () => {
   
   useRealtimeNotifications();
 
-  // THE FIX: The fetch function is now defined here and wrapped in useCallback
-  // so it can be safely used by both useEffect and the SubscriptionButton.
   const fetchTalentProfile = useCallback(async () => {
-    if (!user) {
-      return; // Should be handled by ProtectedTalentRoute, but good practice.
-    }
-
-    setLoading(true); // Ensure loading state is true when we re-fetch
+    if (!user) return;
+    setLoading(true);
     try {
       const { data, error } = await supabase
         .from('talent_profiles')
         .select('*')
         .eq('user_id', user.id)
         .single();
-
       if (error) throw error;
       setProfile(data);
     } catch (err) {
@@ -62,7 +59,7 @@ const TalentDashboard = () => {
       console.error('Error fetching talent profile:', error.message);
       toast({
         title: "Error Loading Profile",
-        description: "There was a problem loading your dashboard. Please try again.",
+        description: "There was a problem loading your dashboard.",
         variant: "destructive",
       });
       navigate('/');
@@ -71,14 +68,12 @@ const TalentDashboard = () => {
     }
   }, [user, navigate, toast]);
 
-  // This useEffect now has the simple job of calling the function on initial load.
   useEffect(() => {
     fetchTalentProfile();
   }, [fetchTalentProfile]);
 
   const handleSignOut = async () => {
     await signOut();
-    navigate('/');
   };
 
   if (loading) {
@@ -90,13 +85,7 @@ const TalentDashboard = () => {
   }
 
   if (!profile) {
-    // This state should not be reached if ProtectedTalentRoute is working correctly,
-    // but it's a safe fallback to prevent a crash.
-    return (
-        <div className="min-h-screen bg-background flex items-center justify-center">
-            <p>Could not load profile. You may be redirected.</p>
-        </div>
-    );
+    return null; 
   }
 
   return (
@@ -122,7 +111,16 @@ const TalentDashboard = () => {
           </div>
           
           <div className="flex flex-wrap gap-2">
-            <ModeSwitch size="sm" />
+            {/* THE FIX: The broken <ModeSwitch /> component is replaced with a simple, reliable Button */}
+            <Button
+              onClick={() => setMode('booking')}
+              variant="outline"
+              size="sm"
+            >
+              <Briefcase className="h-4 w-4 mr-2" />
+              Switch to Booking
+            </Button>
+            
             <Button
               onClick={() => navigate('/talent-dashboard/bookings')}
               variant="outline"
@@ -131,6 +129,7 @@ const TalentDashboard = () => {
               <Calendar className="h-4 w-4 mr-2" />
               My Bookings
             </Button>
+            
             <Button
               onClick={() => navigate('/talent-profile-edit')}
               className="flex-shrink-0"
@@ -139,10 +138,12 @@ const TalentDashboard = () => {
               <Edit3 className="h-4 w-4 mr-2" />
               Edit Profile
             </Button>
+            
             <SubscriptionButton
               isProSubscriber={profile.is_pro_subscriber || false}
-              onSubscriptionChange={fetchTalentProfile} // Now this works correctly
+              onSubscriptionChange={fetchTalentProfile}
             />
+            
             <Button 
               variant="outline" 
               onClick={handleSignOut}
@@ -192,7 +193,7 @@ const TalentDashboard = () => {
               </Button>
             </div>
           </CardContent>
-        </Card>
+        </-Card>
 
         <UniversalChat />
       </div>
