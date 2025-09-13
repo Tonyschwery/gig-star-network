@@ -1,15 +1,13 @@
-import { useState, useEffect, createContext, useContext } from 'react';
+import { useState, useEffect, createContext, useContext, useCallback } from 'react';
 import { User, Session } from '@supabase/supabase-js';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-//7pm
-// Define the complete user state
-export type AuthStatus = 'LOADING' | 'LOGGED_OUT' | 'TALENT' | 'BOOKER';
-type UserMode = 'artist' | 'booking';
 
+export type AuthStatus = 'LOADING' | 'LOGGED_OUT' | 'TALENT_COMPLETE' | 'BOOKER' | 'TALENT_NEEDS_ONBOARDING';
+type UserMode = 'artist' | 'booking';
+//8pm
 interface AuthContextType {
   user: User | null;
-  session: Session | null;
   profile: any | null;
   status: AuthStatus;
   mode: UserMode;
@@ -26,33 +24,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [status, setStatus] = useState<AuthStatus>('LOADING');
   const [mode, setModeState] = useState<UserMode>('booking');
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       setSession(session);
       const currentUser = session?.user ?? null;
       setUser(currentUser);
 
       if (currentUser) {
-        const { data: userProfile, error } = await supabase
+        const { data: userProfile } = await supabase
           .from('talent_profiles')
           .select('*')
           .eq('user_id', currentUser.id)
           .single();
 
-        if (error && error.code !== 'PGRST116') {
-          console.error("Error fetching profile:", error);
-          setStatus('BOOKER');
-          setProfile(null);
-        } else if (userProfile) {
+        if (userProfile) {
           setProfile(userProfile);
-          setStatus('TALENT');
+          setStatus('TALENT_COMPLETE');
           setModeState('artist');
         } else {
-          setProfile({ user_id: currentUser.id });
-          setStatus('BOOKER');
+          if (currentUser.user_metadata?.user_type === 'talent') {
+            setStatus('TALENT_NEEDS_ONBOARDING');
+          } else {
+            setStatus('BOOKER');
+          }
+          setProfile({ id: currentUser.id, ...currentUser.user_metadata });
           setModeState('booking');
         }
+        
+        // Handle post-signup redirect from email link
+        if (event === 'SIGNED_IN') {
+            const userType = currentUser.user_metadata?.user_type;
+            if(userType === 'talent') navigate('/talent-onboarding');
+            else if (userType === 'booker') navigate('/booker-dashboard');
+        }
+
       } else {
         setStatus('LOGGED_OUT');
         setProfile(null);
@@ -62,34 +69,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  const setMode = (newMode: UserMode) => {
+  const setMode = useCallback((newMode: UserMode) => {
     setModeState(newMode);
     if (newMode === 'booking') {
       navigate('/');
-    } else if (newMode === 'artist' && status === 'TALENT') {
+    } else if (newMode === 'artist' && status === 'TALENT_COMPLETE') {
       navigate('/talent-dashboard');
     }
-  };
+  }, [navigate, status]);
 
   const signOut = async () => {
     await supabase.auth.signOut();
     navigate('/');
   };
 
-  const value = { user, session, profile, status, mode, setMode, signOut };
-  
-  // =================================================================
-  // ===== THIS IS THE NEW DIAGNOSTIC LOGGING SECTION ==============
-  // =================================================================
-  useEffect(() => {
-    console.log('%c[AUTH STATE CHANGED]', 'color: #fff; background-color: #222; padding: 2px 5px; border-radius: 3px;', {
-        status,
-        mode,
-        user: user ? { id: user.id, email: user.email, user_type: user.user_metadata?.user_type } : null,
-        profile: profile ? { id: profile.id, name: profile.artist_name } : null,
-    });
-  }, [status, mode, user, profile]);
-  // =================================================================
+  const value = { user, profile, status, mode, setMode, signOut, session };
 
   return (
     <AuthContext.Provider value={value}>
