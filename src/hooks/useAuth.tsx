@@ -17,37 +17,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // THE FIX: Rely ONLY on onAuthStateChange. It's the single source of truth.
+    // It fires once immediately with the current session, and then whenever the state changes.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
-        setLoading(false);
+        setLoading(false); // The loading is finished once we have the first session state.
       }
     );
 
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
+    // The redundant getSession() call has been removed to prevent race conditions.
 
+    // Standard cleanup function to remove the listener when it's no longer needed.
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  }, []); // The empty array ensures this effect runs only once when the app starts.
 
   const signOut = async () => {
     await supabase.auth.signOut();
+    // Use window.location.href for a full refresh to clear all application state.
     window.location.href = '/';
   };
 
   const value = { user, session, loading, signOut };
-
-  // Render children immediately. The protected routes will handle the loading state.
+  
+  // THE CRITICAL FIX: We do not render the rest of the application (`children`)
+  // until the initial authentication check is complete (`loading` is false).
+  // This prevents all downstream components from running with an unstable auth state.
   return (
     <AuthContext.Provider value={value}>
-      {children}
+      {!loading && children}
     </AuthContext.Provider>
   );
 }
