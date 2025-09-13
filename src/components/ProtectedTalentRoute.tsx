@@ -2,108 +2,82 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { AlertTriangle } from 'lucide-react';
 
 interface ProtectedTalentRouteProps {
   children: React.ReactNode;
   requireProfile?: boolean;
 }
-
+//gemini 13 september
 export function ProtectedTalentRoute({ 
   children, 
   requireProfile = true 
 }: ProtectedTalentRouteProps) {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-  const [profileExists, setProfileExists] = useState<boolean | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
+    // We don't do anything until the main authentication check from useAuth is complete.
+    if (authLoading) {
+      return; 
+    }
+
+    // If authentication is done and there's no user, redirect them to the auth page.
+    if (!user) {
+      navigate('/auth');
+      return;
+    }
+
+    // If this specific route doesn't require a profile (like the onboarding page itself),
+    // then the user is authorized to be here.
+    if (!requireProfile) {
+      setIsAuthorized(true);
+      setIsChecking(false);
+      return;
+    }
+
+    // If we have a user and this route requires a profile, we perform the check.
     const checkProfile = async () => {
-      if (authLoading) return;
+      // We use the secure database function we created earlier.
+      const { data: hasProfile, error } = await supabase.rpc('check_talent_profile_exists', {
+        user_id_to_check: user.id
+      });
+
+      if (error) {
+        console.error("Error checking talent profile:", error);
+        // On a critical error, redirect to auth as a safe fallback.
+        navigate('/auth'); 
+        return;
+      }
       
-      if (!user) {
-        navigate('/auth');
-        return;
+      if (hasProfile) {
+        // The user has a profile, so they are authorized to see this page.
+        setIsAuthorized(true);
+      } else {
+        // The user does NOT have a profile, so they are not authorized for this page.
+        // We redirect them to the onboarding page to create one.
+        navigate('/talent-onboarding');
       }
-
-      if (!requireProfile) {
-        setProfileExists(true);
-        setLoading(false);
-        return;
-      }
-
-      try {
-        // Use secure function to check if user has talent profile
-        const { data: hasProfile, error } = await supabase.rpc('check_talent_profile_exists', {
-          user_id_to_check: user.id
-        });
-        
-        if (error) {
-          console.error('Error checking profile:', error);
-          setProfileExists(false);
-        } else {
-          setProfileExists(hasProfile);
-        }
-      } catch (error) {
-        console.error('Error checking profile:', error);
-        setProfileExists(false);
-      } finally {
-        setLoading(false);
-      }
+      
+      // The check is complete.
+      setIsChecking(false);
     };
 
     checkProfile();
+
   }, [user, authLoading, requireProfile, navigate]);
 
-  if (authLoading || loading) {
+  // While any checks are in progress, show a consistent loading spinner.
+  if (isChecking) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-pulse text-muted-foreground">Loading...</div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
     );
   }
-
-  if (!user) {
-    return null; // Will redirect to auth
-  }
-
-  if (requireProfile && profileExists === false) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <Card className="w-full max-w-md glass-card">
-          <CardHeader className="text-center">
-            <CardTitle className="flex items-center justify-center gap-2 text-destructive">
-              <AlertTriangle className="h-6 w-6" />
-              Profile Required
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="text-center space-y-4">
-            <p className="text-muted-foreground">
-              You need to complete your talent profile to access this page.
-            </p>
-            <div className="space-y-2">
-              <Button 
-                onClick={() => navigate('/talent-onboarding')} 
-                className="w-full hero-button"
-              >
-                Complete Profile
-              </Button>
-              <Button 
-                onClick={() => navigate('/auth')} 
-                variant="outline" 
-                className="w-full"
-              >
-                Sign Out
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  return <>{children}</>;
+  
+  // If the checks are done and the user is authorized, show the page content.
+  // Otherwise, render null while the redirect (handled in useEffect) takes place.
+  return isAuthorized ? <>{children}</> : null;
 }
