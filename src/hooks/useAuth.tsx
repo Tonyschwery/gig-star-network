@@ -1,11 +1,11 @@
 import { useState, useEffect, createContext, useContext, useCallback } from 'react';
 import { User, Session } from '@supabase/supabase-js';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-
+//8pm
 export type AuthStatus = 'LOADING' | 'LOGGED_OUT' | 'TALENT_COMPLETE' | 'BOOKER' | 'TALENT_NEEDS_ONBOARDING';
 type UserMode = 'artist' | 'booking';
-//8pm
+
 interface AuthContextType {
   user: User | null;
   profile: any | null;
@@ -24,26 +24,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [status, setStatus] = useState<AuthStatus>('LOADING');
   const [mode, setModeState] = useState<UserMode>('booking');
   const navigate = useNavigate();
-  const location = useLocation();
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      setSession(session);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       const currentUser = session?.user ?? null;
       setUser(currentUser);
+      setSession(session);
 
       if (currentUser) {
+        // User is logged in, now fetch their profile ONCE.
         const { data: userProfile } = await supabase
           .from('talent_profiles')
           .select('*')
           .eq('user_id', currentUser.id)
-          .single();
+          .maybeSingle();
 
         if (userProfile) {
           setProfile(userProfile);
           setStatus('TALENT_COMPLETE');
           setModeState('artist');
         } else {
+          // No talent profile found, check metadata to see if they are a talent-in-progress or a booker.
           if (currentUser.user_metadata?.user_type === 'talent') {
             setStatus('TALENT_NEEDS_ONBOARDING');
           } else {
@@ -52,17 +53,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setProfile({ id: currentUser.id, ...currentUser.user_metadata });
           setModeState('booking');
         }
-        
-        // Handle post-signup redirect from email link
-        if (event === 'SIGNED_IN') {
-            const userType = currentUser.user_metadata?.user_type;
-            if(userType === 'talent') navigate('/talent-onboarding');
-            else if (userType === 'booker') navigate('/booker-dashboard');
-        }
-
       } else {
+        // No user session.
         setStatus('LOGGED_OUT');
         setProfile(null);
+        setModeState('booking');
       }
     });
 
@@ -83,8 +78,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     navigate('/');
   };
 
-  const value = { user, profile, status, mode, setMode, signOut, session };
+  const value = { user, profile, status, mode, setMode, signOut };
 
+  // This is critical: Don't render the rest of the app until the initial status check is complete.
   return (
     <AuthContext.Provider value={value}>
       {status !== 'LOADING' && children}
