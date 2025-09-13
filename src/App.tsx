@@ -46,7 +46,6 @@ const App = () => (
         <Toaster />
         <Sonner />
         <Routes>
-            {/* Public Routes */}
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/login" element={<Login />} />
@@ -60,7 +59,6 @@ const App = () => (
             <Route path="/subscription-success" element={<SubscriptionSuccess />} />
             <Route path="/subscription-cancelled" element={<SubscriptionCancelled />} />
 
-            {/* Admin Routes */}
             <Route path="/admin" element={
               <AdminProvider>
                 <AdminRoute>
@@ -79,7 +77,6 @@ const App = () => (
               <Route path="reports" element={<AdminReports />} />
             </Route>
             
-            {/* Protected User Routes */}
             <Route path="/booker-dashboard" element={<ProtectedRoute><BookerDashboard /></ProtectedRoute>} />
             <Route path="/talent-onboarding" element={<ProtectedTalentRoute requireProfile={false}><TalentOnboarding /></ProtectedTalentRoute>} />
             <Route path="/talent-dashboard" element={<ProtectedTalentRoute><TalentDashboard /></ProtectedTalentRoute>} />
