@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { User, Mail, Lock, ArrowLeft, Briefcase } from "lucide-react";
-
+//gemini 13 sep
 // Define types for clarity
 type UserType = 'talent' | 'booker';
 type AuthMode = 'login' | 'signup';
@@ -23,7 +23,7 @@ const Auth = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, loading: authLoading } = useAuth();
-//gemini 13 september
+
   useEffect(() => {
     // Redirect already logged-in users away from this page
     if (!authLoading && user) {
