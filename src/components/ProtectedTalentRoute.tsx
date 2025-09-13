@@ -1,7 +1,7 @@
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
-//8.5pm
+//9pm
 interface ProtectedTalentRouteProps {
   children: React.ReactNode;
   requireProfile?: boolean;
@@ -15,10 +15,8 @@ export function ProtectedTalentRoute({ children, requireProfile = true }: Protec
     if (status === 'LOGGED_OUT') {
       navigate('/auth');
     } else if (status === 'BOOKER') {
-      // A booker trying to access a talent-only page is sent home.
       navigate('/');
     } else if (status === 'TALENT_NEEDS_ONBOARDING' && requireProfile) {
-      // A talent who needs to onboard is sent to the form.
       navigate('/talent-onboarding');
     }
   }, [status, requireProfile, navigate]);
