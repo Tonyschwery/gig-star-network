@@ -1,8 +1,8 @@
 import React, { createContext, useContext } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-//9pm
-type UserMode = 'booking' | 'artist';
 
+type UserMode = 'booking' | 'artist';
+//9pm
 interface UserModeContextType {
   mode: UserMode;
   setMode: (mode: UserMode) => void;
