@@ -5,7 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./hooks/useAuth";
 import { AdminProvider } from "./hooks/useAdminAuth";
-import { UserModeProvider } from "./contexts/UserModeContext"; // We are putting this back
+import { UserModeProvider } from "./contexts/UserModeContext";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Login from "./pages/Login";
@@ -37,10 +37,9 @@ import NotFound from "./pages/NotFound";
 import { ProtectedTalentRoute } from "./components/ProtectedTalentRoute";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AdminRoute } from "./components/AdminRoute";
-
+//7pm
 const App = () => (
   <AuthProvider>
-    {/* UserModeProvider is now correctly nested inside AuthProvider */}
     <UserModeProvider>
       <TooltipProvider>
         <Toaster />
