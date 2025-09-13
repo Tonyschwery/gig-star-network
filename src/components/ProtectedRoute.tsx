@@ -1,18 +1,18 @@
-import { useAuth } from '@/hooks/useAuth';
-import { useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
-
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/hooks/useAuth';
+//7pm
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { status } = useAuth();
+  const { user, loading } = useAuth();
   const navigate = useNavigate();
-//gemini 13 4pm
+
   useEffect(() => {
-    if (status === 'LOGGED_OUT') {
+    if (!loading && !user) {
       navigate('/auth');
     }
-  }, [status, navigate]);
+  }, [user, loading, navigate]);
 
-  if (status === 'LOADING' || status === 'LOGGED_OUT') {
+  if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -20,6 +20,5 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // Allow both TALENT and BOOKER to access general protected routes
-  return <>{children}</>;
+  return user ? <>{children}</> : null;
 }
