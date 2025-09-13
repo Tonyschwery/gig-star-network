@@ -12,7 +12,7 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
     }
   }, [status, navigate]);
 
-  const isAuthorized = status === 'BOOKER' || status === 'TALENT_COMPLETE' || status === 'TALENT_NEEDS_ONBOARDING';
+  const isAuthorized = status === 'BOOKER' || status === 'TALENT_COMPLETE';
 
   if (!isAuthorized) {
     return (
