@@ -40,7 +40,7 @@ import NotFound from "./pages/NotFound";
 import { ProtectedTalentRoute } from "./components/ProtectedTalentRoute";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AdminRoute } from "./components/AdminRoute";
-//gemini 13 sep
+
 const App = () => {
   const navigate = useNavigate();
 
@@ -78,7 +78,7 @@ const App = () => {
           <Toaster />
           <Sonner />
           <Routes>
-              {/* Public Routes */}
+              {/* All your routes go here as they were before */}
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/login" element={<Login />} />
@@ -92,7 +92,6 @@ const App = () => {
               <Route path="/subscription-success" element={<SubscriptionSuccess />} />
               <Route path="/subscription-cancelled" element={<SubscriptionCancelled />} />
 
-              {/* Admin Routes - The AdminProvider now only wraps these routes */}
               <Route path="/admin" element={
                 <AdminProvider>
                   <AdminRoute>
@@ -111,34 +110,12 @@ const App = () => {
                 <Route path="reports" element={<AdminReports />} />
               </Route>
               
-              {/* Protected User Routes */}
-              <Route path="/booker-dashboard" element={
-                <ProtectedRoute>
-                  <BookerDashboard />
-                </ProtectedRoute>
-              } />
-              <Route path="/talent-onboarding" element={
-                <ProtectedTalentRoute requireProfile={false}>
-                  <TalentOnboarding />
-                </ProtectedTalentRoute>
-              } />
-              <Route path="/talent-dashboard" element={
-                <ProtectedTalentRoute>
-                  <TalentDashboard />
-                </ProtectedTalentRoute>
-              } />
-              <Route path="/talent-dashboard/bookings" element={
-                <ProtectedTalentRoute>
-                  <TalentDashboardBookings />
-                </ProtectedTalentRoute>
-              } />
-              <Route path="/talent-profile-edit" element={
-                <ProtectedTalentRoute>
-                  <TalentProfileEdit />
-                </ProtectedTalentRoute>
-              } />
+              <Route path="/booker-dashboard" element={<ProtectedRoute><BookerDashboard /></ProtectedRoute>} />
+              <Route path="/talent-onboarding" element={<ProtectedTalentRoute requireProfile={false}><TalentOnboarding /></ProtectedTalentRoute>} />
+              <Route path="/talent-dashboard" element={<ProtectedTalentRoute><TalentDashboard /></ProtectedTalentRoute>} />
+              <Route path="/talent-dashboard/bookings" element={<ProtectedTalentRoute><TalentDashboardBookings /></ProtectedTalentRoute>} />
+              <Route path="/talent-profile-edit" element={<ProtectedTalentRoute><TalentProfileEdit /></ProtectedTalentRoute>} />
               
-              {/* Catch-all Not Found Route */}
               <Route path="*" element={<NotFound />} />
           </Routes>
         </TooltipProvider>
