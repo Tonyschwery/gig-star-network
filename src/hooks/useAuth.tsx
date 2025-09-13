@@ -8,9 +8,11 @@ export type UserMode = 'artist' | 'booking';
 //9pm
 interface AuthContextType {
   user: User | null;
+  session: Session | null;
   profile: any | null;
   status: AuthStatus;
   mode: UserMode;
+  loading: boolean;
   setMode: (newMode: UserMode) => void;
   signOut: () => Promise<void>;
 }
@@ -23,6 +25,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<any | null>(null);
   const [status, setStatus] = useState<AuthStatus>('LOADING');
   const [mode, setModeState] = useState<UserMode>('booking');
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -32,7 +35,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession(session);
 
       if (currentUser) {
-        // User is logged in, now fetch their profile ONCE.
         const { data: userProfile, error } = await supabase
           .from('talent_profiles')
           .select('*')
@@ -41,7 +43,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         if (error) {
           console.error("Error fetching profile:", error);
-          setStatus('BOOKER'); // Fallback to Booker on error
+          setStatus('BOOKER');
           setProfile(null);
         } else if (userProfile) {
           setProfile(userProfile);
@@ -61,6 +63,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setProfile(null);
         setModeState('booking');
       }
+      setLoading(false);
     });
 
     return () => subscription.unsubscribe();
@@ -80,9 +83,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     navigate('/');
   };
 
-  const value = { user, profile, status, mode, setMode, signOut };
+  const value = { user, session, profile, status, mode, loading, setMode, signOut };
 
-  // This is critical: Don't render the rest of the app until the initial status check is complete.
   return (
     <AuthContext.Provider value={value}>
       {status !== 'LOADING' && children}
