@@ -1,7 +1,7 @@
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
-//8pm
+//8.5
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { status } = useAuth();
   const navigate = useNavigate();
@@ -12,8 +12,10 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
     }
   }, [status, navigate]);
 
-  // Show a loader while status is being determined.
-  if (status === 'LOADING' || status === 'LOGGED_OUT') {
+  // A booker or a talent can access general protected routes.
+  const isAuthorized = status === 'BOOKER' || status === 'TALENT_COMPLETE' || status === 'TALENT_NEEDS_ONBOARDING';
+
+  if (!isAuthorized) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -21,6 +23,5 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // A booker or a talent can access general protected routes.
   return <>{children}</>;
 }
