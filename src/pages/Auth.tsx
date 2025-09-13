@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { User, Mail, Lock, ArrowLeft, Briefcase } from "lucide-react";
-//8.5pm
+//9pm
 type UserType = 'talent' | 'booker';
 type AuthMode = 'login' | 'signup';
 
@@ -72,7 +72,7 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      {/* Your Auth page JSX, including the Talent/Booker switch */}
+        {/* Your Original Auth JSX Here */}
     </div>
   );
 };
