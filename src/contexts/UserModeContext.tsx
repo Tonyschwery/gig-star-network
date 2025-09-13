@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-//7pm
+
 type UserMode = 'booking' | 'artist';
 
 interface UserModeContextType {
@@ -38,7 +38,7 @@ export function UserModeProvider({ children }: { children: React.ReactNode }) {
           setModeState('booking');
         }
       } catch (error) {
-        console.error('Error checking talent profile in UserModeProvider:', error);
+        console.error('Error in UserModeProvider checking profile:', error);
         setCanSwitchToArtist(false);
         setModeState('booking');
       }
@@ -47,11 +47,8 @@ export function UserModeProvider({ children }: { children: React.ReactNode }) {
   }, [user]);
 
   const setMode = (newMode: UserMode) => {
-    // This is the simplest logic: first, update the state.
     setModeState(newMode);
-    
-    // Then, use a small delay to allow React to process the state update
-    // before we navigate. This prevents the refresh loop.
+    // This timeout prevents a race condition between the state update and navigation
     setTimeout(() => {
       if (newMode === 'booking') {
         navigate('/');
