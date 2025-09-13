@@ -1,45 +1,32 @@
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
-//7pm
-export function ProtectedTalentRoute({ children, requireProfile = true }: { children: React.ReactNode, requireProfile?: boolean }) {
-  const { user, loading: authLoading } = useAuth();
+import { useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
+//8pm
+interface ProtectedTalentRouteProps {
+  children: React.ReactNode;
+  requireProfile?: boolean;
+}
+
+export function ProtectedTalentRoute({ children, requireProfile = true }: ProtectedTalentRouteProps) {
+  const { status } = useAuth();
   const navigate = useNavigate();
-  const [isAuthorized, setIsAuthorized] = useState(false);
-  const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
-    const performCheck = async () => {
-      if (authLoading) return;
-      if (!user) {
-        navigate('/auth');
-        return;
-      }
-      if (!requireProfile) {
-        setIsAuthorized(true);
-        setIsChecking(false);
-        return;
-      }
-      const { data: hasProfile, error } = await supabase.rpc('check_talent_profile_exists', {
-        user_id_to_check: user.id
-      });
-      if (error) {
-        console.error("Error in ProtectedTalentRoute:", error);
-        navigate('/auth');
-        return;
-      }
-      if (hasProfile) {
-        setIsAuthorized(true);
-      } else {
-        navigate('/talent-onboarding');
-      }
-      setIsChecking(false);
-    };
-    performCheck();
-  }, [user, authLoading, requireProfile, navigate]);
+    if (status === 'LOGGED_OUT') {
+      navigate('/auth');
+    } else if (status === 'BOOKER') {
+      // A booker trying to access a talent-only page is sent home.
+      navigate('/');
+    } else if (status === 'TALENT_NEEDS_ONBOARDING' && requireProfile) {
+      // A talent who needs to onboard is sent to the form.
+      navigate('/talent-onboarding');
+    }
+  }, [status, requireProfile, navigate]);
+  
+  // Determine if the user is authorized to see the current page's content
+  const isAuthorized = status === 'TALENT_COMPLETE' || (status === 'TALENT_NEEDS_ONBOARDING' && !requireProfile);
 
-  if (isChecking) {
+  if (!isAuthorized) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -47,5 +34,5 @@ export function ProtectedTalentRoute({ children, requireProfile = true }: { chil
     );
   }
 
-  return isAuthorized ? <>{children}</> : null;
+  return <>{children}</>;
 }
