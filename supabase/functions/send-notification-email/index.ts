@@ -104,26 +104,40 @@ serve(async (req: Request): Promise<Response> => {
         // Prepare email data based on type
         switch (emailType) {
           case 'booking':
+          case 'booking_request_talent':
             if (actualBookingId) {
               const { data: booking } = await supabaseAdmin
                 .from('bookings')
                 .select(`
                   *,
-                  talent_profiles!inner(artist_name, user_id)
+                  talent_profiles!inner(artist_name, user_id, is_pro_subscriber)
                 `)
                 .eq('id', actualBookingId)
                 .single();
 
               if (booking) {
+                const isForTalent = userId === booking.talent_profiles?.user_id;
+                const talentIsProSubscriber = booking.talent_profiles?.is_pro_subscriber;
+                
                 emailData = {
                   eventType: booking.event_type,
                   eventDate: booking.event_date,
                   eventLocation: booking.event_location,
                   bookerName: booking.booker_name,
+                  bookerEmail: booking.booker_email,
+                  bookerPhone: booking.booker_phone,
                   talentName: booking.talent_profiles?.artist_name,
                   status: booking.status,
                   bookingId: booking.id,
-                  isForTalent: userId === booking.talent_profiles?.user_id,
+                  isForTalent,
+                  is_pro_subscriber: talentIsProSubscriber,
+                  // For Pro talents, show all details. For Non-Pro, hide details
+                  showFullDetails: isForTalent && talentIsProSubscriber,
+                  eventDuration: booking.event_duration,
+                  description: booking.description,
+                  budget: booking.budget,
+                  budgetCurrency: booking.budget_currency,
+                  eventAddress: booking.event_address
                 };
               }
             }

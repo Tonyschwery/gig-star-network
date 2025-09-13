@@ -25,6 +25,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     );
 
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
+
     return () => {
       subscription.unsubscribe();
     };

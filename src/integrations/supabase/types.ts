@@ -408,6 +408,33 @@ export type Database = {
           },
         ]
       }
+      profiles: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          full_name: string | null
+          id: string
+          updated_at: string | null
+          user_type: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          id: string
+          updated_at?: string | null
+          user_type?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          updated_at?: string | null
+          user_type?: string | null
+        }
+        Relationships: []
+      }
       talent_profiles: {
         Row: {
           act: Database["public"]["Enums"]["talent_act"]
@@ -620,6 +647,10 @@ export type Database = {
       }
       check_talent_booking_limit: {
         Args: { talent_id_param: string }
+        Returns: boolean
+      }
+      check_talent_profile_exists: {
+        Args: { user_id_to_check: string }
         Returns: boolean
       }
       cleanup_expired_chat_messages: {

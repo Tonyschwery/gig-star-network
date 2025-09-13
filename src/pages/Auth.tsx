@@ -23,7 +23,16 @@ const Auth = () => {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        navigate("/");
+        // Check if user has talent profile to decide where to redirect
+        const { data: hasProfile } = await supabase.rpc('check_talent_profile_exists', {
+          user_id_to_check: session.user.id
+        });
+        
+        if (hasProfile) {
+          navigate("/talent-dashboard");
+        } else {
+          navigate("/talent-onboarding");
+        }
       }
     };
     checkSession();
@@ -34,10 +43,8 @@ const Auth = () => {
     setLoading(true);
 
     try {
-      // Use the deployed URL or preview URL, not localhost
-      const redirectUrl = window.location.hostname === 'localhost' 
-        ? 'https://lovable.dev' // Fallback for development
-        : `${window.location.origin}/`;
+      // Use the current URL origin for redirect
+      const redirectUrl = `${window.location.origin}/talent-onboarding`;
       
       const { error } = await supabase.auth.signUp({
         email,

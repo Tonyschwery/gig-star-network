@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,23 +6,42 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Mail, Lock, ArrowLeft, User } from "lucide-react";
-// Email service removed - emails now sent via database triggers
+import { User, Mail, Lock, ArrowLeft } from "lucide-react";
+import { useEmailNotifications } from "@/hooks/useEmailNotifications";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
+  const [userType, setUserType] = useState<'booker' | 'talent'>('booker');
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { sendUserSignupEmails } = useEmailNotifications();
 
   useEffect(() => {
     // Check if user is already logged in
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        navigate("/");
+        // Check user type and redirect appropriately
+        const userMetadata = session.user.user_metadata;
+        const isBooker = userMetadata?.user_type === 'booker' || !userMetadata?.user_type;
+        
+        if (isBooker) {
+          navigate("/booker-dashboard");
+        } else {
+          // Check if talent has profile
+          const { data: hasProfile } = await supabase.rpc('check_talent_profile_exists', {
+            user_id_to_check: session.user.id
+          });
+          
+          if (hasProfile) {
+            navigate("/talent-dashboard");
+          } else {
+            navigate("/talent-onboarding");
+          }
+        }
       }
     };
     checkSession();
@@ -34,8 +52,9 @@ const Login = () => {
     setLoading(true);
 
     try {
-      // Use the correct redirect URL for the current environment
-      const redirectUrl = window.location.origin;
+      const redirectUrl = userType === 'talent' 
+        ? `${window.location.origin}/talent-onboarding`
+        : `${window.location.origin}/booker-dashboard`;
       
       const { error } = await supabase.auth.signUp({
         email,
@@ -44,7 +63,7 @@ const Login = () => {
           emailRedirectTo: redirectUrl,
           data: {
             name: name,
-            user_type: 'booker'
+            user_type: userType
           }
         }
       });
@@ -64,14 +83,20 @@ const Login = () => {
           });
         }
       } else {
-        // Emails are now sent automatically via database triggers
-
         toast({
           title: "Account created successfully!",
-          description: "Welcome! You can now book talent for your events.",
+          description: `Please check your email to verify your account${userType === 'talent' ? ', then complete your talent profile' : ''}.`,
         });
-        // Let useAuth handle the redirect - no automatic "Your Event" form
-        navigate('/');
+
+        // Send welcome emails
+        try {
+          const { data: { user: newUser } } = await supabase.auth.getUser();
+          if (newUser) {
+            await sendUserSignupEmails(newUser.id, name, email);
+          }
+        } catch (emailError) {
+          console.error('Error sending welcome emails:', emailError);
+        }
       }
     } catch (error) {
       toast({
@@ -89,13 +114,12 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
         password
       });
 
       if (error) {
-        console.error('Login error:', error);
         toast({
           title: "Error",
           description: error.message,
@@ -106,14 +130,30 @@ const Login = () => {
           title: "Welcome back!",
           description: "You have successfully logged in.",
         });
-        // Let useAuth handle the redirect to prevent state issues
-        navigate("/");
+        
+        // Redirect based on user type
+        const userMetadata = data.user.user_metadata;
+        const isBooker = userMetadata?.user_type === 'booker' || !userMetadata?.user_type;
+        
+        if (isBooker) {
+          navigate("/booker-dashboard");
+        } else {
+          // Check if talent has profile
+          const { data: hasProfile } = await supabase.rpc('check_talent_profile_exists', {
+            user_id_to_check: data.user.id
+          });
+          
+          if (hasProfile) {
+            navigate("/talent-dashboard");
+          } else {
+            navigate("/talent-onboarding");
+          }
+        }
       }
     } catch (error) {
-      console.error('Unexpected login error:', error);
       toast({
         title: "Error",
-        description: "An unexpected error occurred during login",
+        description: "An unexpected error occurred",
         variant: "destructive"
       });
     } finally {
@@ -137,9 +177,9 @@ const Login = () => {
 
         <Card className="glass-card">
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl text-foreground">Welcome</CardTitle>
+            <CardTitle className="text-2xl text-foreground">Welcome to QTalents</CardTitle>
             <CardDescription>
-              Sign in to your account or create a new one to get started
+              Sign in to your account or create a new one
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -216,6 +256,29 @@ const Login = () => {
                         className="pl-10"
                         required
                       />
+                    </div>
+                    
+                    {/* User Type Selection */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">I want to:</label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <Button
+                          type="button"
+                          variant={userType === 'booker' ? 'default' : 'outline'}
+                          onClick={() => setUserType('booker')}
+                          className="text-xs"
+                        >
+                          Book Talents
+                        </Button>
+                        <Button
+                          type="button"
+                          variant={userType === 'talent' ? 'default' : 'outline'}
+                          onClick={() => setUserType('talent')}
+                          className="text-xs"
+                        >
+                          Become a Talent
+                        </Button>
+                      </div>
                     </div>
                   </div>
                   <Button type="submit" className="w-full hero-button" disabled={loading}>
