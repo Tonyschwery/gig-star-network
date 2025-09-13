@@ -1,7 +1,7 @@
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
-//8.5
+//9pm
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { status } = useAuth();
   const navigate = useNavigate();
@@ -12,7 +12,6 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
     }
   }, [status, navigate]);
 
-  // A booker or a talent can access general protected routes.
   const isAuthorized = status === 'BOOKER' || status === 'TALENT_COMPLETE' || status === 'TALENT_NEEDS_ONBOARDING';
 
   if (!isAuthorized) {
