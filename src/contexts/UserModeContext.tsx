@@ -1,6 +1,6 @@
 import React, { createContext, useContext } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-//8pm
+//8.5
 type UserMode = 'booking' | 'artist';
 
 interface UserModeContextType {
