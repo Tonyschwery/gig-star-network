@@ -8,8 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { User, Mail, Lock, ArrowLeft, Briefcase } from "lucide-react";
-
-//gemini 13 september
+//gemini 13 sep
 // Define types for clarity
 type UserType = 'talent' | 'booker';
 type AuthMode = 'login' | 'signup';
@@ -20,7 +19,7 @@ const Auth = () => {
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
   const [userType, setUserType] = useState<UserType>('talent');
-  const [authMode, setAuthMode] = useState<AuthMode>('signup'); // NEW: State for Login/Signup tabs
+  const [authMode, setAuthMode] = useState<AuthMode>('signup');
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, loading: authLoading } = useAuth();
@@ -40,7 +39,7 @@ const Auth = () => {
       password,
       options: {
         emailRedirectTo: `${window.location.origin}/`,
-        data: { name, user_type: userType }
+        data: { name, user_type: userType } // Uses the selected user type
       }
     });
     if (error) {
@@ -58,10 +57,11 @@ const Auth = () => {
     if (error) {
       toast({ title: "Error signing in", description: error.message, variant: "destructive" });
     }
-    // On success, the useAuth & App components will handle redirecting the user.
+    // On success, the useAuth & App components will handle the redirect.
     setLoading(false);
   };
 
+  // While checking the session or if the user is already logged in, show a loader.
   if (authLoading || (!authLoading && user)) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -80,7 +80,6 @@ const Auth = () => {
         </div>
         <Card className="glass-card">
           <CardHeader className="text-center">
-            {/* Title now changes based on whether you are logging in or signing up */}
             <CardTitle className="text-2xl text-foreground">
               {authMode === 'login' 
                 ? 'Welcome Back' 
@@ -89,11 +88,11 @@ const Auth = () => {
             <CardDescription>
               {authMode === 'login'
                 ? 'Login to access your dashboard'
-                : userType === 'talent' ? 'Create your profile and start getting booked' : 'Find and book amazing talent for your events'}
+                : userType === 'talent' ? 'Create your profile to start getting booked' : 'Find and book amazing talent for your events'}
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {/* THE FIX: The Booker/Talent switch is now only shown when the 'signup' tab is active */}
+            {/* The Booker/Talent switch is now only shown when the 'signup' tab is active */}
             {authMode === 'signup' && (
               <Tabs value={userType} onValueChange={(value) => setUserType(value as UserType)} className="w-full mb-4">
                 <TabsList className="grid w-full grid-cols-2">
@@ -103,7 +102,6 @@ const Auth = () => {
               </Tabs>
             )}
             
-            {/* The Login/Signup tabs now control the `authMode` state */}
             <Tabs value={authMode} onValueChange={(value) => setAuthMode(value as AuthMode)} className="w-full">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="login">Login</TabsTrigger>
