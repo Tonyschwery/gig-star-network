@@ -1,7 +1,7 @@
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
-//8pm
+//8.5pm
 interface ProtectedTalentRouteProps {
   children: React.ReactNode;
   requireProfile?: boolean;
@@ -23,7 +23,6 @@ export function ProtectedTalentRoute({ children, requireProfile = true }: Protec
     }
   }, [status, requireProfile, navigate]);
   
-  // Determine if the user is authorized to see the current page's content
   const isAuthorized = status === 'TALENT_COMPLETE' || (status === 'TALENT_NEEDS_ONBOARDING' && !requireProfile);
 
   if (!isAuthorized) {
