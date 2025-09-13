@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-//gemini september 13
+
 interface ProtectedRouteProps {
   children: React.ReactNode;
 }
