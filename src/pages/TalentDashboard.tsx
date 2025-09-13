@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
@@ -20,31 +20,20 @@ import { UniversalChat } from "@/components/UniversalChat";
 import { SubscriptionButton } from "@/components/SubscriptionButton";
 import { ModeSwitch } from "@/components/ModeSwitch";
 import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
-
+//gemini 13 september
 interface TalentProfile {
   id: string;
   artist_name: string;
   act: string;
-  gender: string;
-  age: string;
   location?: string;
-  rate_per_hour?: number;
-  currency: string;
   music_genres: string[];
-  custom_genre?: string;
   picture_url?: string;
-  gallery_images?: string[];
-  soundcloud_link?: string;
-  youtube_link?: string;
-  biography: string;
-  nationality: string;
-  created_at: string;
   is_pro_subscriber?: boolean;
-  subscription_started_at?: string;
+  // Add any other fields you need for display here
 }
 
 const TalentDashboard = () => {
-  const { user, session, signOut } = useAuth();
+  const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [profile, setProfile] = useState<TalentProfile | null>(null);
@@ -53,50 +42,34 @@ const TalentDashboard = () => {
   useRealtimeNotifications();
 
   useEffect(() => {
+    // This component is wrapped by `ProtectedTalentRoute`, so we can assume a `user` with a profile exists.
+    // Its only job is to fetch the full profile data needed for display.
     const fetchTalentProfile = async () => {
-      // The useAuth() hook provides the user object once the session is stable.
-      // If there is no user, we can safely redirect to the login page.
       if (!user) {
         setLoading(false);
-        navigate('/auth');
-        return;
+        return; // Failsafe, should be handled by the protected route.
       }
-      
+
       try {
-        // Directly fetch the profile from the table. This is more reliable than an RPC call.
         const { data, error } = await supabase
           .from('talent_profiles')
-          .select('*')
+          .select('*') // Select all columns for the dashboard display
           .eq('user_id', user.id)
-          .single(); // .single() will error if more than one row is found.
+          .single();
 
-        // A specific error code 'PGRST116' means the row was not found. 
-        // This is how we know the user needs to complete their profile.
-        if (error && error.code === 'PGRST116') {
-          console.log('No talent profile found for user, redirecting to onboarding.');
-          navigate('/talent-onboarding');
-          return;
-        }
-        
-        // Any other error is a genuine problem.
-        if (error) {
-          throw error;
-        }
+        if (error) throw error; // Let the catch block handle any errors.
 
-        // If we get here, we have the data successfully.
         setProfile(data);
-
       } catch (err) {
         const error = err as Error;
-        console.error('Error fetching talent profile:', error.message);
+        console.error('Error fetching full talent profile:', error.message);
         toast({
-          title: "Error Loading Profile",
-          description: "There was a problem loading your dashboard. Please try again.",
+          title: "Error",
+          description: "Could not load your dashboard. Please try again.",
           variant: "destructive",
         });
-        navigate('/'); // Redirect to home on critical error
+        navigate('/'); // Redirect to a safe page on failure.
       } finally {
-        // No matter what happens, we are done loading.
         setLoading(false);
       }
     };
@@ -108,15 +81,6 @@ const TalentDashboard = () => {
     await signOut();
     navigate('/');
   };
-  
-  const handleCancelSubscription = async () => {
-    toast({
-      title: "Cancel Pro Subscription",
-      description: "To cancel your PayPal subscription, please visit your PayPal account's subscription management page.",
-      duration: 6000,
-    });
-    window.open('https://www.paypal.com/myaccount/autopay/', '_blank');
-  };
 
   if (loading) {
     return (
@@ -126,8 +90,7 @@ const TalentDashboard = () => {
     );
   }
 
-  // If after loading, the profile is still null, it means a redirect is in progress
-  // or has failed. Showing nothing is better than showing a broken page.
+  // If after loading the profile is still null, a redirect is likely in progress.
   if (!profile) {
     return null; 
   }
@@ -155,7 +118,9 @@ const TalentDashboard = () => {
           </div>
           
           <div className="flex flex-wrap gap-2">
+            {/* This is the switch you wanted to restore */}
             <ModeSwitch size="sm" />
+            
             <Button
               onClick={() => navigate('/talent-dashboard/bookings')}
               variant="outline"
@@ -164,21 +129,21 @@ const TalentDashboard = () => {
               <Calendar className="h-4 w-4 mr-2" />
               My Bookings
             </Button>
+            
             <Button
               onClick={() => navigate('/talent-profile-edit')}
               className="flex-shrink-0"
               size="sm"
             >
               <Edit3 className="h-4 w-4 mr-2" />
-              <span className="hidden sm:inline">Edit Profile</span>
-              <span className="sm:hidden">Edit</span>
+              Edit Profile
             </Button>
+            
             <SubscriptionButton
               isProSubscriber={profile.is_pro_subscriber || false}
-              onSubscriptionChange={() => {}} /* You might want to re-fetch profile here if needed */
-              variant="default"
-              size="sm"
+              onSubscriptionChange={fetchTalentProfile}
             />
+            
             <Button 
               variant="outline" 
               onClick={handleSignOut}
@@ -186,8 +151,7 @@ const TalentDashboard = () => {
               size="sm"
             >
               <LogOut className="h-4 w-4 mr-2" />
-              <span className="hidden sm:inline">Sign Out</span>
-              <span className="sm:hidden">Logout</span>
+              Sign Out
             </Button>
           </div>
         </div>
