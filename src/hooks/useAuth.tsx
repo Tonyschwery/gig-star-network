@@ -2,15 +2,12 @@ import { useState, useEffect, createContext, useContext, useCallback } from 'rea
 import { User, Session } from '@supabase/supabase-js';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-//9pm
-export type AuthStatus = 'LOADING' | 'LOGGED_OUT' | 'TALENT_COMPLETE' | 'BOOKER' | 'TALENT_NEEDS_ONBOARDING';
-type UserMode = 'artist' | 'booking';
 
-// THE FIX: Add `session` and `loading` back to the type definition.
+export type AuthStatus = 'LOADING' | 'LOGGED_OUT' | 'TALENT_COMPLETE' | 'BOOKER' | 'TALENT_NEEDS_ONBOARDING';
+export type UserMode = 'artist' | 'booking';
+//9pm
 interface AuthContextType {
   user: User | null;
-  session: Session | null;
-  loading: boolean;
   profile: any | null;
   status: AuthStatus;
   mode: UserMode;
@@ -26,24 +23,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<any | null>(null);
   const [status, setStatus] = useState<AuthStatus>('LOADING');
   const [mode, setModeState] = useState<UserMode>('booking');
-  const [loading, setLoading] = useState(true); // Keep a dedicated loading state
   const navigate = useNavigate();
 
   useEffect(() => {
-    setLoading(true);
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      setSession(session);
       const currentUser = session?.user ?? null;
       setUser(currentUser);
+      setSession(session);
 
       if (currentUser) {
-        const { data: userProfile } = await supabase
+        // User is logged in, now fetch their profile ONCE.
+        const { data: userProfile, error } = await supabase
           .from('talent_profiles')
           .select('*')
           .eq('user_id', currentUser.id)
           .maybeSingle();
 
-        if (userProfile) {
+        if (error) {
+          console.error("Error fetching profile:", error);
+          setStatus('BOOKER'); // Fallback to Booker on error
+          setProfile(null);
+        } else if (userProfile) {
           setProfile(userProfile);
           setStatus('TALENT_COMPLETE');
           setModeState('artist');
@@ -61,7 +61,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setProfile(null);
         setModeState('booking');
       }
-      setLoading(false); // Set loading to false after all checks are complete
     });
 
     return () => subscription.unsubscribe();
@@ -81,13 +80,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     navigate('/');
   };
 
-  // THE FIX: Ensure `loading` and `session` are provided in the context's value.
-  const value = { user, session, loading, profile, status, mode, setMode, signOut };
+  const value = { user, profile, status, mode, setMode, signOut };
 
+  // This is critical: Don't render the rest of the app until the initial status check is complete.
   return (
     <AuthContext.Provider value={value}>
-      {/* We can still keep this for safety, but the protected routes will also check loading state */}
-      {!loading && children}
+      {status !== 'LOADING' && children}
     </AuthContext.Provider>
   );
 }
