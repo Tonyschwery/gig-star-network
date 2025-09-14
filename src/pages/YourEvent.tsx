@@ -1,40 +1,42 @@
-import { Header } from "@/components/Header";
-import { BookingForm } from "@/components/BookingForm"; // Uses our new smarter form
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { ArrowLeft, HelpCircle } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-//stk
-export default function YourEvent() {
-  const navigate = useNavigate();
+// FILE: src/pages/YourEvent.tsx
 
+import React from 'react';
+import { Header } from '@/components/Header';
+// You will likely need a form component here. 
+// You can create a new one or adapt parts of BookingForm.tsx
+// For now, let's just create a placeholder.
+
+const YourEvent = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <div className="pt-24 container mx-auto px-4 pb-12">
-        <div className="max-w-4xl mx-auto">
-          <div className="mb-8">
-            <Button variant="ghost" onClick={() => navigate(-1)} className="mb-4">
-              <ArrowLeft className="h-4 w-4 mr-2" /> Back
-            </Button>
-            <div className="flex items-center gap-3 mb-4">
-              <HelpCircle className="h-8 w-8 text-primary" />
-              <h1 className="text-4xl font-bold">Tell us about your event</h1>
-            </div>
-            <p className="text-lg text-muted-foreground max-w-2xl">
-              Fill out the details below. Our team will review your request, and Pro talents who match your event's location will also be able to contact you directly.
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-2xl mx-auto">
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold gradient-text">Tell Us About Your Event</h1>
+            <p className="text-muted-foreground mt-2">
+              Provide the details below, and our team will match you with the perfect talent.
             </p>
           </div>
-          <Card className="shadow-lg">
-            <CardHeader>
-              <CardTitle className="text-2xl text-center">Event Request Form</CardTitle>
-            </CardHeader>
-            <CardContent className="p-8">
-              <BookingForm />
-            </CardContent>
-          </Card>
+          
+          {/* TODO: Insert your event request form here.
+            You can build a form similar to the one in 'BookingForm.tsx' 
+            that collects information like:
+            - Booker Name
+            - Event Type
+            - Event Date
+            - Location
+            - Description
+            ...and saves it to your 'event_requests' table in Supabase.
+          */}
+          <div className="p-8 border rounded-lg bg-card text-card-foreground">
+             <p className="text-center">Event Request Form will be here.</p>
+          </div>
+
         </div>
       </div>
     </div>
   );
-}
+};
+
+export default YourEvent;
