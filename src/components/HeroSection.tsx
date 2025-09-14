@@ -11,15 +11,11 @@ import { useAuth } from "@/hooks/useAuth";
 import { ProBadge } from "@/components/ProBadge";
 import Autoplay from "embla-carousel-autoplay";
 
-// --- Helper Data and Components ---
-
 const talentTypes = [
   { value: 'all', label: 'All Talent Types' },
   { value: 'dj', label: 'DJ' },
   { value: 'singer', label: 'Singer' },
   { value: 'band', label: 'Band' },
-  { value: 'saxophonist', label: 'Saxophonist' },
-  // Add other types as needed
 ];
 
 interface TalentProfile {
@@ -33,8 +29,6 @@ interface TalentProfile {
   currency: string;
   music_genres: string[];
 }
-
-// --- Main Hero Section Component ---
 
 export function HeroSection() {
   const navigate = useNavigate();
@@ -153,9 +147,10 @@ export function HeroSection() {
           </div>
           <h2 className="text-3xl md:text-4xl font-bold">Need Help Finding Talent?</h2>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            Let our team curate personalized recommendations based on your event.
+            Let our team curate personalized recommendations based on your event. Get matched with verified performers in 24 hours.
           </p>
           <div className="flex justify-center">
+            {/* THIS IS THE CORRECTED BUTTON */}
             <Button size="lg" className="px-8 py-4 text-base" onClick={() => navigate('/your-event')}>
               Get Personalized Recommendations
             </Button>
@@ -211,4 +206,3 @@ function FeaturedTalentCard({ talent }: FeaturedTalentCardProps) {
     </Card>
   );
 }
-
