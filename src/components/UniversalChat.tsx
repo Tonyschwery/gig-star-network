@@ -5,34 +5,29 @@ import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { MessageCircle, X, Minimize2, Maximize2, Wifi, Send } from "lucide-react";
+import { MessageCircle, X, Minimize2, Maximize2, Send, ArrowLeft } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useRealtimeChat } from "@/hooks/useRealtimeChat";
 import { useUnreadMessages } from "@/hooks/useUnreadMessages";
-import { useToast } from "@/hooks/use-toast";
 import { useOptimizedBookings } from "@/hooks/useOptimizedBookings";
-//gemini sep 14
-// Define a cleaner type for conversations
+//gemini 14 sept
 interface Conversation {
-  id: string; // Will be the booking_id
-  displayName: string;
-  subText: string;
+  id: string; // booking_id
+  displayName: string; // The name of the OTHER person
+  subText: string; // Details about the event
 }
 
 export function UniversalChat() {
   const { user } = useAuth();
-  const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [minimized, setMinimized] = useState(false);
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
   const [input, setInput] = useState("");
+  const [isDirectMode, setIsDirectMode] = useState(false); // New state for Direct Chat Mode
+
   const { unreadCount } = useUnreadMessages();
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  
-  // Fetch raw booking data
-  const { bookings, isProUser, loading } = useOptimizedBookings(user?.id);
-
-  // Use the real-time chat hook with the selected conversation
+  const { bookings, loading } = useOptimizedBookings(user?.id);
   const { messages, sendMessage, isReady } = useRealtimeChat(selectedConversationId, user?.id);
 
   // Memoize and transform the raw bookings into a clean conversation list
@@ -40,37 +35,62 @@ export function UniversalChat() {
     if (!user || loading) return [];
     
     return bookings
-      .filter(b => b.status !== 'declined' && b.status !== 'cancelled' && b.event_type !== 'admin_support')
+      .filter(b => b.status !== 'declined' && b.status !== 'cancelled')
       .map(booking => {
-        // Determine if the current user is the talent for this booking
         const isUserTalent = booking.talent_id && booking.user_id !== user.id;
         const eventDate = booking.event_date ? new Date(booking.event_date).toLocaleDateString() : 'No date';
+        // IMPORTANT: This assumes 'talent_profiles.artist_name' is fetched by useOptimizedBookings
+        const talentName = (booking as any).talent_profiles?.artist_name || 'The Talent';
 
         return {
           id: booking.id,
-          displayName: isUserTalent ? booking.booker_name : (booking as any).talent_profiles?.artist_name || 'Talent',
+          displayName: isUserTalent ? booking.booker_name : talentName,
           subText: `${booking.event_type} • ${eventDate}`
         };
       });
   }, [bookings, user, loading]);
-  
-  // Set a default conversation when the list loads
+
+  // This is the new logic to handle the "Chat before accept" button
   useEffect(() => {
-    if (!selectedConversationId && conversations.length > 0) {
-      setSelectedConversationId(conversations[0].id);
-    }
-  }, [conversations, selectedConversationId]);
+    const handleOpenDirectChat = (event: CustomEvent) => {
+      const { bookingId } = event.detail;
+      if (bookingId && conversations.find(c => c.id === bookingId)) {
+        setSelectedConversationId(bookingId);
+        setIsDirectMode(true); // Activate Direct Chat Mode
+        setMinimized(false);
+        setOpen(true);
+      }
+    };
+    window.addEventListener('openChatWithBooking', handleOpenDirectChat as EventListener);
+    return () => window.removeEventListener('openChatWithBooking', handleOpenDirectChat as EventListener);
+  }, [conversations]);
 
   // Scroll to new messages
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    if (open && !minimized) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages, open, minimized]);
 
   const onSend = useCallback(() => {
     if (!input.trim() || !selectedConversationId) return;
     sendMessage(input);
-setInput("");
+    setInput("");
   }, [input, selectedConversationId, sendMessage]);
+
+  const handleClose = () => {
+    setOpen(false);
+    setIsDirectMode(false); // Reset mode on close
+  };
+  
+  const handleOpenUniversal = () => {
+    if (conversations.length > 0 && !selectedConversationId) {
+      setSelectedConversationId(conversations[0].id);
+    }
+    setIsDirectMode(false); // Ensure we are in universal mode
+    setMinimized(false);
+    setOpen(true);
+  };
 
   const selectedConversation = conversations.find(c => c.id === selectedConversationId);
 
@@ -80,7 +100,7 @@ setInput("");
       <div className="fixed bottom-4 right-4 z-50">
         <Button
           className="h-14 w-14 rounded-full shadow-lg"
-          onClick={() => { setOpen(true); setMinimized(false); }}
+          onClick={handleOpenUniversal}
           aria-label="Open chat"
         >
           <MessageCircle className="h-6 w-6" />
@@ -93,23 +113,23 @@ setInput("");
       </div>
 
       {/* New Chat Dialog */}
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={open} onOpenChange={handleClose}>
         <DialogContent className={`fixed bottom-4 right-4 bg-card border rounded-lg shadow-xl overflow-hidden p-0 flex flex-col transition-all duration-300
           ${minimized ? 'h-[60px] w-[250px]' : 'h-[calc(100vh-2rem)] max-h-[600px] w-[90vw] max-w-[400px]'}`}>
           
           {/* Header */}
           <div className="flex items-center justify-between p-3 border-b shrink-0">
-            <div className="flex items-center gap-2">
-              <div className={`h-2 w-2 rounded-full ${isReady ? 'bg-green-500' : 'bg-yellow-500 animate-pulse'}`}></div>
-              <h3 className="font-semibold text-sm">
-                {minimized ? selectedConversation?.displayName || 'Live Chat' : 'Live Chat'}
-              </h3>
+            <div className="flex items-center gap-2 overflow-hidden">
+                <div className={`h-2 w-2 rounded-full shrink-0 ${isReady ? 'bg-green-500' : 'bg-yellow-500'}`}></div>
+                <h3 className="font-semibold text-sm truncate">
+                    {minimized && selectedConversation ? selectedConversation.displayName : 'Live Chat'}
+                </h3>
             </div>
             <div className="flex items-center">
               <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setMinimized(!minimized)}>
                 {minimized ? <Maximize2 className="h-4 w-4" /> : <Minimize2 className="h-4 w-4" />}
               </Button>
-              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setOpen(false)}>
+              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleClose}>
                 <X className="h-4 w-4" />
               </Button>
             </div>
@@ -117,13 +137,24 @@ setInput("");
           
           {!minimized && (
             <>
-              {/* Conversation Selector */}
-              <div className="p-3 border-b">
-                <Select value={selectedConversationId ?? undefined} onValueChange={setSelectedConversationId}>
-                  <SelectTrigger><SelectValue placeholder="Select a conversation..." /></SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      <SelectLabel>Booking Chats</SelectLabel>
+              {/* Conversation Selector or Direct Chat Header */}
+              <div className="p-3 border-b shrink-0">
+                {isDirectMode && selectedConversation ? (
+                  // Direct Mode: Show a clean header
+                  <div className="flex items-center gap-3">
+                    <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setIsDirectMode(false)}>
+                      <ArrowLeft className="h-4 w-4" />
+                    </Button>
+                    <div>
+                      <p className="font-semibold">{selectedConversation.displayName}</p>
+                      <p className="text-xs text-muted-foreground">{selectedConversation.subText}</p>
+                    </div>
+                  </div>
+                ) : (
+                  // Universal Mode: Show the dropdown
+                  <Select value={selectedConversationId ?? undefined} onValueChange={setSelectedConversationId}>
+                    <SelectTrigger><SelectValue placeholder="Select a conversation..." /></SelectTrigger>
+                    <SelectContent>
                       {conversations.length > 0 ? conversations.map((convo) => (
                         <SelectItem key={convo.id} value={convo.id}>
                           <div className="flex flex-col">
@@ -132,22 +163,18 @@ setInput("");
                           </div>
                         </SelectItem>
                       )) : <p className="text-xs text-muted-foreground p-2">No active bookings.</p>}
-                    </SelectGroup>
-                    <SelectGroup>
-                       <SelectLabel>Support</SelectLabel>
-                       <SelectItem value="admin_support_chat">QTalents Support</SelectItem>
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
 
               {/* Messages Area */}
-              <ScrollArea className="flex-1 p-3">
+              <ScrollArea className="flex-1 p-3 bg-muted/20">
                 <div className="space-y-4">
                   {messages.map((msg) => (
-                    <div key={msg.id} className={`flex ${msg.senderId === user?.id ? 'justify-end' : 'justify-start'}`}>
+                    <div key={msg.id} className={`flex items-end gap-2 ${msg.senderId === user?.id ? 'justify-end' : 'justify-start'}`}>
                       <div className={`max-w-[80%] px-3 py-2 rounded-xl text-sm
-                        ${msg.senderId === user?.id ? 'bg-primary text-primary-foreground rounded-br-none' : 'bg-muted rounded-bl-none'}`}>
+                        ${msg.senderId === user?.id ? 'bg-primary text-primary-foreground rounded-br-none' : 'bg-background border rounded-bl-none'}`}>
                         {msg.content}
                       </div>
                     </div>
