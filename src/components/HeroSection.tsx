@@ -74,7 +74,6 @@ export function HeroSection() {
   };
 
   const handleSearch = () => {
-    // Create URL parameters for search
     const params = new URLSearchParams();
     if (searchFilters.location && searchFilters.location !== 'all') {
       params.set('location', searchFilters.location);
@@ -83,19 +82,12 @@ export function HeroSection() {
       params.set('type', searchFilters.talentType);
     }
 
-    // Build the URL with search parameters
     const newUrl = params.toString() ? `/?${params.toString()}#talents` : '/#talents';
     
-    console.log('Search filters:', searchFilters);
-    console.log('Generated URL:', newUrl);
-    
-    // Navigate to the new URL and scroll to talents section
     navigate(newUrl);
     
-    // Show search feedback
     const hasFilters = searchFilters.location !== 'all' || searchFilters.talentType !== 'all';
     if (hasFilters) {
-      // Small delay to allow navigation to complete
       setTimeout(() => {
         document.getElementById('talents')?.scrollIntoView({ 
           behavior: 'smooth',
@@ -107,7 +99,6 @@ export function HeroSection() {
 
   return (
     <section className="relative min-h-screen flex items-center justify-center pt-24 pb-16">
-      {/* Background Gradient */}
       <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-brand-primary/5" />
       
       <div className="container mx-auto px-4 relative z-10">
@@ -303,7 +294,7 @@ export function HeroSection() {
             <Button 
               size="lg"
               className="hero-button px-8 py-4 text-base font-semibold"
-              onClick={() => navigate('/your-event')}
+              onClick={() => navigate('/your-event')} // CORRECT: This navigates to the URL path /your-event
             >
               {user ? "Get Personalized Recommendations" : "Start Free Consultation"}
             </Button>
