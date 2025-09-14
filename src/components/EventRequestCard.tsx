@@ -2,9 +2,9 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, MapPin, MessageCircle, Info } from "lucide-react";
+import { Calendar, Clock, MapPin, MessageCircle } from "lucide-react";
 import { format } from "date-fns";
-import { useChat } from "@/contexts/ChatContext"; // For direct chat
+import { useChat } from "@/contexts/ChatContext";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 //stk
 export interface EventRequest {
@@ -21,7 +21,7 @@ export interface EventRequest {
 
 interface EventRequestCardProps {
   request: EventRequest;
-  isActionable?: boolean; // To control if a Talent can interact
+  isActionable?: boolean;
   mode: 'talent' | 'booker';
 }
 
@@ -82,7 +82,6 @@ export const EventRequestCard = ({ request, isActionable = false, mode }: EventR
             </div>
         )}
 
-        {/* Action buttons */}
         <div className="border-t pt-3 flex justify-end">
             {mode === 'booker' ? (
                 <Button onClick={() => openChat(request.id)} size="sm" variant="outline">
@@ -92,7 +91,6 @@ export const EventRequestCard = ({ request, isActionable = false, mode }: EventR
                 <TooltipProvider>
                     <Tooltip>
                         <TooltipTrigger asChild>
-                            {/* The button's disabled state is controlled by isActionable */}
                             <Button 
                                 onClick={() => openChat(request.id)} 
                                 size="sm" 
