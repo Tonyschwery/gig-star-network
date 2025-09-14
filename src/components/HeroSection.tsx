@@ -4,27 +4,18 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
-import { Star, MapPin, Search, Music, Crown, HelpCircle, Calendar } from "lucide-react";
+import { Star, MapPin, Search, Music, Crown, HelpCircle } from "lucide-react";
 import { countries } from "@/lib/countries";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { ProBadge } from "@/components/ProBadge";
 import Autoplay from "embla-carousel-autoplay";
 
-// --- Helper Data and Types ---
-
 const talentTypes = [
   { value: 'all', label: 'All Talent Types' },
   { value: 'dj', label: 'DJ' },
   { value: 'singer', label: 'Singer' },
   { value: 'band', label: 'Band' },
-  { value: 'saxophonist', label: 'Saxophonist' },
-  { value: 'keyboardist', label: 'Keyboardist' },
-  { value: 'drummer', label: 'Drummer' },
-  { value: 'percussionist', label: 'Percussionist' },
-  { value: 'guitarist', label: 'Guitarist' },
-  { value: 'violinist', label: 'Violinist' },
-  { value: 'other', label: 'Other' }
 ];
 
 interface TalentProfile {
@@ -38,8 +29,6 @@ interface TalentProfile {
   currency: string;
   music_genres: string[];
 }
-
-// --- Main Hero Section Component ---
 
 export function HeroSection() {
   const navigate = useNavigate();
@@ -56,7 +45,7 @@ export function HeroSection() {
         .select(`id, artist_name, act, location, picture_url, is_pro_subscriber, rate_per_hour, currency, music_genres`)
         .eq('is_pro_subscriber', true)
         .order('created_at', { ascending: false })
-        .limit(10); // Good practice to limit results for performance
+        .limit(10);
 
       if (error) {
         console.error('Error fetching featured talents:', error);
@@ -70,19 +59,10 @@ export function HeroSection() {
 
   const handleSearch = () => {
     const params = new URLSearchParams();
-    if (searchFilters.location && searchFilters.location !== 'all') {
-      params.set('location', searchFilters.location);
-    }
-    if (searchFilters.talentType && searchFilters.talentType !== 'all') {
-      params.set('type', searchFilters.talentType);
-    }
-    const searchUrl = `/?${params.toString()}#talents`;
-    navigate(searchUrl);
-    
-    // Smooth scroll after navigation
-    setTimeout(() => {
-      document.getElementById('talents')?.scrollIntoView({ behavior: 'smooth' });
-    }, 100);
+    if (searchFilters.location) params.set('location', searchFilters.location);
+    if (searchFilters.talentType !== 'all') params.set('type', searchFilters.talentType);
+    navigate(`/?${params.toString()}#talents`);
+    setTimeout(() => document.getElementById('talents')?.scrollIntoView({ behavior: 'smooth' }), 100);
   };
 
   return (
@@ -90,17 +70,15 @@ export function HeroSection() {
       <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-primary/5" />
       <div className="container mx-auto px-4 relative z-10">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
-          {/* Left Content */}
           <div className="space-y-8">
             <div className="space-y-6">
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tighter">
-                Book <span className="text-primary">Live Talent</span> for Your Event
+                Book <span className="text-primary">Live Talent</span> for Any Event
               </h1>
               <p className="text-lg text-muted-foreground max-w-lg">
                 The simplest way to find and book exceptional performers for any occasion.
               </p>
             </div>
-            {/* Search Form */}
             <Card className="p-6">
               <div className="grid md:grid-cols-3 gap-4">
                 <div className="space-y-2">
@@ -108,7 +86,6 @@ export function HeroSection() {
                   <Select value={searchFilters.location} onValueChange={(value) => setSearchFilters(prev => ({ ...prev, location: value }))}>
                     <SelectTrigger><SelectValue placeholder="Select country" /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All Countries</SelectItem>
                       {countries.map((c) => <SelectItem key={c.code} value={c.name}>{c.name}</SelectItem>)}
                     </SelectContent>
                   </Select>
@@ -130,8 +107,6 @@ export function HeroSection() {
               </div>
             </Card>
           </div>
-
-          {/* Right Content - Carousel */}
           <div className="space-y-4">
             <div className="text-center">
               <h3 className="text-xl font-bold">Featured Pro Artists</h3>
@@ -153,18 +128,15 @@ export function HeroSection() {
             )}
           </div>
         </div>
-        
-        {/* Booker Help Section */}
         <div className="mt-24 text-center space-y-6">
           <div className="inline-flex items-center justify-center p-3 bg-primary/10 rounded-full">
             <HelpCircle className="h-8 w-8 text-primary" />
           </div>
           <h2 className="text-3xl md:text-4xl font-bold">Need Help Finding Talent?</h2>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            Let our team curate personalized recommendations based on your event. Get matched with verified performers in 24 hours.
+            Let our team curate personalized recommendations based on your event.
           </p>
           <div className="flex justify-center">
-            {/* THIS IS THE CORRECTED BUTTON */}
             <Button size="lg" className="px-8 py-4 text-base" onClick={() => navigate('/your-event')}>
               Get Personalized Recommendations
             </Button>
@@ -175,25 +147,11 @@ export function HeroSection() {
   );
 }
 
-// --- Sub-component for the Featured Talent Card ---
-
-interface FeaturedTalentCardProps {
-  talent: TalentProfile;
-}
-
-function FeaturedTalentCard({ talent }: FeaturedTalentCardProps) {
+function FeaturedTalentCard({ talent }: { talent: TalentProfile }) {
   const navigate = useNavigate();
-  
-  const getCurrencySymbol = (currency: string) => {
-    const symbols: Record<string, string> = { 'USD': '$', 'EUR': '€', 'GBP': '£', 'AED': 'د.إ' };
-    return symbols[currency] || currency;
-  };
-
+  const getCurrencySymbol = (currency: string) => ({ 'USD': '$', 'EUR': '€', 'GBP': '£', 'AED': 'د.إ' }[currency] || currency);
   return (
-    <Card 
-      className="group p-4 cursor-pointer overflow-hidden h-full"
-      onClick={() => navigate(`/talent/${talent.id}`)}
-    >
+    <Card className="group p-4 cursor-pointer h-full" onClick={() => navigate(`/talent/${talent.id}`)}>
       {talent.is_pro_subscriber && <ProBadge size="sm" className="absolute top-3 right-3 z-10" />}
       <div className="flex justify-center mb-4">
         <div className="w-20 h-20 rounded-full overflow-hidden ring-2 ring-primary/20">
@@ -201,7 +159,7 @@ function FeaturedTalentCard({ talent }: FeaturedTalentCardProps) {
         </div>
       </div>
       <div className="text-center space-y-1">
-        <h3 className="font-bold text-foreground truncate">{talent.artist_name}</h3>
+        <h3 className="font-bold truncate">{talent.artist_name}</h3>
         <p className="text-sm text-muted-foreground">{talent.act}</p>
         <div className="flex items-center justify-center text-xs text-muted-foreground">
           <MapPin className="h-3 w-3 mr-1" />
