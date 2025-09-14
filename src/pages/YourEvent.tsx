@@ -2,9 +2,7 @@
 
 import React from 'react';
 import { Header } from '@/components/Header';
-// You will likely need a form component here. 
-// You can create a new one or adapt parts of BookingForm.tsx
-// For now, let's just create a placeholder.
+import { EventRequestForm } from '@/components/EventRequestForm'; // 1. Import the new form component
 
 const YourEvent = () => {
   return (
@@ -19,19 +17,8 @@ const YourEvent = () => {
             </p>
           </div>
           
-          {/* TODO: Insert your event request form here.
-            You can build a form similar to the one in 'BookingForm.tsx' 
-            that collects information like:
-            - Booker Name
-            - Event Type
-            - Event Date
-            - Location
-            - Description
-            ...and saves it to your 'event_requests' table in Supabase.
-          */}
-          <div className="p-8 border rounded-lg bg-card text-card-foreground">
-             <p className="text-center">Event Request Form will be here.</p>
-          </div>
+          {/* 2. The placeholder is now replaced with the actual form component */}
+          <EventRequestForm />
 
         </div>
       </div>
