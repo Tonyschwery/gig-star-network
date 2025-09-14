@@ -57,7 +57,7 @@ const TalentDashboard = () => {
             {/* ... Your original JSX for displaying profile info ... */}
           </CardContent>
         </Card>
-        <UniversalChat />
+        
       </div>
     </div>
   );
