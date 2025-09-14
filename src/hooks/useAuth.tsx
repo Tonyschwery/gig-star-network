@@ -3,10 +3,17 @@ import { User, Session } from '@supabase/supabase-js';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
+type UserStatus = 'LOADING' | 'LOGGED_OUT' | 'BOOKER' | 'TALENT_NEEDS_ONBOARDING' | 'TALENT_COMPLETE';
+type UserMode = 'booking' | 'artist';
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  status: UserStatus;
+  mode: UserMode;
+  setMode: (mode: UserMode) => void;
+  profile: any | null;
   signOut: () => Promise<void>;
 }
 
@@ -16,24 +23,55 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [profile, setProfile] = useState<any | null>(null);
+  const [status, setStatus] = useState<UserStatus>('LOADING');
+  const [mode, setMode] = useState<UserMode>('booking');
   const queryClient = useQueryClient();
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
+
+        if (session?.user) {
+          // Fetch profile data to determine the user's role and status
+          const { data: talentProfile } = await supabase
+            .from('talent_profiles')
+            .select('*')
+            .eq('user_id', session.user.id)
+            .maybeSingle();
+
+          setProfile(talentProfile);
+
+          if (talentProfile) {
+            // This is a Talent user
+            if (talentProfile.artist_name && talentProfile.biography) {
+              setStatus('TALENT_COMPLETE');
+              setMode('artist');
+            } else {
+              setStatus('TALENT_NEEDS_ONBOARDING');
+              setMode('artist');
+            }
+          } else {
+            // This is a Booker user
+            setStatus('BOOKER');
+            setMode('booking');
+          }
+        } else {
+          // No user is logged in
+          setStatus('LOGGED_OUT');
+          setProfile(null);
+          setMode('booking');
+        }
+
         setLoading(false);
 
-        // Smart Data Management Integration with React Query
+        // Smart Data Management for cache consistency
         if (event === 'SIGNED_IN') {
-          // On sign-in, invalidate all queries to force a fresh data fetch
-          // for the new user.
           queryClient.invalidateQueries();
         }
         if (event === 'SIGNED_OUT') {
-          // On sign-out, completely clear the cache to prevent any of the
-          // previous user's data from being shown to a new user.
           queryClient.clear();
         }
       }
@@ -46,14 +84,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     await supabase.auth.signOut();
-    // A hard reload is the safest way to ensure all application state is cleared.
     window.location.href = '/';
   };
 
-  const value = { user, session, loading, signOut };
+  const value = { user, session, loading, status, mode, setMode, profile, signOut };
 
-  // This ensures the rest of the app doesn't try to render until the
-  // initial authentication check is complete, preventing black screens.
+  // This key fix prevents the rest of the app (children) from rendering
+  // until the initial auth check is complete, preventing black screens.
   return (
     <AuthContext.Provider value={value}>
       {!loading && children}
