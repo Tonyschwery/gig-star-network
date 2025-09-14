@@ -78,9 +78,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [navigate, status]);
 
-  const signOut = async () => {
+   const signOut = async () => {
     await supabase.auth.signOut();
-    navigate('/');
+    // This is the crucial line that forces the browser to go to the homepage after signing out.
+    // It ensures a full page refresh, clearing all user state.
+    window.location.href = '/';
   };
 
   const value = { user, session, profile, status, mode, loading, setMode, signOut };
