@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { useEmailNotifications } from "@/hooks/useEmailNotifications";
+import { Label } from "@/components/ui/label";
 //stk
 export const BookingForm = () => {
   const { user } = useAuth();
