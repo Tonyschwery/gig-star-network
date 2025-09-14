@@ -15,7 +15,6 @@ import BookerDashboard from "./pages/BookerDashboard";
 import TalentOnboarding from "./pages/TalentOnboarding";
 import TalentProfile from "./pages/TalentProfile";
 import TalentDashboard from "./pages/TalentDashboard";
-import TalentDashboardBookings from "./pages/TalentDashboardBookings";
 import TalentProfileEdit from "./pages/TalentProfileEdit";
 import AdminDashboard from "./pages/AdminDashboard";
 import { AdminLayout } from "./components/admin/AdminLayout";
