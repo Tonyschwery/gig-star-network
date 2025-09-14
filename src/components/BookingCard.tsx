@@ -25,6 +25,9 @@ interface BookingCardProps {
   booking: Booking;
   mode: 'talent' | 'booker';
   onUpdate?: () => void;
+  isProSubscriber?: boolean;
+  canAccept?: boolean;
+  onChatOpen?: (bookingId: string) => void;
 }
 
 export const BookingCard = ({ booking, mode, onUpdate }: BookingCardProps) => {

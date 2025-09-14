@@ -87,7 +87,7 @@ export function UniversalChat() {
             <Textarea
               placeholder="Type your message..."
               value={input}
-              onChange={(e) => setInput(e.e.target.value)}
+              onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); onSend(); } }}
               className="pr-12 resize-none"
               rows={1}

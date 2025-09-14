@@ -6,6 +6,8 @@ import { Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./hooks/useAuth";
 import { AdminProvider } from "./hooks/useAdminAuth";
 import { UserModeProvider } from "./contexts/UserModeContext";
+import { ChatProvider } from "./contexts/ChatContext";
+import { UniversalChat } from "./components/UniversalChat";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Login from "./pages/Login";
@@ -27,10 +29,12 @@ import { AdminRoute } from "./components/AdminRoute";
 const App = () => (
   <AuthProvider>
     <UserModeProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <Routes>
+      <ChatProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <UniversalChat />
+          <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/login" element={<Login />} />
@@ -55,8 +59,9 @@ const App = () => (
             
             <Route path="/talent/:id" element={<TalentProfile />} />
             <Route path="*" element={<NotFound />} />
-        </Routes>
-      </TooltipProvider>
+          </Routes>
+        </TooltipProvider>
+      </ChatProvider>
     </UserModeProvider>
   </AuthProvider>
 );
