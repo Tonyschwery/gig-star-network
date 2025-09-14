@@ -20,6 +20,7 @@ const Auth = () => {
   const { user, loading: authLoading } = useAuth();
   
   const { state } = useLocation(); // Get the state passed from the protected route
+  console.log('AUTH PAGE: Received state from redirect:', state); // <-- ADD THIS LINE
   const mode = state?.mode || 'talent'; // Default to 'talent' if no mode is provided
 
   // **THE FIX:** Dynamic text based on the user mode
