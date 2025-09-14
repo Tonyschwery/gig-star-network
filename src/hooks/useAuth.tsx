@@ -34,6 +34,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setSession(session);
         setUser(session?.user ?? null);
 
+        // Smart Data Management Integration
+        if (event === 'SIGNED_IN') {
+          // On sign-in, command React Query to invalidate all existing data.
+          // This forces the entire application to re-fetch fresh data
+          // using the new user's credentials, preventing stale data from being shown.
+          await queryClient.invalidateQueries();
+        }
+        if (event === 'SIGNED_OUT') {
+          // On sign-out, command React Query to completely clear the cache.
+          // This ensures no sensitive data from the previous user is ever
+          // left in memory for a new user.
+          queryClient.clear();
+        }
+
         if (session?.user) {
           const { data: talentProfile } = await supabase
             .from('talent_profiles')
@@ -62,14 +76,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
 
         setLoading(false);
-
-        // Smart Data Management Integration
-        if (event === 'SIGNED_IN') {
-          queryClient.invalidateQueries();
-        }
-        if (event === 'SIGNED_OUT') {
-          queryClient.clear();
-        }
       }
     );
 
@@ -80,13 +86,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     await supabase.auth.signOut();
+    // The onAuthStateChange listener above will handle clearing the cache correctly.
     window.location.href = '/';
   };
 
   const value = { user, session, loading, status, mode, setMode, profile, signOut };
 
-  // This crucial fix prevents the app from rendering until the initial
-  // auth check is complete, solving the "black screen" issue.
+  // This critical line prevents the rest of the app from rendering until the
+  // initial authentication check is complete, solving the "black screen" issue.
   return (
     <AuthContext.Provider value={value}>
       {!loading && children}
@@ -101,4 +108,3 @@ export function useAuth() {
   }
   return context;
 }
-
