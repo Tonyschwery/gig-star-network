@@ -7,33 +7,22 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { User, Mail, Lock, ArrowLeft, Briefcase } from "lucide-react";
-//9pm
-type UserType = 'talent' | 'booker';
-type AuthMode = 'login' | 'signup';
+import { User, Mail, Lock, ArrowLeft } from "lucide-react";
 
 const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
-  const [userType, setUserType] = useState<UserType>('talent');
-  const [authMode, setAuthMode] = useState<AuthMode>('signup');
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { status } = useAuth();
+  const { user, loading: authLoading } = useAuth();
 
   useEffect(() => {
-    if (status !== 'LOGGED_OUT' && status !== 'LOADING') {
-      if (status === 'TALENT_COMPLETE' || status === 'TALENT_NEEDS_ONBOARDING') {
-        navigate('/talent-dashboard');
-      } else if (status === 'BOOKER') {
-        navigate('/booker-dashboard');
-      } else {
-        navigate('/');
-      }
+    if (!authLoading && user) {
+      navigate("/");
     }
-  }, [status, navigate]);
+  }, [user, authLoading, navigate]);
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,12 +30,12 @@ const Auth = () => {
     const { error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { name, user_type: userType } }
+      options: { data: { name, user_type: 'talent' } }
     });
     if (error) {
-      toast({ title: "Error signing up", description: error.message, variant: "destructive" });
+      toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
-      toast({ title: "Account created!", description: "Please check your email to verify your account." });
+      toast({ title: "Account created!", description: "Please check your email to verify." });
     }
     setLoading(false);
   };
@@ -56,23 +45,50 @@ const Auth = () => {
     setLoading(true);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
-      toast({ title: "Error signing in", description: error.message, variant: "destructive" });
+      toast({ title: "Error", description: error.message, variant: "destructive" });
     }
-    // On success, the useAuth hook will detect the new session and redirect.
     setLoading(false);
   };
 
-  if (status !== 'LOGGED_OUT') {
+  if (authLoading || user) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
+        <div className="min-h-screen bg-background flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        {/* Your Original Auth JSX Here */}
+      <div className="w-full max-w-md">
+        <Button variant="ghost" onClick={() => navigate("/")} className="mb-4">
+          <ArrowLeft className="h-4 w-4 mr-2" /> Back to Home
+        </Button>
+        <Card>
+          <CardHeader className="text-center">
+            <CardTitle className="text-2xl">Join as a Talent</CardTitle>
+            <CardDescription>Create your profile to get booked</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Tabs defaultValue="signup" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="login">Login</TabsTrigger>
+                <TabsTrigger value="signup">Sign Up</TabsTrigger>
+              </TabsList>
+              <TabsContent value="login">
+                <form onSubmit={handleSignIn} className="space-y-4">
+                  {/* Inputs for Login */}
+                </form>
+              </TabsContent>
+              <TabsContent value="signup">
+                <form onSubmit={handleSignUp} className="space-y-4">
+                  {/* Inputs for Signup */}
+                </form>
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };
