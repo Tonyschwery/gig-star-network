@@ -3,9 +3,13 @@ import "@/utils/testEmailSystem";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Routes, Route } from "react-router-dom";
-import { AuthProvider, useAuth } from "./hooks/useAuth"; // Import useAuth here
+import { AuthProvider } from "./hooks/useAuth";
 import { AdminProvider } from "./hooks/useAdminAuth";
 import { UserModeProvider } from "./contexts/UserModeContext";
+import { ChatProvider } from "./contexts/ChatContext"; // Import the new Chat Provider
+import { UniversalChat } from "./components/UniversalChat"; // Import the single chat instance
+//gemini14
+// Import all your pages
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Login from "./pages/Login";
@@ -23,60 +27,47 @@ import NotFound from "./pages/NotFound";
 import { ProtectedTalentRoute } from "./components/ProtectedTalentRoute";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AdminRoute } from "./components/AdminRoute";
-import { UniversalChat } from "./components/UniversalChat";
 
-// A new component that contains the main app layout.
-// This allows us to use the useAuth() hook.
-const AppLayout = () => {
-  const { user } = useAuth(); // Get the current user
-
-  return (
-    <>
-      <Routes>
-        {/* All your routes go here as before */}
-        <Route path="/" element={<Index />} />
-        <Route path="/auth" element={<Auth />} />
-        <Route path="/login" element={<Login />} />
-        
-        <Route path="/admin" element={
-          <AdminProvider>
-            <AdminRoute>
-              <AdminLayout />
-            </AdminRoute>
-          </AdminProvider>
-        }>
-          <Route index element={<AdminDashboard />} />
-          <Route path="users" element={<AdminUsers />} />
-          <Route path="bookings" element={<AdminBookings />} />
-        </Route>
-        
-        <Route path="/booker-dashboard" element={<ProtectedRoute><BookerDashboard /></ProtectedRoute>} />
-        <Route path="/talent-onboarding" element={<ProtectedTalentRoute requireProfile={false}><TalentOnboarding /></ProtectedTalentRoute>} />
-        <Route path="/talent-dashboard" element={<ProtectedTalentRoute><TalentDashboard /></ProtectedTalentRoute>} />
-        <Route path="/talent-dashboard/bookings" element={<ProtectedTalentRoute><TalentDashboardBookings /></ProtectedTalentRoute>} />
-        <Route path="/talent-profile-edit" element={<ProtectedTalentRoute><TalentProfileEdit /></ProtectedTalentRoute>} />
-        
-        <Route path="/talent/:id" element={<TalentProfile />} />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-      
-      {/* This is the condition: Only show the UniversalChat if a user is logged in. */}
-      {user && <UniversalChat />}
-    </>
-  );
-}
-
-// The main App component now sets up the providers and renders the AppLayout
 const App = () => (
   <AuthProvider>
     <UserModeProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <AppLayout />
-      </TooltipProvider>
+      <ChatProvider> {/* Wrap the app in the new ChatProvider */}
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <Routes>
+            {/* All your existing routes go here, unchanged */}
+            <Route path="/" element={<Index />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/booker-dashboard" element={<ProtectedRoute><BookerDashboard /></ProtectedRoute>} />
+            <Route path="/talent-onboarding" element={<ProtectedTalentRoute requireProfile={false}><TalentOnboarding /></ProtectedTalentRoute>} />
+            <Route path="/talent-dashboard" element={<ProtectedTalentRoute><TalentDashboard /></ProtectedTalentRoute>} />
+            <Route path="/talent-dashboard/bookings" element={<ProtectedTalentRoute><TalentDashboardBookings /></ProtectedTalentRoute>} />
+            <Route path="/talent-profile-edit" element={<ProtectedTalentRoute><TalentProfileEdit /></ProtectedTalentRoute>} />
+            <Route path="/talent/:id" element={<TalentProfile />} />
+            <Route path="/admin" element={
+              <AdminProvider>
+                <AdminRoute>
+                  <AdminLayout />
+                </AdminRoute>
+              </AdminProvider>
+            }>
+              <Route index element={<AdminDashboard />} />
+              <Route path="users" element={<AdminUsers />} />
+              <Route path="bookings" element={<AdminBookings />} />
+            </Route>
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+          
+          {/* This is the single, global chat instance for the entire app. It is hidden by default. */}
+          <UniversalChat />
+
+        </TooltipProvider>
+      </ChatProvider>
     </UserModeProvider>
   </AuthProvider>
 );
 
 export default App;
+
