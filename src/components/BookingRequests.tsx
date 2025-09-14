@@ -112,11 +112,6 @@ export const BookingRequests = ({ talentId, isProSubscriber }: BookingRequestsPr
                 </TabsContent>
             </Tabs>
             
-            {/* Universal Chat with booking-specific opening */}
-            <UniversalChat 
-                openWithBooking={chatOpenBooking} 
-                key={chatOpenBooking} // Force re-render when booking changes
-            />
-        </div>
+            
     );
 };
