@@ -6,10 +6,6 @@ import { Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./hooks/useAuth";
 import { AdminProvider } from "./hooks/useAdminAuth";
 import { UserModeProvider } from "./contexts/UserModeContext";
-import { ChatProvider } from "./contexts/ChatContext"; // Import the new Chat Provider
-import { UniversalChat } from "./components/UniversalChat"; // Import the single chat instance
-//gemini14
-// Import all your pages
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Login from "./pages/Login";
@@ -31,21 +27,14 @@ import { AdminRoute } from "./components/AdminRoute";
 const App = () => (
   <AuthProvider>
     <UserModeProvider>
-      <ChatProvider> {/* Wrap the app in the new ChatProvider */}
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <Routes>
-            {/* All your existing routes go here, unchanged */}
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/login" element={<Login />} />
-            <Route path="/booker-dashboard" element={<ProtectedRoute><BookerDashboard /></ProtectedRoute>} />
-            <Route path="/talent-onboarding" element={<ProtectedTalentRoute requireProfile={false}><TalentOnboarding /></ProtectedTalentRoute>} />
-            <Route path="/talent-dashboard" element={<ProtectedTalentRoute><TalentDashboard /></ProtectedTalentRoute>} />
-            <Route path="/talent-dashboard/bookings" element={<ProtectedTalentRoute><TalentDashboardBookings /></ProtectedTalentRoute>} />
-            <Route path="/talent-profile-edit" element={<ProtectedTalentRoute><TalentProfileEdit /></ProtectedTalentRoute>} />
-            <Route path="/talent/:id" element={<TalentProfile />} />
+            
             <Route path="/admin" element={
               <AdminProvider>
                 <AdminRoute>
@@ -57,17 +46,19 @@ const App = () => (
               <Route path="users" element={<AdminUsers />} />
               <Route path="bookings" element={<AdminBookings />} />
             </Route>
+            
+            <Route path="/booker-dashboard" element={<ProtectedRoute><BookerDashboard /></ProtectedRoute>} />
+            <Route path="/talent-onboarding" element={<ProtectedTalentRoute requireProfile={false}><TalentOnboarding /></ProtectedTalentRoute>} />
+            <Route path="/talent-dashboard" element={<ProtectedTalentRoute><TalentDashboard /></ProtectedTalentRoute>} />
+            <Route path="/talent-dashboard/bookings" element={<ProtectedTalentRoute><TalentDashboardBookings /></ProtectedTalentRoute>} />
+            <Route path="/talent-profile-edit" element={<ProtectedTalentRoute><TalentProfileEdit /></ProtectedTalentRoute>} />
+            
+            <Route path="/talent/:id" element={<TalentProfile />} />
             <Route path="*" element={<NotFound />} />
-          </Routes>
-          
-          {/* This is the single, global chat instance for the entire app. It is hidden by default. */}
-          <UniversalChat />
-
-        </TooltipProvider>
-      </ChatProvider>
+        </Routes>
+      </TooltipProvider>
     </UserModeProvider>
   </AuthProvider>
 );
 
 export default App;
-
