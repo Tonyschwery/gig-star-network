@@ -2,122 +2,85 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
 import { BookingCard, Booking } from "./BookingCard";
-import { useRealtimeBookings } from '@/hooks/useRealtimeBookings';
-import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications';
-import { useUnreadNotifications } from '@/hooks/useUnreadNotifications';
+import { EventRequestCard, EventRequest } from "./EventRequestCard"; // Assuming you have a card for requests
 
 export const TalentDashboardTabs = () => {
-    const { user } = useAuth();
-    const { unreadCount } = useUnreadNotifications();
-    const [talentProfile, setTalentProfile] = useState<any>(null);
-    const [allBookings, setAllBookings] = useState<Booking[]>([]);
+    const { user, profile } = useAuth();
+    const [directBookings, setDirectBookings] = useState<Booking[]>([]);
+    const [gigOpportunities, setGigOpportunities] = useState<EventRequest[]>([]);
     const [loading, setLoading] = useState(true);
 
-    const fetchAllBookings = useCallback(async () => {
-        if (!user?.id) return;
+    const fetchData = useCallback(async () => {
+        if (!user?.id || !profile?.id) return;
         
-        console.log('Fetching bookings for talent:', user.id);
-        
-        // Ensure we have the talent profile
-        let profileId = talentProfile?.id as string | undefined;
-        if (!profileId) {
-            const { data: tp, error: tpError } = await supabase
-                .from('talent_profiles')
-                .select('id,is_pro_subscriber')
-                .eq('user_id', user.id)
-                .maybeSingle();
-                
-            if (tpError) {
-                console.error("Error fetching talent profile:", tpError);
-                setLoading(false);
-                return;
-            }
-            
-            if (!tp) { 
-                console.log('No talent profile found');
-                setLoading(false); 
-                return; 
-            }
-            
-            setTalentProfile(tp);
-            profileId = tp.id;
-        }
-        
-        const { data, error } = await supabase
+        setLoading(true);
+        // Fetch Direct Bookings (status is not cancelled)
+        const { data: bookingsData, error: bookingsError } = await supabase
             .from('bookings')
             .select(`*`)
-            .eq('talent_id', profileId)
-            .order('event_date', { ascending: false });
+            .eq('talent_id', profile.id)
+            .neq('status', 'cancelled')
+            .order('event_date', { ascending: true });
 
-        if (error) {
-            console.error("Error fetching bookings:", error);
-        } else {
-            console.log('Fetched talent bookings:', data?.length);
-            setAllBookings(data || []);
-        }
+        // Fetch Indirect Bookings/Gig Opportunities
+        const { data: requestsData, error: requestsError } = await supabase
+            .from('event_requests')
+            .select('*')
+            .eq('assigned_talent_id', profile.id) // Assuming this column links admin requests to talents
+            .neq('status', 'declined')
+            .order('created_at', { ascending: false });
+
+        if (bookingsError) console.error("Error fetching direct bookings:", bookingsError);
+        else setDirectBookings(bookingsData || []);
+
+        if (requestsError) console.error("Error fetching gig opportunities:", requestsError);
+        else setGigOpportunities(requestsData || []);
+
         setLoading(false);
-    }, [user, talentProfile]);
-
-    // Use real-time hooks
-    useRealtimeBookings(fetchAllBookings);
-    useRealtimeNotifications();
+    }, [user, profile]);
 
     useEffect(() => {
-        fetchAllBookings();
-    }, [fetchAllBookings]);
+        fetchData();
+    }, [fetchData]);
 
-    if (loading) return <div>Loading...</div>;
-    
-    // Filter bookings for Direct Bookings tabs
-    const directBookings = allBookings; // All bookings are now direct bookings
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const newRequests = directBookings.filter(b => b.status === 'pending');
-    const acceptedBookings = directBookings.filter(b => b.status === 'accepted');
-    const upcomingBookings = directBookings.filter(b => b.status === 'confirmed' && new Date(b.event_date) >= today);
-    const pastBookings = directBookings.filter(b => ['confirmed', 'accepted', 'pending'].includes(b.status) && new Date(b.event_date) < today);
-
-    const renderBookings = (list: Booking[]) => (
-        list.length > 0
-            ? list.map(b => <BookingCard key={b.id} booking={b} mode="talent" onUpdate={fetchAllBookings} isProSubscriber={talentProfile?.is_pro_subscriber} />)
-            : <p className="text-muted-foreground text-center py-4">No bookings in this category.</p>
-    );
+    if (loading) return <div className="text-center py-8">Loading bookings...</div>;
 
     return (
         <div className="w-full">
-            {/* Notification Badge */}
-            {unreadCount > 0 && (
-                <div className="flex justify-center mb-4">
-                    <Badge variant="destructive" className="bg-red-500 hover:bg-red-600 text-white animate-pulse px-3 py-1">
-                        {unreadCount} New Notification{unreadCount > 1 ? 's' : ''}
-                    </Badge>
-                </div>
-            )}
-            
-            <Tabs defaultValue="pending" className="w-full">
-                <TabsList className="grid w-full grid-cols-4">
-                    <TabsTrigger value="pending" className="relative">
-                        New ({newRequests.length})
-                        {newRequests.length > 0 && (
-                            <Badge variant="destructive" className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center text-xs">
-                                {newRequests.length}
-                            </Badge>
-                        )}
+            <Tabs defaultValue="direct_bookings" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="direct_bookings">
+                        Direct Bookings ({directBookings.length})
                     </TabsTrigger>
-                    <TabsTrigger value="accepted">Accepted ({acceptedBookings.length})</TabsTrigger>
-                    <TabsTrigger value="upcoming">Upcoming ({upcomingBookings.length})</TabsTrigger>
-                    <TabsTrigger value="past">Past ({pastBookings.length})</TabsTrigger>
+                    <TabsTrigger value="gig_opportunities">
+                        Gig Opportunities ({gigOpportunities.length})
+                    </TabsTrigger>
                 </TabsList>
-                <TabsContent value="pending">{renderBookings(newRequests)}</TabsContent>
-                <TabsContent value="accepted">{renderBookings(acceptedBookings)}</TabsContent>
-                <TabsContent value="upcoming">{renderBookings(upcomingBookings)}</TabsContent>
-                <TabsContent value="past">{renderBookings(pastBookings)}</TabsContent>
+                <TabsContent value="direct_bookings">
+                    <div className="space-y-4 pt-4">
+                        {directBookings.length > 0
+                            ? directBookings.map(b => <BookingCard key={b.id} booking={b} mode="talent" onUpdate={fetchData} />)
+                            : <p className="text-muted-foreground text-center py-4">No direct bookings found.</p>}
+                    </div>
+                </TabsContent>
+                <TabsContent value="gig_opportunities">
+                    <div className="space-y-4 pt-4">
+                        {gigOpportunities.length > 0
+                            ? gigOpportunities.map(req => <EventRequestCard key={req.id} request={req} mode="talent" onUpdate={fetchData} />)
+                            : <p className="text-muted-foreground text-center py-4">No new gig opportunities from admin.</p>}
+                    </div>
+                </TabsContent>
             </Tabs>
         </div>
     );
 };
 
-export default TalentDashboardTabs;
+// You will likely need a new component for EventRequestCard, you can start with this:
+// src/components/EventRequestCard.tsx
+/*
+export const EventRequestCard = ({ request, mode, onUpdate }) => {
+    // ... UI to display the details of an event request ...
+    // ... It should have its own Accept/Decline/Chat buttons ...
+}
+*/
