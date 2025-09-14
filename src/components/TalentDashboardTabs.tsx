@@ -3,18 +3,18 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BookingCard } from "./BookingCard";
-import { EventRequestCard } from "./EventRequestCard"; // We will create/update this component next
-//stk
-// Define the types for the data we expect from Supabase
+import { EventRequestCard } from "./EventRequestCard"; // This component will display gig opportunities
+
+// Define the types for the data we expect from Supabase for clarity
 interface Booking {
   id: string;
-  // Add other booking properties as needed from your BookingCard component
+  // Other booking properties will be passed but are not strictly typed here
   [key: string]: any; 
 }
 
 interface EventRequest {
   id: string;
-  // Add other event request properties as needed
+  // Other event request properties
   [key: string]: any;
 }
 
@@ -26,19 +26,22 @@ export const TalentDashboardTabs = () => {
 
     const isPro = profile?.is_pro_subscriber === true;
 
-    // Use a single, efficient function to fetch all necessary data
+    // A single, efficient function to fetch all necessary data for the dashboard
     const fetchData = useCallback(async () => {
         // Guard clause: Don't run if we don't have the necessary user/profile info
-        if (!user?.id || !profile?.id) return;
+        if (!user?.id || !profile?.id) {
+            setLoading(false);
+            return;
+        }
         
         setLoading(true);
 
-        // Fetch Direct Bookings for this talent that are not cancelled or declined
+        // Fetch Direct Bookings: these are bookings assigned directly to this talent
         const { data: bookingsData, error: bookingsError } = await supabase
             .from('bookings')
             .select(`*`)
             .eq('talent_id', profile.id)
-            .not('status', 'in', '("cancelled", "declined")')
+            .not('status', 'in', '("cancelled", "declined")') // We only show active bookings
             .order('event_date', { ascending: true });
 
         if (bookingsError) {
@@ -47,13 +50,13 @@ export const TalentDashboardTabs = () => {
             setDirectBookings(bookingsData || []);
         }
 
-        // Fetch Gig Opportunities (Event Requests) that match the talent's location
+        // Fetch Gig Opportunities: these are event requests that match the talent's location
         if (profile.location) {
           const { data: requestsData, error: requestsError } = await supabase
               .from('event_requests')
               .select('*')
-              .eq('status', 'pending') // Only show open requests
-              .eq('event_location', profile.location) // THE KEY: Location matching
+              .eq('status', 'pending') // Only show open requests from bookers
+              .eq('event_location', profile.location) // THE KEY: Location matching logic
               .order('created_at', { ascending: false });
 
           if (requestsError) {
@@ -64,7 +67,7 @@ export const TalentDashboardTabs = () => {
         }
 
         setLoading(false);
-    }, [user, profile]); // This function will re-run if the user or profile changes
+    }, [user, profile]); // This function will re-run if the user or profile data changes
 
     // Fetch data when the component first mounts
     useEffect(() => {
@@ -91,6 +94,7 @@ export const TalentDashboardTabs = () => {
                     <div className="space-y-4">
                         {directBookings.length > 0
                             ? directBookings.map(b => <BookingCard key={b.id} booking={b} mode="talent" onUpdate={fetchData} />)
+                            // I am assuming you have the BookingCard component from our previous work
                             : <p className="text-muted-foreground text-center py-8">No direct bookings found.</p>}
                     </div>
                 </TabsContent>
@@ -101,7 +105,7 @@ export const TalentDashboardTabs = () => {
                                 <EventRequestCard 
                                   key={req.id} 
                                   request={req} 
-                                  isActionable={isPro} // Pro talents can interact
+                                  isActionable={isPro} // Pro talents can interact, others cannot
                                   mode="talent"
                                 />
                               ))
