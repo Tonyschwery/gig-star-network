@@ -16,6 +16,13 @@ const talentTypes = [
   { value: 'dj', label: 'DJ' },
   { value: 'singer', label: 'Singer' },
   { value: 'band', label: 'Band' },
+  { value: 'saxophonist', label: 'Saxophonist' },
+  { value: 'keyboardist', label: 'Keyboardist' },
+  { value: 'drummer', label: 'Drummer' },
+  { value: 'percussionist', label: 'Percussionist' },
+  { value: 'guitarist', label: 'Guitarist' },
+  { value: 'violinist', label: 'Violinist' },
+  { value: 'other', label: 'Other' }
 ];
 
 interface TalentProfile {
@@ -33,7 +40,10 @@ interface TalentProfile {
 export function HeroSection() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [searchFilters, setSearchFilters] = useState({ location: '', talentType: 'all' });
+  const [searchFilters, setSearchFilters] = useState({
+    location: '',
+    talentType: 'all'
+  });
   const [featuredTalents, setFeaturedTalents] = useState<TalentProfile[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -45,7 +55,7 @@ export function HeroSection() {
         .select(`id, artist_name, act, location, picture_url, is_pro_subscriber, rate_per_hour, currency, music_genres`)
         .eq('is_pro_subscriber', true)
         .order('created_at', { ascending: false })
-        .limit(10);
+        .limit(10); // Limit results for performance
 
       if (error) {
         console.error('Error fetching featured talents:', error);
@@ -65,11 +75,12 @@ export function HeroSection() {
     if (searchFilters.talentType && searchFilters.talentType !== 'all') {
       params.set('type', searchFilters.talentType);
     }
-    navigate(`/?${params.toString()}#talents`);
+    const searchUrl = `/?${params.toString()}#talents`;
+    navigate(searchUrl);
     
     setTimeout(() => {
       document.getElementById('talents')?.scrollIntoView({ behavior: 'smooth' });
-    }, 100);
+    }, 150);
   };
 
   return (
@@ -81,30 +92,34 @@ export function HeroSection() {
           <div className="space-y-8">
             <div className="space-y-6">
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tighter">
-                Book <span className="text-primary">Live Talent</span> for Any Event
+                Book <span className="text-primary">Live Talent</span> for Your Event
               </h1>
               <p className="text-lg text-muted-foreground max-w-lg">
-                The simplest way to find and book exceptional performers for any occasion.
+                The simplest way to find and book exceptional performers, artists, and creators for any occasion.
               </p>
             </div>
-            <Card className="p-6">
+            <Card className="p-6 shadow-md">
               <div className="grid md:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <p className="font-semibold text-sm">Location</p>
                   <Select value={searchFilters.location} onValueChange={(value) => setSearchFilters(prev => ({ ...prev, location: value }))}>
-                    <SelectTrigger><SelectValue placeholder="Select country" /></SelectTrigger>
+                    <SelectTrigger><SelectValue placeholder="Select a country" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Countries</SelectItem>
-                      {countries.map((c) => <SelectItem key={c.code} value={c.name}>{c.name}</SelectItem>)}
+                      {countries.map((country) => (
+                        <SelectItem key={country.code} value={country.name}>{country.name}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
                   <p className="font-semibold text-sm">Talent Type</p>
                   <Select value={searchFilters.talentType} onValueChange={(value) => setSearchFilters(prev => ({ ...prev, talentType: value }))}>
-                    <SelectTrigger><SelectValue placeholder="Select talent" /></SelectTrigger>
+                    <SelectTrigger><SelectValue placeholder="Select a talent type" /></SelectTrigger>
                     <SelectContent>
-                      {talentTypes.map((t) => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
+                      {talentTypes.map((type) => (
+                        <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -123,9 +138,9 @@ export function HeroSection() {
               <h3 className="text-xl font-bold">Featured Pro Artists</h3>
             </div>
             {loading ? (
-              <div className="text-center py-8 text-muted-foreground">Loading...</div>
+              <div className="text-center text-muted-foreground py-10">Loading featured talents...</div>
             ) : (
-              <Carousel plugins={[Autoplay({ delay: 4000 })]} className="w-full">
+              <Carousel plugins={[Autoplay({ delay: 5000 })]} className="w-full">
                 <CarouselContent>
                   {featuredTalents.map((talent) => (
                     <CarouselItem key={talent.id} className="md:basis-1/2">
@@ -162,12 +177,7 @@ export function HeroSection() {
 }
 
 // --- Sub-component for the Featured Talent Card ---
-
-interface FeaturedTalentCardProps {
-  talent: TalentProfile;
-}
-
-function FeaturedTalentCard({ talent }: FeaturedTalentCardProps) {
+function FeaturedTalentCard({ talent }: { talent: TalentProfile }) {
   const navigate = useNavigate();
   
   const getCurrencySymbol = (currency: string) => {
@@ -206,3 +216,4 @@ function FeaturedTalentCard({ talent }: FeaturedTalentCardProps) {
     </Card>
   );
 }
+
