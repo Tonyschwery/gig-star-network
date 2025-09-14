@@ -2,11 +2,18 @@ import { useState, useEffect, createContext, useContext } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { useQueryClient } from '@tanstack/react-query'; // Import the Query Client
 import { supabase } from '@/integrations/supabase/client';
-//gemini 14 sept
+
+type UserStatus = 'LOADING' | 'LOGGED_OUT' | 'BOOKER' | 'TALENT_NEEDS_ONBOARDING' | 'TALENT_COMPLETE';
+type UserMode = 'booking' | 'artist';
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  status: UserStatus;
+  mode: UserMode;
+  setMode: (mode: UserMode) => void;
+  profile: any | null;
   signOut: () => Promise<void>;
 }
 
@@ -16,13 +23,44 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [profile, setProfile] = useState<any | null>(null);
+  const [status, setStatus] = useState<UserStatus>('LOADING');
+  const [mode, setMode] = useState<UserMode>('booking');
   const queryClient = useQueryClient(); // Get the instance of the Query Client
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
+
+        if (session?.user) {
+          // Fetch profile data to determine status
+          const { data: talentProfile } = await supabase
+            .from('talent_profiles')
+            .select('*')
+            .eq('user_id', session.user.id)
+            .maybeSingle();
+
+          setProfile(talentProfile);
+
+          if (talentProfile) {
+            if (talentProfile.artist_name && talentProfile.biography) {
+              setStatus('TALENT_COMPLETE');
+              setMode('artist');
+            } else {
+              setStatus('TALENT_NEEDS_ONBOARDING');
+            }
+          } else {
+            setStatus('BOOKER');
+            setMode('booking');
+          }
+        } else {
+          setStatus('LOGGED_OUT');
+          setProfile(null);
+          setMode('booking');
+        }
+
         setLoading(false);
 
         // **THE FIX:** Integrate with React Query
@@ -51,7 +89,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     window.location.href = '/';
   };
 
-  const value = { user, session, loading, signOut };
+  const value = { user, session, loading, status, mode, setMode, profile, signOut };
 
   return (
     <AuthContext.Provider value={value}>
