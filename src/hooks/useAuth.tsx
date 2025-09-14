@@ -29,6 +29,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const queryClient = useQueryClient();
 
   useEffect(() => {
+    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         setSession(session);
@@ -78,6 +79,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setLoading(false);
       }
     );
+
+    // THEN check for existing session to prevent black screen
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      
+      if (session?.user) {
+        supabase
+          .from('talent_profiles')
+          .select('*')
+          .eq('user_id', session.user.id)
+          .maybeSingle()
+          .then(({ data: talentProfile }) => {
+            setProfile(talentProfile);
+
+            if (talentProfile) {
+              if (talentProfile.artist_name && talentProfile.biography) {
+                setStatus('TALENT_COMPLETE');
+                setMode('artist');
+              } else {
+                setStatus('TALENT_NEEDS_ONBOARDING');
+                setMode('artist');
+              }
+            } else {
+              setStatus('BOOKER');
+              setMode('booking');
+            }
+            setLoading(false);
+          });
+      } else {
+        setStatus('LOGGED_OUT');
+        setProfile(null);
+        setMode('booking');
+        setLoading(false);
+      }
+    });
 
     return () => {
       subscription.unsubscribe();
