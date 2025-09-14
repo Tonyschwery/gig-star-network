@@ -10,6 +10,7 @@ import { NotificationCenter } from "@/components/NotificationCenter";
 import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
 import { TalentDashboardTabs } from "@/components/TalentDashboardTabs"; // <-- IMPORT our new component
 import { SubscriptionButton } from "@/components/SubscriptionButton";
+import { Badge } from "@/components/ui/badge";
 
 const TalentDashboard = () => {
   const { user, profile, signOut } = useAuth();
