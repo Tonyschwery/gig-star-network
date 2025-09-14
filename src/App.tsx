@@ -52,9 +52,7 @@ const App = () => (
             </Route>
             
             <Route path="/booker-dashboard" element={<ProtectedRoute><BookerDashboard /></ProtectedRoute>} />
-
-            {/* --- THIS IS THE MISSING LINE THAT FIXES THE ROUTING --- */}
-            <Route path="/your-event" element={<YourEvent />} />
+            <Route path="/your-event" element={<ProtectedRoute><YourEvent /></ProtectedRoute>} />
             
             <Route path="/talent-onboarding" element={<ProtectedTalentRoute requireProfile={false}><TalentOnboarding /></ProtectedTalentRoute>} />
             <Route path="/talent-dashboard" element={<ProtectedTalentRoute><TalentDashboard /></ProtectedTalentRoute>} />
