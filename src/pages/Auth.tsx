@@ -19,16 +19,13 @@ const Auth = () => {
   const { toast } = useToast();
   const { user, loading: authLoading } = useAuth();
   
-  const { state } = useLocation(); // Get the state passed from the protected route
-  console.log('AUTH PAGE: Received state from redirect:', state); // <-- ADD THIS LINE
-  const mode = state?.mode || 'talent'; // Default to 'talent' if no mode is provided
+  const { state } = useLocation();
+  const mode = state?.mode || 'talent';
 
-  // **THE FIX:** Dynamic text based on the user mode
   const title = mode === 'booker' ? 'Log in to Continue' : 'Join as a Talent';
   const description = mode === 'booker' ? 'Please create an account or sign in to proceed.' : 'Create your profile to get booked';
 
   useEffect(() => {
-    // If user is already logged in, redirect them
     if (!authLoading && user) {
       const redirectTo = state?.from?.pathname || '/';
       navigate(redirectTo);
@@ -39,7 +36,6 @@ const Auth = () => {
     e.preventDefault();
     setLoading(true);
     
-    // **THE FIX:** The user_type is now dynamic based on the mode
     const userType = mode === 'booker' ? 'booker' : 'talent';
 
     const { error } = await supabase.auth.signUp({
@@ -52,7 +48,6 @@ const Auth = () => {
       toast({ title: "Sign up failed", description: error.message, variant: "destructive" });
     } else {
       toast({ title: "Success!", description: "Please check your email to verify your account." });
-      // Clear form on success
       setName("");
       setEmail("");
       setPassword("");
@@ -68,7 +63,6 @@ const Auth = () => {
       toast({ title: "Sign in failed", description: error.message, variant: "destructive" });
     } else {
       toast({ title: "Signed in successfully!" });
-      // **THE FIX:** After sign in, redirect to the page they were trying to access, or dashboard
       const redirectTo = state?.from?.pathname || '/';
       navigate(redirectTo);
     }
@@ -132,7 +126,7 @@ const Auth = () => {
               </TabsContent>
             </Tabs>
           </CardContent>
-        </card>
+        </Card> {/* <-- THE FIX: Changed from </card> to </Card> */}
       </div>
     </div>
   );
