@@ -24,7 +24,7 @@ import NotFound from "./pages/NotFound";
 import { ProtectedTalentRoute } from "./components/ProtectedTalentRoute";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AdminRoute } from "./components/AdminRoute";
-
+import YourEvent from "./pages/YourEvent"
 const App = () => (
   <AuthProvider>
     <UserModeProvider>
