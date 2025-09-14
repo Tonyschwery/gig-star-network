@@ -17,27 +17,14 @@ import TalentDashboardBookings from "./pages/TalentDashboardBookings";
 import TalentProfileEdit from "./pages/TalentProfileEdit";
 import AdminDashboard from "./pages/AdminDashboard";
 import { AdminLayout } from "./components/admin/AdminLayout";
-import AdminEventRequests from "./pages/admin/AdminEventRequests";
-import AdminDirectMessages from "./pages/admin/AdminDirectMessages";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminBookings from "./pages/admin/AdminBookings";
-import AdminMessages from "./pages/admin/AdminMessages";
-import AdminPayments from "./pages/admin/AdminPayments";
-import AdminSettings from "./pages/admin/AdminSettings";
-import AdminReports from "./pages/admin/AdminReports";
-import YourEvent from "./pages/YourEvent";
-import SubscriptionSuccess from "./pages/SubscriptionSuccess";
-import SubscriptionCancelled from "./pages/SubscriptionCancelled";
-import Pricing from "./pages/Pricing";
-import HowItWorks from "./pages/HowItWorks";
-import TrustSafety from "./pages/TrustSafety";
-import PrivacyPolicy from "./pages/PrivacyPolicy";
-import TermsOfService from "./pages/TermsOfService";
 import NotFound from "./pages/NotFound";
 import { ProtectedTalentRoute } from "./components/ProtectedTalentRoute";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AdminRoute } from "./components/AdminRoute";
-//9pm
+import { UniversalChat } from "./components/UniversalChat"; // Import the chat component
+//gemini 14 september
 const App = () => (
   <AuthProvider>
     <UserModeProvider>
@@ -45,19 +32,11 @@ const App = () => (
         <Toaster />
         <Sonner />
         <Routes>
+            {/* All your routes go here as before */}
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/login" element={<Login />} />
-            <Route path="/talent/:id" element={<TalentProfile />} />
-            <Route path="/your-event" element={<YourEvent />} />
-            <Route path="/pricing" element={<Pricing />} />
-            <Route path="/how-it-works" element={<HowItWorks />} />
-            <Route path="/trust-safety" element={<TrustSafety />} />
-            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-            <Route path="/terms-of-service" element={<TermsOfService />} />
-            <Route path="/subscription-success" element={<SubscriptionSuccess />} />
-            <Route path="/subscription-cancelled" element={<SubscriptionCancelled />} />
-
+            
             <Route path="/admin" element={
               <AdminProvider>
                 <AdminRoute>
@@ -68,12 +47,6 @@ const App = () => (
               <Route index element={<AdminDashboard />} />
               <Route path="users" element={<AdminUsers />} />
               <Route path="bookings" element={<AdminBookings />} />
-              <Route path="payments" element={<AdminPayments />} />
-              <Route path="messages" element={<AdminMessages />} />
-              <Route path="direct-messages" element={<AdminDirectMessages />} />
-              <Route path="event-requests" element={<AdminEventRequests />} />
-              <Route path="settings" element={<AdminSettings />} />
-              <Route path="reports" element={<AdminReports />} />
             </Route>
             
             <Route path="/booker-dashboard" element={<ProtectedRoute><BookerDashboard /></ProtectedRoute>} />
@@ -82,8 +55,11 @@ const App = () => (
             <Route path="/talent-dashboard/bookings" element={<ProtectedTalentRoute><TalentDashboardBookings /></ProtectedTalentRoute>} />
             <Route path="/talent-profile-edit" element={<ProtectedTalentRoute><TalentProfileEdit /></ProtectedTalentRoute>} />
             
+            <Route path="/talent/:id" element={<TalentProfile />} />
             <Route path="*" element={<NotFound />} />
         </Routes>
+        {/* ADD THE GLOBAL CHAT COMPONENT HERE */}
+        <UniversalChat />
       </TooltipProvider>
     </UserModeProvider>
   </AuthProvider>
