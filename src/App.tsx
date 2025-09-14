@@ -25,7 +25,6 @@ import NotFound from "./pages/NotFound";
 import { ProtectedTalentRoute } from "./components/ProtectedTalentRoute";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AdminRoute } from "./components/AdminRoute";
-import TalentDashboard from "./pages/TalentDashboard";
 
 const App = () => (
   <AuthProvider>
@@ -55,7 +54,6 @@ const App = () => (
             <Route path="/booker-dashboard" element={<ProtectedRoute><BookerDashboard /></ProtectedRoute>} />
             <Route path="/talent-onboarding" element={<ProtectedTalentRoute requireProfile={false}><TalentOnboarding /></ProtectedTalentRoute>} />
             <Route path="/talent-dashboard" element={<ProtectedTalentRoute><TalentDashboard /></ProtectedTalentRoute>} />
-            <Route path="/talent-dashboard/bookings" element={<ProtectedTalentRoute><TalentDashboardBookings /></ProtectedTalentRoute>} />
             <Route path="/talent-profile-edit" element={<ProtectedTalentRoute><TalentProfileEdit /></ProtectedTalentRoute>} />
             
             <Route path="/talent/:id" element={<TalentProfile />} />
