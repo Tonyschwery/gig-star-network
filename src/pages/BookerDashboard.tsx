@@ -98,7 +98,7 @@ const BookerDashboard = () => {
         <BookerDashboardTabs userId={user.id} />
 
         {/* Universal Chat Floating Button */}
-        <UniversalChat />
+        
       </div>
     </div>
   );
