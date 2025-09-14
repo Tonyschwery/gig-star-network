@@ -24,7 +24,8 @@ import NotFound from "./pages/NotFound";
 import { ProtectedTalentRoute } from "./components/ProtectedTalentRoute";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AdminRoute } from "./components/AdminRoute";
-import YourEvent from "./pages/YourEvent"; // <-- ADD THIS LINE HERE
+import YourEvent from "./pages/YourEvent";
+
 const App = () => (
   <AuthProvider>
     <UserModeProvider>
@@ -51,6 +52,10 @@ const App = () => (
             </Route>
             
             <Route path="/booker-dashboard" element={<ProtectedRoute><BookerDashboard /></ProtectedRoute>} />
+
+            {/* --- THIS IS THE MISSING LINE THAT FIXES THE ROUTING --- */}
+            <Route path="/your-event" element={<YourEvent />} />
+            
             <Route path="/talent-onboarding" element={<ProtectedTalentRoute requireProfile={false}><TalentOnboarding /></ProtectedTalentRoute>} />
             <Route path="/talent-dashboard" element={<ProtectedTalentRoute><TalentDashboard /></ProtectedTalentRoute>} />
             <Route path="/talent-profile-edit" element={<ProtectedTalentRoute><TalentProfileEdit /></ProtectedTalentRoute>} />
