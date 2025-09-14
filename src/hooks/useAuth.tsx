@@ -1,19 +1,12 @@
 import { useState, useEffect, createContext, useContext } from 'react';
 import { User, Session } from '@supabase/supabase-js';
-import { useQueryClient } from '@tanstack/react-query'; // Import the Query Client
+import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-
-type UserStatus = 'LOADING' | 'LOGGED_OUT' | 'BOOKER' | 'TALENT_NEEDS_ONBOARDING' | 'TALENT_COMPLETE';
-type UserMode = 'booking' | 'artist';
 
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
-  status: UserStatus;
-  mode: UserMode;
-  setMode: (mode: UserMode) => void;
-  profile: any | null;
   signOut: () => Promise<void>;
 }
 
@@ -23,55 +16,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [profile, setProfile] = useState<any | null>(null);
-  const [status, setStatus] = useState<UserStatus>('LOADING');
-  const [mode, setMode] = useState<UserMode>('booking');
-  const queryClient = useQueryClient(); // Get the instance of the Query Client
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
-
-        if (session?.user) {
-          // Fetch profile data to determine status
-          const { data: talentProfile } = await supabase
-            .from('talent_profiles')
-            .select('*')
-            .eq('user_id', session.user.id)
-            .maybeSingle();
-
-          setProfile(talentProfile);
-
-          if (talentProfile) {
-            if (talentProfile.artist_name && talentProfile.biography) {
-              setStatus('TALENT_COMPLETE');
-              setMode('artist');
-            } else {
-              setStatus('TALENT_NEEDS_ONBOARDING');
-            }
-          } else {
-            setStatus('BOOKER');
-            setMode('booking');
-          }
-        } else {
-          setStatus('LOGGED_OUT');
-          setProfile(null);
-          setMode('booking');
-        }
-
         setLoading(false);
 
-        // **THE FIX:** Integrate with React Query
+        // Smart Data Management Integration with React Query
         if (event === 'SIGNED_IN') {
-          // When a user signs in, invalidate all existing queries.
-          // This forces all components to re-fetch their data with the new user's credentials.
+          // On sign-in, invalidate all queries to force a fresh data fetch
+          // for the new user.
           queryClient.invalidateQueries();
         }
         if (event === 'SIGNED_OUT') {
-          // When a user signs out, completely clear the query cache
-          // to ensure no stale data from the previous user is ever shown.
+          // On sign-out, completely clear the cache to prevent any of the
+          // previous user's data from being shown to a new user.
           queryClient.clear();
         }
       }
@@ -80,20 +42,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => {
       subscription.unsubscribe();
     };
-  }, [queryClient]); // Add queryClient to the dependency array
+  }, [queryClient]);
 
   const signOut = async () => {
     await supabase.auth.signOut();
-    // The onAuthStateChange listener above will handle clearing the cache.
-    // We can use a simple navigate here, but a hard reload is often safer to clear all state.
+    // A hard reload is the safest way to ensure all application state is cleared.
     window.location.href = '/';
   };
 
-  const value = { user, session, loading, status, mode, setMode, profile, signOut };
+  const value = { user, session, loading, signOut };
 
+  // This ensures the rest of the app doesn't try to render until the
+  // initial authentication check is complete, preventing black screens.
   return (
     <AuthContext.Provider value={value}>
-      {children}
+      {!loading && children}
     </AuthContext.Provider>
   );
 }
