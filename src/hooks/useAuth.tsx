@@ -1,6 +1,6 @@
 import { useState, useEffect, createContext, useContext } from 'react';
 import { User, Session } from '@supabase/supabase-js';
-import { useQueryClient } from '@tanstack/react-query'; // This import is added
+import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
 type UserStatus = 'LOADING' | 'LOGGED_OUT' | 'BOOKER' | 'TALENT_NEEDS_ONBOARDING' | 'TALENT_COMPLETE';
@@ -26,7 +26,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<any | null>(null);
   const [status, setStatus] = useState<UserStatus>('LOADING');
   const [mode, setMode] = useState<UserMode>('booking');
-  const queryClient = useQueryClient(); // This line is added to get the cache controller
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -49,6 +49,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               setMode('artist');
             } else {
               setStatus('TALENT_NEEDS_ONBOARDING');
+              setMode('artist');
             }
           } else {
             setStatus('BOOKER');
@@ -62,25 +63,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         setLoading(false);
 
-        // --- START OF ADDED SMART CACHE MANAGEMENT ---
+        // Smart Data Management Integration
         if (event === 'SIGNED_IN') {
-          // When a user signs in, invalidate all existing queries.
-          // This forces all components to re-fetch their data with the new user's credentials.
           queryClient.invalidateQueries();
         }
         if (event === 'SIGNED_OUT') {
-          // When a user signs out, completely clear the query cache
-          // to ensure no stale data from the previous user is ever shown.
           queryClient.clear();
         }
-        // --- END OF ADDED SMART CACHE MANAGEMENT ---
       }
     );
 
     return () => {
       subscription.unsubscribe();
     };
-  }, [queryClient]); // Add queryClient to the dependency array
+  }, [queryClient]);
 
   const signOut = async () => {
     await supabase.auth.signOut();
@@ -89,8 +85,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const value = { user, session, loading, status, mode, setMode, profile, signOut };
 
-  // This key fix prevents the rest of the app from rendering
-  // until the initial auth check is complete, preventing black screens.
+  // This crucial fix prevents the app from rendering until the initial
+  // auth check is complete, solving the "black screen" issue.
   return (
     <AuthContext.Provider value={value}>
       {!loading && children}
@@ -105,3 +101,4 @@ export function useAuth() {
   }
   return context;
 }
+
