@@ -10,7 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { ProBadge } from "@/components/ProBadge";
 import Autoplay from "embla-carousel-autoplay";
-//stk
+
 // --- Helper Data and Components ---
 
 const talentTypes = [
