@@ -9,6 +9,7 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (status === 'LOGGED_OUT') {
+      console.log('PROTECTED ROUTE: User is logged out. Redirecting to /auth with state:', { from: location, mode: 'booker' }); // <-- ADD THIS LINE
       // **THE FIX:** When redirecting, we now pass state.
       // 'from': tells the login page where to return the user after success.
       // 'mode': tells the login page to show text for a 'booker'.
