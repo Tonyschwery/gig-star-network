@@ -112,6 +112,7 @@ export const BookingRequests = ({ talentId, isProSubscriber }: BookingRequestsPr
                 </TabsContent>
             </Tabs>
             
-            
+           
+        </div>
     );
 };
