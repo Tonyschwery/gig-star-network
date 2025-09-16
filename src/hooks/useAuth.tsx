@@ -1,5 +1,3 @@
-// FILE: src/hooks/useAuth.ts
-
 import { useState, useEffect, createContext, useContext } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { useQueryClient } from '@tanstack/react-query';
@@ -31,12 +29,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [mode, setMode] = useState<UserMode>('booking');
   const queryClient = useQueryClient();
 
-  useEffect(() => {console.log('%c AUTH STATUS CHANGED:', 'color: #A020F0; font-weight: bold;', status);
+  useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
         setSession(session);
         const currentUser = session?.user ?? null;
         setUser(currentUser);
+        setLoading(true); // Set loading to true while we check roles
 
         if (!currentUser) {
           setStatus('LOGGED_OUT');
@@ -51,32 +50,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (currentUser.email === 'admin@qtalent.live') {
           setStatus('ADMIN');
           setProfile({ name: 'Admin' }); // Give a placeholder profile for the admin
-          setMode('booking'); // Admins can operate in booking mode
-          setLoading(false);
-          return;
-        }
-
-        // 2. If not admin, check for a Talent profile
-        const { data: talentProfile } = await supabase
-          .from('talent_profiles')
-          .select('*')
-          .eq('user_id', currentUser.id)
-          .maybeSingle();
-
-        setProfile(talentProfile);
-
-        if (talentProfile) {
-          if (talentProfile.artist_name && talentProfile.biography) {
-            setStatus('TALENT_COMPLETE');
-            setMode('artist');
-          } else {
-            setStatus('TALENT_NEEDS_ONBOARDING');
-            setMode('artist');
-          }
-        } else {
-          // 3. If not admin and not a talent, they must be a Booker
-          setStatus('BOOKER');
           setMode('booking');
+        } else {
+          // 2. If not admin, check for a Talent profile
+          const { data: talentProfile } = await supabase
+            .from('talent_profiles')
+            .select('*')
+            .eq('user_id', currentUser.id)
+            .maybeSingle();
+
+          setProfile(talentProfile);
+
+          if (talentProfile) {
+            if (talentProfile.artist_name && talentProfile.biography) {
+              setStatus('TALENT_COMPLETE');
+              setMode('artist');
+            } else {
+              setStatus('TALENT_NEEDS_ONBOARDING');
+              setMode('artist');
+            }
+          } else {
+            // 3. If not admin and not a talent, they must be a Booker
+            setStatus('BOOKER');
+            setMode('booking');
+          }
         }
         
         setLoading(false);
@@ -91,12 +88,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = async () => {
     await supabase.auth.signOut();
     queryClient.clear();
-    // No need for window.location.href, the listener will handle the redirect state.
   };
 
   const value = { user, session, loading, status, mode, setMode, profile, signOut };
 
-  // Render children only after the initial loading is complete
   return (
     <AuthContext.Provider value={value}>
       {children}
