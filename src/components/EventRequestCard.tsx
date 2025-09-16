@@ -1,3 +1,5 @@
+// FILE: src/components/EventRequestCard.tsx
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,7 +8,8 @@ import { Calendar, Clock, MapPin, MessageCircle } from "lucide-react";
 import { format } from "date-fns";
 import { useChat } from "@/contexts/ChatContext";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-//stk
+
+// THE FIX: Export this interface so other files can use the same "contract".
 export interface EventRequest {
   id: string;
   booker_name: string;
@@ -113,4 +116,3 @@ export const EventRequestCard = ({ request, isActionable = false, mode }: EventR
     </Card>
   );
 };
-
