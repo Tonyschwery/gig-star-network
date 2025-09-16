@@ -1,26 +1,16 @@
+// FILE: src/components/BookerDashboardTabs.tsx
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BookingCard } from "./BookingCard";
-import { EventRequestCard } from "./EventRequestCard";
-
-// Define the types for the data we expect from Supabase for clarity
-interface Booking {
-  id: string;
-  [key: string]: any;
-}
-
-interface EventRequest {
-  id: string;
-  [key: string]: any;
-}
+import { BookingCard, Booking } from "./BookingCard"; // THE FIX: Import the strict Booking interface
+import { EventRequestCard, EventRequest } from "./EventRequestCard"; // THE FIX: Import the strict EventRequest interface
 
 export const BookerDashboardTabs = ({ userId }: { userId: string }) => {
     const [directBookings, setDirectBookings] = useState<Booking[]>([]);
     const [eventRequests, setEventRequests] = useState<EventRequest[]>([]);
     const [loading, setLoading] = useState(true);
 
-    // A single, efficient function to fetch all necessary data for the booker's dashboard
     const fetchData = useCallback(async () => {
         if (!userId) {
             setLoading(false);
@@ -28,21 +18,19 @@ export const BookerDashboardTabs = ({ userId }: { userId: string }) => {
         }
         setLoading(true);
 
-        // Fetch Direct Bookings made by this user that have not been cancelled
         const { data: bookingsData, error: bookingsError } = await supabase
             .from('bookings')
-            .select(`*, talent_profiles(artist_name)`) // Also get the talent's name
+            .select(`*, talent_profiles(artist_name)`)
             .eq('user_id', userId)
-            .neq('status', 'cancelled') // This implements the "remove from view" logic
+            .neq('status', 'cancelled')
             .order('event_date', { ascending: true });
 
         if (bookingsError) {
             console.error("Error fetching direct bookings:", bookingsError.message);
         } else {
-            setDirectBookings(bookingsData || []);
+            setDirectBookings(bookingsData as Booking[] || []);
         }
 
-        // Fetch Event Requests made by this user that have not been declined
         const { data: requestsData, error: requestsError } = await supabase
             .from('event_requests')
             .select('*')
@@ -53,13 +41,12 @@ export const BookerDashboardTabs = ({ userId }: { userId: string }) => {
         if (requestsError) {
             console.error("Error fetching event requests:", requestsError.message);
         } else {
-            setEventRequests(requestsData || []);
+            setEventRequests(requestsData as EventRequest[] || []);
         }
 
         setLoading(false);
-    }, [userId]); // This function will re-run if the userId changes
+    }, [userId]);
 
-    // Fetch data when the component first mounts
     useEffect(() => {
         fetchData();
     }, [fetchData]);
@@ -95,7 +82,6 @@ export const BookerDashboardTabs = ({ userId }: { userId: string }) => {
                     <div className="space-y-4">
                         {eventRequests.length > 0
                             ? eventRequests.map(req => <EventRequestCard key={req.id} request={req} isActionable={true} mode="booker" />)
-                            // isActionable is true here because bookers can always chat
                             : <p className="text-muted-foreground text-center py-8">You have not made any event requests to our team.</p>}
                     </div>
                 </TabsContent>
@@ -103,4 +89,3 @@ export const BookerDashboardTabs = ({ userId }: { userId: string }) => {
         </div>
     );
 };
-
