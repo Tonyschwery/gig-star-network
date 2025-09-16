@@ -31,7 +31,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [mode, setMode] = useState<UserMode>('booking');
   const queryClient = useQueryClient();
 
-  useEffect(() => {
+  useEffect(() => {console.log('%c AUTH STATUS CHANGED:', 'color: #A020F0; font-weight: bold;', status);
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
         setSession(session);
