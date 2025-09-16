@@ -40,7 +40,7 @@ export const BookerDashboardTabs = ({ userId }: { userId: string }) => {
             .order('created_at', { ascending: false })
             .range(0, PAGE_SIZE - 1);
 
-        // **OPTIMIZATION:** Run queries in parallel
+        // Run queries in parallel for efficiency
         const [bookingsResult, requestsResult] = await Promise.all([bookingsQuery, requestsQuery]);
 
         if (bookingsResult.error) console.error("Error fetching bookings:", bookingsResult.error.message);
@@ -79,8 +79,8 @@ export const BookerDashboardTabs = ({ userId }: { userId: string }) => {
             .range(from, to);
         
         if (error) console.error("Error fetching more bookings:", error.message);
-        else {
-            setDirectBookings(prev => [...prev, ...(data as Booking[] || [])]);
+        else if (data) {
+            setDirectBookings(prev => [...prev, ...data as Booking[]]);
             setHasMoreBookings(data.length === PAGE_SIZE);
             setBookingsPage(prev => prev + 1);
         }
@@ -102,8 +102,8 @@ export const BookerDashboardTabs = ({ userId }: { userId: string }) => {
             .range(from, to);
 
         if (error) console.error("Error fetching more requests:", error.message);
-        else {
-            setEventRequests(prev => [...prev, ...(data as EventRequest[] || [])]);
+        else if (data) {
+            setEventRequests(prev => [...prev, ...data as EventRequest[]]);
             setHasMoreRequests(data.length === PAGE_SIZE);
             setRequestsPage(prev => prev + 1);
         }
@@ -112,8 +112,8 @@ export const BookerDashboardTabs = ({ userId }: { userId: string }) => {
 
     if (loading) {
         return (
-            <div className="text-center py-12">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+            <div className="min-h-screen bg-background flex items-center justify-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
             </div>
         );
     }
