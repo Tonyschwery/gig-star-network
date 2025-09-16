@@ -1,10 +1,11 @@
+// FILE: src/hooks/useAuth.ts
+
 import { useState, useEffect, createContext, useContext, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { User, Session } from '@supabase/supabase-js';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
-// This is now the single source of truth for all user statuses
 type UserStatus = 'LOADING' | 'LOGGED_OUT' | 'BOOKER' | 'TALENT_NEEDS_ONBOARDING' | 'TALENT_COMPLETE' | 'ADMIN';
 type UserMode = 'booking' | 'artist';
 
@@ -32,41 +33,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // This ref helps us know if this is the first time the page is loading
-  // vs. a user actively signing in. This prevents unwanted redirects.
-  const isInitialLoad = useRef(true);
+  const previousStatusRef = useRef<UserStatus>('LOADING');
 
   useEffect(() => {
-    // This listener is the core of our authentication system.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      async (_event, session) => {
         setSession(session);
         const currentUser = session?.user ?? null;
         setUser(currentUser);
         setLoading(true);
-
-        // If the user just signed in, it's not the initial page load.
-        if (event === 'SIGNED_IN') {
-          isInitialLoad.current = false;
-        }
 
         if (!currentUser) {
           setStatus('LOGGED_OUT');
           setProfile(null);
           setMode('booking');
           setLoading(false);
-          isInitialLoad.current = true; // Reset on logout
           return;
         }
 
-        // --- UNIFIED ROLE CHECKING LOGIC ---
-        // 1. Check for Admin first, based on email
         if (currentUser.email === 'admin@qtalent.live') {
           setStatus('ADMIN');
           setProfile({ name: 'Admin' });
           setMode('booking');
         } else {
-          // 2. If not admin, check for a Talent profile
           const { data: talentProfile } = await supabase
             .from('talent_profiles')
             .select('*')
@@ -78,13 +67,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (talentProfile) {
             setStatus(talentProfile.artist_name ? 'TALENT_COMPLETE' : 'TALENT_NEEDS_ONBOARDING');
             setMode('artist');
+
           } else {
-            // 3. If not admin and not a talent, they must be a Booker
             setStatus('BOOKER');
             setMode('booking');
           }
         }
-        
         setLoading(false);
       }
     );
@@ -94,38 +82,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  // --- NEW: Smart redirect logic ---
+  // --- REVISED AND CORRECTED Redirect Logic ---
   useEffect(() => {
-    // We only want to redirect after a fresh login, not on every page refresh.
-    // We also wait until the loading is finished.
-    if (loading || isInitialLoad.current) {
-        return;
-    }
+    const previousStatus = previousStatusRef.current;
+    
+    // This logic now ONLY runs when the user's status changes from a non-logged-in state to a logged-in state.
+    // It will NOT run when a logged-out user is just navigating the site.
+    const justLoggedIn = (previousStatus === 'LOADING' || previousStatus === 'LOGGED_OUT') && 
+                         (status === 'ADMIN' || status === 'BOOKER' || status === 'TALENT_COMPLETE' || status === 'TALENT_NEEDS_ONBOARDING');
 
-    // Get the page the user was trying to go to before being sent to login
-    const from = location.state?.from?.pathname || null;
-    if (from && from !== '/login' && from !== '/auth') {
+    if (justLoggedIn) {
+      const from = location.state?.from?.pathname || null;
+      if (from && from !== '/login' && from !== '/auth') {
         navigate(from);
         return;
-    }
-    
-    // If there was no specific destination, send them to their default dashboard
-    switch (status) {
+      }
+      
+      switch (status) {
         case 'ADMIN':
-            navigate('/admin');
-            break;
+          navigate('/admin');
+          break;
         case 'BOOKER':
-            navigate('/booker-dashboard');
-            break;
+          navigate('/booker-dashboard');
+          break;
         case 'TALENT_COMPLETE':
-            navigate('/talent-dashboard');
-            break;
+          navigate('/talent-dashboard');
+          break;
         case 'TALENT_NEEDS_ONBOARDING':
-            navigate('/talent-onboarding');
-            break;
+          navigate('/talent-onboarding');
+          break;
+      }
     }
 
-  }, [status, loading]); // This effect runs whenever the status or loading state changes
+    // Update the previous status for the next check
+    previousStatusRef.current = status;
+  }, [status, navigate, location.state]);
+
 
   const signOut = async () => {
     await supabase.auth.signOut();
