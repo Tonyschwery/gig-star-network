@@ -1,10 +1,9 @@
 import { Toaster } from "@/components/ui/toaster";
-import "@/utils/testEmailSystem";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./hooks/useAuth";
-import { AdminProvider } from "./hooks/useAdminAuth";
+// We no longer import or use AdminProvider
 import { UserModeProvider } from "./contexts/UserModeContext";
 import { ChatProvider } from "./contexts/ChatContext";
 import { UniversalChat } from "./components/UniversalChat";
@@ -39,13 +38,8 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/login" element={<Login />} />
             
-            <Route path="/admin" element={
-              <AdminProvider>
-                <AdminRoute>
-                  <AdminLayout />
-                </AdminRoute>
-              </AdminProvider>
-            }>
+            {/* THE FIX: The <AdminProvider> wrapper has been removed */}
+            <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
               <Route index element={<AdminDashboard />} />
               <Route path="users" element={<AdminUsers />} />
               <Route path="bookings" element={<AdminBookings />} />
