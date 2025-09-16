@@ -3,19 +3,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BookingCard } from "./BookingCard";
-import { EventRequestCard } from "./EventRequestCard";
-
-// Define the types for clarity
-interface Booking {
-  id: string;
-  [key: string]: any;
-}
-
-interface EventRequest {
-  id: string;
-  [key: string]: any;
-}
+import { BookingCard, Booking } from "./BookingCard"; // THE FIX: Import the strict Booking interface
+import { EventRequestCard, EventRequest } from "./EventRequestCard"; // THE FIX: Import the strict EventRequest interface
 
 interface TalentProfile {
     id: string;
@@ -39,7 +28,6 @@ export const TalentDashboardTabs = ({ profile }: TalentDashboardTabsProps) => {
         }
         setLoading(true);
 
-        // 1. Fetch Direct Bookings assigned to this talent
         const { data: bookingsData, error: bookingsError } = await supabase
             .from('bookings')
             .select(`*`)
@@ -49,24 +37,21 @@ export const TalentDashboardTabs = ({ profile }: TalentDashboardTabsProps) => {
         if (bookingsError) {
             console.error("Error fetching direct bookings:", bookingsError.message);
         } else {
-            setDirectBookings(bookingsData || []);
+            setDirectBookings(bookingsData as Booking[] || []);
         }
 
-        // 2. Fetch Event Requests that match the talent's location
-        // IMPORTANT: This assumes 'event_location' in event_requests matches 'location' in talent_profiles.
-        // Adjust the .eq('event_location', profile.location) if your matching logic is different.
         if (profile.location) {
             const { data: requestsData, error: requestsError } = await supabase
                 .from('event_requests')
                 .select('*')
-                .eq('event_location', profile.location) // This is the matching logic
+                .eq('event_location', profile.location)
                 .not('status', 'in', '("declined", "cancelled")')
                 .order('created_at', { ascending: false });
 
             if (requestsError) {
                 console.error("Error fetching matching event requests:", requestsError.message);
             } else {
-                setEventRequests(requestsData || []);
+                setEventRequests(requestsData as EventRequest[] || []);
             }
         }
 
@@ -111,7 +96,7 @@ export const TalentDashboardTabs = ({ profile }: TalentDashboardTabsProps) => {
                                 <EventRequestCard 
                                     key={req.id} 
                                     request={req} 
-                                    isActionable={profile.is_pro_subscriber || false} // This enables/disables the chat button
+                                    isActionable={profile.is_pro_subscriber || false}
                                     mode="talent" 
                                 />
                               ))
