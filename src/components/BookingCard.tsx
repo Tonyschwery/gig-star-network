@@ -1,12 +1,15 @@
+// FILE: src/components/BookingCard.tsx
+
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
-import { Calendar, Check, X, Clock3, MapPin, MessageCircle } from "lucide-react";
+import { Calendar, Check, X, Clock3, MessageCircle } from "lucide-react";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { useChat } from "@/contexts/ChatContext";
 
+// THE FIX: Export this interface so other files can use the same "contract".
 export interface Booking {
   id: string;
   booker_name: string;
@@ -32,7 +35,6 @@ export const BookingCard = ({ booking, mode, onUpdate }: BookingCardProps) => {
   const { openChat } = useChat();
 
   const handleUpdateStatus = async (newStatus: 'accepted' | 'confirmed' | 'cancelled' | 'declined') => {
-    // For our new logic, 'declined' and 'cancelled' do the same thing.
     const finalStatus = (newStatus === 'declined' || newStatus === 'cancelled') ? 'cancelled' : newStatus;
 
     try {
@@ -40,9 +42,7 @@ export const BookingCard = ({ booking, mode, onUpdate }: BookingCardProps) => {
         .from('bookings')
         .update({ status: finalStatus })
         .eq('id', booking.id);
-
       if (error) throw new Error(error.message);
-
       toast({ title: `Booking ${finalStatus.charAt(0).toUpperCase() + finalStatus.slice(1)}` });
       onUpdate?.();
     } catch (error) {
@@ -57,8 +57,9 @@ export const BookingCard = ({ booking, mode, onUpdate }: BookingCardProps) => {
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {
         case 'pending': return 'secondary';
-        case 'accepted': return 'default';
-        case 'confirmed': return 'success';
+        case 'accepted': return 'secondary';
+        // THE FIX: 'success' is not a valid variant. 'default' is the primary color.
+        case 'confirmed': return 'default'; 
         default: return 'outline';
     }
   };
@@ -114,7 +115,6 @@ export const BookingCard = ({ booking, mode, onUpdate }: BookingCardProps) => {
           </div>
         )}
 
-        {/* New Cancel button for both users on active bookings */}
         {(booking.status === 'accepted' || booking.status === 'confirmed') && (
             <Button onClick={() => handleUpdateStatus('cancelled')} variant="ghost" size="sm" className="text-red-500 hover:text-red-600 hover:bg-red-50">
                 <X className="h-4 w-4 mr-2" />Cancel Booking
