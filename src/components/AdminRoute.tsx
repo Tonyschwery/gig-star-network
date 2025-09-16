@@ -1,55 +1,28 @@
+// FILE: src/components/AdminRoute.tsx
+
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAdminAuth } from '@/hooks/useAdminAuth';
+import { useAuth } from '@/hooks/useAuth'; // We now use the main auth hook
 
-interface AdminRouteProps {
-  children: React.ReactNode;
-  requiredPermissions?: string[];
-}
-
-export function AdminRoute({ children, requiredPermissions = [] }: AdminRouteProps) {
-  const { isAdmin, adminPermissions, loading } = useAdminAuth();
+export function AdminRoute({ children }: { children: React.ReactNode }) {
+  const { status, loading } = useAuth(); // Get status from the unified hook
   const navigate = useNavigate();
 
   useEffect(() => {
-    console.log('AdminRoute: useEffect - loading:', loading, 'isAdmin:', isAdmin);
-    if (!loading && !isAdmin) {
-      console.log('AdminRoute: Redirecting to auth - user is not admin');
-      navigate('/auth');
+    if (!loading && status !== 'ADMIN') {
+      // If the check is done and the user is NOT an admin, redirect them
+      navigate('/'); 
     }
-  }, [isAdmin, loading, navigate]);
-
-  const hasRequiredPermissions = requiredPermissions.length === 0 || 
-    requiredPermissions.every(perm => 
-      adminPermissions.includes('all') || adminPermissions.includes(perm)
-    );
-
-  console.log('AdminRoute: Rendering - loading:', loading, 'isAdmin:', isAdmin, 'hasRequiredPermissions:', hasRequiredPermissions);
+  }, [status, loading, navigate]);
 
   if (loading) {
-    console.log('AdminRoute: Showing loading state');
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-pulse text-muted-foreground">Loading admin access...</div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
     );
   }
 
-  if (!isAdmin) {
-    console.log('AdminRoute: User is not admin, returning null (will redirect)');
-    return null; // Will redirect to auth
-  }
-
-  if (!hasRequiredPermissions) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-destructive mb-2">Access Denied</h1>
-          <p className="text-muted-foreground">You don't have the required permissions to access this area.</p>
-        </div>
-      </div>
-    );
-  }
-
-  return <>{children}</>;
+  // Only render the admin pages if the status is correct
+  return status === 'ADMIN' ? <>{children}</> : null;
 }
