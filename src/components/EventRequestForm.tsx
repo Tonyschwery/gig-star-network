@@ -21,7 +21,7 @@ export function EventRequestForm() {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { sendEventRequestEmails } = useEmailNotifications();
+  //const { sendEventRequestEmails } = useEmailNotifications();
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDetectingLocation, setIsDetectingLocation] = useState(false);
