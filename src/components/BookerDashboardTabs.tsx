@@ -3,59 +3,117 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BookingCard, Booking } from "./BookingCard"; // THE FIX: Import the strict Booking interface
-import { EventRequestCard, EventRequest } from "./EventRequestCard"; // THE FIX: Import the strict EventRequest interface
+import { Button } from "@/components/ui/button";
+import { BookingCard, Booking } from "./BookingCard";
+import { EventRequestCard, EventRequest } from "./EventRequestCard";
+
+const PAGE_SIZE = 10; // We will load 10 items at a time
 
 export const BookerDashboardTabs = ({ userId }: { userId: string }) => {
     const [directBookings, setDirectBookings] = useState<Booking[]>([]);
     const [eventRequests, setEventRequests] = useState<EventRequest[]>([]);
     const [loading, setLoading] = useState(true);
+    const [loadingMoreBookings, setLoadingMoreBookings] = useState(false);
+    const [loadingMoreRequests, setLoadingMoreRequests] = useState(false);
+    const [hasMoreBookings, setHasMoreBookings] = useState(true);
+    const [hasMoreRequests, setHasMoreRequests] = useState(true);
+    const [bookingsPage, setBookingsPage] = useState(0);
+    const [requestsPage, setRequestsPage] = useState(0);
 
-    const fetchData = useCallback(async () => {
-        if (!userId) {
-            setLoading(false);
-            return;
-        }
+    const fetchInitialData = useCallback(async () => {
+        if (!userId) return;
         setLoading(true);
 
-        const { data: bookingsData, error: bookingsError } = await supabase
+        const bookingsQuery = supabase
             .from('bookings')
             .select(`*, talent_profiles(artist_name)`)
             .eq('user_id', userId)
             .neq('status', 'cancelled')
-            .order('event_date', { ascending: true });
+            .order('event_date', { ascending: true })
+            .range(0, PAGE_SIZE - 1);
 
-        if (bookingsError) {
-            console.error("Error fetching direct bookings:", bookingsError.message);
-        } else {
-            setDirectBookings(bookingsData as Booking[] || []);
-        }
-
-        const { data: requestsData, error: requestsError } = await supabase
+        const requestsQuery = supabase
             .from('event_requests')
             .select('*')
             .eq('user_id', userId)
             .not('status', 'in', '("declined", "cancelled")')
-            .order('created_at', { ascending: false });
+            .order('created_at', { ascending: false })
+            .range(0, PAGE_SIZE - 1);
 
-        if (requestsError) {
-            console.error("Error fetching event requests:", requestsError.message);
-        } else {
-            setEventRequests(requestsData as EventRequest[] || []);
+        // **OPTIMIZATION:** Run queries in parallel
+        const [bookingsResult, requestsResult] = await Promise.all([bookingsQuery, requestsQuery]);
+
+        if (bookingsResult.error) console.error("Error fetching bookings:", bookingsResult.error.message);
+        else {
+            setDirectBookings(bookingsResult.data as Booking[] || []);
+            setHasMoreBookings(bookingsResult.data.length === PAGE_SIZE);
+            setBookingsPage(1);
+        }
+
+        if (requestsResult.error) console.error("Error fetching requests:", requestsResult.error.message);
+        else {
+            setEventRequests(requestsResult.data as EventRequest[] || []);
+            setHasMoreRequests(requestsResult.data.length === PAGE_SIZE);
+            setRequestsPage(1);
         }
 
         setLoading(false);
     }, [userId]);
 
     useEffect(() => {
-        fetchData();
-    }, [fetchData]);
+        fetchInitialData();
+    }, [fetchInitialData]);
+
+    const loadMoreBookings = async () => {
+        if (!userId || loadingMoreBookings) return;
+        setLoadingMoreBookings(true);
+        const from = bookingsPage * PAGE_SIZE;
+        const to = from + PAGE_SIZE - 1;
+
+        const { data, error } = await supabase
+            .from('bookings')
+            .select(`*, talent_profiles(artist_name)`)
+            .eq('user_id', userId)
+            .neq('status', 'cancelled')
+            .order('event_date', { ascending: true })
+            .range(from, to);
+        
+        if (error) console.error("Error fetching more bookings:", error.message);
+        else {
+            setDirectBookings(prev => [...prev, ...(data as Booking[] || [])]);
+            setHasMoreBookings(data.length === PAGE_SIZE);
+            setBookingsPage(prev => prev + 1);
+        }
+        setLoadingMoreBookings(false);
+    };
+    
+    const loadMoreRequests = async () => {
+        if (!userId || loadingMoreRequests) return;
+        setLoadingMoreRequests(true);
+        const from = requestsPage * PAGE_SIZE;
+        const to = from + PAGE_SIZE - 1;
+
+        const { data, error } = await supabase
+            .from('event_requests')
+            .select('*')
+            .eq('user_id', userId)
+            .not('status', 'in', '("declined", "cancelled")')
+            .order('created_at', { ascending: false })
+            .range(from, to);
+
+        if (error) console.error("Error fetching more requests:", error.message);
+        else {
+            setEventRequests(prev => [...prev, ...(data as EventRequest[] || [])]);
+            setHasMoreRequests(data.length === PAGE_SIZE);
+            setRequestsPage(prev => prev + 1);
+        }
+        setLoadingMoreRequests(false);
+    };
 
     if (loading) {
         return (
             <div className="text-center py-12">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-                <p className="mt-4 text-muted-foreground">Loading Your Bookings...</p>
             </div>
         );
     }
@@ -64,26 +122,42 @@ export const BookerDashboardTabs = ({ userId }: { userId: string }) => {
         <div className="w-full">
             <Tabs defaultValue="direct_bookings" className="w-full">
                 <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="direct_bookings">
-                        Direct Bookings ({directBookings.length})
-                    </TabsTrigger>
-                    <TabsTrigger value="event_requests">
-                        Event Requests ({eventRequests.length})
-                    </TabsTrigger>
+                    <TabsTrigger value="direct_bookings">Direct Bookings ({directBookings.length})</TabsTrigger>
+                    <TabsTrigger value="event_requests">Event Requests ({eventRequests.length})</TabsTrigger>
                 </TabsList>
+                
                 <TabsContent value="direct_bookings" className="pt-4">
                     <div className="space-y-4">
-                        {directBookings.length > 0
-                            ? directBookings.map(b => <BookingCard key={b.id} booking={b} mode="booker" onUpdate={fetchData} />)
-                            : <p className="text-muted-foreground text-center py-8">You have not made any direct bookings.</p>}
+                        {directBookings.length > 0 ? (
+                            directBookings.map(b => <BookingCard key={b.id} booking={b} mode="booker" onUpdate={fetchInitialData} />)
+                        ) : (
+                            <p className="text-muted-foreground text-center py-8">You have not made any direct bookings.</p>
+                        )}
                     </div>
+                    {hasMoreBookings && (
+                        <div className="text-center mt-6">
+                            <Button onClick={loadMoreBookings} disabled={loadingMoreBookings}>
+                                {loadingMoreBookings ? 'Loading...' : 'Load More'}
+                            </Button>
+                        </div>
+                    )}
                 </TabsContent>
+
                 <TabsContent value="event_requests" className="pt-4">
                     <div className="space-y-4">
-                        {eventRequests.length > 0
-                            ? eventRequests.map(req => <EventRequestCard key={req.id} request={req} isActionable={true} mode="booker" />)
-                            : <p className="text-muted-foreground text-center py-8">You have not made any event requests to our team.</p>}
+                        {eventRequests.length > 0 ? (
+                            eventRequests.map(req => <EventRequestCard key={req.id} request={req} isActionable={true} mode="booker" />)
+                        ) : (
+                            <p className="text-muted-foreground text-center py-8">You have not made any event requests to our team.</p>
+                        )}
                     </div>
+                    {hasMoreRequests && (
+                        <div className="text-center mt-6">
+                            <Button onClick={loadMoreRequests} disabled={loadingMoreRequests}>
+                                {loadingMoreRequests ? 'Loading...' : 'Load More'}
+                            </Button>
+                        </div>
+                    )}
                 </TabsContent>
             </Tabs>
         </div>
