@@ -16,10 +16,9 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
-// --- NEW: Import the phone number input component and its CSS ---
+// Import the phone number input component and its necessary CSS
 import PhoneInput from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
-import { CountryCode } from 'react-phone-number-input/types';
 
 export function EventRequestForm() {
   const { user } = useAuth();
@@ -33,7 +32,7 @@ export function EventRequestForm() {
   const [eventDate, setEventDate] = useState<Date>();
   const [eventDuration, setEventDuration] = useState("");
   const [eventLocation, setEventLocation] = useState("");
-  const [detectedCountry, setDetectedCountry] = useState<CountryCode | undefined>(); // State for the country code
+  const [detectedCountry, setDetectedCountry] = useState<string | undefined>();
   const [eventType, setEventType] = useState("");
   const [description, setDescription] = useState("");
   const [talentTypeNeeded, setTalentTypeNeeded] = useState("");
@@ -41,8 +40,7 @@ export function EventRequestForm() {
   const eventTypes = ["wedding", "birthday", "corporate", "opening", "club", "school", "festival", "private party", "other"];
   const talentTypes = ["Singer", "Guitarist", "Pianist", "DJ", "Band", "Violinist", "Saxophonist", "Drummer", "Other"];
 
-  // --- UPDATED: This function now calls our new Edge Function ---
-  const handleDetectLocation = () => {
+  const handleDetectLocation = async () => {
     if (!navigator.geolocation) {
       toast({ title: "Geolocation is not supported by your browser.", variant: "destructive" });
       return;
@@ -53,16 +51,10 @@ export function EventRequestForm() {
       async (position) => {
         const { latitude, longitude } = position.coords;
         try {
-          // Call our new Supabase function
-          const { data, error } = await supabase.functions.invoke('reverse-geocode', {
-            body: { latitude, longitude },
-          });
-
+          const { data, error } = await supabase.functions.invoke('reverse-geocode', { body: { latitude, longitude } });
           if (error) throw new Error(error.message);
-
           setEventLocation(data.formatted_address);
-          setDetectedCountry(data.country_code as CountryCode); // Sync the phone input with the detected country
-
+          setDetectedCountry(data.country_code);
           toast({ title: "Location Detected!", description: data.formatted_address });
         } catch (error: any) {
           toast({ title: "Could not fetch address", description: error.message, variant: "destructive" });
@@ -71,24 +63,39 @@ export function EventRequestForm() {
         }
       },
       () => {
-        toast({ title: "Unable to retrieve your location.", description: "Please grant location permission or enter it manually.", variant: "destructive" });
+        toast({ title: "Unable to retrieve your location.", description: "Please grant permission or enter it manually.", variant: "destructive" });
         setIsDetectingLocation(false);
       }
     );
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    // ... (handleSubmit logic remains the same as the last correct version)
     e.preventDefault();
     if (!user || !user.email) {
       toast({ title: "Authentication Required", variant: "destructive" });
       navigate('/login');
       return;
     }
-    // ... validation checks ...
+    if (!bookerName || !eventDate || !eventLocation || !eventType || !eventDuration) {
+        toast({ title: "Missing Information", description: "Please fill out all required fields.", variant: "destructive" });
+        return;
+    }
     setIsSubmitting(true);
     try {
-      const { error } = await supabase.from('event_requests').insert({ /* ... data ... */ });
+      const { error } = await supabase.from('event_requests').insert({
+        user_id: user.id,
+        booker_email: user.email,
+        booker_name: bookerName,
+        booker_phone: bookerPhone,
+        event_date: format(eventDate, 'yyyy-MM-dd'),
+        event_duration: parseInt(eventDuration, 10),
+        event_location: eventLocation,
+        event_type: eventType,
+        description: description,
+        talent_type_needed: talentTypeNeeded,
+        status: 'pending',
+      });
+
       if (error) throw error;
       toast({ title: "Request Submitted!" });
       navigate('/booker-dashboard');
@@ -108,18 +115,30 @@ export function EventRequestForm() {
         </div>
         <div className="space-y-2">
           <Label htmlFor="booker-phone">Phone Number</Label>
-          {/* --- NEW: Use the smart phone input component --- */}
           <PhoneInput
             id="booker-phone"
             placeholder="Enter phone number"
             value={bookerPhone}
             onChange={setBookerPhone}
             international
-            defaultCountry={detectedCountry} // This syncs with the detected location!
+            defaultCountry={detectedCountry as any}
             className="phone-input"
           />
         </div>
-        {/* ... Other form fields like Event Type and Event Date ... */}
+        <div className="space-y-2">
+            <Label htmlFor="event-type">Event Type *</Label>
+            <Select onValueChange={setEventType} required>
+                <SelectTrigger><SelectValue placeholder="Select an event type" /></SelectTrigger>
+                <SelectContent>{eventTypes.map(type => <SelectItem key={type} value={type} className="capitalize">{type}</SelectItem>)}</SelectContent>
+            </Select>
+        </div>
+        <div className="space-y-2">
+            <Label htmlFor="event-date">Event Date *</Label>
+            <Popover>
+                <PopoverTrigger asChild><Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !eventDate && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{eventDate ? format(eventDate, "PPP") : <span>Pick a date</span>}</Button></PopoverTrigger>
+                <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={eventDate} onSelect={setEventDate} initialFocus /></PopoverContent>
+            </Popover>
+        </div>
       </div>
       <div className="space-y-2">
         <Label htmlFor="event-location">Event Location *</Label>
@@ -131,7 +150,28 @@ export function EventRequestForm() {
           </Button>
         </div>
       </div>
-      {/* ... Rest of the form fields and submit button ... */}
+       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+          <div className="space-y-2">
+              <Label htmlFor="event-duration">Event Duration (hours) *</Label>
+              <Input id="event-duration" type="number" placeholder="e.g., 3" value={eventDuration} onChange={(e) => setEventDuration(e.target.value)} required />
+          </div>
+          <div className="space-y-2">
+              <Label htmlFor="talent-needed">Talent Type Needed</Label>
+              <Select onValueChange={setTalentTypeNeeded}>
+                  <SelectTrigger><SelectValue placeholder="What kind of talent?" /></SelectTrigger>
+                  <SelectContent>{talentTypes.map(type => <SelectItem key={type} value={type}>{type}</SelectItem>)}</SelectContent>
+              </Select>
+          </div>
+      </div>
+      <div className="space-y-2">
+          <Label htmlFor="description">Event Description</Label>
+          <Textarea id="description" placeholder="Tell us more about your event..." value={description} onChange={(e) => setDescription(e.target.value)} />
+      </div>
+      <div className="pt-4">
+        <Button type="submit" disabled={isSubmitting} className="w-full">
+          {isSubmitting ? "Submitting..." : "Send Event Request"}
+        </Button>
+      </div>
     </form>
   );
 }
