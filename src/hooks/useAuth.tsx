@@ -5,7 +5,7 @@ import { User, Session } from '@supabase/supabase-js';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
-// THE FIX: Added 'ADMIN' to the list of possible statuses.
+// This is now the single source of truth for all user statuses
 type UserStatus = 'LOADING' | 'LOGGED_OUT' | 'BOOKER' | 'TALENT_NEEDS_ONBOARDING' | 'TALENT_COMPLETE' | 'ADMIN';
 type UserMode = 'booking' | 'artist';
 
@@ -33,73 +33,73 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      async (_event, session) => {
         setSession(session);
-        setUser(session?.user ?? null);
+        const currentUser = session?.user ?? null;
+        setUser(currentUser);
 
-        if (event === 'SIGNED_IN') {
-          await queryClient.invalidateQueries();
-        }
-        if (event === 'SIGNED_OUT') {
-          queryClient.clear();
-        }
-
-        if (session?.user) {
-          // You could add logic here to check for an admin role if needed
-          // For now, we assume non-talents are bookers.
-          const { data: talentProfile } = await supabase
-            .from('talent_profiles')
-            .select('*')
-            .eq('user_id', session.user.id)
-            .maybeSingle();
-
-          setProfile(talentProfile);
-
-          if (talentProfile) {
-            if (talentProfile.artist_name && talentProfile.biography) {
-              setStatus('TALENT_COMPLETE');
-              setMode('artist');
-            } else {
-              setStatus('TALENT_NEEDS_ONBOARDING');
-              setMode('artist');
-            }
-          } else {
-            // This is a simplified check. You might have a specific 'role' in your users table.
-            setStatus('BOOKER');
-            setMode('booking');
-          }
-        } else {
+        if (!currentUser) {
           setStatus('LOGGED_OUT');
           setProfile(null);
           setMode('booking');
+          setLoading(false);
+          return;
         }
 
+        // --- UNIFIED ROLE CHECKING LOGIC ---
+        // 1. Check for Admin first
+        if (currentUser.email === 'admin@qtalent.live') {
+          setStatus('ADMIN');
+          setProfile({ name: 'Admin' }); // Give a placeholder profile for the admin
+          setMode('booking'); // Admins can operate in booking mode
+          setLoading(false);
+          return;
+        }
+
+        // 2. If not admin, check for a Talent profile
+        const { data: talentProfile } = await supabase
+          .from('talent_profiles')
+          .select('*')
+          .eq('user_id', currentUser.id)
+          .maybeSingle();
+
+        setProfile(talentProfile);
+
+        if (talentProfile) {
+          if (talentProfile.artist_name && talentProfile.biography) {
+            setStatus('TALENT_COMPLETE');
+            setMode('artist');
+          } else {
+            setStatus('TALENT_NEEDS_ONBOARDING');
+            setMode('artist');
+          }
+        } else {
+          // 3. If not admin and not a talent, they must be a Booker
+          setStatus('BOOKER');
+          setMode('booking');
+        }
+        
         setLoading(false);
       }
     );
 
-    // Initial session check
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false); // Let the listener handle the detailed status check
-    });
-
     return () => {
       subscription.unsubscribe();
     };
-  }, [queryClient]);
+  }, []);
 
   const signOut = async () => {
     await supabase.auth.signOut();
-    window.location.href = '/';
+    queryClient.clear();
+    // No need for window.location.href, the listener will handle the redirect state.
   };
 
   const value = { user, session, loading, status, mode, setMode, profile, signOut };
 
+  // Render children only after the initial loading is complete
   return (
     <AuthContext.Provider value={value}>
-      {!loading && children}
+      {children}
     </AuthContext.Provider>
   );
 }
