@@ -294,7 +294,11 @@ export function HeroSection() {
             <Button 
               size="lg"
               className="hero-button px-8 py-4 text-base font-semibold"
-              onClick={() => navigate('/your-event')} // CORRECT: This navigates to the URL path /your-event
+              onClick={() => {
+                console.log('Button clicked! User status:', user ? 'logged in' : 'not logged in');
+                console.log('Navigating to /your-event');
+                navigate('/your-event');
+              }}
             >
               {user ? "Get Personalized Recommendations" : "Start Free Consultation"}
             </Button>
