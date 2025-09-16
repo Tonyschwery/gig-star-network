@@ -1,6 +1,6 @@
 // FILE: src/components/EventRequestForm.tsx
 
-import { useState } from "react";
+import { useState, useEffect } from "react"; // Import useEffect
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,9 +16,9 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
-// Import the phone number input component and its necessary CSS
 import PhoneInput from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
+import { CountryCode } from 'react-phone-number-input/input';
 
 export function EventRequestForm() {
   const { user } = useAuth();
@@ -32,7 +32,7 @@ export function EventRequestForm() {
   const [eventDate, setEventDate] = useState<Date>();
   const [eventDuration, setEventDuration] = useState("");
   const [eventLocation, setEventLocation] = useState("");
-  const [detectedCountry, setDetectedCountry] = useState<string | undefined>();
+  const [detectedCountry, setDetectedCountry] = useState<CountryCode | undefined>();
   const [eventType, setEventType] = useState("");
   const [description, setDescription] = useState("");
   const [talentTypeNeeded, setTalentTypeNeeded] = useState("");
@@ -41,6 +41,8 @@ export function EventRequestForm() {
   const talentTypes = ["Singer", "Guitarist", "Pianist", "DJ", "Band", "Violinist", "Saxophonist", "Drummer", "Other"];
 
   const handleDetectLocation = async () => {
+    // This logic is wrapped in a useCallback to prevent re-creation, but not strictly necessary here.
+    // For simplicity, we define it inside.
     if (!navigator.geolocation) {
       toast({ title: "Geolocation is not supported by your browser.", variant: "destructive" });
       return;
@@ -54,7 +56,7 @@ export function EventRequestForm() {
           const { data, error } = await supabase.functions.invoke('reverse-geocode', { body: { latitude, longitude } });
           if (error) throw new Error(error.message);
           setEventLocation(data.formatted_address);
-          setDetectedCountry(data.country_code);
+          setDetectedCountry(data.country_code as CountryCode);
           toast({ title: "Location Detected!", description: data.formatted_address });
         } catch (error: any) {
           toast({ title: "Could not fetch address", description: error.message, variant: "destructive" });
@@ -65,9 +67,18 @@ export function EventRequestForm() {
       () => {
         toast({ title: "Unable to retrieve your location.", description: "Please grant permission or enter it manually.", variant: "destructive" });
         setIsDetectingLocation(false);
-      }
+      },
+      { timeout: 10000 } // Add a timeout for the geolocation request
     );
   };
+
+  // --- NEW: Automatically detect location when the form loads ---
+  useEffect(() => {
+    // Only attempt to auto-detect if no location is already set
+    if (!eventLocation) {
+      handleDetectLocation();
+    }
+  }, []); // The empty array means this runs only once when the component mounts
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -121,7 +132,7 @@ export function EventRequestForm() {
             value={bookerPhone}
             onChange={setBookerPhone}
             international
-            defaultCountry={detectedCountry as any}
+            defaultCountry={detectedCountry}
             className="phone-input"
           />
         </div>
@@ -143,10 +154,10 @@ export function EventRequestForm() {
       <div className="space-y-2">
         <Label htmlFor="event-location">Event Location *</Label>
         <div className="flex items-center gap-2">
-          <Input id="event-location" value={eventLocation} onChange={(e) => setEventLocation(e.target.value)} required />
+          <Input id="event-location" value={eventLocation} onChange={(e) => setEventLocation(e.target.value)} required placeholder="Detecting location..." />
           <Button type="button" variant="outline" onClick={handleDetectLocation} disabled={isDetectingLocation}>
             <MapPin className="h-4 w-4 mr-2" />
-            {isDetectingLocation ? 'Detecting...' : 'Detect'}
+            {isDetectingLocation ? 'Detecting...' : 'Detect Again'}
           </Button>
         </div>
       </div>
