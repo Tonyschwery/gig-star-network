@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { Mail, Lock, ArrowLeft } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 
 const Auth = () => {
   const [email, setEmail] = useState("");
@@ -27,30 +27,27 @@ const Auth = () => {
 
   useEffect(() => {
     if (!authLoading && user) {
-      const redirectTo = state?.from?.pathname || '/';
-      navigate(redirectTo);
+      if (user.email === 'admin@qtalent.live') {
+        navigate('/admin');
+      } else {
+        navigate(state?.from?.pathname || '/');
+      }
     }
   }, [user, authLoading, navigate, state]);
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    
     const userType = mode === 'booker' ? 'booker' : 'talent';
-
     const { error } = await supabase.auth.signUp({
       email,
       password,
       options: { data: { name, user_type: userType } }
     });
-
     if (error) {
       toast({ title: "Sign up failed", description: error.message, variant: "destructive" });
     } else {
       toast({ title: "Success!", description: "Please check your email to verify your account." });
-      setName("");
-      setEmail("");
-      setPassword("");
     }
     setLoading(false);
   };
@@ -63,18 +60,13 @@ const Auth = () => {
       toast({ title: "Sign in failed", description: error.message, variant: "destructive" });
     } else {
       toast({ title: "Signed in successfully!" });
-      const redirectTo = state?.from?.pathname || '/';
-      navigate(redirectTo);
+      // The useEffect above will handle the redirect.
     }
     setLoading(false);
   };
 
-  if (authLoading || user) {
-    return (
-        <div className="min-h-screen bg-background flex items-center justify-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        </div>
-    );
+  if (authLoading) {
+    return <div className="min-h-screen bg-background flex items-center justify-center">...</div>;
   }
 
   return (
@@ -126,7 +118,7 @@ const Auth = () => {
               </TabsContent>
             </Tabs>
           </CardContent>
-        </Card> {/* <-- THE FIX: Changed from </card> to </Card> */}
+        </Card>
       </div>
     </div>
   );
