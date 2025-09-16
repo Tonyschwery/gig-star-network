@@ -15,13 +15,12 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useEmailNotifications } from "@/hooks/useEmailNotifications";
+// NOTE: We no longer import useEmailNotifications here, as the backend handles it.
 
 export function EventRequestForm() {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
-  //const { sendEventRequestEmails } = useEmailNotifications();
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDetectingLocation, setIsDetectingLocation] = useState(false);
@@ -37,7 +36,6 @@ export function EventRequestForm() {
   const eventTypes = ["wedding", "birthday", "corporate", "opening", "club", "school", "festival", "private party", "other"];
   const talentTypes = ["Singer", "Guitarist", "Pianist", "DJ", "Band", "Violinist", "Saxophonist", "Drummer", "Other"];
 
-  // --- NEW: Function to handle automatic location detection ---
   const handleDetectLocation = () => {
     if (!navigator.geolocation) {
       toast({ title: "Geolocation is not supported by your browser.", variant: "destructive" });
@@ -48,16 +46,13 @@ export function EventRequestForm() {
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const { latitude, longitude } = position.coords;
-        // NOTE: This gives you coordinates. You need a reverse geocoding service
-        // to turn these into a city/country name like "Doha, Qatar".
-        // For now, we'll store the raw coordinates as a placeholder.
         const locationString = `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
         setEventLocation(locationString); 
         toast({ title: "Location Detected!" });
         setIsDetectingLocation(false);
       },
       () => {
-        toast({ title: "Unable to retrieve your location.", description: "Please grant location permission or enter it manually.", variant: "destructive" });
+        toast({ title: "Unable to retrieve your location.", description: "Please grant permission or enter it manually.", variant: "destructive" });
         setIsDetectingLocation(false);
       }
     );
@@ -76,38 +71,29 @@ export function EventRequestForm() {
     }
     setIsSubmitting(true);
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('event_requests')
         .insert({
           user_id: user.id,
-          booker_email: user.email, // <-- CRITICAL FIX: Add the booker's email
+          booker_email: user.email,
           booker_name: bookerName,
           booker_phone: bookerPhone,
           event_date: format(eventDate, 'yyyy-MM-dd'),
           event_duration: parseInt(eventDuration, 10),
-          event_location: eventLocation, // This will be the detected coordinates for now
+          event_location: eventLocation,
           event_type: eventType,
           description: description,
           talent_type_needed: talentTypeNeeded,
           status: 'pending',
-        })
-        .select()
-        .single();
+        });
 
       if (error) throw error;
 
-      if (data) {
-        await sendEventRequestEmails({
-            bookerEmail: user.email,
-            bookerName: bookerName,
-            eventDate: format(eventDate, 'PPP'),
-            eventType: eventType
-        });
-      }
-      toast({ title: "Request Submitted!" });
+      toast({ title: "Request Submitted!", description: "Our team has received your event details and will be in touch shortly." });
       navigate('/booker-dashboard');
 
     } catch (err: any) {
+      console.error("Error submitting event request:", err)
       toast({ title: "Submission Failed", description: err.message, variant: "destructive" });
     } finally {
       setIsSubmitting(false);
@@ -116,7 +102,6 @@ export function EventRequestForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6 p-8 border rounded-lg bg-card text-card-foreground shadow-md">
-      {/* ... Form fields for name, phone, event type, date ... */}
        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
             <div className="space-y-2">
                 <Label htmlFor="booker-name">Your Name *</Label>
@@ -124,7 +109,7 @@ export function EventRequestForm() {
             </div>
             <div className="space-y-2">
                 <Label htmlFor="booker-phone">Phone Number</Label>
-                <Input id="booker-phone" type="tel" value={bookerPhone} onChange={(e) => setBookerPhone(e.target.value)} />
+                <Input id="booker-phone" type="tel" placeholder="Your contact number" value={bookerPhone} onChange={(e) => setBookerPhone(e.target.value)} />
             </div>
             <div className="space-y-2">
                 <Label htmlFor="event-type">Event Type *</Label>
@@ -153,7 +138,6 @@ export function EventRequestForm() {
             </div>
         </div>
         
-        {/* ... Rest of the form fields ... */}
          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
             <div className="space-y-2">
                 <Label htmlFor="event-duration">Event Duration (hours) *</Label>
