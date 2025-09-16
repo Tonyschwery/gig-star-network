@@ -30,7 +30,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
+      async (event, session) => {
         setSession(session);
         const currentUser = session?.user ?? null;
         setUser(currentUser);
@@ -48,6 +48,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setStatus('ADMIN');
           setProfile({ name: 'Admin' });
           setMode('booking');
+          
+          // Redirect admin to admin dashboard after login
+          if (event === 'SIGNED_IN') {
+            setTimeout(() => {
+              window.location.href = '/admin';
+            }, 100);
+          }
         } else {
           const { data: talentProfile } = await supabase
             .from('talent_profiles')
@@ -63,6 +70,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           } else {
             setStatus('BOOKER');
             setMode('booking');
+          }
+
+          // Handle redirect for regular users after login
+          if (event === 'SIGNED_IN') {
+            setTimeout(() => {
+              // Check if there's a redirect location in sessionStorage
+              const redirectPath = sessionStorage.getItem('redirectAfterAuth');
+              if (redirectPath) {
+                sessionStorage.removeItem('redirectAfterAuth');
+                window.location.href = redirectPath;
+              } else {
+                // Default redirect based on user type
+                if (talentProfile) {
+                  window.location.href = '/talent-dashboard';
+                } else {
+                  window.location.href = '/your-event';
+                }
+              }
+            }, 100);
           }
         }
         setLoading(false);
