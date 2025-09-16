@@ -48,12 +48,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setStatus('ADMIN');
           setProfile({ name: 'Admin' });
           setMode('booking');
+          setLoading(false);
           
           // Redirect admin to admin dashboard after login
           if (event === 'SIGNED_IN') {
             setTimeout(() => {
-              window.location.href = '/admin';
-            }, 100);
+              window.location.replace('/admin');
+            }, 500);
           }
         } else {
           const { data: talentProfile } = await supabase
@@ -72,6 +73,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setMode('booking');
           }
 
+          setLoading(false);
+
           // Handle redirect for regular users after login
           if (event === 'SIGNED_IN') {
             setTimeout(() => {
@@ -79,19 +82,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               const redirectPath = sessionStorage.getItem('redirectAfterAuth');
               if (redirectPath) {
                 sessionStorage.removeItem('redirectAfterAuth');
-                window.location.href = redirectPath;
+                window.location.replace(redirectPath);
               } else {
                 // Default redirect based on user type
                 if (talentProfile) {
-                  window.location.href = '/talent-dashboard';
+                  window.location.replace('/talent-dashboard');
                 } else {
-                  window.location.href = '/your-event';
+                  window.location.replace('/your-event');
                 }
               }
-            }, 100);
+            }, 500);
           }
         }
-        setLoading(false);
       }
     );
 
@@ -101,10 +103,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signOut = async () => {
-    await supabase.auth.signOut();
-    queryClient.clear();
-    // After sign out, navigate to home. Using window.location.href ensures a full page refresh.
-    window.location.href = '/';
+    setLoading(true);
+    try {
+      // Clear all state first
+      setUser(null);
+      setSession(null);
+      setProfile(null);
+      setStatus('LOGGED_OUT');
+      setMode('booking');
+      
+      // Clear query cache
+      queryClient.clear();
+      
+      // Clear session storage
+      sessionStorage.removeItem('redirectAfterAuth');
+      
+      // Sign out from Supabase
+      await supabase.auth.signOut();
+      
+      // Force page refresh to ensure clean state
+      window.location.replace('/');
+    } catch (error) {
+      console.error('Error signing out:', error);
+      setLoading(false);
+    }
   };
 
   const value = { user, session, loading, status, mode, setMode, profile, signOut };

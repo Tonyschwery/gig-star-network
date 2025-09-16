@@ -58,11 +58,11 @@ const Auth = () => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
       toast({ title: "Sign in failed", description: error.message, variant: "destructive" });
+      setLoading(false);
     } else {
       toast({ title: "Signed in successfully!" });
-      // The useAuth hook will now handle the redirect automatically.
+      // The useAuth hook will handle the redirect automatically
     }
-    setLoading(false);
   };
 
   if (authLoading) {
