@@ -1,6 +1,6 @@
 // FILE: src/components/EventRequestForm.tsx
 
-import { useState, useEffect } from "react"; // Import useEffect
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,7 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 
 import PhoneInput from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
-import { CountryCode } from 'react-phone-number-input/input';
+// FIX: The problematic 'CountryCode' import has been removed.
 
 export function EventRequestForm() {
   const { user } = useAuth();
@@ -32,7 +32,7 @@ export function EventRequestForm() {
   const [eventDate, setEventDate] = useState<Date>();
   const [eventDuration, setEventDuration] = useState("");
   const [eventLocation, setEventLocation] = useState("");
-  const [detectedCountry, setDetectedCountry] = useState<CountryCode | undefined>();
+  const [detectedCountry, setDetectedCountry] = useState<string | undefined>(); // FIX: Using a simple string type
   const [eventType, setEventType] = useState("");
   const [description, setDescription] = useState("");
   const [talentTypeNeeded, setTalentTypeNeeded] = useState("");
@@ -40,9 +40,7 @@ export function EventRequestForm() {
   const eventTypes = ["wedding", "birthday", "corporate", "opening", "club", "school", "festival", "private party", "other"];
   const talentTypes = ["Singer", "Guitarist", "Pianist", "DJ", "Band", "Violinist", "Saxophonist", "Drummer", "Other"];
 
-  const handleDetectLocation = async () => {
-    // This logic is wrapped in a useCallback to prevent re-creation, but not strictly necessary here.
-    // For simplicity, we define it inside.
+  const handleDetectLocation = () => {
     if (!navigator.geolocation) {
       toast({ title: "Geolocation is not supported by your browser.", variant: "destructive" });
       return;
@@ -56,7 +54,7 @@ export function EventRequestForm() {
           const { data, error } = await supabase.functions.invoke('reverse-geocode', { body: { latitude, longitude } });
           if (error) throw new Error(error.message);
           setEventLocation(data.formatted_address);
-          setDetectedCountry(data.country_code as CountryCode);
+          setDetectedCountry(data.country_code);
           toast({ title: "Location Detected!", description: data.formatted_address });
         } catch (error: any) {
           toast({ title: "Could not fetch address", description: error.message, variant: "destructive" });
@@ -67,18 +65,15 @@ export function EventRequestForm() {
       () => {
         toast({ title: "Unable to retrieve your location.", description: "Please grant permission or enter it manually.", variant: "destructive" });
         setIsDetectingLocation(false);
-      },
-      { timeout: 10000 } // Add a timeout for the geolocation request
+      }
     );
   };
 
-  // --- NEW: Automatically detect location when the form loads ---
   useEffect(() => {
-    // Only attempt to auto-detect if no location is already set
     if (!eventLocation) {
       handleDetectLocation();
     }
-  }, []); // The empty array means this runs only once when the component mounts
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -132,7 +127,7 @@ export function EventRequestForm() {
             value={bookerPhone}
             onChange={setBookerPhone}
             international
-            defaultCountry={detectedCountry}
+            defaultCountry={detectedCountry as any}
             className="phone-input"
           />
         </div>
