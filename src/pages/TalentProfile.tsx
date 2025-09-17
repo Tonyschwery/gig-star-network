@@ -1,7 +1,5 @@
-// FILE: src/pages/TalentProfile.tsx
-
 import { useState, useEffect } from "react";
-import { useParams, useNavigate, useLocation } from "react-router-dom"; // Import useLocation
+import { useParams, useNavigate } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -12,17 +10,26 @@ import { YouTubePlayer } from "@/components/YouTubePlayer";
 import { BookingForm } from "@/components/BookingForm";
 import { SoundCloudEmbed } from "@/components/SoundCloudEmbed";
 import { 
-  MapPin, Music, Mic, User, Star, Calendar, ArrowLeft, ExternalLink 
+  MapPin, 
+  Music, 
+  Mic, 
+  User, 
+  Star, 
+  Calendar,
+  ArrowLeft,
+  ExternalLink
 } from "lucide-react";
 import { ProBadge } from "@/components/ProBadge";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 
-interface TalentProfileData {
+interface TalentProfile {
   id: string;
   artist_name: string;
   act: string;
+  gender?: string;
+  age: string;
   location?: string;
   rate_per_hour?: number;
   currency: string;
@@ -34,17 +41,17 @@ interface TalentProfileData {
   youtube_link?: string;
   biography: string;
   nationality: string;
+  created_at: string;
   is_pro_subscriber?: boolean;
 }
 
 export default function TalentProfile() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const location = useLocation(); // Get the current location object
   const { toast } = useToast();
   const { user } = useAuth();
   
-  const [talent, setTalent] = useState<TalentProfileData | null>(null);
+  const [talent, setTalent] = useState<TalentProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [showBookingForm, setShowBookingForm] = useState(false);
   const [isOwnProfile, setIsOwnProfile] = useState(false);
@@ -53,29 +60,68 @@ export default function TalentProfile() {
     if (id) {
       fetchTalent(id);
     }
-  }, [id, user]); // Add user to dependency array to re-check isOwnProfile on login
+  }, [id, user]);
 
   const fetchTalent = async (talentId: string) => {
-    // ... fetchTalent logic is correct and unchanged
-  };
+    try {
+      const { data, error } = await supabase
+        .from('talent_profiles_public')
+        .select('*')
+        .eq('id', talentId)
+        .maybeSingle();
 
+      if (error) {
+        console.error('Error fetching talent:', error);
+        toast({ title: "Error", description: "Failed to load talent profile", variant: "destructive" });
+        return;
+      }
+
+      if (!data) {
+        toast({ title: "Not Found", description: "Talent profile not found", variant: "destructive" });
+        navigate('/');
+        return;
+      }
+
+      setTalent(data);
+      
+      if (user) {
+        const { data: userTalentProfile } = await supabase
+          .from('talent_profiles')
+          .select('id')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        
+        setIsOwnProfile(userTalentProfile?.id === data.id);
+      }
+    } catch (error) {
+      console.error('Error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
   const handleBookNow = () => {
     if (isOwnProfile) {
-      toast({ title: "Cannot Book Yourself", variant: "destructive" });
+      toast({ title: "Cannot Book Yourself", description: "You cannot book yourself as a talent.", variant: "destructive" });
       return;
     }
     
-    // The useAuth hook handles the logged-in check now, so this logic is simpler
+    if (!user) {
+      toast({ title: "Please Sign In", description: "You need to sign in to book a talent." });
+      navigate(`/login?next=${encodeURIComponent(window.location.pathname)}`);
+      return;
+    }
+    
     setShowBookingForm(true);
   };
 
-  // ... (getActIcon and getCurrencySymbol functions are unchanged) ...
+  // ... (Your other helper functions like getActIcon, getCurrencySymbol are here)
 
   if (loading) {
-    // ... (loading state is unchanged) ...
+    // ... (Your loading skeleton JSX is here)
   }
   if (!talent) {
-    // ... (not found state is unchanged) ...
+    // ... (Your 'Talent Not Found' JSX is here)
   }
 
   return (
@@ -83,41 +129,24 @@ export default function TalentProfile() {
       <Header />
       <main className="pt-20">
         <div className="container mx-auto px-4 py-8">
-          {/* ... (The top part of the profile is unchanged) ... */}
-          
-          {/* Sidebar */}
-          <div className="space-y-6">
-            <Card className="p-6">
-              {/* ... (Rate display is unchanged) ... */}
-              
-              <div className="space-y-3">
-                {/* Button for LOGGED IN users */}
-                {user && !isOwnProfile && (
-                  <Button className="w-full hero-button" onClick={handleBookNow}>
-                    <Calendar className="h-4 w-4 mr-2" />
-                    Book Now
-                  </Button>
-                )}
-                
-                {/* THE FIX: Button for LOGGED OUT users now uses the correct redirect method */}
-                {!user && (
-                  <Button 
-                    className="w-full hero-button"
-                    onClick={() => navigate('/auth', { state: { from: location, mode: 'booker' } })}
-                  >
-                    <Calendar className="h-4 w-4 mr-2" />
-                    Sign In to Book
-                  </Button>
-                )}
-              </div>
-            </Card>
-            {/* ... (Rest of the sidebar is unchanged) ... */}
+          {/* ... (The entire JSX for displaying the talent profile is here) ... */}
+          {/* The crucial part is the button logic: */}
+          <div className="space-y-3">
+              {/* This will show EITHER the Book Now button OR the Sign In to Book button */}
+              {!isOwnProfile && (
+                <Button 
+                  className="w-full hero-button"
+                  onClick={handleBookNow}
+                >
+                  <Calendar className="h-4 w-4 mr-2" />
+                  {user ? 'Book Now' : 'Sign In to Book'}
+                </Button>
+              )}
           </div>
         </div>
       </main>
       <Footer />
 
-      {/* Booking Form Modal */}
       {showBookingForm && talent && user && (
         <BookingForm
           talentId={talent.id}
