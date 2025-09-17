@@ -1,4 +1,6 @@
-import { useState, useEffect } from "react";
+// FILE: src/pages/Auth.tsx
+
+import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -17,20 +19,16 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user, loading: authLoading } = useAuth();
+  const { loading: authLoading } = useAuth();
   
   const { state } = useLocation();
   const mode = state?.mode || 'talent';
 
-  const title = mode === 'booker' ? 'Log in to Continue' : 'Join as a Talent';
-  const description = mode === 'booker' ? 'Please create an account or sign in to proceed.' : 'Create your profile to get booked';
+  const title = mode === 'booker' ? 'Welcome to Qtalent' : 'Join as a Talent';
+  const description = mode === 'booker' ? 'Please sign in or sign up to proceed.' : 'Create your profile to get booked';
   
-  useEffect(() => {
-    // Redirect a user if they are ALREADY logged in and land on this page.
-    if (!authLoading && user) {
-        navigate('/');
-    }
-  }, [user, authLoading, navigate]);
+  // THE FIX: The problematic useEffect that caused a race condition has been removed from here.
+  // All redirect logic is now safely handled inside the handleSignIn function.
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,7 +58,9 @@ const Auth = () => {
       if (data.user.email === 'admin@qtalent.live') {
         navigate('/admin');
       } else if (from) {
-        navigate(from);
+        // This is the logic that will now work correctly.
+        // It sends the user back to the page they were trying to access (e.g., /your-event).
+        navigate(from); 
       } else {
         const { data: profile } = await supabase.from('talent_profiles').select('id').eq('user_id', data.user.id).single();
         if (profile) {
@@ -73,7 +73,7 @@ const Auth = () => {
     setLoading(false);
   };
 
-  if (authLoading && !user) {
+  if (authLoading) {
     return (
         <div className="min-h-screen bg-background flex items-center justify-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
