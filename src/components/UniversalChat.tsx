@@ -1,111 +1,117 @@
-import { useEffect, useMemo, useState, useRef, useCallback } from "react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { X, Send, ArrowLeft } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
-import { useRealtimeChat } from "@/hooks/useRealtimeChat";
-import { useOptimizedBookings } from "@/hooks/useOptimizedBookings";
-import { useChat } from "@/contexts/ChatContext";
-//gemini14
-export function UniversalChat() {
+// FILE: src/components/UniversalChat.tsx
+
+import { useState, useEffect, useRef } from 'react';
+import { useChat, Message } from '@/contexts/ChatContext';
+import { useAuth } from '@/hooks/useAuth';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Textarea } from '@/components/ui/textarea';
+import { Send, X, User } from 'lucide-react';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+
+export const UniversalChat = () => {
+  const { isOpen, closeChat, messages, sendMessage, loadingMessages, channelInfo } = useChat();
   const { user } = useAuth();
-  const { isChatOpen, closeChat, activeBookingId } = useChat();
-  const [input, setInput] = useState("");
+  const [newMessage, setNewMessage] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  
-  const { bookings, loading } = useOptimizedBookings(user?.id);
-  const { messages, sendMessage, isReady } = useRealtimeChat(activeBookingId, user?.id);
 
-  const activeConversation = useMemo(() => {
-    if (!activeBookingId || loading || !user) return null;
-    
-    const booking = bookings.find(b => b.id === activeBookingId);
-    if (!booking) return null;
-
-    const isUserTalent = booking.talent_id && booking.user_id !== user.id;
-    const talentName = (booking as any).talent_profiles?.artist_name || 'The Talent';
-
-    return {
-      displayName: isUserTalent ? booking.booker_name : talentName,
-      subText: `${booking.event_type} • ${booking.event_date ? new Date(booking.event_date).toLocaleDateString() : 'No date'}`
-    };
-  }, [activeBookingId, bookings, user, loading]);
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    scrollToBottom();
+  }, [messages, loadingMessages]);
 
-  const onSend = useCallback(() => {
-    if (!input.trim() || !activeBookingId) return;
-    sendMessage(input);
-    setInput("");
-  }, [input, activeBookingId, sendMessage]);
+  const handleSendMessage = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newMessage.trim()) {
+      sendMessage(newMessage);
+      setNewMessage('');
+    }
+  };
 
-  // If chat is not open, render nothing. This removes the floating button.
-  if (!isChatOpen) {
+  if (!isOpen) {
     return null;
   }
 
   return (
-    <Dialog open={isChatOpen} onOpenChange={closeChat}>
-      <DialogContent className="fixed bottom-4 right-4 bg-card border rounded-lg shadow-xl overflow-hidden p-0 flex flex-col h-[calc(100vh-2rem)] max-h-[600px] w-[90vw] max-w-[400px]">
-        
-        <div className="flex items-center justify-between p-3 border-b shrink-0">
-          {activeConversation ? (
-            <div className="flex items-center gap-3">
-              <ArrowLeft className="h-4 w-4 text-muted-foreground" />
-              <div>
-                <p className="font-semibold">{activeConversation.displayName}</p>
-                <p className="text-xs text-muted-foreground">{activeConversation.subText}</p>
-              </div>
-            </div>
-          ) : (
-            <p className="font-semibold">Loading Chat...</p>
-          )}
-          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={closeChat}>
+    <div className="fixed bottom-4 right-4 sm:bottom-8 sm:right-8 w-[calc(100%-2rem)] max-w-sm h-[60vh] sm:h-[70vh] z-50">
+      <Card className="w-full h-full flex flex-col shadow-2xl">
+        <CardHeader className="flex flex-row items-center justify-between p-4 border-b">
+          <CardTitle className="text-base font-semibold">
+            {channelInfo?.type === 'booking' ? 'Booking Chat' : 'Event Request Chat'}
+          </CardTitle>
+          <Button variant="ghost" size="icon" onClick={closeChat}>
             <X className="h-4 w-4" />
           </Button>
-        </div>
-        
-        <ScrollArea className="flex-1 p-3 bg-muted/20">
-          <div className="space-y-4">
-            {messages.map((msg) => (
-              <div key={msg.id} className={`flex items-end gap-2 ${msg.senderId === user?.id ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[80%] px-3 py-2 rounded-xl text-sm ${msg.senderId === user?.id ? 'bg-primary text-primary-foreground rounded-br-none' : 'bg-background border rounded-bl-none'}`}>
-                  {msg.content}
-                </div>
+        </CardHeader>
+        <CardContent className="p-0 flex-1 flex flex-col">
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            {loadingMessages ? (
+              <div className="flex items-center justify-center h-full">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
               </div>
-            ))}
+            ) : messages.length === 0 ? (
+              <div className="flex items-center justify-center h-full">
+                <p className="text-sm text-muted-foreground">Start the conversation!</p>
+              </div>
+            ) : (
+              messages.map((msg) => (
+                <div
+                  key={msg.id}
+                  className={cn(
+                    'flex items-end gap-2',
+                    msg.sender_id === user?.id ? 'justify-end' : 'justify-start'
+                  )}
+                >
+                  {msg.sender_id !== user?.id && (
+                    <Avatar className="h-8 w-8">
+                      <AvatarFallback><User className="h-4 w-4" /></AvatarFallback>
+                    </Avatar>
+                  )}
+                  <div
+                    className={cn(
+                      'max-w-xs p-3 rounded-2xl text-sm',
+                      msg.sender_id === user?.id
+                        ? 'bg-primary text-primary-foreground rounded-br-none'
+                        : 'bg-muted rounded-bl-none'
+                    )}
+                  >
+                    <p>{msg.content}</p>
+                    <p className={cn("text-xs mt-1", msg.sender_id === user?.id ? 'text-primary-foreground/70' : 'text-muted-foreground/70')}>
+                      {format(new Date(msg.created_at), 'p')}
+                    </p>
+                  </div>
+                </div>
+              ))
+            )}
+            <div ref={messagesEndRef} />
           </div>
-          <div ref={messagesEndRef} />
-        </ScrollArea>
-
-        <div className="p-3 border-t">
-          <div className="relative">
-            <Textarea
-              placeholder="Type your message..."
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); onSend(); } }}
-              className="pr-12 resize-none"
-              rows={1}
-              disabled={!activeBookingId || !isReady}
-            />
-            <Button
-              type="submit"
-              size="icon"
-              className="absolute bottom-1.5 right-1.5 h-8 w-8"
-              onClick={onSend}
-              disabled={!input.trim() || !activeBookingId || !isReady}
-            >
-              <Send className="h-4 w-4" />
-            </Button>
+          <div className="p-4 border-t bg-background">
+            <form onSubmit={handleSendMessage} className="flex items-center gap-2">
+              <Textarea
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                placeholder="Type your message..."
+                className="resize-none"
+                rows={1}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSendMessage(e);
+                  }
+                }}
+              />
+              <Button type="submit" size="icon" disabled={!newMessage.trim()}>
+                <Send className="h-4 w-4" />
+              </Button>
+            </form>
           </div>
-        </div>
-      </DialogContent>
-    </Dialog>
+        </CardContent>
+      </Card>
+    </div>
   );
-}
-
+};
