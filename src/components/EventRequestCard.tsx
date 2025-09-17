@@ -30,7 +30,6 @@ interface EventRequestCardProps {
 export const EventRequestCard = ({ request, isActionable = false, mode }: EventRequestCardProps) => {
   const { openChat } = useChat();
 
-  // Safety check: If for some reason the request data is missing, render nothing.
   if (!request) {
     return null;
   }
@@ -79,14 +78,15 @@ export const EventRequestCard = ({ request, isActionable = false, mode }: EventR
 
         <div className="border-t pt-3 flex justify-end">
             {mode === 'booker' ? (
+                // THE CHANGE: Updated the button text for clarity.
                 <Button onClick={() => openChat(request.id, 'event_request')} size="sm" variant="outline">
-                    <MessageCircle className="h-4 w-4 mr-2" />Chat with Admin
+                    <MessageCircle className="h-4 w-4 mr-2" />Chat with QTalent Team
                 </Button>
             ) : (
                 <TooltipProvider>
                     <Tooltip>
                         <TooltipTrigger asChild>
-                            <span tabIndex={0}> {/* Wrapper for disabled button tooltip */}
+                            <span tabIndex={0}>
                                 <Button 
                                     onClick={() => openChat(request.id, 'event_request')} 
                                     size="sm" 
