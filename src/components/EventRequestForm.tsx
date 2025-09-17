@@ -18,7 +18,6 @@ import { useToast } from "@/hooks/use-toast";
 
 import PhoneInput from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
-// FIX: The problematic 'CountryCode' import has been removed.
 
 export function EventRequestForm() {
   const { user } = useAuth();
@@ -32,10 +31,13 @@ export function EventRequestForm() {
   const [eventDate, setEventDate] = useState<Date>();
   const [eventDuration, setEventDuration] = useState("");
   const [eventLocation, setEventLocation] = useState("");
-  const [detectedCountry, setDetectedCountry] = useState<string | undefined>(); // FIX: Using a simple string type
+  const [detectedCountry, setDetectedCountry] = useState<string | undefined>();
   const [eventType, setEventType] = useState("");
   const [description, setDescription] = useState("");
   const [talentTypeNeeded, setTalentTypeNeeded] = useState("");
+
+  // control calendar popover
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
   const eventTypes = ["wedding", "birthday", "corporate", "opening", "club", "school", "festival", "private party", "other"];
   const talentTypes = ["Singer", "Guitarist", "Pianist", "DJ", "Band", "Violinist", "Saxophonist", "Drummer", "Other"];
@@ -140,20 +142,47 @@ export function EventRequestForm() {
         </div>
         <div className="space-y-2">
             <Label htmlFor="event-date">Event Date *</Label>
-            <Popover>
-                <PopoverTrigger asChild><Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !eventDate && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{eventDate ? format(eventDate, "PPP") : <span>Pick a date</span>}</Button></PopoverTrigger>
-                <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={eventDate} onSelect={setEventDate} initialFocus /></PopoverContent>
+            <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant={"outline"}
+                  className={cn("w-full justify-start text-left font-normal", !eventDate && "text-muted-foreground")}
+                  onClick={() => setIsCalendarOpen(true)}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {eventDate ? format(eventDate, "PPP") : <span>Pick a date</span>}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0">
+                <Calendar
+                  mode="single"
+                  selected={eventDate}
+                  onSelect={(date) => {
+                    setEventDate(date);
+                    setIsCalendarOpen(false); // auto-close on pick
+                  }}
+                  initialFocus
+                />
+              </PopoverContent>
             </Popover>
         </div>
       </div>
       <div className="space-y-2">
         <Label htmlFor="event-location">Event Location *</Label>
         <div className="flex items-center gap-2">
-          <Input id="event-location" value={eventLocation} onChange={(e) => setEventLocation(e.target.value)} required placeholder="Detecting location..." />
-          <Button type="button" variant="outline" onClick={handleDetectLocation} disabled={isDetectingLocation}>
-            <MapPin className="h-4 w-4 mr-2" />
-            {isDetectingLocation ? 'Detecting...' : 'Detect Again'}
-          </Button>
+          <Input
+            id="event-location"
+            value={eventLocation}
+            onChange={(e) => setEventLocation(e.target.value)}
+            required
+            placeholder={isDetectingLocation ? "Detecting location..." : "Enter or detect location"}
+          />
+          {!isDetectingLocation && (
+            <Button type="button" variant="outline" onClick={handleDetectLocation}>
+              <MapPin className="h-4 w-4 mr-2" />
+              Detect Again
+            </Button>
+          )}
         </div>
       </div>
        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
