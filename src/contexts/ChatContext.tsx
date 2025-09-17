@@ -65,7 +65,7 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
       fetchMessages();
       const subscription = supabase
         .channel(`chat-${channelInfo.type}-${channelInfo.id}`)
-        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, fetchMessages)
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: `${channelInfo.type === 'booking' ? 'booking_id' : 'event_request_id'}=eq.${channelInfo.id}`}, fetchMessages)
         .subscribe();
       return () => { supabase.removeChannel(subscription); };
     }
@@ -81,59 +81,11 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
       messageData.event_request_id = channelInfo.id;
     }
 
-    const { error: messageError } = await supabase
-      .from('chat_messages')
-      .insert(messageData)
-      .select()
-      .single();
-
-    if (messageError) {
-      console.error('Error sending message:', messageError);
-      return;
-    }
-
-    try {
-      let recipientId: string | undefined;
-      let notificationMessage = '';
-      let link_to = '';
-      
-      const isAdmin = user.email === 'admin@qtalent.live';
-
-      if (channelInfo.type === 'booking') {
-        const { data: booking } = await supabase.from('bookings').select('user_id, talent_id, event_type, talent_profiles(artist_name)').eq('id', channelInfo.id).single();
-        if (!booking) return;
-
-        recipientId = user.id === booking.user_id ? booking.talent_id : booking.user_id;
-        const senderName = user.id === booking.user_id ? "A Booker" : booking.talent_profiles?.artist_name;
-        notificationMessage = `New message from ${senderName} about the ${booking.event_type} event.`;
-        link_to = user.id === booking.user_id ? '/talent-dashboard' : '/booker-dashboard';
-
-      } else if (channelInfo.type === 'event_request') {
-        const { data: eventRequest } = await supabase.from('event_requests').select('user_id, booker_name, event_type').eq('id', channelInfo.id).single();
-        if (!eventRequest) return;
-        
-        const bookerId = eventRequest.user_id;
-        const { data: adminUser } = await supabase.from('profiles').select('id').eq('email', 'admin@qtalent.live').single();
-        
-        recipientId = isAdmin ? bookerId : adminUser?.id;
-        const senderName = isAdmin ? "QTalent Team" : eventRequest.booker_name;
-        notificationMessage = `New message from ${senderName} regarding your ${eventRequest.event_type} request.`;
-        link_to = isAdmin ? '/booker-dashboard' : '/admin/bookings';
-      }
-
-      if (!recipientId) return;
-
-      await supabase.from('notifications').insert({
-        user_id: recipientId,
-        message: notificationMessage,
-        booking_id: channelInfo.type === 'booking' ? channelInfo.id : null,
-        event_request_id: channelInfo.type === 'event_request' ? channelInfo.id : null,
-        link_to: link_to,
-        type: 'new_message'
-      });
-
-    } catch (error) {
-      console.error('Failed to create notification:', error);
+    // The ONLY job of this function is to insert the message.
+    // The database trigger will handle creating the notification automatically.
+    const { error } = await supabase.from('chat_messages').insert(messageData);
+    if (error) {
+      console.error('Error sending message:', error);
     }
   };
 
