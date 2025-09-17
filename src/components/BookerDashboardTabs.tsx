@@ -144,21 +144,26 @@ export const BookerDashboardTabs = ({ userId }: { userId: string }) => {
                 </TabsContent>
 
                 <TabsContent value="event_requests" className="pt-4">
-                    <div className="space-y-4">
-                        {eventRequests.length > 0 ? (
-                            eventRequests.map(req => <EventRequestCard key={req.id} request={req} isActionable={true} mode="booker" />)
-                        ) : (
-                            <p className="text-muted-foreground text-center py-8">You have not made any event requests to our team.</p>
-                        )}
-                    </div>
-                    {hasMoreRequests && (
-                        <div className="text-center mt-6">
-                            <Button onClick={loadMoreRequests} disabled={loadingMoreRequests}>
-                                {loadingMoreRequests ? 'Loading...' : 'Load More'}
-                            </Button>
-                        </div>
-                    )}
-                </TabsContent>
+    <div className="space-y-4">
+        {eventRequests.length > 0 ? (
+            eventRequests.map((req, index) => {
+                // --- THIS IS THE DEBUGGING LINE ---
+                if (index === 0) console.log("Data for the first Event Request card:", req);
+                
+                return <EventRequestCard key={req.id} request={req} isActionable={true} mode="booker" />
+            })
+        ) : (
+            <p className="text-muted-foreground text-center py-8">You have not made any event requests to our team.</p>
+        )}
+    </div>
+    {hasMoreRequests && (
+        <div className="text-center mt-6">
+            <Button onClick={loadMoreRequests} disabled={loadingMoreRequests}>
+                {loadingMoreRequests ? 'Loading...' : 'Load More'}
+            </Button>
+        </div>
+    )}
+</TabsContent>
             </Tabs>
         </div>
     );
