@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -17,152 +17,115 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { loading: authLoading } = useAuth(); // We no longer need the user object here
+  const { user, loading: authLoading } = useAuth();
   
   const { state } = useLocation();
   const mode = state?.mode || 'talent';
 
   const title = mode === 'booker' ? 'Log in to Continue' : 'Join as a Talent';
   const description = mode === 'booker' ? 'Please create an account or sign in to proceed.' : 'Create your profile to get booked';
-
-  // THE FIX: The redirect useEffect has been removed from this file.
-  // The useAuth hook will now handle all post-login navigation.
+  
+  useEffect(() => {
+    // Redirect a user if they are ALREADY logged in and land on this page.
+    if (!authLoading && user) {
+        navigate('/');
+    }
+  }, [user, authLoading, navigate]);
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    
-    const redirectUrl = `${window.location.origin}/`;
     const userType = mode === 'booker' ? 'booker' : 'talent';
-    
-    const { error } = await supabase.auth.signUp({ 
-      email, 
-      password, 
-      options: { 
-        data: { name, user_type: userType },
-        emailRedirectTo: redirectUrl
-      } 
-    });
-    
-    if (error) {
-      toast({ title: "Sign up failed", description: error.message, variant: "destructive" });
-    } else {
-      toast({ title: "Success!", description: "Please check your email to verify your account." });
-    }
+    const { error } = await supabase.auth.signUp({ email, password, options: { data: { name, user_type: userType } } });
+    if (error) toast({ title: "Sign up failed", description: error.message, variant: "destructive" });
+    else toast({ title: "Success!", description: "Please check your email to verify your account." });
     setLoading(false);
   };
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error, data } = await supabase.auth.signInWithPassword({ email, password });
+
     if (error) {
       toast({ title: "Sign in failed", description: error.message, variant: "destructive" });
       setLoading(false);
-    } else {
+      return;
+    } 
+    
+    if (data.user) {
       toast({ title: "Signed in successfully!" });
-      // The useAuth hook will handle the redirect automatically
+      
+      const from = state?.from?.pathname || null;
+      if (data.user.email === 'admin@qtalent.live') {
+        navigate('/admin');
+      } else if (from) {
+        navigate(from);
+      } else {
+        const { data: profile } = await supabase.from('talent_profiles').select('id').eq('user_id', data.user.id).single();
+        if (profile) {
+            navigate('/talent-dashboard');
+        } else {
+            navigate('/booker-dashboard');
+        }
+      }
     }
+    setLoading(false);
   };
 
-  if (authLoading) {
-    return <div className="min-h-screen bg-background flex items-center justify-center">...</div>;
+  if (authLoading && !user) {
+    return (
+        <div className="min-h-screen bg-background flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+    );
   }
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <div className="mb-6">
-          <Button 
-            variant="ghost" 
-            onClick={() => navigate(-1)}
-            className="mb-4 p-0 h-auto font-normal text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
-          </Button>
-        </div>
-
-        <Card className="glass-card">
+        <Button variant="ghost" onClick={() => navigate("/")} className="mb-4">
+          <ArrowLeft className="h-4 w-4 mr-2" /> Back to Home
+        </Button>
+        <Card>
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-bold">{title}</CardTitle>
+            <CardTitle className="text-2xl">{title}</CardTitle>
             <CardDescription>{description}</CardDescription>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="signin" className="w-full">
+            <Tabs defaultValue="login" className="w-full">
               <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="signin">Sign In</TabsTrigger>
+                <TabsTrigger value="login">Login</TabsTrigger>
                 <TabsTrigger value="signup">Sign Up</TabsTrigger>
               </TabsList>
-              
-              <TabsContent value="signin">
-                <form onSubmit={handleSignIn} className="space-y-4">
+              <TabsContent value="login">
+                <form onSubmit={handleSignIn} className="space-y-4 pt-4">
                   <div className="space-y-2">
-                    <Label htmlFor="signin-email">Email</Label>
-                    <Input
-                      id="signin-email"
-                      type="email"
-                      placeholder="Enter your email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                    />
+                    <Label htmlFor="login-email">Email</Label>
+                    <Input id="login-email" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="signin-password">Password</Label>
-                    <Input
-                      id="signin-password"
-                      type="password"
-                      placeholder="Enter your password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                    />
+                    <Label htmlFor="login-password">Password</Label>
+                    <Input id="login-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
                   </div>
-                  <Button type="submit" className="w-full" disabled={loading}>
-                    {loading ? "Signing In..." : "Sign In"}
-                  </Button>
+                  <Button type="submit" disabled={loading} className="w-full">{loading ? 'Signing In...' : 'Sign In'}</Button>
                 </form>
               </TabsContent>
-              
               <TabsContent value="signup">
-                <form onSubmit={handleSignUp} className="space-y-4">
+                <form onSubmit={handleSignUp} className="space-y-4 pt-4">
                   <div className="space-y-2">
                     <Label htmlFor="signup-name">Full Name</Label>
-                    <Input
-                      id="signup-name"
-                      type="text"
-                      placeholder="Enter your full name"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      required
-                    />
+                    <Input id="signup-name" placeholder="Your Name" value={name} onChange={(e) => setName(e.target.value)} required />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="signup-email">Email</Label>
-                    <Input
-                      id="signup-email"
-                      type="email"
-                      placeholder="Enter your email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                    />
+                    <Input id="signup-email" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="signup-password">Password</Label>
-                    <Input
-                      id="signup-password"
-                      type="password"
-                      placeholder="Create a password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                    />
+                    <Input id="signup-password" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required />
                   </div>
-                  <Button type="submit" className="w-full" disabled={loading}>
-                    {loading ? "Creating Account..." : "Create Account"}
-                  </Button>
+                  <Button type="submit" disabled={loading} className="w-full">{loading ? 'Creating Account...' : 'Create Account'}</Button>
                 </form>
               </TabsContent>
             </Tabs>
