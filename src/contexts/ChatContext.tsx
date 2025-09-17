@@ -13,7 +13,7 @@ export interface Message {
 
 interface ChannelInfo {
   id: string;
-  type: 'booking' | 'event_request'; // This tells us what the chat is for
+  type: 'booking' | 'event_request';
 }
 
 interface ChatContextType {
@@ -49,55 +49,42 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
 
   const fetchMessages = useCallback(async () => {
     if (!channelInfo) return;
-
     setLoadingMessages(true);
     const filterColumn = channelInfo.type === 'booking' ? 'booking_id' : 'event_request_id';
-    
-    const { data, error } = await supabase
-      .from('chat_messages')
-      .select('*')
-      .eq(filterColumn, channelInfo.id)
-      .order('created_at', { ascending: true });
-
-    if (error) {
-      console.error('Error fetching messages:', error);
-    } else {
-      setMessages(data || []);
-    }
+    const { data, error } = await supabase.from('chat_messages').select('*').eq(filterColumn, channelInfo.id).order('created_at', { ascending: true });
+    if (error) console.error('Error fetching messages:', error);
+    else setMessages(data || []);
     setLoadingMessages(false);
   }, [channelInfo]);
 
   useEffect(() => {
     if (isOpen && channelInfo) {
       fetchMessages();
+      const subscription = supabase
+        .channel(`chat-${channelInfo.type}-${channelInfo.id}`)
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, fetchMessages)
+        .subscribe();
+      return () => { supabase.removeChannel(subscription); };
     }
   }, [isOpen, channelInfo, fetchMessages]);
 
   const sendMessage = async (content: string) => {
     if (!user || !channelInfo || !content.trim()) return;
 
-    const messageData: {
-      sender_id: string;
-      content: string;
-      booking_id?: string;
-      event_request_id?: string;
-    } = {
-      sender_id: user.id,
-      content: content.trim(),
-    };
-
-    if (channelInfo.type === 'booking') {
-      messageData.booking_id = channelInfo.id;
-    } else {
-      messageData.event_request_id = channelInfo.id;
-    }
+    const messageData: any = { sender_id: user.id, content: content.trim() };
+    if (channelInfo.type === 'booking') messageData.booking_id = channelInfo.id;
+    else messageData.event_request_id = channelInfo.id;
 
     const { error } = await supabase.from('chat_messages').insert(messageData);
     if (error) {
       console.error('Error sending message:', error);
     } else {
-      // Re-fetch messages to show the new one
-      fetchMessages();
+      // After sending, invoke the backend function to notify the other user
+      const payload: any = { senderId: user.id };
+      if (channelInfo.type === 'booking') payload.bookingId = channelInfo.id;
+      else payload.eventRequestId = channelInfo.id;
+      
+      await supabase.functions.invoke('send-chat-notification', { body: payload });
     }
   };
 
@@ -110,8 +97,6 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
 
 export const useChat = () => {
   const context = useContext(ChatContext);
-  if (!context) {
-    throw new Error('useChat must be used within a ChatProvider');
-  }
+  if (!context) throw new Error('useChat must be used within a ChatProvider');
   return context;
 };
