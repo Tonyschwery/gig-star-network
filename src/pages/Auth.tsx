@@ -1,6 +1,6 @@
 // FILE: src/pages/Auth.tsx
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -19,7 +19,7 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { loading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   
   const { state } = useLocation();
   const mode = state?.mode || 'talent';
@@ -27,16 +27,28 @@ const Auth = () => {
   const title = mode === 'booker' ? 'Welcome to Qtalent' : 'Join as a Talent';
   const description = mode === 'booker' ? 'Please sign in or sign up to proceed.' : 'Create your profile to get booked';
   
-  // THE FIX: The problematic useEffect that caused a race condition has been removed from here.
-  // All redirect logic is now safely handled inside the handleSignIn function.
+  // This effect redirects a user if they are ALREADY logged in and happen to land on this page.
+  useEffect(() => {
+    if (!authLoading && user) {
+        navigate('/');
+    }
+  }, [user, authLoading, navigate]);
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    // This correctly sets the user_type metadata during signup
     const userType = mode === 'booker' ? 'booker' : 'talent';
-    const { error } = await supabase.auth.signUp({ email, password, options: { data: { name, user_type: userType } } });
-    if (error) toast({ title: "Sign up failed", description: error.message, variant: "destructive" });
-    else toast({ title: "Success!", description: "Please check your email to verify your account." });
+    const { error } = await supabase.auth.signUp({ 
+        email, 
+        password, 
+        options: { data: { name: name, user_type: userType } } 
+    });
+    if (error) {
+        toast({ title: "Sign up failed", description: error.message, variant: "destructive" });
+    } else {
+        toast({ title: "Success!", description: "Please check your email to verify your account." });
+    }
     setLoading(false);
   };
 
@@ -51,17 +63,22 @@ const Auth = () => {
       return;
     } 
     
+    // This is the smart redirect logic that runs AFTER a successful login
     if (data.user) {
       toast({ title: "Signed in successfully!" });
       
       const from = state?.from?.pathname || null;
+
+      // Rule 1: If user is the admin, always go to the admin panel.
       if (data.user.email === 'admin@qtalent.live') {
         navigate('/admin');
-      } else if (from) {
-        // This is the logic that will now work correctly.
-        // It sends the user back to the page they were trying to access (e.g., /your-event).
-        navigate(from); 
-      } else {
+      } 
+      // Rule 2: If user was sent here from another page, send them back.
+      else if (from) {
+        navigate(from);
+      } 
+      // Rule 3: Otherwise, send them to their default dashboard.
+      else {
         const { data: profile } = await supabase.from('talent_profiles').select('id').eq('user_id', data.user.id).single();
         if (profile) {
             navigate('/talent-dashboard');
@@ -73,7 +90,7 @@ const Auth = () => {
     setLoading(false);
   };
 
-  if (authLoading) {
+  if (authLoading && !user) {
     return (
         <div className="min-h-screen bg-background flex items-center justify-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
