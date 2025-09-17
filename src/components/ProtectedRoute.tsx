@@ -9,11 +9,12 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (status === 'LOGGED_OUT') {
-      console.log('PROTECTED ROUTE: User is logged out. Redirecting to /auth with state:', { from: location, mode: 'booker' });
+      console.log('🛡️ PROTECTED ROUTE: User is logged out. Redirecting to /auth');
+      console.log('🛡️ Current location:', location.pathname);
       // Store the intended destination for post-auth redirect
       sessionStorage.setItem('redirectAfterAuth', location.pathname);
-      // 'from': tells the login page where to return the user after success.
-      // 'mode': tells the login page to show text for a 'booker'.
+      console.log('🛡️ Stored redirect path:', location.pathname);
+      // Navigate to auth with booker mode
       navigate('/auth', { replace: true, state: { from: location, mode: 'booker' } });
     }
   }, [status, navigate, location]);

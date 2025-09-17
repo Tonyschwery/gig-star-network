@@ -31,12 +31,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('🔐 Auth state change:', event, session?.user?.email);
         setSession(session);
         const currentUser = session?.user ?? null;
         setUser(currentUser);
-        setLoading(true);
 
         if (!currentUser) {
+          console.log('🔐 No user, setting logged out state');
           setStatus('LOGGED_OUT');
           setProfile(null);
           setMode('booking');
@@ -44,17 +45,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return;
         }
 
+        console.log('🔐 User found, checking profile...');
+        setLoading(true);
+
         if (currentUser.email === 'admin@qtalent.live') {
+          console.log('🔐 Admin user detected');
           setStatus('ADMIN');
           setProfile({ name: 'Admin' });
           setMode('booking');
           setLoading(false);
           
-          // Redirect admin to admin dashboard after login
+          // For admin, navigate immediately on sign in
           if (event === 'SIGNED_IN') {
+            console.log('🔐 Redirecting admin to /admin');
+            // Use a small delay to ensure state is updated, but don't reload the page
             setTimeout(() => {
-              window.location.replace('/admin');
-            }, 500);
+              window.location.href = '/admin';
+            }, 100);
           }
         } else {
           const { data: talentProfile } = await supabase
@@ -63,6 +70,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             .eq('user_id', currentUser.id)
             .maybeSingle();
 
+          console.log('🔐 Talent profile:', talentProfile);
           setProfile(talentProfile);
 
           if (talentProfile) {
@@ -75,23 +83,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
           setLoading(false);
 
-          // Handle redirect for regular users after login
+          // Handle redirect for regular users after login - NO PAGE RELOAD
           if (event === 'SIGNED_IN') {
-            setTimeout(() => {
-              // Check if there's a redirect location in sessionStorage
-              const redirectPath = sessionStorage.getItem('redirectAfterAuth');
-              if (redirectPath) {
-                sessionStorage.removeItem('redirectAfterAuth');
-                window.location.replace(redirectPath);
+            console.log('🔐 Handling post-login redirect...');
+            // Check if there's a redirect location in sessionStorage
+            const redirectPath = sessionStorage.getItem('redirectAfterAuth');
+            if (redirectPath) {
+              console.log('🔐 Found redirect path:', redirectPath);
+              sessionStorage.removeItem('redirectAfterAuth');
+              // Use navigate instead of window.location to avoid page reload
+              setTimeout(() => {
+                window.location.href = redirectPath;
+              }, 100);
+            } else {
+              console.log('🔐 No redirect path, using defaults');
+              // Default redirect based on user type
+              if (talentProfile) {
+                setTimeout(() => {
+                  window.location.href = '/talent-dashboard';
+                }, 100);
               } else {
-                // Default redirect based on user type
-                if (talentProfile) {
-                  window.location.replace('/talent-dashboard');
-                } else {
-                  window.location.replace('/your-event');
-                }
+                // For bookers, redirect to event form
+                setTimeout(() => {
+                  window.location.href = '/your-event';
+                }, 100);
               }
-            }, 500);
+            }
           }
         }
       }
@@ -103,16 +120,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signOut = async () => {
+    console.log('🔐 Starting sign out process');
     setLoading(true);
     try {
-      // Clear all state first
-      setUser(null);
-      setSession(null);
-      setProfile(null);
-      setStatus('LOGGED_OUT');
-      setMode('booking');
-      
-      // Clear query cache
+      // Clear query cache first
       queryClient.clear();
       
       // Clear session storage
@@ -121,10 +132,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Sign out from Supabase
       await supabase.auth.signOut();
       
-      // Force page refresh to ensure clean state
-      window.location.replace('/');
+      // Clear all state after successful sign out
+      setUser(null);
+      setSession(null);
+      setProfile(null);
+      setStatus('LOGGED_OUT');
+      setMode('booking');
+      setLoading(false);
+      
+      console.log('🔐 Sign out completed, redirecting to home');
+      // Navigate to home without page reload
+      window.location.href = '/';
     } catch (error) {
-      console.error('Error signing out:', error);
+      console.error('🔐 Error signing out:', error);
       setLoading(false);
     }
   };
