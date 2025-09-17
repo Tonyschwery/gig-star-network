@@ -1,66 +1,39 @@
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+// FILE: src/components/ProtectedTalentRoute.tsx
+
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useEffect } from 'react';
 
-interface ProtectedTalentRouteProps {
-  children: React.ReactNode;
-  requireProfile?: boolean;
-}
+export function ProtectedTalentRoute({ children }: { children: React.ReactNode }) {
+    const { status, loading } = useAuth();
+    const navigate = useNavigate();
+    const location = useLocation();
 
-export function ProtectedTalentRoute({ 
-  children, 
-  requireProfile = true 
-}: ProtectedTalentRouteProps) {
-  const { user, loading: authLoading } = useAuth();
-  const navigate = useNavigate();
-  const [isAuthorized, setIsAuthorized] = useState(false);
-  const [isChecking, setIsChecking] = useState(true);
+    useEffect(() => {
+        if (loading) {
+            return; // Do nothing while auth state is loading
+        }
 
-  useEffect(() => {
-    const performCheck = async () => {
-      if (authLoading) return; 
+        // Define which statuses are considered a "Talent"
+        const isTalent = status === 'TALENT_COMPLETE' || status === 'TALENT_NEEDS_ONBOARDING';
 
-      if (!user) {
-        navigate('/auth');
-        return;
-      }
+        if (status === 'LOGGED_OUT') {
+            navigate('/auth', { replace: true, state: { from: location, mode: 'talent' } });
+        } else if (!isTalent) {
+            // If logged in but not as a talent (e.g., a Booker), send to homepage
+            navigate('/');
+        }
+    }, [status, loading, navigate, location]);
 
-      if (!requireProfile) {
-        setIsAuthorized(true);
-        setIsChecking(false);
-        return;
-      }
+    const isAuthorized = status === 'TALENT_COMPLETE' || status === 'TALENT_NEEDS_ONBOARDING';
 
-      const { data: hasProfile, error } = await supabase.rpc('check_talent_profile_exists', {
-        user_id_to_check: user.id
-      });
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-background flex items-center justify-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+        );
+    }
 
-      if (error) {
-        console.error("Error calling check_talent_profile_exists:", error);
-        navigate('/auth');
-        return;
-      }
-      
-      if (hasProfile) {
-        setIsAuthorized(true);
-      } else {
-        navigate('/talent-onboarding');
-      }
-      
-      setIsChecking(false);
-    };
-
-    performCheck();
-  }, [user, authLoading, requireProfile, navigate]);
-
-  if (isChecking) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-
-  return isAuthorized ? <>{children}</> : null;
+    return isAuthorized ? <>{children}</> : null;
 }
