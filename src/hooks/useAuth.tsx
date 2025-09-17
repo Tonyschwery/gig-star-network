@@ -55,7 +55,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setMode('artist');
         } else {
           // If not a talent, check for a booker profile
-          const { data: bookerProfile } = await supabase.from('booker_profiles').select('*').eq('user_id', currentUser.id).single();
+          const { data: bookerProfile } = await supabase.from('profiles').select('*').eq('id', currentUser.id).single();
           if (bookerProfile) {
             setProfile(bookerProfile);
             setStatus('BOOKER');

@@ -27,8 +27,8 @@ export const UniversalChat = () => {
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
-    if (newMessage.trim()) {
-      sendMessage(newMessage);
+    if (newMessage.trim() && user?.id) {
+      sendMessage(newMessage, user.id);
       setNewMessage('');
     }
   };

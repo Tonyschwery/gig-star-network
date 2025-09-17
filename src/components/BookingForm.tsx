@@ -95,6 +95,7 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
         event_date: format(eventDate, 'yyyy-MM-dd'),
         event_duration: parseInt(eventDuration, 10),
         event_location: eventLocation,
+        event_address: eventLocation, // Adding required field
         event_type: eventType,
         description: description,
         status: 'pending',

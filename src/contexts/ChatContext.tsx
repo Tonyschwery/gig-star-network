@@ -1,8 +1,10 @@
 // FILE: src/contexts/ChatContext.tsx
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+
+// Simple manual query without full supabase types to avoid circular dependency
+const supabaseUrl = "https://myxizupccweukrxfdqmc.supabase.co";
+const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im15eGl6dXBjY3dldWtyeGZkcW1jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI5Mjk4ODQsImV4cCI6MjA2ODUwNTg4NH0.KiikwI4cv2x4o0bPavrHtofHD8_VdK7INEAWdHsNRpE";
 
 export interface Message {
   id: string;
@@ -21,7 +23,7 @@ interface ChatContextType {
   openChat: (id: string, type: 'booking' | 'event_request') => void;
   closeChat: () => void;
   messages: Message[];
-  sendMessage: (content: string) => Promise<void>;
+  sendMessage: (content: string, userId?: string) => Promise<void>;
   loadingMessages: boolean;
   channelInfo: ChannelInfo | null;
 }
@@ -29,17 +31,16 @@ interface ChatContextType {
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
 
 export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
-  const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [channelInfo, setChannelInfo] = useState<ChannelInfo | null>(null);
 
-  const openChat = useCallback((id: string, type: 'booking' | 'event_request') => {
+  const openChat = (id: string, type: 'booking' | 'event_request') => {
     if (!id || !type) return;
     setChannelInfo({ id, type });
     setIsOpen(true);
-  }, []);
+  };
 
   const closeChat = () => {
     setIsOpen(false);
@@ -47,50 +48,83 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
     setMessages([]);
   };
 
-  const fetchMessages = useCallback(async () => {
-    if (!channelInfo) return;
+  const fetchMessages = async (info: ChannelInfo) => {
     setLoadingMessages(true);
-    const filterColumn = channelInfo.type === 'booking' ? 'booking_id' : 'event_request_id';
-    const { data, error } = await supabase.from('chat_messages').select('*').eq(filterColumn, channelInfo.id).order('created_at', { ascending: true });
-    if (error) {
-      console.error('Error fetching messages:', error);
-    } else {
-      setMessages(data || []);
+    try {
+      const filterColumn = info.type === 'booking' ? 'booking_id' : 'event_request_id';
+      
+      // Use fetch directly to avoid type issues
+      const response = await fetch(`${supabaseUrl}/rest/v1/chat_messages?${filterColumn}=eq.${info.id}&select=id,sender_id,content,created_at&order=created_at.asc`, {
+        headers: {
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${supabaseKey}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setMessages(data || []);
+      } else {
+        console.error('Error fetching messages:', response.statusText);
+      }
+    } catch (err) {
+      console.error('Error:', err);
+    } finally {
+      setLoadingMessages(false);
     }
-    setLoadingMessages(false);
-  }, [channelInfo]);
+  };
 
   useEffect(() => {
     if (isOpen && channelInfo) {
-      fetchMessages();
-      const subscription = supabase
-        .channel(`chat-${channelInfo.type}-${channelInfo.id}`)
-        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: `${channelInfo.type === 'booking' ? 'booking_id' : 'event_request_id'}=eq.${channelInfo.id}`}, fetchMessages)
-        .subscribe();
-      return () => { supabase.removeChannel(subscription); };
+      fetchMessages(channelInfo);
     }
-  }, [isOpen, channelInfo, fetchMessages]);
+  }, [isOpen, channelInfo]);
 
-  const sendMessage = async (content: string) => {
-    if (!user || !channelInfo || !content.trim()) return;
+  const sendMessage = async (content: string, userId?: string) => {
+    if (!userId || !channelInfo || !content.trim()) return;
 
-    const messageData: any = { sender_id: user.id, content: content.trim() };
+    const messageData: any = { 
+      sender_id: userId, 
+      content: content.trim() 
+    };
+    
     if (channelInfo.type === 'booking') {
       messageData.booking_id = channelInfo.id;
     } else {
       messageData.event_request_id = channelInfo.id;
     }
 
-    // The ONLY job of this function is to insert the message.
-    // The database trigger will handle creating the notification automatically.
-    const { error } = await supabase.from('chat_messages').insert(messageData);
-    if (error) {
+    // Use fetch directly to avoid type issues
+    try {
+      const response = await fetch(`${supabaseUrl}/rest/v1/chat_messages`, {
+        method: 'POST',
+        headers: {
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${supabaseKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(messageData)
+      });
+      
+      if (!response.ok) {
+        console.error('Error sending message:', response.statusText);
+      }
+    } catch (error) {
       console.error('Error sending message:', error);
     }
   };
 
   return (
-    <ChatContext.Provider value={{ isOpen, openChat, closeChat, messages, sendMessage, loadingMessages, channelInfo }}>
+    <ChatContext.Provider value={{ 
+      isOpen, 
+      openChat, 
+      closeChat, 
+      messages, 
+      sendMessage, 
+      loadingMessages, 
+      channelInfo 
+    }}>
       {children}
     </ChatContext.Provider>
   );

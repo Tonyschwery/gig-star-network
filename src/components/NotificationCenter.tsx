@@ -12,10 +12,11 @@ import { formatDistanceToNow } from 'date-fns';
 
 interface Notification {
   id: string;
+  title: string;
   message: string;
   created_at: string;
   is_read: boolean;
-  link_to: string;
+  type: string;
   booking_id?: string;
   event_request_id?: string;
 }
@@ -65,8 +66,6 @@ export function NotificationCenter() {
     } else if (notification.event_request_id) {
         navigate('/booker-dashboard'); // Or admin-dashboard based on role
         openChat(notification.event_request_id, 'event_request');
-    } else if (notification.link_to) {
-        navigate(notification.link_to);
     }
   };
 
