@@ -1,10 +1,10 @@
-// FILE: src/contexts/ChatContext.tsx
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { createClient } from '@supabase/supabase-js';
 
-// Simple manual query without full supabase types to avoid circular dependency
 const supabaseUrl = "https://myxizupccweukrxfdqmc.supabase.co";
-const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im15eGl6dXBjY3dldWtyeGZkcW1jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI5Mjk4ODQsImV4cCI6MjA2ODUwNTg4NH0.KiikwI4cv2x4o0bPavrHtofHD8_VdK7INEAWdHsNRpE";
+const supabaseKey = "YOUR_SERVICE_ROLE_OR_ANON_KEY"; // replace with safe env var in production
+
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 export interface Message {
   id: string;
@@ -52,78 +52,83 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
     setLoadingMessages(true);
     try {
       const filterColumn = info.type === 'booking' ? 'booking_id' : 'event_request_id';
-      
-      // Use fetch directly to avoid type issues
-      const response = await fetch(`${supabaseUrl}/rest/v1/chat_messages?${filterColumn}=eq.${info.id}&select=id,sender_id,content,created_at&order=created_at.asc`, {
-        headers: {
-          'apikey': supabaseKey,
-          'Authorization': `Bearer ${supabaseKey}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setMessages(data || []);
-      } else {
-        console.error('Error fetching messages:', response.statusText);
-      }
+
+      const { data, error } = await supabase
+        .from('chat_messages')
+        .select('id,sender_id,content,created_at')
+        .eq(filterColumn, info.id)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+      setMessages(data || []);
     } catch (err) {
-      console.error('Error:', err);
+      console.error('Error fetching messages:', err);
     } finally {
       setLoadingMessages(false);
     }
   };
 
+  // 🔴 NEW: Realtime subscription
   useEffect(() => {
-    if (isOpen && channelInfo) {
-      fetchMessages(channelInfo);
-    }
-  }, [isOpen, channelInfo]);
+    if (!channelInfo) return;
+
+    fetchMessages(channelInfo);
+
+    const filterColumn = channelInfo.type === 'booking' ? 'booking_id' : 'event_request_id';
+
+    const subscription = supabase
+      .channel('chat-room')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'chat_messages',
+          filter: `${filterColumn}=eq.${channelInfo.id}`,
+        },
+        (payload) => {
+          const newMessage = payload.new as Message;
+          setMessages((prev) => [...prev, newMessage]);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(subscription);
+    };
+  }, [channelInfo]);
 
   const sendMessage = async (content: string, userId?: string) => {
     if (!userId || !channelInfo || !content.trim()) return;
 
-    const messageData: any = { 
-      sender_id: userId, 
-      content: content.trim() 
+    const messageData: any = {
+      sender_id: userId,
+      content: content.trim(),
     };
-    
+
     if (channelInfo.type === 'booking') {
       messageData.booking_id = channelInfo.id;
     } else {
       messageData.event_request_id = channelInfo.id;
     }
 
-    // Use fetch directly to avoid type issues
     try {
-      const response = await fetch(`${supabaseUrl}/rest/v1/chat_messages`, {
-        method: 'POST',
-        headers: {
-          'apikey': supabaseKey,
-          'Authorization': `Bearer ${supabaseKey}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(messageData)
-      });
-      
-      if (!response.ok) {
-        console.error('Error sending message:', response.statusText);
-      }
+      const { error } = await supabase.from('chat_messages').insert(messageData);
+      if (error) throw error;
     } catch (error) {
       console.error('Error sending message:', error);
     }
   };
 
   return (
-    <ChatContext.Provider value={{ 
-      isOpen, 
-      openChat, 
-      closeChat, 
-      messages, 
-      sendMessage, 
-      loadingMessages, 
-      channelInfo 
+    <ChatContext.Provider value={{
+      isOpen,
+      openChat,
+      closeChat,
+      messages,
+      sendMessage,
+      loadingMessages,
+      channelInfo,
     }}>
       {children}
     </ChatContext.Provider>
