@@ -67,17 +67,26 @@ const Auth = () => {
     if (data.user) {
       toast({ title: "Signed in successfully!" });
       
+      const intent = state?.intent;
+      const talentId = state?.talentId;
       const from = state?.from?.pathname || null;
 
       // Rule 1: If user is the admin, always go to the admin panel.
       if (data.user.email === 'admin@qtalent.live') {
         navigate('/admin');
       } 
-      // Rule 2: If user was sent here from another page, send them back.
+      // Rule 2: Handle specific intents first
+      else if (intent === 'event-form') {
+        navigate('/your-event');
+      }
+      else if (intent === 'booking-form' && talentId) {
+        navigate(`/talent/${talentId}`, { state: { openBookingForm: true } });
+      }
+      // Rule 3: If user was sent here from another page, send them back.
       else if (from) {
         navigate(from);
       } 
-      // Rule 3: Otherwise, send them to their default dashboard.
+      // Rule 4: Otherwise, send them to their default dashboard.
       else {
         const { data: profile } = await supabase.from('talent_profiles').select('id').eq('user_id', data.user.id).single();
         if (profile) {

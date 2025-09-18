@@ -85,9 +85,18 @@ export default function TalentProfile() {
     fetchTalent();
   }, [id, toast]);
 
+  // Auto-open booking form if redirected from auth with intent
+  useEffect(() => {
+    if (location.state?.openBookingForm && user && talent) {
+      setShowBookingForm(true);
+      // Clear the state to prevent reopening on refresh
+      navigate(location.pathname, { replace: true });
+    }
+  }, [location.state, user, talent, navigate, location.pathname]);
+
   const handleBookNow = () => {
     if (!user) {
-      navigate('/auth', { state: { from: location, mode: 'booker' } });
+      navigate('/auth', { state: { intent: 'booking-form', talentId: id, mode: 'booker' } });
     } else {
       setShowBookingForm(true);
     }

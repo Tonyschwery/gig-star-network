@@ -295,9 +295,11 @@ export function HeroSection() {
               size="lg"
               className="hero-button px-8 py-4 text-base font-semibold"
               onClick={() => {
-                console.log('Button clicked! User status:', user ? 'logged in' : 'not logged in');
-                console.log('Navigating to /your-event');
-                navigate('/your-event');
+                if (user) {
+                  navigate('/your-event');
+                } else {
+                  navigate('/auth', { state: { intent: 'event-form', mode: 'booker' } });
+                }
               }}
             >
               {user ? "Get Personalized Recommendations" : "Start Free Consultation"}
