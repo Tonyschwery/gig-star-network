@@ -16,6 +16,7 @@ interface Notification {
   message: string;
   booking_id: string | null;
   message_id: string | null;
+  event_request_id: string | null;
   is_read: boolean;
   created_at: string;
 }
@@ -66,7 +67,21 @@ export function NotificationList() {
         .limit(5);
 
       if (error) throw error;
-      setNotifications(data || []);
+      
+      // Cast the data to match our interface (adding null checks)
+      const typedNotifications: Notification[] = (data || []).map((item: any) => ({
+        id: item.id,
+        type: item.type,
+        title: item.title,
+        message: item.message,
+        booking_id: item.booking_id,
+        message_id: item.message_id,
+        event_request_id: item.event_request_id ?? null,
+        is_read: item.is_read,
+        created_at: item.created_at,
+      }));
+      
+      setNotifications(typedNotifications);
     } catch (error) {
       console.error('Error loading notifications:', error);
     } finally {
@@ -138,6 +153,8 @@ export function NotificationList() {
   };
 
   const handleNotificationClick = async (notification: Notification) => {
+    console.log('Notification clicked:', notification);
+    
     // Mark as read
     if (!notification.is_read) {
       await markAsRead(notification.id);
@@ -163,18 +180,38 @@ export function NotificationList() {
           const isTalent = talentProfile && booking.talent_id === talentProfile.id;
           
           if (isTalent) {
-            navigate('/talent-dashboard/bookings');
+            navigate('/talent-dashboard');
           } else {
             navigate('/booker-dashboard');
           }
+          
+          // Open chat for the booking after navigation
+          setTimeout(() => {
+            // Use the chat system to open the booking chat
+            const chatEvent = new CustomEvent('openChat', { 
+              detail: { id: notification.booking_id, type: 'booking' }
+            });
+            window.dispatchEvent(chatEvent);
+          }, 500);
         }
       } catch (error) {
         console.error('Error navigating to booking:', error);
         navigate('/booker-dashboard');
       }
+    } else if (notification.event_request_id) {
+      // Always go to booker dashboard for event requests (only bookers create them)
+      navigate('/booker-dashboard');
+      
+      // Open chat for the event request after navigation
+      setTimeout(() => {
+        const chatEvent = new CustomEvent('openChat', { 
+          detail: { id: notification.event_request_id, type: 'event_request' }
+        });
+        window.dispatchEvent(chatEvent);
+      }, 500);
     } else if (notification.message_id) {
       // Navigate to chat - implementation depends on your chat structure
-      navigate('/talent-dashboard'); // or appropriate chat route
+      navigate('/talent-dashboard');
     }
   };
 

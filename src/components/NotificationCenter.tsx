@@ -53,19 +53,39 @@ export function NotificationCenter() {
   }, [user]);
 
   const handleNotificationClick = async (notification: Notification) => {
+    console.log('Notification clicked:', notification);
+    
     // Mark as read in the database
     await supabase.from('notifications').update({ is_read: true }).eq('id', notification.id);
     
     // Update state locally to immediately reflect the change
     setNotifications(prev => prev.map(n => n.id === notification.id ? { ...n, is_read: true } : n));
     
-    // Handle navigation and open chat
+    // Handle navigation based on notification type
     if (notification.booking_id) {
-        navigate('/booker-dashboard'); // Or talent-dashboard based on role
-        openChat(notification.booking_id, 'booking');
+      // Check user role to determine dashboard
+      const { data: talentProfile } = await supabase
+        .from('talent_profiles')
+        .select('id')
+        .eq('user_id', user?.id)
+        .single();
+        
+      if (talentProfile) {
+        navigate('/talent-dashboard');
+      } else {
+        navigate('/booker-dashboard');
+      }
+      // Open chat for the booking
+      setTimeout(() => {
+        openChat(notification.booking_id!, 'booking');
+      }, 500);
     } else if (notification.event_request_id) {
-        navigate('/booker-dashboard'); // Or admin-dashboard based on role
-        openChat(notification.event_request_id, 'event_request');
+      // Always go to booker dashboard for event requests (only bookers create them)
+      navigate('/booker-dashboard');
+      // Open chat for the event request
+      setTimeout(() => {
+        openChat(notification.event_request_id!, 'event_request');
+      }, 500);
     }
   };
 

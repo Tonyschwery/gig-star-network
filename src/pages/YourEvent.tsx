@@ -1,10 +1,25 @@
 // FILE: src/pages/YourEvent.tsx
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Header } from '@/components/Header';
-import { EventRequestForm } from '@/components/EventRequestForm'; // 1. Import the new form component
+import { EventRequestForm } from '@/components/EventRequestForm';
+import { useAuth } from '@/hooks/useAuth';
 
 const YourEvent = () => {
+  const { user, loading } = useAuth();
+  
+  useEffect(() => {
+    console.log('YourEvent page loaded, user:', user ? 'authenticated' : 'not authenticated', 'loading:', loading);
+  }, [user, loading]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <Header />

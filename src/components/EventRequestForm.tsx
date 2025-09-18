@@ -81,7 +81,7 @@ export function EventRequestForm() {
     e.preventDefault();
     if (!user || !user.email) {
       toast({ title: "Authentication Required", variant: "destructive" });
-      navigate('/login');
+      navigate('/auth', { state: { intent: 'event-form', mode: 'booker' } });
       return;
     }
     if (!bookerName || !eventDate || !eventLocation || !eventType || !eventDuration) {

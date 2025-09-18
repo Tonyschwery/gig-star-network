@@ -1,10 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = "https://myxizupccweukrxfdqmc.supabase.co";
-const supabaseKey = "YOUR_SERVICE_ROLE_OR_ANON_KEY"; // replace with safe env var in production
-
-const supabase = createClient(supabaseUrl, supabaseKey);
+import { supabase } from '@/integrations/supabase/client';
 
 export interface Message {
   id: string;
@@ -36,6 +31,23 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [channelInfo, setChannelInfo] = useState<ChannelInfo | null>(null);
 
+  // Listen for custom chat open events from notifications
+  useEffect(() => {
+    const handleOpenChat = (event: Event) => {
+      const customEvent = event as CustomEvent<{id: string, type: 'booking' | 'event_request'}>;
+      const { id, type } = customEvent.detail;
+      if (id && type) {
+        setChannelInfo({ id, type });
+        setIsOpen(true);
+      }
+    };
+    
+    window.addEventListener('openChat', handleOpenChat);
+    return () => {
+      window.removeEventListener('openChat', handleOpenChat);
+    };
+  }, []);
+
   const openChat = (id: string, type: 'booking' | 'event_request') => {
     if (!id || !type) return;
     setChannelInfo({ id, type });
@@ -60,7 +72,15 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
         .order('created_at', { ascending: true });
 
       if (error) throw error;
-      setMessages(data || []);
+      
+      const typedMessages: Message[] = (data || []).map(msg => ({
+        id: msg.id,
+        sender_id: msg.sender_id,
+        content: msg.content,
+        created_at: msg.created_at
+      }));
+      
+      setMessages(typedMessages);
     } catch (err) {
       console.error('Error fetching messages:', err);
     } finally {
@@ -68,7 +88,7 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  // 🔴 NEW: Realtime subscription
+  // Realtime subscription
   useEffect(() => {
     if (!channelInfo) return;
 
@@ -101,20 +121,22 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
   const sendMessage = async (content: string, userId?: string) => {
     if (!userId || !channelInfo || !content.trim()) return;
 
-    const messageData: any = {
-      sender_id: userId,
-      content: content.trim(),
-    };
-
-    if (channelInfo.type === 'booking') {
-      messageData.booking_id = channelInfo.id;
-    } else {
-      messageData.event_request_id = channelInfo.id;
-    }
-
     try {
-      const { error } = await supabase.from('chat_messages').insert(messageData);
-      if (error) throw error;
+      if (channelInfo.type === 'booking') {
+        const { error } = await supabase.from('chat_messages').insert({
+          booking_id: channelInfo.id,
+          sender_id: userId,
+          content: content.trim(),
+        });
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('chat_messages').insert({
+          event_request_id: channelInfo.id,
+          sender_id: userId,
+          content: content.trim(),
+        });
+        if (error) throw error;
+      }
     } catch (error) {
       console.error('Error sending message:', error);
     }
