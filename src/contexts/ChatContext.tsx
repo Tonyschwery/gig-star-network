@@ -1,7 +1,8 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import React, { createContext, useContext, useState, ReactNode } from 'react';
+import { supabase } from '../supabaseClient'; // Adjust your import path
 
-export interface Message {
+// Define your Message type matching the chat_messages table
+export type Message = {
   id: string;
   booking_id?: string | null;
   event_request_id?: string | null;
@@ -9,158 +10,88 @@ export interface Message {
   content: string;
   created_at: string;
   updated_at: string;
-}
+};
 
-interface ChannelInfo {
-  id: string;
-  type: "booking" | "event_request";
-}
-
-interface ChatContextType {
-  isOpen: boolean;
-  openChat: (id: string, type: "booking" | "event_request") => void;
-  closeChat: () => void;
+type ChatContextType = {
   messages: Message[];
-  sendMessage: (content: string, userId: string) => Promise<void>;
-  loadingMessages: boolean;
-  channelInfo: ChannelInfo | null;
-}
+  loadMessages: (id: string, type: 'booking' | 'event_request') => Promise<void>;
+  sendMessage: (
+    content: string,
+    sender_id: string,
+    target: { booking_id?: string; event_request_id?: string }
+  ) => Promise<void>;
+};
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
 
-export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
-  const [isOpen, setIsOpen] = useState(false);
+export const ChatProvider = ({ children }: { children: ReactNode }) => {
   const [messages, setMessages] = useState<Message[]>([]);
-  const [loadingMessages, setLoadingMessages] = useState(false);
-  const [channelInfo, setChannelInfo] = useState<ChannelInfo | null>(null);
 
-  useEffect(() => {
-    const handleOpenChat = (event: Event) => {
-      const customEvent = event as CustomEvent<{
-        id: string;
-        type: "booking" | "event_request";
-      }>;
-      const { id, type } = customEvent.detail;
-      if (id && type) {
-        setChannelInfo({ id, type });
-        setIsOpen(true);
-      }
-    };
-
-    window.addEventListener("openChat", handleOpenChat);
-    return () => {
-      window.removeEventListener("openChat", handleOpenChat);
-    };
-  }, []);
-
-  const openChat = (id: string, type: "booking" | "event_request") => {
-    if (!id || !type) return;
-    setChannelInfo({ id, type });
-    setIsOpen(true);
-  };
-
-  const closeChat = () => {
-    setIsOpen(false);
-    setChannelInfo(null);
-    setMessages([]);
-  };
-
-  const fetchMessages = async (info: ChannelInfo) => {
-    setLoadingMessages(true);
+  // Load messages based on booking_id or event_request_id
+  const loadMessages = async (id: string, type: 'booking' | 'event_request') => {
     try {
-      const filterColumn = info.type === "booking" ? "booking_id" : "event_request_id";
+      const column = type === 'booking' ? 'booking_id' : 'event_request_id';
 
       const { data, error } = await supabase
-        .from<Message>("chat_messages")
-        .select("*")
-        .eq(filterColumn, info.id)
-        .order("created_at", { ascending: true });
+        .from<Message>('chat_messages')
+        .select('*')
+        .eq(column, id)
+        .order('created_at', { ascending: true });
 
       if (error) throw error;
 
       setMessages(data || []);
-    } catch (err) {
-      console.error("Error fetching messages:", err);
-    } finally {
-      setLoadingMessages(false);
+    } catch (error) {
+      console.error('Failed to load messages:', error);
+      setMessages([]);
     }
   };
 
-  useEffect(() => {
-    if (!channelInfo) return;
-
-    fetchMessages(channelInfo);
-
-    const filterColumn = channelInfo.type === "booking" ? "booking_id" : "event_request_id";
-
-    const subscription = supabase
-      .channel("chat-room")
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "chat_messages",
-          filter: `${filterColumn}=eq.${channelInfo.id}`,
-        },
-        (payload) => {
-          const newMessage = payload.new as Message;
-          setMessages((prev) => [...prev, newMessage]);
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(subscription);
-    };
-  }, [channelInfo]);
-
-  const sendMessage = async (content: string, userId: string) => {
-    if (!userId || !channelInfo || !content.trim()) return;
-
+  // Send message function
+  const sendMessage = async (
+    content: string,
+    sender_id: string,
+    target: { booking_id?: string; event_request_id?: string }
+  ) => {
     try {
-      const insertData =
-        channelInfo.type === "booking"
-          ? {
-              booking_id: channelInfo.id,
-              sender_id: userId,
-              content: content.trim(),
-            }
-          : {
-              event_request_id: channelInfo.id,
-              sender_id: userId,
-              content: content.trim(),
-            };
+      if (!target.booking_id && !target.event_request_id) {
+        throw new Error('Either booking_id or event_request_id must be provided');
+      }
 
-      const { error } = await supabase.from("chat_messages").insert(insertData);
+      const messageToInsert = {
+        content,
+        sender_id,
+        booking_id: target.booking_id ?? null,
+        event_request_id: target.event_request_id ?? null,
+      };
+
+      const { data, error } = await supabase
+        .from<Message>('chat_messages')
+        .insert(messageToInsert)
+        .select()
+        .single();
 
       if (error) throw error;
+
+      // Append new message to existing messages state
+      setMessages((prev) => [...prev, data]);
     } catch (error) {
-      console.error("Error sending message:", error);
+      console.error('Failed to send message:', error);
     }
   };
 
   return (
-    <ChatContext.Provider
-      value={{
-        isOpen,
-        openChat,
-        closeChat,
-        messages,
-        sendMessage,
-        loadingMessages,
-        channelInfo,
-      }}
-    >
+    <ChatContext.Provider value={{ messages, loadMessages, sendMessage }}>
       {children}
     </ChatContext.Provider>
   );
 };
 
-export function useChat() {
+// Hook to use ChatContext easily
+export const useChat = () => {
   const context = useContext(ChatContext);
-  if (context === undefined) {
-    throw new Error("useChat must be used within a ChatProvider");
+  if (!context) {
+    throw new Error('useChat must be used within a ChatProvider');
   }
   return context;
-}
+};
