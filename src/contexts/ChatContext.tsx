@@ -140,7 +140,7 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
               content: content.trim(),
             };
 
-      const { error } = await supabase.from("chat_messages").insert(insertData);
+      const { error } = await supabase.from("chat_messages").insert(insertData as any);
       if (error) throw error;
     } catch (error) {
       console.error("Error sending message:", error);
