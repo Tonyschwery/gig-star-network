@@ -73,7 +73,7 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
         .from("chat_messages")
         .select("id, sender_id, content, created_at")
         .eq(filterColumn, info.id)
-        .order("created_at", { ascending: true })) as any;
+        .order("created_at", { ascending: true }) as any;
 
       if (error) throw error;
 
