@@ -3,9 +3,12 @@ import { supabase } from "@/integrations/supabase/client";
 
 export interface Message {
   id: string;
+  booking_id?: string | null;
+  event_request_id?: string | null;
   sender_id: string;
   content: string;
   created_at: string;
+  updated_at: string;
 }
 
 interface ChannelInfo {
@@ -18,7 +21,7 @@ interface ChatContextType {
   openChat: (id: string, type: "booking" | "event_request") => void;
   closeChat: () => void;
   messages: Message[];
-  sendMessage: (content: string, userId?: string) => Promise<void>;
+  sendMessage: (content: string, userId: string) => Promise<void>;
   loadingMessages: boolean;
   channelInfo: ChannelInfo | null;
 }
@@ -31,10 +34,12 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [channelInfo, setChannelInfo] = useState<ChannelInfo | null>(null);
 
-  // Listen for custom chat open events
   useEffect(() => {
     const handleOpenChat = (event: Event) => {
-      const customEvent = event as CustomEvent<{ id: string; type: "booking" | "event_request" }>;
+      const customEvent = event as CustomEvent<{
+        id: string;
+        type: "booking" | "event_request";
+      }>;
       const { id, type } = customEvent.detail;
       if (id && type) {
         setChannelInfo({ id, type });
@@ -43,7 +48,9 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
     };
 
     window.addEventListener("openChat", handleOpenChat);
-    return () => window.removeEventListener("openChat", handleOpenChat);
+    return () => {
+      window.removeEventListener("openChat", handleOpenChat);
+    };
   }, []);
 
   const openChat = (id: string, type: "booking" | "event_request") => {
@@ -63,23 +70,15 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       const filterColumn = info.type === "booking" ? "booking_id" : "event_request_id";
 
-      // Explicitly typing response to avoid deep inference issues
-      type SupabaseMessage = {
-        id: string;
-        sender_id: string;
-        content: string;
-        created_at: string;
-      };
-
       const { data, error } = await supabase
-        .from<SupabaseMessage>("chat_messages")
-        .select("id, sender_id, content, created_at")
+        .from<Message>("chat_messages")
+        .select("*")
         .eq(filterColumn, info.id)
         .order("created_at", { ascending: true });
 
       if (error) throw error;
 
-      setMessages(data ?? []);
+      setMessages(data || []);
     } catch (err) {
       console.error("Error fetching messages:", err);
     } finally {
@@ -116,7 +115,7 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
     };
   }, [channelInfo]);
 
-  const sendMessage = async (content: string, userId?: string) => {
+  const sendMessage = async (content: string, userId: string) => {
     if (!userId || !channelInfo || !content.trim()) return;
 
     try {
