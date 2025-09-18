@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import React, { createContext, useContext, useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 export interface Message {
   id: string;
@@ -10,12 +10,12 @@ export interface Message {
 
 interface ChannelInfo {
   id: string;
-  type: 'booking' | 'event_request';
+  type: "booking" | "event_request";
 }
 
 interface ChatContextType {
   isOpen: boolean;
-  openChat: (id: string, type: 'booking' | 'event_request') => void;
+  openChat: (id: string, type: "booking" | "event_request") => void;
   closeChat: () => void;
   messages: Message[];
   sendMessage: (content: string, userId?: string) => Promise<void>;
@@ -34,21 +34,24 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
   // Listen for custom chat open events from notifications
   useEffect(() => {
     const handleOpenChat = (event: Event) => {
-      const customEvent = event as CustomEvent<{id: string, type: 'booking' | 'event_request'}>;
+      const customEvent = event as CustomEvent<{
+        id: string;
+        type: "booking" | "event_request";
+      }>;
       const { id, type } = customEvent.detail;
       if (id && type) {
         setChannelInfo({ id, type });
         setIsOpen(true);
       }
     };
-    
-    window.addEventListener('openChat', handleOpenChat);
+
+    window.addEventListener("openChat", handleOpenChat);
     return () => {
-      window.removeEventListener('openChat', handleOpenChat);
+      window.removeEventListener("openChat", handleOpenChat);
     };
   }, []);
 
-  const openChat = (id: string, type: 'booking' | 'event_request') => {
+  const openChat = (id: string, type: "booking" | "event_request") => {
     if (!id || !type) return;
     setChannelInfo({ id, type });
     setIsOpen(true);
@@ -63,26 +66,27 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
   const fetchMessages = async (info: ChannelInfo) => {
     setLoadingMessages(true);
     try {
-      const filterColumn = info.type === 'booking' ? 'booking_id' : 'event_request_id';
+      const filterColumn =
+        info.type === "booking" ? "booking_id" : "event_request_id";
 
       const { data, error } = await supabase
-        .from('chat_messages')
-        .select('id,sender_id,content,created_at')
+        .from("chat_messages")
+        .select("id, sender_id, content, created_at")
         .eq(filterColumn, info.id)
-        .order('created_at', { ascending: true });
+        .order("created_at", { ascending: true });
 
       if (error) throw error;
-      
-      const typedMessages: Message[] = (data || []).map(msg => ({
+
+      const typedMessages: Message[] = (data || []).map((msg: any) => ({
         id: msg.id,
         sender_id: msg.sender_id,
         content: msg.content,
-        created_at: msg.created_at
+        created_at: msg.created_at,
       }));
-      
+
       setMessages(typedMessages);
     } catch (err) {
-      console.error('Error fetching messages:', err);
+      console.error("Error fetching messages:", err);
     } finally {
       setLoadingMessages(false);
     }
@@ -94,16 +98,17 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
 
     fetchMessages(channelInfo);
 
-    const filterColumn = channelInfo.type === 'booking' ? 'booking_id' : 'event_request_id';
+    const filterColumn =
+      channelInfo.type === "booking" ? "booking_id" : "event_request_id";
 
     const subscription = supabase
-      .channel('chat-room')
+      .channel("chat-room")
       .on(
-        'postgres_changes',
+        "postgres_changes",
         {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'chat_messages',
+          event: "INSERT",
+          schema: "public",
+          table: "chat_messages",
           filter: `${filterColumn}=eq.${channelInfo.id}`,
         },
         (payload) => {
@@ -122,36 +127,38 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
     if (!userId || !channelInfo || !content.trim()) return;
 
     try {
-      if (channelInfo.type === 'booking') {
-        const { error } = await supabase.from('chat_messages').insert({
-          booking_id: channelInfo.id,
-          sender_id: userId,
-          content: content.trim(),
-        });
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from('chat_messages').insert({
-          event_request_id: channelInfo.id,
-          sender_id: userId,
-          content: content.trim(),
-        });
-        if (error) throw error;
-      }
+      const insertData =
+        channelInfo.type === "booking"
+          ? {
+              booking_id: channelInfo.id,
+              sender_id: userId,
+              content: content.trim(),
+            }
+          : {
+              event_request_id: channelInfo.id,
+              sender_id: userId,
+              content: content.trim(),
+            };
+
+      const { error } = await supabase.from("chat_messages").insert(insertData);
+      if (error) throw error;
     } catch (error) {
-      console.error('Error sending message:', error);
+      console.error("Error sending message:", error);
     }
   };
 
   return (
-    <ChatContext.Provider value={{
-      isOpen,
-      openChat,
-      closeChat,
-      messages,
-      sendMessage,
-      loadingMessages,
-      channelInfo,
-    }}>
+    <ChatContext.Provider
+      value={{
+        isOpen,
+        openChat,
+        closeChat,
+        messages,
+        sendMessage,
+        loadingMessages,
+        channelInfo,
+      }}
+    >
       {children}
     </ChatContext.Provider>
   );
@@ -160,7 +167,7 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
 export function useChat() {
   const context = useContext(ChatContext);
   if (context === undefined) {
-    throw new Error('useChat must be used within a ChatProvider');
+    throw new Error("useChat must be used within a ChatProvider");
   }
   return context;
 }
