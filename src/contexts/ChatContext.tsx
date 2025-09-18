@@ -31,13 +31,10 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [channelInfo, setChannelInfo] = useState<ChannelInfo | null>(null);
 
-  // Listen for custom chat open events from notifications
+  // Listen for custom chat open events
   useEffect(() => {
     const handleOpenChat = (event: Event) => {
-      const customEvent = event as CustomEvent<{
-        id: string;
-        type: "booking" | "event_request";
-      }>;
+      const customEvent = event as CustomEvent<{ id: string; type: "booking" | "event_request" }>;
       const { id, type } = customEvent.detail;
       if (id && type) {
         setChannelInfo({ id, type });
@@ -46,9 +43,7 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
     };
 
     window.addEventListener("openChat", handleOpenChat);
-    return () => {
-      window.removeEventListener("openChat", handleOpenChat);
-    };
+    return () => window.removeEventListener("openChat", handleOpenChat);
   }, []);
 
   const openChat = (id: string, type: "booking" | "event_request") => {
@@ -66,25 +61,25 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
   const fetchMessages = async (info: ChannelInfo) => {
     setLoadingMessages(true);
     try {
-      const filterColumn =
-        info.type === "booking" ? "booking_id" : "event_request_id";
+      const filterColumn = info.type === "booking" ? "booking_id" : "event_request_id";
+
+      // Explicitly typing response to avoid deep inference issues
+      type SupabaseMessage = {
+        id: string;
+        sender_id: string;
+        content: string;
+        created_at: string;
+      };
 
       const { data, error } = await supabase
-        .from("chat_messages")
+        .from<SupabaseMessage>("chat_messages")
         .select("id, sender_id, content, created_at")
         .eq(filterColumn, info.id)
-        .order("created_at", { ascending: true }) as any;
+        .order("created_at", { ascending: true });
 
       if (error) throw error;
 
-      const typedMessages: Message[] = (data || []).map((msg: any) => ({
-        id: msg.id,
-        sender_id: msg.sender_id,
-        content: msg.content,
-        created_at: msg.created_at,
-      }));
-
-      setMessages(typedMessages);
+      setMessages(data ?? []);
     } catch (err) {
       console.error("Error fetching messages:", err);
     } finally {
@@ -92,14 +87,12 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  // Realtime subscription
   useEffect(() => {
     if (!channelInfo) return;
 
     fetchMessages(channelInfo);
 
-    const filterColumn =
-      channelInfo.type === "booking" ? "booking_id" : "event_request_id";
+    const filterColumn = channelInfo.type === "booking" ? "booking_id" : "event_request_id";
 
     const subscription = supabase
       .channel("chat-room")
@@ -140,7 +133,8 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
               content: content.trim(),
             };
 
-      const { error } = await supabase.from("chat_messages").insert(insertData as any);
+      const { error } = await supabase.from("chat_messages").insert(insertData);
+
       if (error) throw error;
     } catch (error) {
       console.error("Error sending message:", error);
