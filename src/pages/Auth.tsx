@@ -88,7 +88,7 @@ const Auth = () => {
       } 
       // Rule 4: Otherwise, send them to their default dashboard.
       else {
-        const { data: profile } = await supabase.from('talent_profiles').select('id').eq('user_id', data.user.id).single();
+        const { data: profile } = await supabase.from('talent_profiles').select('id').eq('user_id', data.user.id).maybeSingle();
         if (profile) {
             navigate('/talent-dashboard');
         } else {

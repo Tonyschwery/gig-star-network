@@ -73,11 +73,11 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
         .from("chat_messages")
         .select("id, sender_id, content, created_at")
         .eq(filterColumn, info.id)
-        .order("created_at", { ascending: true }) as any;
+        .order("created_at", { ascending: true });
 
       if (error) throw error;
 
-      const typedMessages: Message[] = (data || []).map((msg: any) => ({
+      const typedMessages: Message[] = (data || []).map((msg) => ({
         id: msg.id,
         sender_id: msg.sender_id,
         content: msg.content,
@@ -140,7 +140,7 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
               content: content.trim(),
             };
 
-      const { error } = await supabase.from("chat_messages").insert(insertData as any);
+      const { error } = await supabase.from("chat_messages").insert(insertData);
       if (error) throw error;
     } catch (error) {
       console.error("Error sending message:", error);

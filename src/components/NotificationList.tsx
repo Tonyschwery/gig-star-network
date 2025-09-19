@@ -168,14 +168,14 @@ export function NotificationList() {
           .from('bookings')
           .select('talent_id, user_id')
           .eq('id', notification.booking_id)
-          .single();
+          .maybeSingle();
 
         if (booking) {
           const { data: talentProfile } = await supabase
             .from('talent_profiles')
             .select('id')
             .eq('user_id', user?.id)
-            .single();
+            .maybeSingle();
 
           const isTalent = talentProfile && booking.talent_id === talentProfile.id;
           

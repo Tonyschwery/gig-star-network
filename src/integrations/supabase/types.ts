@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_notifications: {
+        Row: {
+          admin_user_id: string
+          created_at: string | null
+          id: string
+          is_read: boolean | null
+          message: string
+          notification_type: string
+          related_id: string | null
+          related_type: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          admin_user_id: string
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message: string
+          notification_type: string
+          related_id?: string | null
+          related_type?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          admin_user_id?: string
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message?: string
+          notification_type?: string
+          related_id?: string | null
+          related_type?: string | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       admin_settings: {
         Row: {
           created_at: string
@@ -81,6 +120,36 @@ export type Database = {
             referencedColumns: ["user_id"]
           },
         ]
+      }
+      booker_profiles: {
+        Row: {
+          company_name: string | null
+          created_at: string | null
+          full_name: string | null
+          id: string
+          phone_number: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          company_name?: string | null
+          created_at?: string | null
+          full_name?: string | null
+          id?: string
+          phone_number?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          company_name?: string | null
+          created_at?: string | null
+          full_name?: string | null
+          id?: string
+          phone_number?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
       }
       booking_request_tracking: {
         Row: {
@@ -201,30 +270,47 @@ export type Database = {
       }
       chat_messages: {
         Row: {
-          booking_id: string
+          booking_id: string | null
+          chat_type: string | null
           content: string
           created_at: string
+          event_request_id: string | null
           id: string
+          is_admin_chat: boolean | null
           sender_id: string
           updated_at: string
         }
         Insert: {
-          booking_id: string
+          booking_id?: string | null
+          chat_type?: string | null
           content: string
           created_at?: string
+          event_request_id?: string | null
           id?: string
+          is_admin_chat?: boolean | null
           sender_id: string
           updated_at?: string
         }
         Update: {
-          booking_id?: string
+          booking_id?: string | null
+          chat_type?: string | null
           content?: string
           created_at?: string
+          event_request_id?: string | null
           id?: string
+          is_admin_chat?: boolean | null
           sender_id?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_event_request_id_fkey"
+            columns: ["event_request_id"]
+            isOneToOne: false
+            referencedRelation: "event_requests"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       email_logs: {
         Row: {
@@ -365,6 +451,7 @@ export type Database = {
         Row: {
           booking_id: string | null
           created_at: string
+          event_request_id: string | null
           id: string
           is_read: boolean
           message: string
@@ -377,6 +464,7 @@ export type Database = {
         Insert: {
           booking_id?: string | null
           created_at?: string
+          event_request_id?: string | null
           id?: string
           is_read?: boolean
           message: string
@@ -389,6 +477,7 @@ export type Database = {
         Update: {
           booking_id?: string | null
           created_at?: string
+          event_request_id?: string | null
           id?: string
           is_read?: boolean
           message?: string
@@ -404,6 +493,13 @@ export type Database = {
             columns: ["booking_id"]
             isOneToOne: false
             referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_event_request_id_fkey"
+            columns: ["event_request_id"]
+            isOneToOne: false
+            referencedRelation: "event_requests"
             referencedColumns: ["id"]
           },
         ]
@@ -668,6 +764,18 @@ export type Database = {
       get_admin_permissions: {
         Args: { user_id_param?: string }
         Returns: string[]
+      }
+      get_admin_user_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      get_my_role: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      get_or_create_admin_support_booking: {
+        Args: { target_user_id: string }
+        Returns: string
       }
       get_payment_status: {
         Args: { booking_id_param: string }

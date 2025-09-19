@@ -8,9 +8,10 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Calendar, Clock, MapPin, User, Mail, FileText, Eye, CheckCircle, XCircle, AlertCircle, Reply, Trash2, Send } from 'lucide-react';
+import { Calendar, Clock, MapPin, User, Mail, FileText, Eye, CheckCircle, XCircle, AlertCircle, Reply, Trash2, Send, MessageCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
+import { useChat } from '@/contexts/ChatContext';
 
 interface EventRequest {
   id: string;
@@ -32,6 +33,7 @@ interface EventRequest {
 }
 
 export default function AdminEventRequests() {
+  const { openChat } = useChat();
   const [requests, setRequests] = useState<EventRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedRequest, setSelectedRequest] = useState<EventRequest | null>(null);
@@ -305,17 +307,24 @@ export default function AdminEventRequests() {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
+                        <Button
+                          onClick={() => openChat(request.id, 'event_request')}
+                          variant="outline"
+                          size="sm"
+                        >
+                          <MessageCircle className="h-4 w-4" />
+                        </Button>
                         <Dialog>
                            <DialogTrigger asChild>
-                             <Button 
-                               variant="outline" 
-                               size="sm"
-                               onClick={() => {
-                                 setSelectedRequest(request);
-                               }}
-                             >
-                               <Eye className="h-4 w-4" />
-                             </Button>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => {
+                                  setSelectedRequest(request);
+                                }}
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
                            </DialogTrigger>
                           <DialogContent className="sm:max-w-2xl">
                             <DialogHeader>
@@ -368,10 +377,19 @@ export default function AdminEventRequests() {
                                   </div>
                                 )}
                                 
-                                 
-                                 {/* Admin Reply Section */}
-                                 <div className="border-t pt-4 space-y-4">
-                                   <h3 className="font-semibold mb-2">Admin Response</h3>
+                                  {/* Admin Reply Section */}
+                                  <div className="border-t pt-4 space-y-4">
+                                    <div className="flex items-center justify-between">
+                                      <h3 className="font-semibold mb-2">Admin Response</h3>
+                                      <Button
+                                        onClick={() => openChat(selectedRequest.id, 'event_request')}
+                                        variant="outline"
+                                        size="sm"
+                                      >
+                                        <MessageCircle className="h-4 w-4 mr-2" />
+                                        Open Chat
+                                      </Button>
+                                    </div>
                                    
                                    {selectedRequest.admin_reply ? (
                                      <div className="bg-green-50 border border-green-200 rounded p-3">

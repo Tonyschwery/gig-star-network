@@ -68,7 +68,7 @@ export function NotificationCenter() {
         .from('talent_profiles')
         .select('id')
         .eq('user_id', user?.id)
-        .single();
+        .maybeSingle();
         
       if (talentProfile) {
         navigate('/talent-dashboard');
