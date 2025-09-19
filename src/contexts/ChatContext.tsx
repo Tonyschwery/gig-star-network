@@ -31,7 +31,7 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [channelInfo, setChannelInfo] = useState<ChannelInfo | null>(null);
 
-  // Listen for custom chat open events from notifications
+  // Listen for custom chat open events
   useEffect(() => {
     const handleOpenChat = (event: Event) => {
       const customEvent = event as CustomEvent<{
@@ -123,6 +123,7 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
     };
   }, [channelInfo]);
 
+  // ✅ Fixed sendMessage function
   const sendMessage = async (content: string, userId?: string) => {
     if (!userId || !channelInfo || !content.trim()) return;
 
@@ -131,12 +132,12 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
         channelInfo.type === "booking"
           ? {
               booking_id: channelInfo.id,
-              sender_id: userId,
+              sender_id: userId, // explicitly use sender_id
               content: content.trim(),
             }
           : {
               event_request_id: channelInfo.id,
-              sender_id: userId,
+              sender_id: userId, // explicitly use sender_id
               content: content.trim(),
             };
 
