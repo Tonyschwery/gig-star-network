@@ -66,18 +66,24 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
   const fetchMessages = async (info: ChannelInfo) => {
     setLoadingMessages(true);
     try {
-      const filterColumn =
-        info.type === "booking" ? "booking_id" : "event_request_id";
-
-      const { data, error } = await supabase
+      const filterColumn = info.type === "booking" ? "booking_id" : "event_request_id";
+      
+      let query = supabase
         .from("chat_messages")
         .select("id, sender_id, content, created_at")
-        .eq(filterColumn, info.id)
         .order("created_at", { ascending: true });
 
+      if (info.type === "booking") {
+        query = query.eq("booking_id", info.id);
+      } else {
+        query = query.eq("event_request_id", info.id);
+      }
+
+      const { data, error } = await query;
+      
       if (error) throw error;
 
-      const typedMessages: Message[] = (data || []).map((msg) => ({
+      const typedMessages: Message[] = (data || []).map((msg: any) => ({
         id: msg.id,
         sender_id: msg.sender_id,
         content: msg.content,
