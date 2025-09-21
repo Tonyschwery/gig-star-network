@@ -1,11 +1,14 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 export interface Message {
   id: string;
   sender_id: string;
   content: string;
   created_at: string;
+  booking_id?: string;
+  event_request_id?: string;
 }
 
 interface ChannelInfo {
@@ -30,6 +33,7 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [channelInfo, setChannelInfo] = useState<ChannelInfo | null>(null);
+  const { user } = useAuth();
 
   // Listen for custom chat open events
   useEffect(() => {
@@ -70,7 +74,7 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
       
       let query = supabase
         .from("chat_messages")
-        .select("id, sender_id, content, created_at")
+        .select("id, sender_id, content, created_at, booking_id, event_request_id")
         .order("created_at", { ascending: true });
 
       if (info.type === "booking") {
@@ -88,6 +92,8 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
         sender_id: msg.sender_id,
         content: msg.content,
         created_at: msg.created_at,
+        booking_id: msg.booking_id,
+        event_request_id: msg.event_request_id,
       }));
 
       setMessages(typedMessages);
@@ -98,7 +104,7 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  // Realtime subscription
+  // Realtime subscription and auto-open functionality
   useEffect(() => {
     if (!channelInfo) return;
 
@@ -128,6 +134,81 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
       supabase.removeChannel(subscription);
     };
   }, [channelInfo]);
+
+  // Auto-open chat when receiving messages (safest implementation)
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const autoOpenSubscription = supabase
+      .channel("auto-open-chat")
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "chat_messages",
+        },
+        async (payload) => {
+          const newMessage = payload.new as Message;
+          
+          // Only auto-open if message is not from current user and chat is not already open
+          if (newMessage.sender_id !== user.id && !isOpen) {
+            // Check if this message is for the current user
+            let shouldAutoOpen = false;
+            let messageChannelInfo: ChannelInfo | null = null;
+
+            if (newMessage.booking_id) {
+              const { data: booking } = await supabase
+                .from('bookings')
+                .select('user_id, talent_id')
+                .eq('id', newMessage.booking_id)
+                .single();
+              
+              if (booking) {
+                // Check if current user is the booker
+                if (booking.user_id === user.id) {
+                  shouldAutoOpen = true;
+                  messageChannelInfo = { id: newMessage.booking_id, type: 'booking' };
+                } else {
+                  // Check if current user is the talent
+                  const { data: talent } = await supabase
+                    .from('talent_profiles')
+                    .select('user_id')
+                    .eq('id', booking.talent_id)
+                    .single();
+                  
+                  if (talent?.user_id === user.id) {
+                    shouldAutoOpen = true;
+                    messageChannelInfo = { id: newMessage.booking_id, type: 'booking' };
+                  }
+                }
+              }
+            } else if (newMessage.event_request_id) {
+              const { data: eventRequest } = await supabase
+                .from('event_requests')
+                .select('user_id')
+                .eq('id', newMessage.event_request_id)
+                .single();
+
+              if (eventRequest?.user_id === user.id) {
+                shouldAutoOpen = true;
+                messageChannelInfo = { id: newMessage.event_request_id, type: 'event_request' };
+              }
+            }
+
+            if (shouldAutoOpen && messageChannelInfo) {
+              setChannelInfo(messageChannelInfo);
+              setIsOpen(true);
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(autoOpenSubscription);
+    };
+  }, [user?.id, isOpen]);
 
   // ✅ Fixed sendMessage function
   const sendMessage = async (content: string, userId?: string) => {
