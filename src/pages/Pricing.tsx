@@ -7,7 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { SubscriptionButton } from "@/components/SubscriptionButton";
 
-export default function Pricing() {
+export default function () {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');

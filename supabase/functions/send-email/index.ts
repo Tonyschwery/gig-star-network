@@ -430,7 +430,7 @@ serve(async (req: Request): Promise<Response> => {
           </div>
           
           ${!data.is_pro_subscriber ? `<div style="background-color: #fef3c7; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #f59e0b;">
-            <p style="margin: 0;"><strong>💎 Pro Feature:</strong> Full client contact details and complete address are available with Pro subscription. <a href="${appUrl}/pricing" style="color: #d97706;">Upgrade now</a> to access all booking details!</p>
+            <p style="margin: 0;"><strong>💎 Pro Feature:</strong> Full client contact details and complete address are available with Pro subscription. <a href="${appUrl}/" style="color: #d97706;">Upgrade now</a> to access all booking details!</p>
           </div>` : ''}
           
           <p><a href="${appUrl}/talent-dashboard" style="background: #28a745; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">View Booking Request</a></p>

@@ -108,7 +108,7 @@ export function Header() {
   };
 
   const handleProButtonClick = () => {
-    navigate('/pricing');
+    navigate("/");
   };
 
 
@@ -180,12 +180,12 @@ export function Header() {
                       if (upgradeSection) {
                         upgradeSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
                       } else {
-                        navigate('/pricing#upgrade-to-pro');
+                        navigate("/#upgrade-to-pro");
                       }
                     }}
                     className="text-foreground hover:text-accent transition-colors font-medium"
                   >
-                    Pricing
+                    
                   </button>
                 </>
               )}
@@ -333,7 +333,7 @@ export function Header() {
                         if (upgradeSection) {
                           upgradeSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
                         } else {
-                          navigate('/pricing#upgrade-to-pro');
+                          navigate("/#upgrade-to-pro");
                         }
                         // Close mobile menu
                         const mobileMenuClose = document.querySelector('[data-mobile-menu-close]') as HTMLElement;
@@ -343,7 +343,7 @@ export function Header() {
                       }}
                       className="text-left text-foreground hover:text-accent transition-colors font-medium py-2"
                     >
-                      Pricing
+                      
                     </button>
                   </>
                 )}

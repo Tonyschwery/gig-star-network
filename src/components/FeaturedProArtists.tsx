@@ -188,7 +188,7 @@ export function FeaturedProArtists() {
 
         <div className="text-center mt-8">
           <Button 
-            onClick={() => navigate('/pricing')}
+            onClick={() => navigate("/")}
             className="hero-button"
           >
             <Crown className="h-4 w-4 mr-2" />

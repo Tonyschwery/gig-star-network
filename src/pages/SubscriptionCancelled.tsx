@@ -48,7 +48,7 @@ export default function SubscriptionCancelled() {
           <div className="flex flex-col gap-3">
             <Button 
               className="hero-button"
-              onClick={() => navigate('/pricing')}
+              onClick={() => navigate("/")}
             >
               <Crown className="h-4 w-4 mr-2" />
               Try Pro Again
