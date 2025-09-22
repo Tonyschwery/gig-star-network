@@ -13,7 +13,7 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { useChat } from '@/contexts/ChatContext';
 
-interface EventRequest {
+interface AdminEventRequest {
   id: string;
   user_id: string;
   booker_name: string;
@@ -34,9 +34,9 @@ interface EventRequest {
 
 export default function AdminEventRequests() {
   const { openChat } = useChat();
-  const [requests, setRequests] = useState<EventRequest[]>([]);
+  const [requests, setRequests] = useState<AdminEventRequest[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedRequest, setSelectedRequest] = useState<EventRequest | null>(null);
+  const [selectedRequest, setSelectedRequest] = useState<AdminEventRequest | null>(null);
   const [adminReply, setAdminReply] = useState('');
 
   useEffect(() => {
@@ -53,7 +53,7 @@ export default function AdminEventRequests() {
       if (error) throw error;
       setRequests((data || []).map(item => ({
         ...item,
-        status: item.status as EventRequest['status']
+        status: item.status as AdminEventRequest['status']
       })));
     } catch (error) {
       console.error('Error loading event requests:', error);
@@ -63,7 +63,7 @@ export default function AdminEventRequests() {
     }
   };
 
-  const updateRequestStatus = async (requestId: string, status: EventRequest['status'], adminReply?: string) => {
+  const updateRequestStatus = async (requestId: string, status: AdminEventRequest['status'], adminReply?: string) => {
     try {
       const updateData: any = { 
         status,
@@ -127,7 +127,7 @@ export default function AdminEventRequests() {
     }
   };
 
-  const getStatusBadge = (status: EventRequest['status']) => {
+  const getStatusBadge = (status: AdminEventRequest['status']) => {
     switch (status) {
       case 'pending':
         return <Badge variant="outline" className="bg-yellow-50 text-yellow-600 border-yellow-200"><AlertCircle className="h-3 w-3 mr-1" />Pending</Badge>;
@@ -422,7 +422,7 @@ export default function AdminEventRequests() {
                                          <span className="text-sm font-medium">Update Status:</span>
                                          <Select
                                            value={selectedRequest.status}
-                                           onValueChange={(value: EventRequest['status']) => {
+                                           onValueChange={(value: AdminEventRequest['status']) => {
                                              setSelectedRequest({ ...selectedRequest, status: value });
                                            }}
                                          >

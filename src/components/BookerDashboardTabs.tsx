@@ -36,7 +36,7 @@ export const BookerDashboardTabs = ({ userId }: { userId: string }) => {
             .from('event_requests')
             .select('*')
             .eq('user_id', userId)
-            .not('status', 'in', '("declined", "cancelled")')
+            .neq('status', 'cancelled')
             .order('created_at', { ascending: false })
             .range(0, PAGE_SIZE - 1);
 
@@ -97,7 +97,7 @@ export const BookerDashboardTabs = ({ userId }: { userId: string }) => {
             .from('event_requests')
             .select('*')
             .eq('user_id', userId)
-            .not('status', 'in', '("declined", "cancelled")')
+            .neq('status', 'cancelled')
             .order('created_at', { ascending: false })
             .range(from, to);
 
@@ -147,10 +147,15 @@ export const BookerDashboardTabs = ({ userId }: { userId: string }) => {
     <div className="space-y-4">
         {eventRequests.length > 0 ? (
             eventRequests.map((req, index) => {
-                // --- THIS IS THE DEBUGGING LINE ---
-                if (index === 0) console.log("Data for the first Event Request card:", req);
-                
-                return <EventRequestCard key={req.id} request={req} isActionable={true} mode="booker" />
+                return <EventRequestCard 
+                    key={req.id} 
+                    request={req} 
+                    isActionable={true} 
+                    mode="booker"
+                    onRemove={(requestId) => {
+                        setEventRequests(prev => prev.filter(r => r.id !== requestId));
+                    }}
+                />
             })
         ) : (
             <p className="text-muted-foreground text-center py-8">You have not made any event requests to our team.</p>

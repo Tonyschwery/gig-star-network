@@ -97,7 +97,10 @@ export const TalentDashboardTabs = ({ profile }: TalentDashboardTabsProps) => {
                                     key={req.id} 
                                     request={req} 
                                     isActionable={profile.is_pro_subscriber || false}
-                                    mode="talent" 
+                                    mode="talent"
+                                    onRemove={(requestId) => {
+                                        setEventRequests(prev => prev.filter(r => r.id !== requestId));
+                                    }}
                                 />
                               ))
                             : <p className="text-muted-foreground text-center py-8">No event requests match your location at this time.</p>}
