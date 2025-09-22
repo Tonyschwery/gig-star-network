@@ -12,9 +12,13 @@ import { useChat } from "@/contexts/ChatContext";
 export interface Booking {
   id: string;
   booker_name: string;
+  booker_email?: string;
+  booker_phone?: string;
   event_date: string;
   event_duration: number;
   event_location: string;
+  event_address: string;
+  description?: string;
   status: string;
   user_id: string;
   talent_id?: string;
@@ -24,11 +28,12 @@ export interface Booking {
 
 interface BookingCardProps {
   booking: Booking;
-  mode: 'talent' | 'booker';
+  mode: 'talent' | 'booker' | 'admin';
   onUpdate?: () => void;
+  onRemove?: (bookingId: string) => void;
 }
 
-export const BookingCard = ({ booking, mode, onUpdate }: BookingCardProps) => {
+export const BookingCard = ({ booking, mode, onUpdate, onRemove }: BookingCardProps) => {
   const { toast } = useToast();
   const { openChat } = useChat();
 
@@ -42,6 +47,30 @@ export const BookingCard = ({ booking, mode, onUpdate }: BookingCardProps) => {
       const { error } = await supabase.from('bookings').update({ status: newStatus }).eq('id', booking.id);
       if (error) throw new Error(error.message);
       toast({ title: `Booking ${newStatus}` });
+      onUpdate?.();
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    }
+  };
+
+  const handleDecline = async () => {
+    try {
+      const { error } = await supabase.from('bookings').update({ status: 'declined' }).eq('id', booking.id);
+      if (error) throw new Error(error.message);
+      toast({ title: "Booking declined" });
+      onRemove?.(booking.id);
+      onUpdate?.();
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    }
+  };
+
+  const handleRemove = async () => {
+    try {
+      const { error } = await supabase.from('bookings').delete().eq('id', booking.id);
+      if (error) throw new Error(error.message);
+      toast({ title: "Booking removed" });
+      onRemove?.(booking.id);
       onUpdate?.();
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -77,7 +106,7 @@ export const BookingCard = ({ booking, mode, onUpdate }: BookingCardProps) => {
         <Badge variant={getStatusBadgeVariant(booking.status)} className="capitalize">{booking.status}</Badge>
       </div>
       
-      <div className="border-t pt-3">
+      <div className="border-t pt-3 space-y-2">
         <div className="text-sm text-foreground">
           {mode === 'talent' ? (
             <><strong>Booker:</strong> <span className="text-muted-foreground">{booking.booker_name}</span></>
@@ -85,6 +114,34 @@ export const BookingCard = ({ booking, mode, onUpdate }: BookingCardProps) => {
             <><strong>Talent:</strong> <span className="text-muted-foreground">{booking.talent_profiles?.artist_name || 'N/A'}</span></>
           )}
         </div>
+        
+        {booking.booker_email && mode !== 'booker' && (
+          <div className="text-sm text-foreground">
+            <strong>Email:</strong> <span className="text-muted-foreground">{booking.booker_email}</span>
+          </div>
+        )}
+        
+        {booking.booker_phone && mode !== 'booker' && (
+          <div className="text-sm text-foreground">
+            <strong>Phone:</strong> <span className="text-muted-foreground">{booking.booker_phone}</span>
+          </div>
+        )}
+        
+        <div className="text-sm text-foreground">
+          <strong>Location:</strong> <span className="text-muted-foreground">{booking.event_location}</span>
+        </div>
+        
+        {booking.event_address && (
+          <div className="text-sm text-foreground">
+            <strong>Address:</strong> <span className="text-muted-foreground">{booking.event_address}</span>
+          </div>
+        )}
+        
+        {booking.description && (
+          <div className="text-sm text-foreground">
+            <strong>Description:</strong> <span className="text-muted-foreground">{booking.description}</span>
+          </div>
+        )}
       </div>
       
       <div className="flex flex-wrap gap-2 pt-2 border-t mt-2">
@@ -94,11 +151,27 @@ export const BookingCard = ({ booking, mode, onUpdate }: BookingCardProps) => {
         
         {mode === 'talent' && booking.status === 'pending' && (
           <div className="flex-grow flex justify-end gap-2">
-            <Button onClick={() => handleUpdateStatus('declined')} variant="destructive" size="sm">
+            <Button onClick={handleDecline} variant="destructive" size="sm">
               <X className="h-4 w-4 mr-2" />Decline
             </Button>
             <Button onClick={() => handleUpdateStatus('accepted')} size="sm">
               <Check className="h-4 w-4 mr-2" />Accept
+            </Button>
+          </div>
+        )}
+        
+        {mode === 'booker' && booking.status === 'pending' && (
+          <div className="flex-grow flex justify-end">
+            <Button onClick={handleRemove} variant="destructive" size="sm">
+              <X className="h-4 w-4 mr-2" />Remove Request
+            </Button>
+          </div>
+        )}
+        
+        {mode === 'admin' && (
+          <div className="flex-grow flex justify-end">
+            <Button onClick={handleRemove} variant="destructive" size="sm">
+              <X className="h-4 w-4 mr-2" />Delete
             </Button>
           </div>
         )}

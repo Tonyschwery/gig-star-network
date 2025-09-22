@@ -30,7 +30,7 @@ export const TalentDashboardTabs = ({ profile }: TalentDashboardTabsProps) => {
 
         const { data: bookingsData, error: bookingsError } = await supabase
             .from('bookings')
-            .select(`*`)
+            .select(`*, talent_profiles(artist_name)`)
             .eq('talent_id', profile.id)
             .order('event_date', { ascending: false });
 
@@ -85,7 +85,9 @@ export const TalentDashboardTabs = ({ profile }: TalentDashboardTabsProps) => {
                 <TabsContent value="direct_bookings" className="pt-4">
                     <div className="space-y-4">
                         {directBookings.length > 0
-                            ? directBookings.map(b => <BookingCard key={b.id} booking={b} mode="talent" onUpdate={fetchData} />)
+                            ? directBookings.map(b => <BookingCard key={b.id} booking={b} mode="talent" onUpdate={fetchData} onRemove={(bookingId) => {
+                                setDirectBookings(prev => prev.filter(booking => booking.id !== bookingId));
+                            }} />)
                             : <p className="text-muted-foreground text-center py-8">You have not received any direct bookings.</p>}
                     </div>
                 </TabsContent>

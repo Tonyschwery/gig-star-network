@@ -129,7 +129,9 @@ export const BookerDashboardTabs = ({ userId }: { userId: string }) => {
                 <TabsContent value="direct_bookings" className="pt-4">
                     <div className="space-y-4">
                         {directBookings.length > 0 ? (
-                            directBookings.map(b => <BookingCard key={b.id} booking={b} mode="booker" onUpdate={fetchInitialData} />)
+                            directBookings.map(b => <BookingCard key={b.id} booking={b} mode="booker" onUpdate={fetchInitialData} onRemove={(bookingId) => {
+                                setDirectBookings(prev => prev.filter(booking => booking.id !== bookingId));
+                            }} />)
                         ) : (
                             <p className="text-muted-foreground text-center py-8">You have not made any direct bookings.</p>
                         )}

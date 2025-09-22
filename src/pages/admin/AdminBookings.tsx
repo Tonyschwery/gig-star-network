@@ -52,14 +52,18 @@ const AdminBookings = () => {
                     <TabsContent value="direct_bookings" className="pt-4">
                         <div className="space-y-4">
                             {directBookings.length > 0
-                                ? directBookings.map(b => <BookingCard key={b.id} booking={b} mode="booker" onUpdate={fetchData} />)
+                                ? directBookings.map(b => <BookingCard key={b.id} booking={b} mode="admin" onUpdate={fetchData} onRemove={(bookingId) => {
+                                    setDirectBookings(prev => prev.filter(booking => booking.id !== bookingId));
+                                }} />)
                                 : <p className="text-muted-foreground text-center py-8">No direct bookings found.</p>}
                         </div>
                     </TabsContent>
                     <TabsContent value="event_requests" className="pt-4">
                         <div className="space-y-4">
                             {eventRequests.length > 0
-                                ? eventRequests.map(req => <EventRequestCard key={req.id} request={req} isActionable={true} mode="booker" />)
+                                ? eventRequests.map(req => <EventRequestCard key={req.id} request={req} isActionable={true} mode="admin" onRemove={(requestId) => {
+                                    setEventRequests(prev => prev.filter(r => r.id !== requestId));
+                                }} />)
                                 : <p className="text-muted-foreground text-center py-8">No event requests found.</p>}
                         </div>
                     </TabsContent>
