@@ -55,9 +55,9 @@ export const BookingCard = ({ booking, mode, onUpdate, onRemove }: BookingCardPr
 
   const handleDecline = async () => {
     try {
-      const { error } = await supabase.from('bookings').update({ status: 'declined' }).eq('id', booking.id);
+      const { error } = await supabase.from('bookings').delete().eq('id', booking.id);
       if (error) throw new Error(error.message);
-      toast({ title: "Booking declined" });
+      toast({ title: "Booking declined and removed" });
       onRemove?.(booking.id);
       onUpdate?.();
     } catch (error: any) {
@@ -93,7 +93,7 @@ export const BookingCard = ({ booking, mode, onUpdate, onRemove }: BookingCardPr
     <div className="border rounded-lg p-4 bg-card text-card-foreground space-y-3 transition-all hover:shadow-md">
       <div className="flex justify-between items-start">
         <div className="flex flex-col gap-2">
-            <h3 className="font-semibold capitalize text-foreground">{booking.event_type}</h3>
+            <h3 className="font-semibold capitalize text-foreground">Event Type: {booking.event_type}</h3>
             <div className="text-sm text-muted-foreground flex items-center">
               <Calendar className="inline h-4 w-4 mr-2" />
               {booking.event_date ? format(new Date(booking.event_date), 'PPP') : 'No date'}
@@ -109,7 +109,7 @@ export const BookingCard = ({ booking, mode, onUpdate, onRemove }: BookingCardPr
       <div className="border-t pt-3 space-y-2">
         <div className="text-sm text-foreground">
           {mode === 'talent' ? (
-            <><strong>Booker:</strong> <span className="text-muted-foreground">{booking.booker_name}</span></>
+            <><strong>Booker Name:</strong> <span className="text-muted-foreground">{booking.booker_name}</span></>
           ) : (
             <><strong>Talent:</strong> <span className="text-muted-foreground">{booking.talent_profiles?.artist_name || 'N/A'}</span></>
           )}
@@ -117,29 +117,29 @@ export const BookingCard = ({ booking, mode, onUpdate, onRemove }: BookingCardPr
         
         {booking.booker_email && mode !== 'booker' && (
           <div className="text-sm text-foreground">
-            <strong>Email:</strong> <span className="text-muted-foreground">{booking.booker_email}</span>
+            <strong>Booker Email:</strong> <span className="text-muted-foreground">{booking.booker_email}</span>
           </div>
         )}
         
         {booking.booker_phone && mode !== 'booker' && (
           <div className="text-sm text-foreground">
-            <strong>Phone:</strong> <span className="text-muted-foreground">{booking.booker_phone}</span>
+            <strong>Booker Phone:</strong> <span className="text-muted-foreground">{booking.booker_phone}</span>
           </div>
         )}
         
         <div className="text-sm text-foreground">
-          <strong>Location:</strong> <span className="text-muted-foreground">{booking.event_location}</span>
+          <strong>Event Location:</strong> <span className="text-muted-foreground">{booking.event_location}</span>
         </div>
         
         {booking.event_address && (
           <div className="text-sm text-foreground">
-            <strong>Address:</strong> <span className="text-muted-foreground">{booking.event_address}</span>
+            <strong>Event Address:</strong> <span className="text-muted-foreground">{booking.event_address}</span>
           </div>
         )}
         
         {booking.description && (
           <div className="text-sm text-foreground">
-            <strong>Description:</strong> <span className="text-muted-foreground">{booking.description}</span>
+            <strong>Event Description:</strong> <span className="text-muted-foreground">{booking.description}</span>
           </div>
         )}
       </div>

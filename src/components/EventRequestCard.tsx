@@ -98,7 +98,7 @@ export const EventRequestCard = ({ request, isActionable = false, mode, onRemove
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <CardTitle className="flex items-center gap-3 mb-2 text-base font-semibold">
-              <span className="capitalize">{request.event_type} Request</span>
+              <span className="capitalize">Event Type: {request.event_type}</span>
               <Badge variant={request.status === 'pending' ? 'secondary' : 'default'} className="capitalize">
                 {request.status}
               </Badge>
@@ -117,14 +117,14 @@ export const EventRequestCard = ({ request, isActionable = false, mode, onRemove
           <h4 className="font-medium mb-2 text-sm text-foreground">Booker Information</h4>
           <div className="space-y-2 text-sm">
             <div className="flex items-center gap-2">
-              <span className="font-medium text-foreground">Name:</span>
+              <span className="font-medium text-foreground">Booker Name:</span>
               <span className={cn("text-muted-foreground", isBlurred && "blur-sm select-none")}>
                 {request.booker_name}
               </span>
             </div>
             <div className="flex items-center gap-2">
               <Mail className="h-4 w-4 text-muted-foreground" />
-              <span className="font-medium text-foreground">Email:</span>
+              <span className="font-medium text-foreground">Booker Email:</span>
               <span className={cn("text-muted-foreground", isBlurred && "blur-sm select-none")}>
                 {request.booker_email}
               </span>
@@ -132,7 +132,7 @@ export const EventRequestCard = ({ request, isActionable = false, mode, onRemove
             {request.booker_phone && (
               <div className="flex items-center gap-2">
                 <Phone className="h-4 w-4 text-muted-foreground" />
-                <span className="font-medium text-foreground">Phone:</span>
+                <span className="font-medium text-foreground">Booker Phone:</span>
                 <span className={cn("text-muted-foreground", isBlurred && "blur-sm select-none")}>
                   {request.booker_phone}
                 </span>
@@ -150,14 +150,14 @@ export const EventRequestCard = ({ request, isActionable = false, mode, onRemove
           </div>
           <div className="flex items-center gap-2">
             <MapPin className="h-4 w-4 text-muted-foreground" />
-            <span className="font-medium text-foreground">Location:</span>
+            <span className="font-medium text-foreground">Event Location:</span>
             <span className="text-muted-foreground">{request.event_location}</span>
           </div>
         </div>
 
         {request.description && (
           <div className="border-t pt-3">
-            <h4 className="font-medium mb-2 text-sm text-foreground">Event Description</h4>
+            <h4 className="font-medium mb-2 text-sm text-foreground">Event Description:</h4>
             <p className="text-sm text-muted-foreground bg-muted/50 p-3 rounded">
               {request.description}
             </p>
