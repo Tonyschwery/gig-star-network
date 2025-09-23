@@ -4,10 +4,12 @@ import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
-import { Calendar, Check, X, Clock3, MessageCircle } from "lucide-react";
+import { Calendar, Check, X, Clock3, MessageCircle, Crown } from "lucide-react";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { useChat } from "@/contexts/ChatContext";
+import { useTalentBookingLimit } from "@/hooks/useTalentBookingLimit";
+import { ProFeatureWrapper } from "@/components/ProFeatureWrapper";
 
 export interface Booking {
   id: string;
@@ -36,6 +38,7 @@ interface BookingCardProps {
 export const BookingCard = ({ booking, mode, onUpdate, onRemove }: BookingCardProps) => {
   const { toast } = useToast();
   const { openChat } = useChat();
+  const { canAcceptBooking, isProUser, acceptedBookingsThisMonth } = useTalentBookingLimit();
 
   // Safety check
   if (!booking) {
@@ -154,9 +157,18 @@ export const BookingCard = ({ booking, mode, onUpdate, onRemove }: BookingCardPr
             <Button onClick={handleDecline} variant="destructive" size="sm">
               <X className="h-4 w-4 mr-2" />Decline
             </Button>
-            <Button onClick={() => handleUpdateStatus('accepted')} size="sm">
-              <Check className="h-4 w-4 mr-2" />Accept
-            </Button>
+            {canAcceptBooking || isProUser ? (
+              <Button onClick={() => handleUpdateStatus('accepted')} size="sm">
+                <Check className="h-4 w-4 mr-2" />Accept
+              </Button>
+            ) : (
+              <ProFeatureWrapper isProFeature={true} showProIcon={false}>
+                <Button disabled size="sm" className="relative">
+                  <Crown className="h-4 w-4 mr-2" />
+                  Upgrade to Pro to Accept
+                </Button>
+              </ProFeatureWrapper>
+            )}
           </div>
         )}
         

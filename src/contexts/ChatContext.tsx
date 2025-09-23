@@ -33,6 +33,7 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [channelInfo, setChannelInfo] = useState<ChannelInfo | null>(null);
+  const [autoCloseTimer, setAutoCloseTimer] = useState<NodeJS.Timeout | null>(null);
   const { user } = useAuth();
 
   // Listen for custom chat open events
@@ -57,11 +58,33 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
 
   const openChat = (id: string, type: "booking" | "event_request") => {
     if (!id || !type) return;
+    
+    // Clear any existing timer
+    if (autoCloseTimer) {
+      clearTimeout(autoCloseTimer);
+    }
+    
     setChannelInfo({ id, type });
     setIsOpen(true);
+    
+    // Set auto-close timer for 5 seconds
+    const timer = setTimeout(() => {
+      setIsOpen(false);
+      setChannelInfo(null);
+      setMessages([]);
+      setAutoCloseTimer(null);
+    }, 5000);
+    
+    setAutoCloseTimer(timer);
   };
 
   const closeChat = () => {
+    // Clear any existing timer
+    if (autoCloseTimer) {
+      clearTimeout(autoCloseTimer);
+      setAutoCloseTimer(null);
+    }
+    
     setIsOpen(false);
     setChannelInfo(null);
     setMessages([]);
@@ -197,8 +220,23 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
             }
 
             if (shouldAutoOpen && messageChannelInfo) {
+              // Clear any existing timer
+              if (autoCloseTimer) {
+                clearTimeout(autoCloseTimer);
+              }
+              
               setChannelInfo(messageChannelInfo);
               setIsOpen(true);
+              
+              // Set auto-close timer for 5 seconds
+              const timer = setTimeout(() => {
+                setIsOpen(false);
+                setChannelInfo(null);
+                setMessages([]);
+                setAutoCloseTimer(null);
+              }, 5000);
+              
+              setAutoCloseTimer(timer);
             }
           }
         }
