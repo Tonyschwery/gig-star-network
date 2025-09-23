@@ -38,7 +38,7 @@ interface BookingCardProps {
 export const BookingCard = ({ booking, mode, onUpdate, onRemove }: BookingCardProps) => {
   const { toast } = useToast();
   const { openChat } = useChat();
-  const { canAcceptBooking, isProUser, acceptedBookingsThisMonth } = useTalentBookingLimit();
+  const { canAcceptBooking, isProUser, acceptedBookingsThisMonth, refetchLimit } = useTalentBookingLimit();
 
   // Safety check
   if (!booking) {
@@ -50,6 +50,12 @@ export const BookingCard = ({ booking, mode, onUpdate, onRemove }: BookingCardPr
       const { error } = await supabase.from('bookings').update({ status: newStatus }).eq('id', booking.id);
       if (error) throw new Error(error.message);
       toast({ title: `Booking ${newStatus}` });
+      
+      // Refresh booking limit for talents after accepting a booking
+      if (newStatus === 'accepted' && mode === 'talent') {
+        refetchLimit();
+      }
+      
       onUpdate?.();
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
