@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useChat } from "@/contexts/ChatContext";
 import { useTalentBookingLimit } from "@/hooks/useTalentBookingLimit";
 import { ProFeatureWrapper } from "@/components/ProFeatureWrapper";
+import { useNavigate } from "react-router-dom";
 
 export interface Booking {
   id: string;
@@ -39,6 +40,7 @@ export const BookingCard = ({ booking, mode, onUpdate, onRemove }: BookingCardPr
   const { toast } = useToast();
   const { openChat } = useChat();
   const { canAcceptBooking, isProUser, acceptedBookingsThisMonth, refetchLimit } = useTalentBookingLimit();
+  const navigate = useNavigate();
 
   // Safety check
   if (!booking) {
@@ -99,7 +101,9 @@ export const BookingCard = ({ booking, mode, onUpdate, onRemove }: BookingCardPr
   };
 
   return (
-    <div className="border rounded-lg p-4 bg-card text-card-foreground space-y-3 transition-all hover:shadow-md">
+    <div className={`border rounded-lg p-4 bg-card text-card-foreground space-y-3 transition-all hover:shadow-md ${
+      mode === 'talent' && !canAcceptBooking && !isProUser ? 'blur-sm opacity-60' : ''
+    }`}>
       <div className="flex justify-between items-start">
         <div className="flex flex-col gap-2">
             <h3 className="font-semibold capitalize text-foreground">Event Type: {booking.event_type}</h3>
@@ -168,12 +172,14 @@ export const BookingCard = ({ booking, mode, onUpdate, onRemove }: BookingCardPr
                 <Check className="h-4 w-4 mr-2" />Accept
               </Button>
             ) : (
-              <ProFeatureWrapper isProFeature={true} showProIcon={false}>
-                <Button disabled size="sm" className="relative">
-                  <Crown className="h-4 w-4 mr-2" />
-                  Upgrade to Pro to Accept
-                </Button>
-              </ProFeatureWrapper>
+              <Button 
+                onClick={() => navigate('/pricing')} 
+                size="sm" 
+                className="relative bg-gradient-to-br from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-white border-amber-300"
+              >
+                <Crown className="h-4 w-4 mr-2" />
+                Upgrade to Pro to Accept
+              </Button>
             )}
           </div>
         )}
