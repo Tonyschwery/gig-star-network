@@ -3,10 +3,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { useChat, Message } from '@/contexts/ChatContext';
 import { useAuth } from '@/hooks/useAuth';
+import { useTalentBookingLimit } from '@/hooks/useTalentBookingLimit';
+import { useChatFilterPro } from '@/hooks/useChatFilterPro';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
-import { Send, X, User } from 'lucide-react';
+import { Send, X, User, Crown } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -14,6 +16,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 export const UniversalChat = () => {
   const { isOpen, closeChat, messages, sendMessage, loadingMessages, channelInfo } = useChat();
   const { user } = useAuth();
+  const { canAcceptBooking, isProUser, isTalent } = useTalentBookingLimit();
+  const { filterMessage } = useChatFilterPro(isProUser);
   const [newMessage, setNewMessage] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -28,6 +32,15 @@ export const UniversalChat = () => {
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
     if (newMessage.trim() && user?.id) {
+      // Check if user is a non-pro talent who has reached booking limit
+      if (isTalent && !canAcceptBooking && !isProUser) {
+        const filterResult = filterMessage(newMessage);
+        if (filterResult.isBlocked) {
+          // Show upgrade prompt instead of sending blocked message
+          setNewMessage("");
+          return;
+        }
+      }
       sendMessage(newMessage, user.id);
       setNewMessage('');
     }
@@ -91,11 +104,30 @@ export const UniversalChat = () => {
             <div ref={messagesEndRef} />
           </div>
           <div className="p-4 border-t bg-background">
+            {isTalent && !canAcceptBooking && !isProUser && (
+              <div className="mb-3 p-3 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-800">
+                <p className="text-xs text-amber-700 dark:text-amber-300 font-medium mb-2">
+                  You've reached your monthly booking limit. Upgrade to Pro for unlimited bookings and full messaging access.
+                </p>
+                <Button 
+                  size="sm" 
+                  onClick={() => window.open('/pricing', '_blank')}
+                  className="bg-gradient-to-br from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-white"
+                >
+                  <Crown className="h-3 w-3 mr-1" />
+                  Upgrade to Pro
+                </Button>
+              </div>
+            )}
             <form onSubmit={handleSendMessage} className="flex items-center gap-2">
               <Textarea
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
-                placeholder="Type your message..."
+                placeholder={
+                  isTalent && !canAcceptBooking && !isProUser
+                    ? "Upgrade to Pro to share contact details..."
+                    : "Type your message..."
+                }
                 className="resize-none"
                 rows={1}
                 onKeyDown={(e) => {

@@ -25,6 +25,7 @@ import { ProtectedTalentRoute } from "./components/ProtectedTalentRoute";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AdminRoute } from "./components/AdminRoute";
 import YourEvent from "./pages/YourEvent";
+import Pricing from "./pages/Pricing";
 
 const App = () => (
   <AuthProvider>
@@ -48,6 +49,7 @@ const App = () => (
             
             <Route path="/booker-dashboard" element={<ProtectedRoute><BookerDashboard /></ProtectedRoute>} />
             <Route path="/your-event" element={<ProtectedRoute><YourEvent /></ProtectedRoute>} />
+            <Route path="/pricing" element={<Pricing />} />
             
             <Route path="/talent-onboarding" element={<ProtectedTalentRoute><TalentOnboarding /></ProtectedTalentRoute>} />
             <Route path="/talent-dashboard" element={<ProtectedTalentRoute><TalentDashboard /></ProtectedTalentRoute>} />

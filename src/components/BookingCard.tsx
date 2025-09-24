@@ -130,13 +130,31 @@ export const BookingCard = ({ booking, mode, onUpdate, onRemove }: BookingCardPr
         
         {booking.booker_email && mode !== 'booker' && (
           <div className="text-sm text-foreground">
-            <strong>Booker Email:</strong> <span className="text-muted-foreground">{booking.booker_email}</span>
+            <strong>Booker Email:</strong> 
+            {mode === 'talent' && !canAcceptBooking && !isProUser ? (
+              <span className="text-muted-foreground blur-sm">••••••@••••.com</span>
+            ) : (
+              <span className="text-muted-foreground">{booking.booker_email}</span>
+            )}
           </div>
         )}
         
         {booking.booker_phone && mode !== 'booker' && (
           <div className="text-sm text-foreground">
-            <strong>Booker Phone:</strong> <span className="text-muted-foreground">{booking.booker_phone}</span>
+            <strong>Booker Phone:</strong> 
+            {mode === 'talent' && !canAcceptBooking && !isProUser ? (
+              <span className="text-muted-foreground blur-sm">+•• ••• ••• •••</span>
+            ) : (
+              <span className="text-muted-foreground">{booking.booker_phone}</span>
+            )}
+          </div>
+        )}
+        
+        {mode === 'talent' && !canAcceptBooking && !isProUser && (booking.booker_email || booking.booker_phone) && (
+          <div className="mt-2 p-2 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-800">
+            <p className="text-xs text-amber-700 dark:text-amber-300 font-medium">
+              Upgrade to Pro to see booker contact details
+            </p>
           </div>
         )}
         
