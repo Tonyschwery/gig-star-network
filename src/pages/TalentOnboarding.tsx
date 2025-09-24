@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -18,6 +18,7 @@ import { ProFeatureWrapper } from '@/components/ProFeatureWrapper';
 import { SubscriptionModal } from '@/components/SubscriptionModal';
 import { useEmailNotifications } from '@/hooks/useEmailNotifications';
 import { useLocationDetection } from '@/hooks/useLocationDetection';
+import { LocationSelector } from '@/components/LocationSelector';
 
 const MUSIC_GENRES = [
   'afro-house',
@@ -101,7 +102,7 @@ export default function TalentOnboarding() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { sendTalentProfileEmails } = useEmailNotifications();
-  const { userLocation, detectedLocation } = useLocationDetection();
+  const { userLocation, detectedLocation, saveLocation } = useLocationDetection();
   const [loading, setLoading] = useState(false);
   const [pictureFile, setPictureFile] = useState<File | null>(null);
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
@@ -122,6 +123,18 @@ export default function TalentOnboarding() {
     currency: 'USD',
     location: ''
   });
+
+  // Update form location when user location changes
+  useEffect(() => {
+    const currentLocation = userLocation || detectedLocation;
+    if (currentLocation && currentLocation !== 'Worldwide' && !formData.location) {
+      setFormData(prev => ({ ...prev, location: currentLocation }));
+    }
+  }, [userLocation, detectedLocation, formData.location]);
+
+  const handleLocationChange = (location: string) => {
+    setFormData(prev => ({ ...prev, location }));
+  };
 
   const handleGenreChange = (genre: string, checked: boolean) => {
     if (checked) {
@@ -230,7 +243,7 @@ export default function TalentOnboarding() {
         nationality: formData.countryOfResidence,
         rate_per_hour: parseFloat(formData.ratePerHour),
         currency: formData.currency,
-        location: formData.location
+        location: formData.location || userLocation || detectedLocation || ''
       };
 
       const { data: talentProfile, error } = await supabase
@@ -303,6 +316,9 @@ export default function TalentOnboarding() {
   // Sort countries by proximity for location dropdowns
   const currentLocation = userLocation || detectedLocation;
   const sortedCountries = sortCountriesByProximity(currentLocation, countries);
+
+  // Get current location for validation
+  const selectedLocation = formData.location || userLocation || detectedLocation;
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -520,24 +536,18 @@ export default function TalentOnboarding() {
             {/* Talent Location */}
             <div className="space-y-2">
               <Label>Talent Location *</Label>
-              <Select value={formData.location} onValueChange={(value) => setFormData(prev => ({ ...prev, location: value }))}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select your talent location" />
-                </SelectTrigger>
-                <SelectContent className="max-h-60">
-                  {sortedCountries.map((country) => (
-                    <SelectItem key={country.code} value={country.name}>
-                      {country.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex justify-start">
+                <LocationSelector />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Selected location: {selectedLocation || 'Not selected'}
+              </p>
             </div>
 
             <Button 
               type="submit" 
               className="w-full" 
-              disabled={loading || !formData.artistName || !formData.act || !formData.gender || formData.musicGenres.length === 0 || !formData.biography || !formData.age || !formData.countryOfResidence || !formData.ratePerHour || !formData.location || !pictureFile}
+              disabled={loading || !formData.artistName || !formData.act || !formData.gender || formData.musicGenres.length === 0 || !formData.biography || !formData.age || !formData.countryOfResidence || !formData.ratePerHour || !selectedLocation || !pictureFile}
             >
               {loading ? "Creating Profile..." : "Complete Profile"}
             </Button>

@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
-import { LogOut, Edit3, Crown } from "lucide-react";
+import { LogOut, Edit3, Crown, Eye } from "lucide-react";
 import { Header } from "@/components/Header";
 import { NotificationCenter } from "@/components/NotificationCenter";
 import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
@@ -63,6 +63,9 @@ const TalentDashboard = () => {
             <div className="flex flex-wrap gap-2 flex-1">
                 <Button onClick={() => navigate('/talent-profile-edit')} size="sm">
                   <Edit3 className="h-4 w-4 mr-2" />Edit Profile
+                </Button>
+                <Button variant="outline" onClick={() => navigate(`/talent/${profile.id}`)} size="sm">
+                  <Eye className="h-4 w-4 mr-2" />View Profile
                 </Button>
                 <SubscriptionButton isProSubscriber={profile.is_pro_subscriber || false} />
                 <Button variant="outline" onClick={handleSignOut} size="sm">
