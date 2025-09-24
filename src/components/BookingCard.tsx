@@ -224,7 +224,7 @@ export const BookingCard = ({ booking, mode, onUpdate, onRemove }: BookingCardPr
           </div>
         )}
 
-        {(booking.status === 'accepted' || booking.status === 'confirmed') && (
+        {(booking.status === 'pending') && (
             <Button onClick={() => handleUpdateStatus('cancelled')} variant="ghost" size="sm" className="text-destructive hover:text-destructive-foreground hover:bg-destructive/90">
                 <X className="h-4 w-4 mr-2" />Cancel Booking
             </Button>

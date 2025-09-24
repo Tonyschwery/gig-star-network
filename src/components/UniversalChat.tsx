@@ -19,7 +19,9 @@ export const UniversalChat = () => {
   const { canAcceptBooking, isProUser, isTalent } = useTalentBookingLimit();
   const { filterMessage } = useChatFilterPro(isProUser);
   const [newMessage, setNewMessage] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -57,7 +59,13 @@ export const UniversalChat = () => {
           <CardTitle className="text-base font-semibold">
             {channelInfo?.type === 'booking' ? 'Booking Chat' : 'Event Request Chat'}
           </CardTitle>
-          <Button variant="ghost" size="icon" onClick={closeChat}>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={closeChat}
+            disabled={isTyping}
+            className={isTyping ? 'opacity-50 cursor-not-allowed' : ''}
+          >
             <X className="h-4 w-4" />
           </Button>
         </CardHeader>
@@ -122,7 +130,22 @@ export const UniversalChat = () => {
             <form onSubmit={handleSendMessage} className="flex items-center gap-2">
               <Textarea
                 value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
+                onChange={(e) => {
+                  setNewMessage(e.target.value);
+                  
+                  // Handle typing detection
+                  setIsTyping(e.target.value.length > 0);
+                  
+                  // Clear previous timeout
+                  if (typingTimeoutRef.current) {
+                    clearTimeout(typingTimeoutRef.current);
+                  }
+                  
+                  // Set new timeout to clear typing state
+                  typingTimeoutRef.current = setTimeout(() => {
+                    setIsTyping(false);
+                  }, 1000);
+                }}
                 placeholder={
                   isTalent && !canAcceptBooking && !isProUser
                     ? "Upgrade to Pro to share contact details..."
@@ -135,6 +158,13 @@ export const UniversalChat = () => {
                     e.preventDefault();
                     handleSendMessage(e);
                   }
+                }}
+                onBlur={() => {
+                  // Clear typing state when user leaves the input
+                  if (typingTimeoutRef.current) {
+                    clearTimeout(typingTimeoutRef.current);
+                  }
+                  setIsTyping(false);
                 }}
               />
               <Button type="submit" size="icon" disabled={!newMessage.trim()}>

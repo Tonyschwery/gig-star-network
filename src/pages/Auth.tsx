@@ -42,7 +42,10 @@ const Auth = () => {
     const { error } = await supabase.auth.signUp({ 
         email, 
         password, 
-        options: { data: { name: name, user_type: userType } } 
+        options: { 
+          emailRedirectTo: `${window.location.origin}/`,
+          data: { name: name, user_type: userType } 
+        } 
     });
     if (error) {
         toast({ title: "Sign up failed", description: error.message, variant: "destructive" });
