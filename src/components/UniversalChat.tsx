@@ -35,8 +35,8 @@ export const UniversalChat = () => {
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
     if (newMessage.trim() && user?.id) {
-      // Check if user is a non-pro talent who has reached booking limit
-      if (isTalent && !canAcceptBooking && !isProUser) {
+      // Apply filtering to ALL non-pro talents to protect business
+      if (isTalent && !isProUser) {
         const filterResult = filterMessage(newMessage);
         if (filterResult.isBlocked) {
           // Show upgrade prompt instead of sending blocked message
@@ -117,10 +117,10 @@ export const UniversalChat = () => {
             <div ref={messagesEndRef} />
           </div>
           <div className="p-4 border-t bg-background">
-            {isTalent && !canAcceptBooking && !isProUser && (
+            {isTalent && !isProUser && (
               <div className="mb-3 p-3 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-800">
                 <p className="text-xs text-amber-700 dark:text-amber-300 font-medium mb-2">
-                  You've reached your monthly booking limit. Upgrade to Pro for unlimited bookings and full messaging access.
+                  Upgrade to Pro for unlimited messaging access. Free users cannot share contact details or external links.
                 </p>
                 <Button 
                   size="sm" 
@@ -152,7 +152,7 @@ export const UniversalChat = () => {
                   }, 3000);
                 }}
                 placeholder={
-                  isTalent && !canAcceptBooking && !isProUser
+                  isTalent && !isProUser
                     ? "Upgrade to Pro to share contact details..."
                     : "Type your message..."
                 }
