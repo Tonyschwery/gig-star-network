@@ -749,6 +749,10 @@ export type Database = {
         Args: { user_id_to_check: string }
         Returns: boolean
       }
+      cleanup_expired_bookings: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       cleanup_expired_chat_messages: {
         Args: Record<PropertyKey, never>
         Returns: undefined
