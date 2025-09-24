@@ -101,9 +101,7 @@ export const BookingCard = ({ booking, mode, onUpdate, onRemove }: BookingCardPr
   };
 
   return (
-    <div className={`border rounded-lg p-4 bg-card text-card-foreground space-y-3 transition-all hover:shadow-md ${
-      mode === 'talent' && !canAcceptBooking && !isProUser ? 'blur-sm opacity-60' : ''
-    }`}>
+    <div className="border rounded-lg p-4 bg-card text-card-foreground space-y-3 transition-all hover:shadow-md">
       <div className="flex justify-between items-start">
         <div className="flex flex-col gap-2">
             <h3 className="font-semibold capitalize text-foreground">Event Type: {booking.event_type}</h3>
