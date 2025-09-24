@@ -11,6 +11,7 @@ import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
 import { TalentDashboardTabs } from "@/components/TalentDashboardTabs"; // <-- IMPORT our new component
 import { SubscriptionButton } from "@/components/SubscriptionButton";
 import { Badge } from "@/components/ui/badge";
+import { ModeSwitch } from "@/components/ModeSwitch";
 
 const TalentDashboard = () => {
   const { user, profile, signOut } = useAuth();
@@ -67,6 +68,7 @@ const TalentDashboard = () => {
                 <Button variant="outline" onClick={() => navigate(`/talent/${profile.id}`)} size="sm">
                   <Eye className="h-4 w-4 mr-2" />View Profile
                 </Button>
+                <ModeSwitch size="sm" />
                 <SubscriptionButton isProSubscriber={profile.is_pro_subscriber || false} />
                 <Button variant="outline" onClick={handleSignOut} size="sm">
                   <LogOut className="h-4 w-4 mr-2" />Sign Out
