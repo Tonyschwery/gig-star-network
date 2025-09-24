@@ -5,7 +5,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
 
 export function ProtectedTalentRoute({ children }: { children: React.ReactNode }) {
-    const { status, loading } = useAuth();
+    const { status, loading, user } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
 
@@ -16,16 +16,20 @@ export function ProtectedTalentRoute({ children }: { children: React.ReactNode }
 
         // Define which statuses are considered a "Talent"
         const isTalent = status === 'TALENT_COMPLETE' || status === 'TALENT_NEEDS_ONBOARDING';
+        
+        // Also allow users who signed up as talent but haven't completed onboarding yet
+        const isTalentSignup = user?.user_metadata?.user_type === 'talent' && status === 'BOOKER';
 
         if (status === 'LOGGED_OUT') {
             navigate('/auth', { replace: true, state: { from: location, mode: 'talent' } });
-        } else if (!isTalent) {
+        } else if (!isTalent && !isTalentSignup) {
             // If logged in but not as a talent (e.g., a Booker), send to homepage
             navigate('/');
         }
-    }, [status, loading, navigate, location]);
+    }, [status, loading, navigate, location, user]);
 
-    const isAuthorized = status === 'TALENT_COMPLETE' || status === 'TALENT_NEEDS_ONBOARDING';
+    const isAuthorized = status === 'TALENT_COMPLETE' || status === 'TALENT_NEEDS_ONBOARDING' || 
+                        (user?.user_metadata?.user_type === 'talent' && status === 'BOOKER');
 
     if (loading) {
         return (
