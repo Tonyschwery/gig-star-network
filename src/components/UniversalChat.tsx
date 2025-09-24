@@ -20,6 +20,7 @@ export const UniversalChat = () => {
   const { filterMessage } = useChatFilterPro(isProUser);
   const [newMessage, setNewMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [isHovering, setIsHovering] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -54,7 +55,11 @@ export const UniversalChat = () => {
 
   return (
     <div className="fixed bottom-4 right-4 sm:bottom-8 sm:right-8 w-[calc(100%-2rem)] max-w-sm h-[60vh] sm:h-[70vh] z-50">
-      <Card className="w-full h-full flex flex-col shadow-2xl">
+      <Card 
+        className="w-full h-full flex flex-col shadow-2xl"
+        onMouseEnter={() => setIsHovering(true)}
+        onMouseLeave={() => setIsHovering(false)}
+      >
         <CardHeader className="flex flex-row items-center justify-between p-4 border-b">
           <CardTitle className="text-base font-semibold">
             {channelInfo?.type === 'booking' ? 'Booking Chat' : 'Event Request Chat'}
@@ -63,8 +68,8 @@ export const UniversalChat = () => {
             variant="ghost" 
             size="icon" 
             onClick={closeChat}
-            disabled={isTyping}
-            className={isTyping ? 'opacity-50 cursor-not-allowed' : ''}
+            disabled={isTyping || isHovering}
+            className={(isTyping || isHovering) ? 'opacity-50 cursor-not-allowed' : ''}
           >
             <X className="h-4 w-4" />
           </Button>
@@ -144,7 +149,7 @@ export const UniversalChat = () => {
                   // Set new timeout to clear typing state
                   typingTimeoutRef.current = setTimeout(() => {
                     setIsTyping(false);
-                  }, 1000);
+                  }, 3000);
                 }}
                 placeholder={
                   isTalent && !canAcceptBooking && !isProUser
@@ -158,13 +163,6 @@ export const UniversalChat = () => {
                     e.preventDefault();
                     handleSendMessage(e);
                   }
-                }}
-                onBlur={() => {
-                  // Clear typing state when user leaves the input
-                  if (typingTimeoutRef.current) {
-                    clearTimeout(typingTimeoutRef.current);
-                  }
-                  setIsTyping(false);
                 }}
               />
               <Button type="submit" size="icon" disabled={!newMessage.trim()}>
