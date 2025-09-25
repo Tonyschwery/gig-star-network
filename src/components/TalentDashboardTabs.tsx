@@ -23,47 +23,55 @@ export const TalentDashboardTabs = ({ profile }: TalentDashboardTabsProps) => {
     const [loading, setLoading] = useState(true);
     const { acceptedBookingsThisMonth, isProUser } = useTalentBookingLimit();
 
-    const fetchData = useCallback(async () => {
-        if (!profile || !profile.id) {
-            setLoading(false);
-            return;
-        }
-        setLoading(true);
+  const fetchData = useCallback(async () => {
+    if (!profile || !profile.id) {
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    console.log('Fetching bookings for talent:', profile.id);
 
-        const { data: bookingsData, error: bookingsError } = await supabase
-            .from('bookings')
-            .select(`*, talent_profiles(artist_name)`)
-            .eq('talent_id', profile.id)
-            .not('status', 'in', '("declined", "cancelled")')
-            .order('event_date', { ascending: false });
+    const { data: bookingsData, error: bookingsError } = await supabase
+      .from('bookings')
+      .select(`*, talent_profiles(artist_name)`)
+      .eq('talent_id', profile.id)
+      .not('status', 'in', '("declined", "cancelled")')
+      .order('event_date', { ascending: false });
 
-        if (bookingsError) {
-            console.error("Error fetching direct bookings:", bookingsError.message);
-        } else {
-            setDirectBookings(bookingsData as Booking[] || []);
-        }
+    if (bookingsError) {
+      console.error("Error fetching direct bookings:", bookingsError.message);
+    } else {
+      console.log('Fetched bookings:', bookingsData?.length || 0, 'records');
+      setDirectBookings(bookingsData as Booking[] || []);
+    }
 
-        if (profile.location) {
-            const { data: requestsData, error: requestsError } = await supabase
-                .from('event_requests')
-                .select('*')
-                .eq('event_location', profile.location)
-                .not('status', 'in', '("declined", "cancelled")')
-                .order('created_at', { ascending: false });
+    if (profile.location) {
+      const { data: requestsData, error: requestsError } = await supabase
+        .from('event_requests')
+        .select('*')
+        .eq('event_location', profile.location)
+        .not('status', 'in', '("declined", "cancelled")')
+        .order('created_at', { ascending: false });
 
-            if (requestsError) {
-                console.error("Error fetching matching event requests:", requestsError.message);
-            } else {
-                setEventRequests(requestsData as EventRequest[] || []);
-            }
-        }
+      if (requestsError) {
+        console.error("Error fetching matching event requests:", requestsError.message);
+      } else {
+        setEventRequests(requestsData as EventRequest[] || []);
+      }
+    }
 
-        setLoading(false);
-    }, [profile]);
+    setLoading(false);
+  }, [profile]);
 
-    useEffect(() => {
-        fetchData();
-    }, [fetchData]);
+  // Handle immediate removal from local state when booking is deleted
+  const handleBookingRemove = useCallback((bookingId: string) => {
+    console.log('Removing booking from local state:', bookingId);
+    setDirectBookings(prev => prev.filter(booking => booking.id !== bookingId));
+  }, []);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
     if (loading) {
         return (
@@ -95,16 +103,14 @@ export const TalentDashboardTabs = ({ profile }: TalentDashboardTabsProps) => {
                                     b.status === 'pending';
                                 
                                 return (
-                                    <BookingCard 
-                                        key={b.id} 
-                                        booking={b} 
-                                        mode="talent" 
-                                        onUpdate={fetchData} 
-                                        onRemove={(bookingId) => {
-                                            setDirectBookings(prev => prev.filter(booking => booking.id !== bookingId));
-                                        }}
-                                        shouldBlurContact={shouldBlurContact}
-                                    />
+                        <BookingCard 
+                            key={b.id} 
+                            booking={b} 
+                            mode="talent" 
+                            onUpdate={fetchData} 
+                            onRemove={handleBookingRemove}
+                            shouldBlurContact={shouldBlurContact}
+                        />
                                 );
                             })
                             : <p className="text-muted-foreground text-center py-8">You have not received any direct bookings.</p>}
