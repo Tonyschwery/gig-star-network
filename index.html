@@ -57,6 +57,14 @@
             .then(function(registration) {
               console.log('SW registered: ', registration);
               
+              // Listen for service worker messages
+              navigator.serviceWorker.addEventListener('message', function(event) {
+                if (event.data.type === 'SW_UPDATED') {
+                  console.log('Service worker updated to version:', event.data.version);
+                  window.location.reload();
+                }
+              });
+              
               // Force update when new content is available
               registration.addEventListener('updatefound', function() {
                 const newWorker = registration.installing;
@@ -70,6 +78,30 @@
                   });
                 }
               });
+              
+              // Handle auth state changes more responsively
+              const originalPushState = window.history.pushState;
+              const originalReplaceState = window.history.replaceState;
+              
+              window.history.pushState = function(...args) {
+                originalPushState.apply(window.history, args);
+                // Clear dynamic cache on navigation for fresh auth state
+                if (args[2]?.includes('dashboard') || args[2]?.includes('login') || args[2]?.includes('auth')) {
+                  navigator.serviceWorker.ready.then(registration => {
+                    registration.active?.postMessage({ type: 'CLEAR_DYNAMIC_CACHE' });
+                  });
+                }
+              };
+              
+              window.history.replaceState = function(...args) {
+                originalReplaceState.apply(window.history, args);
+                // Clear dynamic cache on auth state changes
+                if (args[2]?.includes('dashboard') || args[2]?.includes('login') || args[2]?.includes('auth')) {
+                  navigator.serviceWorker.ready.then(registration => {
+                    registration.active?.postMessage({ type: 'CLEAR_DYNAMIC_CACHE' });
+                  });
+                }
+              };
             })
             .catch(function(registrationError) {
               console.log('SW registration failed: ', registrationError);
