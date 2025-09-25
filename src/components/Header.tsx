@@ -71,6 +71,7 @@ export function Header() {
           
         setProfilePictureUrl(pictureData?.picture_url || null);
       } else {
+        // Reset all states if no profile found
         setTalentName(null);
         setTalentId(null);
         setIsProTalent(false);
@@ -78,6 +79,11 @@ export function Header() {
       }
     } catch (error) {
       console.error('Error fetching talent profile:', error);
+      // Reset states on error to avoid showing incomplete data
+      setTalentName(null);
+      setTalentId(null);
+      setIsProTalent(false);
+      setProfilePictureUrl(null);
     }
   };
 
@@ -200,15 +206,15 @@ export function Header() {
                   {talentName && <ModeSwitch />}
                   <NotificationCenter />
                   
-                  {user && !talentName && user.user_metadata?.user_type === 'talent' && (
-                    <Button 
-                      className="hero-button text-sm px-4"
-                      size="sm"
-                      onClick={handleTalentSignup}
-                    >
-                      Complete Profile
-                    </Button>
-                  )}
+                   {user && !talentName && user.user_metadata?.user_type === 'talent' && !profilePictureUrl && (
+                     <Button 
+                       className="hero-button text-sm px-4"
+                       size="sm"
+                       onClick={handleTalentSignup}
+                     >
+                       Complete Profile
+                     </Button>
+                   )}
                   
                   {/* Only show subscription button in artist dashboard mode if not already shown in nav */}
                   {talentName && !showArtistDashboardNav && (
@@ -377,14 +383,14 @@ export function Header() {
                       <NotificationCenter />
                     </div>
                       
-                      {user && !talentName && user.user_metadata?.user_type === 'talent' && (
-                        <Button 
-                          className="w-full hero-button mt-2"
-                          onClick={handleTalentSignup}
-                        >
-                          Complete Profile
-                        </Button>
-                      )}
+                       {user && !talentName && user.user_metadata?.user_type === 'talent' && !profilePictureUrl && (
+                         <Button 
+                           className="w-full hero-button mt-2"
+                           onClick={handleTalentSignup}
+                         >
+                           Complete Profile
+                         </Button>
+                       )}
                       
                       {talentName && !showArtistDashboardNav && (
                         <SubscriptionButton
