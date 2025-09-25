@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BookingCard, Booking } from "./BookingCard"; // THE FIX: Import the strict Booking interface
 import { EventRequestCard, EventRequest } from "./EventRequestCard"; // THE FIX: Import the strict EventRequest interface
+import { useTalentBookingLimit } from '@/hooks/useTalentBookingLimit';
 
 interface TalentProfile {
     id: string;
@@ -20,6 +21,7 @@ export const TalentDashboardTabs = ({ profile }: TalentDashboardTabsProps) => {
     const [directBookings, setDirectBookings] = useState<Booking[]>([]);
     const [eventRequests, setEventRequests] = useState<EventRequest[]>([]);
     const [loading, setLoading] = useState(true);
+    const { acceptedBookingsThisMonth, isProUser } = useTalentBookingLimit();
 
     const fetchData = useCallback(async () => {
         if (!profile || !profile.id) {
@@ -85,9 +87,26 @@ export const TalentDashboardTabs = ({ profile }: TalentDashboardTabsProps) => {
                 <TabsContent value="direct_bookings" className="pt-4">
                     <div className="space-y-4">
                         {directBookings.length > 0
-                            ? directBookings.map(b => <BookingCard key={b.id} booking={b} mode="talent" onUpdate={fetchData} onRemove={(bookingId) => {
-                                setDirectBookings(prev => prev.filter(booking => booking.id !== bookingId));
-                            }} />)
+                            ? directBookings.map((b, index) => {
+                                // Only blur contact details for the FIRST pending booking when limit is reached
+                                const shouldBlurContact = !isProUser && 
+                                    acceptedBookingsThisMonth >= 1 && 
+                                    b.status === 'pending' && 
+                                    index === directBookings.findIndex(booking => booking.status === 'pending');
+                                
+                                return (
+                                    <BookingCard 
+                                        key={b.id} 
+                                        booking={b} 
+                                        mode="talent" 
+                                        onUpdate={fetchData} 
+                                        onRemove={(bookingId) => {
+                                            setDirectBookings(prev => prev.filter(booking => booking.id !== bookingId));
+                                        }}
+                                        shouldBlurContact={shouldBlurContact}
+                                    />
+                                );
+                            })
                             : <p className="text-muted-foreground text-center py-8">You have not received any direct bookings.</p>}
                     </div>
                 </TabsContent>
