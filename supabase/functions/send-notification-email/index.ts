@@ -159,23 +159,23 @@ serve(async (req: Request): Promise<Response> => {
                 .eq('id', actualMessageId)
                 .single();
 
-              const { data: booking } = await supabaseAdmin
-                .from('bookings')
-                .select(`
-                  event_type,
-                  event_date,
-                  booker_name,
-                  user_id,
-                  talent_profiles!inner(artist_name, user_id)
-                `)
-                .eq('id', actualBookingId)
-                .single();
+                const { data: booking } = await supabaseAdmin
+                  .from('bookings')
+                  .select(`
+                    event_type,
+                    event_date,
+                    booker_name,
+                    user_id,
+                    talent_profiles!inner(artist_name, user_id)
+                  `)
+                  .eq('id', actualBookingId)
+                  .single();
 
-              if (message && booking) {
-                const isFromTalent = message.sender_id === booking.talent_profiles?.user_id;
-                const senderName = isFromTalent 
-                  ? booking.talent_profiles?.artist_name 
-                  : booking.booker_name;
+                if (message && booking) {
+                  const isFromTalent = message.sender_id === booking.talent_profiles.user_id;
+                  const senderName = isFromTalent 
+                    ? booking.talent_profiles.artist_name 
+                    : booking.booker_name;
 
                 emailData = {
                   senderName,
@@ -262,7 +262,7 @@ serve(async (req: Request): Promise<Response> => {
         logStep(`Email queued for user ${userId}`, { userEmail, userName });
 
       } catch (userError) {
-        logStep(`Error processing user ${userId}`, { error: userError.message });
+        logStep(`Error processing user ${userId}`, { error: userError instanceof Error ? userError.message : String(userError) });
       }
     }
 
@@ -297,7 +297,7 @@ serve(async (req: Request): Promise<Response> => {
               const { data: talentUser } = await supabaseAdmin.auth.admin.getUserById(booking.talent_profiles.user_id);
               talentEmail = talentUser?.user?.email || null;
             } catch (error) {
-              logStep('Error fetching talent user', { error: error.message });
+              logStep('Error fetching talent user', { error: error instanceof Error ? error.message : String(error) });
             }
           }
           

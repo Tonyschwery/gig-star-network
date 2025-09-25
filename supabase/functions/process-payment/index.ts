@@ -1,9 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-import { Resend } from "npm:resend@4.0.0";
-import { renderAsync } from "npm:@react-email/components@0.0.22";
-import React from "npm:react@18.3.1";
-import { PaymentNotificationEmail } from "./_templates/payment-notification.tsx";
+import { Resend } from "https://esm.sh/resend@2.0.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -58,18 +55,35 @@ async function sendPaymentConfirmationEmails(payment: any) {
     // Send email to booker
     if (bookerEmail) {
       console.log('EMAIL FUNCTION - Preparing booker email for:', bookerEmail);
-      const bookerHtml = await renderAsync(
-        React.createElement(PaymentNotificationEmail, {
-          recipientName: bookerResponse.data.user?.user_metadata?.first_name || 'Valued Customer',
-          eventType: payment.bookings.event_type,
-          eventDate: eventDate,
-          totalAmount: (payment.total_amount / 100).toFixed(2),
-          currency: payment.currency.toUpperCase(),
-          bookingId: payment.booking_id,
-          appUrl: appUrl,
-          isForTalent: false
-        })
-      );
+      const bookerName = bookerResponse.data.user?.user_metadata?.first_name || 'Valued Customer';
+      const amount = (payment.total_amount / 100).toFixed(2);
+      
+      const bookerHtml = `
+        <html>
+          <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
+            <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+              <h1 style="color: #28a745;">Payment Processed Successfully!</h1>
+              <p>Hi ${bookerName},</p>
+              <p>Great news! Your payment has been processed and your booking is now confirmed.</p>
+              
+              <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                <h2 style="margin-top: 0;">Payment Details</h2>
+                <p><strong>Total Amount:</strong> ${payment.currency.toUpperCase()} ${amount}</p>
+                <p><strong>Event:</strong> ${payment.bookings.event_type}</p>
+                <p><strong>Date:</strong> ${eventDate}</p>
+                <p><strong>Booking ID:</strong> ${payment.booking_id}</p>
+              </div>
+
+              <div style="text-align: center; margin: 30px 0;">
+                <a href="${appUrl}/booker-dashboard" style="background-color: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">View Booking Details</a>
+              </div>
+
+              <p>Thank you for using Qtalent.live!</p>
+              <p>Best regards,<br/>The Qtalent Team</p>
+            </div>
+          </body>
+        </html>
+      `;
 
       emailPromises.push(
         resend.emails.send({
@@ -90,20 +104,37 @@ async function sendPaymentConfirmationEmails(payment: any) {
     // Send email to talent
     if (talentEmail && payment.bookings.talent_profiles) {
       console.log('EMAIL FUNCTION - Preparing talent email for:', talentEmail);
-      const talentHtml = await renderAsync(
-        React.createElement(PaymentNotificationEmail, {
-          recipientName: payment.bookings.talent_profiles.artist_name || 'Talented Artist',
-          eventType: payment.bookings.event_type,
-          eventDate: eventDate,
-          totalAmount: (payment.total_amount / 100).toFixed(2),
-          currency: payment.currency.toUpperCase(),
-          bookingId: payment.booking_id,
-          appUrl: appUrl,
-          isForTalent: true,
-          talentEarnings: (payment.talent_earnings / 100).toFixed(2),
-          platformCommission: ((payment.total_amount - payment.talent_earnings) / 100).toFixed(2)
-        })
-      );
+      const talentName = payment.bookings.talent_profiles.artist_name || 'Talented Artist';
+      const totalAmount = (payment.total_amount / 100).toFixed(2);
+      const talentEarnings = (payment.talent_earnings / 100).toFixed(2);
+      const platformFee = ((payment.total_amount - payment.talent_earnings) / 100).toFixed(2);
+      
+      const talentHtml = `
+        <html>
+          <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
+            <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+              <h1 style="color: #28a745;">Payment Received!</h1>
+              <p>Hi ${talentName},</p>
+              <p>Great news! Payment has been processed for your confirmed booking.</p>
+              
+              <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                <h2 style="margin-top: 0;">Payment Details</h2>
+                <p><strong>Total Amount:</strong> ${payment.currency.toUpperCase()} ${totalAmount}</p>
+                <p><strong>Your Earnings:</strong> ${payment.currency.toUpperCase()} ${talentEarnings}</p>
+                <p><strong>Platform Fee:</strong> ${payment.currency.toUpperCase()} ${platformFee}</p>
+                <p><strong>Event:</strong> ${payment.bookings.event_type}</p>
+                <p><strong>Date:</strong> ${eventDate}</p>
+              </div>
+
+              <div style="text-align: center; margin: 30px 0;">
+                <a href="${appUrl}/talent-dashboard" style="background-color: #28a745; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">View Payment Details</a>
+              </div>
+
+              <p>Best regards,<br/>The Qtalent Team</p>
+            </div>
+          </body>
+        </html>
+      `;
 
       emailPromises.push(
         resend.emails.send({

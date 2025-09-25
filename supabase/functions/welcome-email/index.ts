@@ -1,17 +1,11 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-import { Resend } from "npm:resend@4.0.0";
-import { renderAsync } from "npm:@react-email/components@0.0.22";
-import React from "npm:react@18.3.1";
-import { WelcomeEmail } from "./_templates/welcome-email.tsx";
-import { TalentWelcomeEmail } from "./_templates/talent-welcome-email.tsx";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.52.0";
+import { Resend } from "https://esm.sh/resend@2.0.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
-
-// Resend will be initialized inside the request handler
 
 interface WelcomeEmailRequest {
   type: 'user_signup' | 'talent_profile_created';
@@ -22,6 +16,77 @@ interface WelcomeEmailRequest {
     lastName?: string;
     artistName?: string;
   };
+}
+
+function generateWelcomeEmailHtml(userEmail: string, firstName: string, appUrl: string): string {
+  return `
+    <html>
+      <body style="font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen-Sans,Ubuntu,Cantarell,'Helvetica Neue',sans-serif; background-color: #ffffff;">
+        <div style="margin: 0 auto; padding: 20px 0 48px; max-width: 560px;">
+          <h1 style="color: #333; font-size: 24px; font-weight: bold; margin: 40px 0; padding: 0;">Welcome to Qtalent.live!</h1>
+          <p style="color: #333; font-size: 16px; line-height: 26px; margin: 16px 0;">Hello ${firstName || 'there'},</p>
+          <p style="color: #333; font-size: 16px; line-height: 26px; margin: 16px 0;">
+            Welcome to our talent marketplace! We're excited to have you join our community.
+          </p>
+          <p style="color: #333; font-size: 16px; line-height: 26px; margin: 16px 0;">
+            Your account has been created successfully. You can now:
+          </p>
+          <ul style="color: #333; font-size: 16px; line-height: 26px; margin: 16px 0; padding-left: 20px;">
+            <li>Browse and book talented performers for your events</li>
+            <li>Connect with amazing artists in your area</li>
+            <li>Manage your bookings through your dashboard</li>
+          </ul>
+          
+          <div style="text-align: center; margin: 32px 0;">
+            <a href="${appUrl}" style="background-color: #007bff; border-radius: 8px; color: #fff; font-size: 16px; font-weight: bold; text-decoration: none; text-align: center; display: inline-block; padding: 12px 24px;">
+              Explore Talents
+            </a>
+          </div>
+
+          <p style="color: #898989; font-size: 12px; line-height: 22px; margin-top: 32px;">
+            Best regards,<br/>
+            The Qtalent Team
+          </p>
+        </div>
+      </body>
+    </html>
+  `;
+}
+
+function generateTalentWelcomeEmailHtml(artistName: string, userEmail: string, appUrl: string): string {
+  return `
+    <html>
+      <body style="font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen-Sans,Ubuntu,Cantarell,'Helvetica Neue',sans-serif; background-color: #ffffff;">
+        <div style="margin: 0 auto; padding: 20px 0 48px; max-width: 560px;">
+          <h1 style="color: #333; font-size: 24px; font-weight: bold; margin: 40px 0; padding: 0;">Congratulations! Your Talent Profile is Now Live</h1>
+          <p style="color: #333; font-size: 16px; line-height: 26px; margin: 16px 0;">Hello ${artistName || 'Talented Artist'},</p>
+          <p style="color: #333; font-size: 16px; line-height: 26px; margin: 16px 0;">
+            Your talent profile has been successfully created and is now live on Qtalent.live!
+          </p>
+          <p style="color: #333; font-size: 16px; line-height: 26px; margin: 16px 0;">
+            You can now:
+          </p>
+          <ul style="color: #333; font-size: 16px; line-height: 26px; margin: 16px 0; padding-left: 20px;">
+            <li>Receive booking requests from event organizers</li>
+            <li>Manage your availability and rates</li>
+            <li>Build your reputation with reviews</li>
+            <li>Grow your performance business</li>
+          </ul>
+          
+          <div style="text-align: center; margin: 32px 0;">
+            <a href="${appUrl}/talent-dashboard" style="background-color: #28a745; border-radius: 8px; color: #fff; font-size: 16px; font-weight: bold; text-decoration: none; text-align: center; display: inline-block; padding: 12px 24px;">
+              Go to Dashboard
+            </a>
+          </div>
+
+          <p style="color: #898989; font-size: 12px; line-height: 22px; margin-top: 32px;">
+            Best of luck with your performances!<br/>
+            The Qtalent Team
+          </p>
+        </div>
+      </body>
+    </html>
+  `;
 }
 
 serve(async (req) => {
@@ -54,27 +119,16 @@ serve(async (req) => {
 
     let emailHtml: string;
     let subject: string;
+    const appUrl = Deno.env.get("SUPABASE_URL")?.replace('/auth/v1', '') || 'https://qtalent.live';
 
     if (type === 'user_signup') {
       // Send generic welcome email to all new users
       subject = "Welcome to Qtalent.live!";
-      emailHtml = await renderAsync(
-        React.createElement(WelcomeEmail, {
-          userEmail: email,
-          firstName: userData?.firstName || '',
-          appUrl: Deno.env.get("SUPABASE_URL")?.replace('/auth/v1', '') || 'https://qtalent.live'
-        })
-      );
+      emailHtml = generateWelcomeEmailHtml(email, userData?.firstName || '', appUrl);
     } else if (type === 'talent_profile_created') {
       // Send talent-specific confirmation email
       subject = "Congratulations! Your Talent Profile is Now Live";
-      emailHtml = await renderAsync(
-        React.createElement(TalentWelcomeEmail, {
-          artistName: userData?.artistName || 'Talented Artist',
-          userEmail: email,
-          appUrl: Deno.env.get("SUPABASE_URL")?.replace('/auth/v1', '') || 'https://qtalent.live'
-        })
-      );
+      emailHtml = generateTalentWelcomeEmailHtml(userData?.artistName || 'Talented Artist', email, appUrl);
     } else {
       throw new Error("Invalid email type");
     }

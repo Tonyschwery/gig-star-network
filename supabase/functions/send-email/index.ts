@@ -1,16 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import React from 'npm:react@18.3.1';
-import { Resend } from 'npm:resend@4.0.0';
-import { renderAsync } from 'npm:@react-email/components@0.0.22';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.52.0';
-
-import { BookingNotificationEmail } from './_templates/booking-notification.tsx';
-import { MessageNotificationEmail } from './_templates/message-notification.tsx';
-import { PaymentNotificationEmail } from './_templates/payment-notification.tsx';
-import { AdminNotificationEmail } from './_templates/admin-notification.tsx';
-import { BroadcastNotificationEmail } from './_templates/broadcast-notification.tsx';
-import { AdminEventRequestEmail } from './_templates/admin-event-request.tsx';
-import { EventRequestConfirmationEmail } from './_templates/event-request-confirmation.tsx';
+import { Resend } from 'https://esm.sh/resend@2.0.0';
+import { generateBookingEmailHtml, generateMessageEmailHtml, generatePaymentEmailHtml, generateBroadcastEmailHtml } from './email-templates.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -339,63 +330,58 @@ serve(async (req: Request): Promise<Response> => {
         break;
 
       // Legacy support for existing email types
+      // Legacy support for existing email types
       case 'booking':
-        emailHtml = await renderAsync(
-          React.createElement(BookingNotificationEmail, {
-            recipientName: data.recipient_name || 'User',
-            eventType: data.eventType,
-            eventDate: data.eventDate,
-            eventLocation: data.eventLocation,
-            bookerName: data.bookerName,
-            talentName: data.talentName,
-            bookingStatus: data.status,
-            bookingId: data.bookingId,
-            appUrl,
-            isForTalent: data.isForTalent,
-            showFullDetails: data.showFullDetails || false,
-            bookerEmail: data.bookerEmail,
-            bookerPhone: data.bookerPhone,
-            description: data.description,
-            eventDuration: data.eventDuration,
-            budget: data.budget,
-            budgetCurrency: data.budgetCurrency,
-            eventAddress: data.eventAddress,
-          })
-        );
+        emailHtml = generateBookingEmailHtml({
+          recipientName: data.recipient_name || 'User',
+          eventType: data.eventType,
+          eventDate: data.eventDate,
+          eventLocation: data.eventLocation,
+          bookerName: data.bookerName,
+          talentName: data.talentName,
+          bookingStatus: data.status,
+          bookingId: data.bookingId,
+          appUrl,
+          isForTalent: data.isForTalent,
+          showFullDetails: data.showFullDetails || false,
+          bookerEmail: data.bookerEmail,
+          bookerPhone: data.bookerPhone,
+          description: data.description,
+          eventDuration: data.eventDuration,
+          budget: data.budget,
+          budgetCurrency: data.budgetCurrency,
+          eventAddress: data.eventAddress,
+        });
         subject = data.isForTalent ? 'New Booking Request' : 'Booking Update';
         break;
 
       case 'message':
-        emailHtml = await renderAsync(
-          React.createElement(MessageNotificationEmail, {
-            recipientName: data.recipient_name || 'User',
-            senderName: data.senderName,
-            eventType: data.eventType,
-            eventDate: data.eventDate,
-            messagePreview: data.messagePreview,
-            bookingId: data.bookingId,
-            appUrl,
-            isFromTalent: data.isFromTalent,
-          })
-        );
+        emailHtml = generateMessageEmailHtml({
+          recipientName: data.recipient_name || 'User',
+          senderName: data.senderName,
+          eventType: data.eventType,
+          eventDate: data.eventDate,
+          messagePreview: data.messagePreview,
+          bookingId: data.bookingId,
+          appUrl,
+          isFromTalent: data.isFromTalent,
+        });
         subject = `New message from ${data.senderName}`;
         break;
 
       case 'payment':
-        emailHtml = await renderAsync(
-          React.createElement(PaymentNotificationEmail, {
-            recipientName: data.recipient_name || 'User',
-            eventType: data.eventType,
-            eventDate: data.eventDate,
-            totalAmount: data.totalAmount,
-            currency: data.currency,
-            bookingId: data.bookingId,
-            appUrl,
-            isForTalent: data.isForTalent,
-            talentEarnings: data.talentEarnings,
-            platformCommission: data.platformCommission,
-          })
-        );
+        emailHtml = generatePaymentEmailHtml({
+          recipientName: data.recipient_name || 'User',
+          eventType: data.eventType,
+          eventDate: data.eventDate,
+          totalAmount: data.totalAmount,
+          currency: data.currency,
+          bookingId: data.bookingId,
+          appUrl,
+          isForTalent: data.isForTalent,
+          talentEarnings: data.talentEarnings,
+          platformCommission: data.platformCommission,
+        });
         subject = data.isForTalent ? 'Payment Received' : 'Payment Processed';
         break;
 
