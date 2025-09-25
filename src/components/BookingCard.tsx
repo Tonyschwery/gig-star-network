@@ -75,8 +75,8 @@ export const BookingCard = ({ booking, mode, onUpdate, onRemove, shouldBlurConta
       if (error) throw new Error(error.message);
       toast({ title: "Booking declined and removed" });
       setShowDeclineDialog(false);
+      // Immediately remove from dashboard
       onRemove?.(booking.id);
-      onUpdate?.();
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     }
@@ -88,8 +88,8 @@ export const BookingCard = ({ booking, mode, onUpdate, onRemove, shouldBlurConta
       if (error) throw new Error(error.message);
       toast({ title: "Booking removed" });
       setShowRemoveDialog(false);
+      // Immediately remove from dashboard
       onRemove?.(booking.id);
-      onUpdate?.();
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     }
@@ -101,8 +101,8 @@ export const BookingCard = ({ booking, mode, onUpdate, onRemove, shouldBlurConta
       if (error) throw new Error(error.message);
       toast({ title: "Booking cancelled and removed" });
       setShowCancelDialog(false);
+      // Immediately remove from dashboard
       onRemove?.(booking.id);
-      onUpdate?.();
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     }

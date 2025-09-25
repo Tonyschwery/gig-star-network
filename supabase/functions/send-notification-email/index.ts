@@ -120,8 +120,23 @@ serve(async (req: Request): Promise<Response> => {
                 const talentIsProSubscriber = booking.talent_profiles?.is_pro_subscriber;
                 const isAdmin = (await supabaseAdmin.rpc('is_admin', { user_id_param: userId })).data;
                 
-                // Determine if user should see full details (admin or pro talent)
-                const showFullDetails = isAdmin || (isForTalent && talentIsProSubscriber);
+                // For non-pro talents, check if they've already accepted a booking this month
+                let hasReachedLimit = false;
+                if (isForTalent && !talentIsProSubscriber && booking.talent_profiles) {
+                  try {
+                    const { data: acceptedCount } = await supabaseAdmin
+                      .rpc('get_talent_accepted_bookings_count', { 
+                        talent_id_param: booking.talent_id 
+                      });
+                    hasReachedLimit = (acceptedCount || 0) >= 1;
+                  } catch (error) {
+                    console.error('Error checking talent booking limit:', error);
+                  }
+                }
+                
+                // Determine if user should see full details 
+                // Admin always sees all, Pro talents see all, non-pro talents only see details if they haven't reached limit
+                const showFullDetails = isAdmin || (isForTalent && talentIsProSubscriber) || (isForTalent && !hasReachedLimit);
                 
                 // Base email data (always included) - using template-expected field names
                 emailData = {
