@@ -24,11 +24,12 @@ export const BookerDashboardTabs = ({ userId }: { userId: string }) => {
         if (!userId) return;
         setLoading(true);
 
+        console.log('Fetching initial bookings for user:', userId);
         const bookingsQuery = supabase
             .from('bookings')
             .select(`*, talent_profiles(artist_name)`)
             .eq('user_id', userId)
-            .neq('status', 'cancelled')
+            .not('status', 'in', '("declined", "cancelled")')
             .order('event_date', { ascending: true })
             .range(0, PAGE_SIZE - 1);
 
@@ -36,7 +37,7 @@ export const BookerDashboardTabs = ({ userId }: { userId: string }) => {
             .from('event_requests')
             .select('*')
             .eq('user_id', userId)
-            .neq('status', 'cancelled')
+            .not('status', 'in', '("declined", "cancelled")')
             .order('created_at', { ascending: false })
             .range(0, PAGE_SIZE - 1);
 
@@ -45,6 +46,7 @@ export const BookerDashboardTabs = ({ userId }: { userId: string }) => {
 
         if (bookingsResult.error) console.error("Error fetching bookings:", bookingsResult.error.message);
         else {
+            console.log('Fetched bookings:', bookingsResult.data?.length || 0, 'records');
             setDirectBookings(bookingsResult.data as Booking[] || []);
             setHasMoreBookings(bookingsResult.data.length === PAGE_SIZE);
             setBookingsPage(1);
@@ -74,7 +76,7 @@ export const BookerDashboardTabs = ({ userId }: { userId: string }) => {
             .from('bookings')
             .select(`*, talent_profiles(artist_name)`)
             .eq('user_id', userId)
-            .neq('status', 'cancelled')
+            .not('status', 'in', '("declined", "cancelled")')
             .order('event_date', { ascending: true })
             .range(from, to);
         
@@ -97,7 +99,7 @@ export const BookerDashboardTabs = ({ userId }: { userId: string }) => {
             .from('event_requests')
             .select('*')
             .eq('user_id', userId)
-            .neq('status', 'cancelled')
+            .not('status', 'in', '("declined", "cancelled")')
             .order('created_at', { ascending: false })
             .range(from, to);
 
@@ -129,9 +131,16 @@ export const BookerDashboardTabs = ({ userId }: { userId: string }) => {
                 <TabsContent value="direct_bookings" className="pt-4">
                     <div className="space-y-4">
                         {directBookings.length > 0 ? (
-                            directBookings.map(b => <BookingCard key={b.id} booking={b} mode="booker" onUpdate={fetchInitialData} onRemove={(bookingId) => {
-                                setDirectBookings(prev => prev.filter(booking => booking.id !== bookingId));
-                            }} />)
+                            directBookings.map(b => <BookingCard 
+                                key={b.id} 
+                                booking={b} 
+                                mode="booker" 
+                                onUpdate={fetchInitialData} 
+                                onRemove={(bookingId) => {
+                                    console.log('Removing booking from booker dashboard:', bookingId);
+                                    setDirectBookings(prev => prev.filter(booking => booking.id !== bookingId));
+                                }} 
+                            />)
                         ) : (
                             <p className="text-muted-foreground text-center py-8">You have not made any direct bookings.</p>
                         )}
