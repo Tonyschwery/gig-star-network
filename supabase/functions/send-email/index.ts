@@ -352,6 +352,14 @@ serve(async (req: Request): Promise<Response> => {
             bookingId: data.bookingId,
             appUrl,
             isForTalent: data.isForTalent,
+            showFullDetails: data.showFullDetails || false,
+            bookerEmail: data.bookerEmail,
+            bookerPhone: data.bookerPhone,
+            description: data.description,
+            eventDuration: data.eventDuration,
+            budget: data.budget,
+            budgetCurrency: data.budgetCurrency,
+            eventAddress: data.eventAddress,
           })
         );
         subject = data.isForTalent ? 'New Booking Request' : 'Booking Update';

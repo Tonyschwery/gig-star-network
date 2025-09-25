@@ -22,6 +22,14 @@ interface BookingNotificationProps {
   bookingId: string
   appUrl: string
   isForTalent: boolean
+  showFullDetails?: boolean
+  bookerEmail?: string
+  bookerPhone?: string
+  description?: string
+  eventDuration?: number
+  budget?: number
+  budgetCurrency?: string
+  eventAddress?: string
 }
 
 export const BookingNotificationEmail = ({
@@ -34,7 +42,15 @@ export const BookingNotificationEmail = ({
   bookingStatus,
   bookingId,
   appUrl,
-  isForTalent
+  isForTalent,
+  showFullDetails = false,
+  bookerEmail,
+  bookerPhone,
+  description,
+  eventDuration,
+  budget,
+  budgetCurrency,
+  eventAddress
 }: BookingNotificationProps) => {
   const getSubject = () => {
     switch (bookingStatus) {
@@ -100,20 +116,40 @@ export const BookingNotificationEmail = ({
             </Button>
           </div>
 
-          <Text style={detailsText}>
-            <strong>Event Details:</strong><br/>
-            Type: {eventType}<br/>
-            Date: {eventDate}<br/>
-            Location: {eventLocation}<br/>
-            {isForTalent ? (
-              bookerName && `Client: ${bookerName}`
-            ) : (
-              <>
-                {bookerName && `Booker: ${bookerName}`}<br/>
-                {talentName && `Talent: ${talentName}`}
-              </>
-            )}
-          </Text>
+          <div style={detailsContainer}>
+            <Text style={detailsTitle}>Event Details:</Text>
+            <Text style={detailsText}>
+              <strong>Type:</strong> {eventType}<br/>
+              <strong>Date:</strong> {eventDate}<br/>
+              <strong>Location:</strong> {eventLocation}<br/>
+              {eventDuration && <><strong>Duration:</strong> {eventDuration} hours<br/></>}
+              
+              {isForTalent ? (
+                <>
+                  <strong>Client:</strong> {bookerName}<br/>
+                  {showFullDetails && bookerEmail && <><strong>Client Email:</strong> {bookerEmail}<br/></>}
+                  {showFullDetails && bookerPhone && <><strong>Client Phone:</strong> {bookerPhone}<br/></>}
+                  {showFullDetails && eventAddress && <><strong>Full Address:</strong> {eventAddress}<br/></>}
+                  {showFullDetails && budget && <><strong>Budget:</strong> {budget} {budgetCurrency || 'USD'}<br/></>}
+                  {showFullDetails && description && <><strong>Description:</strong> {description}<br/></>}
+                  
+                  {!showFullDetails && (
+                    <Text style={upgradeNotice}>
+                      <strong>📧 Upgrade to Pro</strong> to see client contact details, budget, and full event description.
+                    </Text>
+                  )}
+                </>
+              ) : (
+                <>
+                  <strong>Booker:</strong> {bookerName}<br/>
+                  {talentName && <><strong>Talent:</strong> {talentName}<br/></>}
+                  {eventAddress && <><strong>Full Address:</strong> {eventAddress}<br/></>}
+                  {budget && <><strong>Budget:</strong> {budget} {budgetCurrency || 'USD'}<br/></>}
+                  {description && <><strong>Description:</strong> {description}<br/></>}
+                </>
+              )}
+            </Text>
+          </div>
 
           <Text style={footer}>
             Best regards,<br/>
@@ -153,14 +189,37 @@ const text = {
   margin: '16px 0',
 }
 
+const detailsContainer = {
+  margin: '24px 0',
+  padding: '20px',
+  backgroundColor: '#f8f9fa',
+  borderRadius: '8px',
+  border: '1px solid #e9ecef',
+}
+
+const detailsTitle = {
+  color: '#333',
+  fontSize: '16px',
+  fontWeight: 'bold',
+  margin: '0 0 12px 0',
+}
+
 const detailsText = {
   color: '#666',
   fontSize: '14px',
   lineHeight: '22px',
-  margin: '24px 0',
-  padding: '16px',
-  backgroundColor: '#f8f9fa',
-  borderRadius: '8px',
+  margin: '0',
+}
+
+const upgradeNotice = {
+  color: '#007ee6',
+  fontSize: '14px',
+  fontStyle: 'italic',
+  margin: '12px 0 0 0',
+  padding: '12px',
+  backgroundColor: '#e3f2fd',
+  borderRadius: '6px',
+  border: '1px solid #bbdefb',
 }
 
 const buttonContainer = {
