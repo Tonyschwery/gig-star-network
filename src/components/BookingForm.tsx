@@ -1,6 +1,6 @@
 // FILE: src/components/BookingForm.tsx
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,13 +8,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, MapPin, X } from "lucide-react";
+import { CalendarIcon, X } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useEmailNotifications } from "@/hooks/useEmailNotifications";
+import { LocationSelector } from "@/components/LocationSelector";
+import { useLocationDetection } from "@/hooks/useLocationDetection";
 
 import PhoneInput from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
@@ -30,15 +32,16 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
   const { user } = useAuth();
   const { toast } = useToast();
   const { sendBookingEmails } = useEmailNotifications();
+  
+  // Use location detection hook for consistent location handling
+  const { userLocation, detectedLocation } = useLocationDetection();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isDetectingLocation, setIsDetectingLocation] = useState(false);
   const [bookerName, setBookerName] = useState(user?.user_metadata?.name || "");
   const [bookerPhone, setBookerPhone] = useState<string | undefined>();
   const [eventDate, setEventDate] = useState<Date>();
   const [eventDuration, setEventDuration] = useState("");
-  const [eventLocation, setEventLocation] = useState("");
-  const [detectedCountry, setDetectedCountry] = useState<string | undefined>();
+  const [eventAddress, setEventAddress] = useState(""); // Separate field for venue address
   const [eventType, setEventType] = useState("");
   const [description, setDescription] = useState("");
 
@@ -47,41 +50,8 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
 
   const eventTypes = ["wedding", "birthday", "corporate", "opening", "club", "school", "festival", "private party", "other"];
 
-  const handleDetectLocation = () => {
-    if (!navigator.geolocation) {
-      toast({ title: "Geolocation is not supported by your browser.", variant: "destructive" });
-      return;
-    }
-    setIsDetectingLocation(true);
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const { latitude, longitude } = position.coords;
-        try {
-          const { data, error } = await supabase.functions.invoke('reverse-geocode', {
-            body: { latitude, longitude }
-          });
-          if (error) throw new Error(error.message);
-          setEventLocation(data.formatted_address);
-          setDetectedCountry(data.country_code);
-          toast({ title: "Location Detected!", description: data.formatted_address });
-        } catch (error: any) {
-          toast({ title: "Could not fetch address", description: error.message, variant: "destructive" });
-        } finally {
-          setIsDetectingLocation(false);
-        }
-      },
-      () => {
-        toast({ title: "Unable to retrieve your location.", description: "Please grant permission or enter it manually.", variant: "destructive" });
-        setIsDetectingLocation(false);
-      }
-    );
-  };
-
-  useEffect(() => {
-    if (!eventLocation) {
-      handleDetectLocation();
-    }
-  }, []);
+  // Get current location for form validation and submission
+  const currentLocation = userLocation || detectedLocation || 'Worldwide';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -89,8 +59,8 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
       toast({ title: "Authentication Required", description: "Please sign in to book talent.", variant: "destructive" });
       return;
     }
-    if (!bookerName || !eventDate || !eventLocation || !eventType || !eventDuration) {
-      toast({ title: "Missing Information", description: "Please fill out all required fields.", variant: "destructive" });
+    if (!bookerName || !eventDate || !currentLocation || currentLocation === 'Worldwide' || !eventType || !eventDuration) {
+      toast({ title: "Missing Information", description: "Please fill out all required fields and select a specific location.", variant: "destructive" });
       return;
     }
 
@@ -104,10 +74,10 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
         booker_phone: bookerPhone,
         event_date: format(eventDate, 'yyyy-MM-dd'),
         event_duration: parseInt(eventDuration, 10),
-        event_location: eventLocation,
-        event_address: eventLocation, // keep same field as old BookingForm
+        event_location: currentLocation, // Use standardized country name
+        event_address: eventAddress, // Store venue address separately
         event_type: eventType,
-        description: description,
+        description: eventAddress ? `${description}\n\nVenue: ${eventAddress}` : description,
         status: 'pending',
       };
 
@@ -143,18 +113,17 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
                 <Label htmlFor="booker-name">Your Name *</Label>
                 <Input id="booker-name" value={bookerName} onChange={(e) => setBookerName(e.target.value)} required />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="booker-phone">Phone Number</Label>
-                <PhoneInput
-                  id="booker-phone"
-                  placeholder="Enter phone number"
-                  value={bookerPhone}
-                  onChange={setBookerPhone}
-                  international
-                  defaultCountry={detectedCountry as any}
-                  className="phone-input"
-                />
-              </div>
+                <div className="space-y-2">
+                  <Label htmlFor="booker-phone">Phone Number</Label>
+                  <PhoneInput
+                    id="booker-phone"
+                    placeholder="Enter phone number"
+                    value={bookerPhone}
+                    onChange={setBookerPhone}
+                    international
+                    className="phone-input"
+                  />
+                </div>
               <div className="space-y-2">
                 <Label htmlFor="event-type">Event Type *</Label>
                 <Select onValueChange={setEventType} required>
@@ -193,21 +162,19 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
             </div>
             <div className="space-y-2">
               <Label htmlFor="event-location">Event Location *</Label>
-              <div className="flex items-center gap-2">
-                <Input
-                  id="event-location"
-                  value={eventLocation}
-                  onChange={(e) => setEventLocation(e.target.value)}
-                  required
-                  placeholder={isDetectingLocation ? "Detecting location..." : "Enter or detect location"}
-                />
-                {!isDetectingLocation && (
-                  <Button type="button" variant="outline" onClick={handleDetectLocation}>
-                    <MapPin className="h-4 w-4 mr-2" />
-                    Detect Again
-                  </Button>
-                )}
-              </div>
+              <LocationSelector />
+              <p className="text-xs text-muted-foreground">
+                Selected location: {currentLocation === 'Worldwide' ? 'Please select a country' : currentLocation}
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="event-address">Venue Address (Optional)</Label>
+              <Input
+                id="event-address"
+                value={eventAddress}
+                onChange={(e) => setEventAddress(e.target.value)}
+                placeholder="Enter specific venue name or address"
+              />
             </div>
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
               <div className="space-y-2">
