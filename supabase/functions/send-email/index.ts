@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.52.0';
 import { Resend } from 'https://esm.sh/resend@2.0.0';
-import { generateBookingEmailHtml, generateMessageEmailHtml, generatePaymentEmailHtml, generateBroadcastEmailHtml } from './email-templates.ts';
+import { generateBookingEmailHtml, generateMessageEmailHtml, generatePaymentEmailHtml, generateBroadcastEmailHtml, generateAdminEmailHtml, generateEventRequestConfirmationEmailHtml } from './email-templates.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -386,22 +386,29 @@ serve(async (req: Request): Promise<Response> => {
         break;
 
       case 'admin':
-        emailHtml = await renderAsync(
-          React.createElement(AdminNotificationEmail, {
-            eventType: data.eventType || '',
-            notificationType: data.notificationType,
-            bookerName: data.bookerName,
-            talentName: data.talentName,
-            eventDate: data.eventDate,
-            eventLocation: data.eventLocation,
-            amount: data.amount,
-            currency: data.currency,
-            bookingId: data.bookingId,
-            talentId: data.talentId,
-            appUrl,
-          })
-        );
-        subject = `Admin Alert: ${data.notificationType?.replace('_', ' ') || 'Notification'}`;
+        emailHtml = generateAdminEmailHtml({
+          eventType: data.eventType || '',
+          notificationType: data.notificationType,
+          bookerName: data.bookerName,
+          talentName: data.talentName,
+          eventDate: data.eventDate,
+          eventLocation: data.eventLocation,
+          amount: data.amount,
+          currency: data.currency,
+          bookingId: data.bookingId,
+          talentId: data.talentId,
+          appUrl,
+        });
+        subject = `Admin Notification: ${data.notificationType || 'Update'}`;
+        break;
+
+      case 'event_request_confirmation':
+        emailHtml = generateEventRequestConfirmationEmailHtml({
+          recipientName: data.recipient_name || 'User',
+          eventData: data.eventData,
+          appUrl,
+        });
+        subject = 'Event Request Confirmation';
         break;
 
       case 'booking_request_talent':

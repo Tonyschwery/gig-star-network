@@ -182,14 +182,14 @@ serve(async (req) => {
   } catch (error) {
     // CRITICAL ERROR LOGGING as requested
     console.error('CRITICAL ERROR in create-invoice:', error);
-    console.error('Error stack:', error.stack);
-    console.error('Error message:', error.message);
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+    console.error('Error message:', error instanceof Error ? error.message : String(error));
     console.error('Error details:', JSON.stringify(error, null, 2));
     
     return new Response(
       JSON.stringify({
         success: false,
-        error: error.message || "Failed to create invoice"
+        error: (error instanceof Error ? error.message : String(error)) || "Failed to create invoice"
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },

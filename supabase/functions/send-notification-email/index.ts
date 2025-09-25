@@ -157,25 +157,26 @@ serve(async (req: Request): Promise<Response> => {
                 .from('chat_messages')
                 .select('content, sender_id')
                 .eq('id', actualMessageId)
-                .single();
+                .maybeSingle();
 
-                const { data: booking } = await supabaseAdmin
-                  .from('bookings')
-                  .select(`
-                    event_type,
-                    event_date,
-                    booker_name,
-                    user_id,
-                    talent_profiles!inner(artist_name, user_id)
-                  `)
-                  .eq('id', actualBookingId)
-                  .single();
+              const { data: booking } = await supabaseAdmin
+                .from('bookings')
+                .select(`
+                  event_type,
+                  event_date,
+                  booker_name,
+                  user_id,
+                  talent_profiles!inner(artist_name, user_id)
+                `)
+                .eq('id', actualBookingId)
+                .maybeSingle();
 
-                if (message && booking) {
-                  const isFromTalent = message.sender_id === booking.talent_profiles.user_id;
-                  const senderName = isFromTalent 
-                    ? booking.talent_profiles.artist_name 
-                    : booking.booker_name;
+              if (message && booking && booking.talent_profiles && !Array.isArray(booking.talent_profiles)) {
+                const talentProfile = booking.talent_profiles as { artist_name: string; user_id: string };
+                const isFromTalent = message.sender_id === talentProfile.user_id;
+                const senderName = isFromTalent 
+                  ? talentProfile.artist_name 
+                  : booking.booker_name;
 
                 emailData = {
                   senderName,

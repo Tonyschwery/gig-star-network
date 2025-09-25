@@ -268,3 +268,103 @@ export function generateBroadcastEmailHtml(data: { recipientName: string; messag
 </body>
 </html>`;
 }
+
+export function generateAdminEmailHtml(data: {
+  eventType: string;
+  notificationType: string;
+  bookerName: string;
+  talentName: string;
+  eventDate: string;
+  eventLocation: string;
+  amount: string;
+  currency: string;
+  bookingId: string;
+  talentId: string;
+  appUrl: string;
+}): string {
+  return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen-Sans,Ubuntu,Cantarell,'Helvetica Neue',sans-serif; background-color: #ffffff;">
+  <div style="margin: 0 auto; padding: 20px 0 48px; max-width: 560px;">
+    <h1 style="color: #333; font-size: 24px; font-weight: bold; margin: 40px 0; padding: 0;">Admin Notification: ${data.notificationType}</h1>
+    <p style="color: #333; font-size: 16px; line-height: 26px; margin: 16px 0;">Admin notification for ${data.eventType} event.</p>
+    
+    <div style="margin: 24px 0; padding: 20px; background-color: #f8f9fa; border-radius: 8px; border: 1px solid #e9ecef;">
+      <p style="color: #333; font-size: 16px; font-weight: bold; margin: 0 0 12px 0;">Event Details:</p>
+      <div style="color: #666; font-size: 14px; line-height: 22px; margin: 0;">
+        <p><strong>Type:</strong> ${data.eventType}</p>
+        <p><strong>Date:</strong> ${data.eventDate}</p>
+        <p><strong>Location:</strong> ${data.eventLocation}</p>
+        <p><strong>Booker:</strong> ${data.bookerName}</p>
+        <p><strong>Talent:</strong> ${data.talentName}</p>
+        ${data.amount ? `<p><strong>Amount:</strong> ${data.currency} ${data.amount}</p>` : ''}
+        <p><strong>Booking ID:</strong> ${data.bookingId}</p>
+      </div>
+    </div>
+
+    <div style="text-align: center; margin: 32px 0;">
+      <a href="${data.appUrl}/admin" style="background-color: #dc3545; border-radius: 8px; color: #fff; font-size: 16px; font-weight: bold; text-decoration: none; text-align: center; display: inline-block; padding: 12px 24px;">
+        View Admin Panel
+      </a>
+    </div>
+
+    <p style="color: #898989; font-size: 12px; line-height: 22px; margin-top: 32px;">
+      Admin notification from Qtalent.live
+    </p>
+  </div>
+</body>
+</html>`;
+}
+
+export function generateEventRequestConfirmationEmailHtml(data: {
+  recipientName: string;
+  eventData: any;
+  appUrl: string;
+}): string {
+  return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen-Sans,Ubuntu,Cantarell,'Helvetica Neue',sans-serif; background-color: #ffffff;">
+  <div style="margin: 0 auto; padding: 20px 0 48px; max-width: 560px;">
+    <h1 style="color: #333; font-size: 24px; font-weight: bold; margin: 40px 0; padding: 0;">Event Request Confirmation</h1>
+    <p style="color: #333; font-size: 16px; line-height: 26px; margin: 16px 0;">Hi ${data.recipientName},</p>
+    <p style="color: #333; font-size: 16px; line-height: 26px; margin: 16px 0;">
+      Thank you for your event request! We have received the following details:
+    </p>
+    
+    <div style="margin: 24px 0; padding: 20px; background-color: #f8f9fa; border-radius: 8px; border: 1px solid #e9ecef;">
+      <p style="color: #333; font-size: 16px; font-weight: bold; margin: 0 0 12px 0;">Event Details:</p>
+      <div style="color: #666; font-size: 14px; line-height: 22px; margin: 0;">
+        ${data.eventData?.event_type ? `<p><strong>Type:</strong> ${data.eventData.event_type}</p>` : ''}
+        ${data.eventData?.event_date ? `<p><strong>Date:</strong> ${data.eventData.event_date}</p>` : ''}
+        ${data.eventData?.event_location ? `<p><strong>Location:</strong> ${data.eventData.event_location}</p>` : ''}
+        ${data.eventData?.event_duration ? `<p><strong>Duration:</strong> ${data.eventData.event_duration} hours</p>` : ''}
+        ${data.eventData?.description ? `<p><strong>Description:</strong> ${data.eventData.description}</p>` : ''}
+      </div>
+    </div>
+
+    <p style="color: #333; font-size: 16px; line-height: 26px; margin: 16px 0;">
+      We will review your request and get back to you within 24 hours with suitable talent options and pricing information.
+    </p>
+
+    <div style="text-align: center; margin: 32px 0;">
+      <a href="${data.appUrl}" style="background-color: #007ee6; border-radius: 8px; color: #fff; font-size: 16px; font-weight: bold; text-decoration: none; text-align: center; display: inline-block; padding: 12px 24px;">
+        Visit Qtalent
+      </a>
+    </div>
+
+    <p style="color: #898989; font-size: 12px; line-height: 22px; margin-top: 32px;">
+      Best regards,<br/>
+      The Qtalent Team
+    </p>
+  </div>
+</body>
+</html>`;
+}
