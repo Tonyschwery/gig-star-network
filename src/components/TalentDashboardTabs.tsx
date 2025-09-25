@@ -34,6 +34,7 @@ export const TalentDashboardTabs = ({ profile }: TalentDashboardTabsProps) => {
             .from('bookings')
             .select(`*, talent_profiles(artist_name)`)
             .eq('talent_id', profile.id)
+            .not('status', 'in', '("declined", "cancelled")')
             .order('event_date', { ascending: false });
 
         if (bookingsError) {
