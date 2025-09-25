@@ -1,10 +1,11 @@
 // FILE: src/components/EventRequestCard.tsx
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, MapPin, MessageCircle, X, Mail, Phone, UserX } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Calendar, Clock, MapPin, MessageCircle, X, Mail, Phone, UserX, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { useChat } from "@/contexts/ChatContext";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -35,6 +36,8 @@ interface EventRequestCardProps {
 
 export const EventRequestCard = ({ request, isActionable = false, mode, onRemove }: EventRequestCardProps) => {
   const { openChat } = useChat();
+  const [showRemoveDialog, setShowRemoveDialog] = useState(false);
+  const [showDeclineDialog, setShowDeclineDialog] = useState(false);
 
   if (!request) {
     return null;
@@ -50,6 +53,7 @@ export const EventRequestCard = ({ request, isActionable = false, mode, onRemove
       if (error) throw error;
 
       toast.success('Request removed successfully');
+      setShowRemoveDialog(false);
       if (onRemove) {
         onRemove(request.id);
       }
@@ -69,6 +73,7 @@ export const EventRequestCard = ({ request, isActionable = false, mode, onRemove
       if (error) throw error;
 
       toast.success('Request declined');
+      setShowDeclineDialog(false);
       if (onRemove) {
         onRemove(request.id);
       }
@@ -82,16 +87,33 @@ export const EventRequestCard = ({ request, isActionable = false, mode, onRemove
 
   return (
     <Card className="overflow-hidden transition-all hover:shadow-md bg-card text-card-foreground relative">
-      {/* Remove Button for Booker */}
-      {mode === 'booker' && (
-        <Button
-          onClick={handleRemove}
-          variant="ghost"
-          size="sm"
-          className="absolute top-2 right-2 h-8 w-8 p-0 hover:bg-destructive hover:text-destructive-foreground z-10"
-        >
-          <X className="h-4 w-4" />
-        </Button>
+      {/* Remove Button for Booker and Talent */}
+      {(mode === 'booker' || mode === 'talent') && (
+        <AlertDialog open={showRemoveDialog} onOpenChange={setShowRemoveDialog}>
+          <AlertDialogTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="absolute top-2 right-2 h-8 w-8 p-0 hover:bg-destructive hover:text-destructive-foreground z-10"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Remove Request</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to remove this event request? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleRemove} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                Remove
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       )}
 
       <CardHeader>
@@ -167,26 +189,60 @@ export const EventRequestCard = ({ request, isActionable = false, mode, onRemove
         <div className="border-t pt-3 flex justify-between items-center">
           <div className="flex gap-2">
             {mode === 'talent' && (
-              <Button
-                onClick={handleDecline}
-                variant="outline"
-                size="sm"
-                className="text-destructive hover:bg-destructive hover:text-destructive-foreground"
-              >
-                <UserX className="h-4 w-4 mr-2" />
-                Decline
-              </Button>
+              <AlertDialog open={showDeclineDialog} onOpenChange={setShowDeclineDialog}>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                  >
+                    <UserX className="h-4 w-4 mr-2" />
+                    Decline
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Decline Request</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to decline this event request? This will notify the booker that you are not available.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDecline} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                      Decline
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             )}
             {mode === 'admin' && onRemove && (
-              <Button
-                onClick={handleRemove}
-                variant="outline"
-                size="sm"
-                className="text-destructive hover:bg-destructive hover:text-destructive-foreground"
-              >
-                <X className="h-4 w-4 mr-2" />
-                Delete
-              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                  >
+                    <X className="h-4 w-4 mr-2" />
+                    Delete
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete Request</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to permanently delete this event request? This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleRemove} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                      Delete
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             )}
           </div>
 

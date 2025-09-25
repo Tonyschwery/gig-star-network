@@ -1,10 +1,11 @@
 // FILE: src/components/BookingCard.tsx
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
-import { Calendar, Check, X, Clock3, MessageCircle, Crown } from "lucide-react";
+import { Calendar, Check, X, Clock3, MessageCircle, Crown, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { useChat } from "@/contexts/ChatContext";
@@ -42,6 +43,9 @@ export const BookingCard = ({ booking, mode, onUpdate, onRemove, shouldBlurConta
   const { openChat } = useChat();
   const { canAcceptBooking, isProUser, acceptedBookingsThisMonth, refetchLimit } = useTalentBookingLimit();
   const navigate = useNavigate();
+  const [showRemoveDialog, setShowRemoveDialog] = useState(false);
+  const [showDeclineDialog, setShowDeclineDialog] = useState(false);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
 
   // Safety check
   if (!booking) {
@@ -70,6 +74,7 @@ export const BookingCard = ({ booking, mode, onUpdate, onRemove, shouldBlurConta
       const { error } = await supabase.from('bookings').delete().eq('id', booking.id);
       if (error) throw new Error(error.message);
       toast({ title: "Booking declined and removed" });
+      setShowDeclineDialog(false);
       onRemove?.(booking.id);
       onUpdate?.();
     } catch (error: any) {
@@ -82,7 +87,20 @@ export const BookingCard = ({ booking, mode, onUpdate, onRemove, shouldBlurConta
       const { error } = await supabase.from('bookings').delete().eq('id', booking.id);
       if (error) throw new Error(error.message);
       toast({ title: "Booking removed" });
+      setShowRemoveDialog(false);
       onRemove?.(booking.id);
+      onUpdate?.();
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    }
+  };
+
+  const handleCancel = async () => {
+    try {
+      const { error } = await supabase.from('bookings').update({ status: 'cancelled' }).eq('id', booking.id);
+      if (error) throw new Error(error.message);
+      toast({ title: "Booking cancelled" });
+      setShowCancelDialog(false);
       onUpdate?.();
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -181,9 +199,27 @@ export const BookingCard = ({ booking, mode, onUpdate, onRemove, shouldBlurConta
         
         {mode === 'talent' && booking.status === 'pending' && (
           <div className="flex-grow flex justify-end gap-2">
-            <Button onClick={handleDecline} variant="destructive" size="sm">
-              <X className="h-4 w-4 mr-2" />Decline
-            </Button>
+            <AlertDialog open={showDeclineDialog} onOpenChange={setShowDeclineDialog}>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" size="sm">
+                  <X className="h-4 w-4 mr-2" />Decline
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Decline Booking</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure you want to decline this booking? This will notify the booker and remove the booking request.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDecline} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                    Decline
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
             {canAcceptBooking || isProUser ? (
               <Button onClick={() => handleUpdateStatus('accepted')} size="sm">
                 <Check className="h-4 w-4 mr-2" />Accept
@@ -203,17 +239,13 @@ export const BookingCard = ({ booking, mode, onUpdate, onRemove, shouldBlurConta
         
         {mode === 'booker' && booking.status === 'pending' && (
           <div className="flex-grow flex justify-end">
-            <Button onClick={handleRemove} variant="destructive" size="sm">
-              <X className="h-4 w-4 mr-2" />Remove Request
-            </Button>
+            {/* Remove button is now handled by the top-right button */}
           </div>
         )}
         
         {mode === 'admin' && (
           <div className="flex-grow flex justify-end">
-            <Button onClick={handleRemove} variant="destructive" size="sm">
-              <X className="h-4 w-4 mr-2" />Delete
-            </Button>
+            {/* Remove button is now handled by the top-right button */}
           </div>
         )}
         
@@ -226,9 +258,27 @@ export const BookingCard = ({ booking, mode, onUpdate, onRemove, shouldBlurConta
         )}
 
         {(booking.status === 'pending') && (
-            <Button onClick={() => handleUpdateStatus('cancelled')} variant="ghost" size="sm" className="text-destructive hover:text-destructive-foreground hover:bg-destructive/90">
+          <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+            <AlertDialogTrigger asChild>
+              <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive-foreground hover:bg-destructive/90">
                 <X className="h-4 w-4 mr-2" />Cancel Booking
-            </Button>
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Cancel Booking</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to cancel this booking? This action will update the booking status to cancelled.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Keep Booking</AlertDialogCancel>
+                <AlertDialogAction onClick={handleCancel} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                  Cancel Booking
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         )}
       </div>
     </div>

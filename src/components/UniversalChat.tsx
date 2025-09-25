@@ -21,6 +21,7 @@ export const UniversalChat = () => {
   const [newMessage, setNewMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [isHovering, setIsHovering] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -68,8 +69,8 @@ export const UniversalChat = () => {
             variant="ghost" 
             size="icon" 
             onClick={closeChat}
-            disabled={isTyping || isHovering}
-            className={(isTyping || isHovering) ? 'opacity-50 cursor-not-allowed' : ''}
+            disabled={isTyping || isHovering || isFocused}
+            className={(isTyping || isHovering || isFocused) ? 'opacity-50 cursor-not-allowed' : ''}
           >
             <X className="h-4 w-4" />
           </Button>
@@ -146,10 +147,22 @@ export const UniversalChat = () => {
                     clearTimeout(typingTimeoutRef.current);
                   }
                   
-                  // Set new timeout to clear typing state
+                  // Set new timeout to clear typing state only if not focused
                   typingTimeoutRef.current = setTimeout(() => {
-                    setIsTyping(false);
-                  }, 3000);
+                    if (!isFocused) {
+                      setIsTyping(false);
+                    }
+                  }, 5000); // Increased timeout to 5 seconds
+                }}
+                onFocus={() => setIsFocused(true)}
+                onBlur={() => {
+                  setIsFocused(false);
+                  // Clear typing after blur with delay
+                  setTimeout(() => {
+                    if (!isFocused) {
+                      setIsTyping(false);
+                    }
+                  }, 1000);
                 }}
                 placeholder={
                   isTalent && !isProUser
