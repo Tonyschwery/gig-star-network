@@ -1,5 +1,5 @@
 // Advanced Service Worker with Intelligent Cache Management
-const VERSION = '2.1.0';
+const VERSION = '2.2.0';
 const STATIC_CACHE = 'qtalent-static-v' + VERSION;
 const DYNAMIC_CACHE = 'qtalent-dynamic-v' + VERSION;
 const API_CACHE = 'qtalent-api-v' + VERSION;
@@ -18,12 +18,16 @@ const STATIC_ASSETS = [
   /\/favicon/
 ];
 
-// API endpoints that should use network-first
-const API_ENDPOINTS = [
-  /\/api\//,
+// API endpoints that should NEVER be cached (always fresh)
+const NEVER_CACHE = [
   /supabase/,
+  /\/api\//,
   /\/auth\//,
-  /\/rest\//
+  /\/rest\//,
+  /\/functions\//,
+  /\.lovableproject\.com.*\/api/,
+  /ipapi\.co/,
+  /api\.ipify\.org/
 ];
 
 // Dynamic content that benefits from stale-while-revalidate
@@ -99,14 +103,14 @@ async function handleRequest(request, url) {
   const requestPath = url.pathname + url.search;
   
   try {
+    // NEVER cache API endpoints - always fetch fresh
+    if (NEVER_CACHE.some(pattern => pattern.test(requestPath))) {
+      return await fetch(request);
+    }
+    
     // Static assets: Cache-first strategy
     if (STATIC_ASSETS.some(pattern => pattern.test(requestPath))) {
       return await cacheFirst(request, STATIC_CACHE);
-    }
-    
-    // API endpoints: Network-first strategy
-    if (API_ENDPOINTS.some(pattern => pattern.test(requestPath))) {
-      return await networkFirst(request, API_CACHE);
     }
     
     // Dynamic content: Stale-while-revalidate strategy
@@ -218,8 +222,23 @@ self.addEventListener('notificationclick', function(event) {
 self.addEventListener('message', function(event) {
   if (event.data.type === 'CLEAR_DYNAMIC_CACHE') {
     event.waitUntil(
-      caches.delete(DYNAMIC_CACHE).then(() => {
-        console.log('SW: Dynamic cache cleared for auth state change');
+      Promise.all([
+        caches.delete(DYNAMIC_CACHE),
+        caches.delete(API_CACHE)
+      ]).then(() => {
+        console.log('SW: Dynamic and API caches cleared for auth state change');
+      })
+    );
+  }
+  
+  if (event.data.type === 'CLEAR_ALL_CACHE') {
+    event.waitUntil(
+      caches.keys().then(function(cacheNames) {
+        return Promise.all(
+          cacheNames.map(name => caches.delete(name))
+        );
+      }).then(() => {
+        console.log('SW: All caches cleared');
       })
     );
   }

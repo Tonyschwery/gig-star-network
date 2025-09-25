@@ -83,10 +83,17 @@
               const originalPushState = window.history.pushState;
               const originalReplaceState = window.history.replaceState;
               
+              // Add global cache clearing function
+              window.clearAppCache = function() {
+                navigator.serviceWorker.ready.then(registration => {
+                  registration.active?.postMessage({ type: 'CLEAR_ALL_CACHE' });
+                });
+              };
+              
               window.history.pushState = function(...args) {
                 originalPushState.apply(window.history, args);
-                // Clear dynamic cache on navigation for fresh auth state
-                if (args[2]?.includes('dashboard') || args[2]?.includes('login') || args[2]?.includes('auth')) {
+                // Clear cache on navigation for fresh data
+                if (args[2]?.includes('dashboard') || args[2]?.includes('login') || args[2]?.includes('auth') || args[2]?.includes('booking')) {
                   navigator.serviceWorker.ready.then(registration => {
                     registration.active?.postMessage({ type: 'CLEAR_DYNAMIC_CACHE' });
                   });
@@ -95,13 +102,22 @@
               
               window.history.replaceState = function(...args) {
                 originalReplaceState.apply(window.history, args);
-                // Clear dynamic cache on auth state changes
-                if (args[2]?.includes('dashboard') || args[2]?.includes('login') || args[2]?.includes('auth')) {
+                // Clear cache on auth/data state changes
+                if (args[2]?.includes('dashboard') || args[2]?.includes('login') || args[2]?.includes('auth') || args[2]?.includes('booking')) {
                   navigator.serviceWorker.ready.then(registration => {
                     registration.active?.postMessage({ type: 'CLEAR_DYNAMIC_CACHE' });
                   });
                 }
               };
+              
+              // Clear cache on page visibility change (when user returns to tab)
+              document.addEventListener('visibilitychange', function() {
+                if (!document.hidden) {
+                  navigator.serviceWorker.ready.then(registration => {
+                    registration.active?.postMessage({ type: 'CLEAR_DYNAMIC_CACHE' });
+                  });
+                }
+              });
             })
             .catch(function(registrationError) {
               console.log('SW registration failed: ', registrationError);
