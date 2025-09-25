@@ -97,10 +97,11 @@ export const BookingCard = ({ booking, mode, onUpdate, onRemove, shouldBlurConta
 
   const handleCancel = async () => {
     try {
-      const { error } = await supabase.from('bookings').update({ status: 'cancelled' }).eq('id', booking.id);
+      const { error } = await supabase.from('bookings').delete().eq('id', booking.id);
       if (error) throw new Error(error.message);
-      toast({ title: "Booking cancelled" });
+      toast({ title: "Booking cancelled and removed" });
       setShowCancelDialog(false);
+      onRemove?.(booking.id);
       onUpdate?.();
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });

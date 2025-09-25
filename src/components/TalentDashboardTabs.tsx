@@ -87,12 +87,11 @@ export const TalentDashboardTabs = ({ profile }: TalentDashboardTabsProps) => {
                 <TabsContent value="direct_bookings" className="pt-4">
                     <div className="space-y-4">
                         {directBookings.length > 0
-                            ? directBookings.map((b, index) => {
-                                // Only blur contact details for the FIRST pending booking when limit is reached
+                            ? directBookings.map((b) => {
+                                // Blur contact details for ALL pending bookings when non-pro talent has reached limit
                                 const shouldBlurContact = !isProUser && 
                                     acceptedBookingsThisMonth >= 1 && 
-                                    b.status === 'pending' && 
-                                    index === directBookings.findIndex(booking => booking.status === 'pending');
+                                    b.status === 'pending';
                                 
                                 return (
                                     <BookingCard 

@@ -14,7 +14,7 @@ import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 export const UniversalChat = () => {
-  const { isOpen, closeChat, messages, sendMessage, loadingMessages, channelInfo } = useChat();
+  const { isOpen, closeChat, messages, sendMessage, loadingMessages, channelInfo, setUserInteracting } = useChat();
   const { user } = useAuth();
   const { canAcceptBooking, isProUser, isTalent } = useTalentBookingLimit();
   const { filterMessage } = useChatFilterPro(isProUser);
@@ -32,6 +32,11 @@ export const UniversalChat = () => {
   useEffect(() => {
     scrollToBottom();
   }, [messages, loadingMessages]);
+
+  // Communicate interaction state to context
+  useEffect(() => {
+    setUserInteracting(isTyping || isHovering || isFocused);
+  }, [isTyping, isHovering, isFocused, setUserInteracting]);
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,8 +74,6 @@ export const UniversalChat = () => {
             variant="ghost" 
             size="icon" 
             onClick={closeChat}
-            disabled={isTyping || isHovering || isFocused}
-            className={(isTyping || isHovering || isFocused) ? 'opacity-50 cursor-not-allowed' : ''}
           >
             <X className="h-4 w-4" />
           </Button>
