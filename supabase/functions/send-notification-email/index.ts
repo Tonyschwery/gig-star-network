@@ -123,29 +123,29 @@ serve(async (req: Request): Promise<Response> => {
                 // Determine if user should see full details (admin or pro talent)
                 const showFullDetails = isAdmin || (isForTalent && talentIsProSubscriber);
                 
-                // Base email data (always included)
+                // Base email data (always included) - using template-expected field names
                 emailData = {
-                  eventType: booking.event_type,
-                  eventDate: booking.event_date,
-                  eventLocation: booking.event_location,
-                  bookerName: booking.booker_name,
-                  talentName: booking.talent_profiles?.artist_name,
+                  event_type: booking.event_type,
+                  event_date: booking.event_date,
+                  event_location: booking.event_location,
+                  booker_name: booking.booker_name,
+                  talent_name: booking.talent_profiles?.artist_name,
                   status: booking.status,
-                  bookingId: booking.id,
+                  booking_id: booking.id,
                   isForTalent,
                   is_pro_subscriber: talentIsProSubscriber,
                   showFullDetails,
-                  eventDuration: booking.event_duration,
+                  event_duration: booking.event_duration,
                 };
 
                 // Add sensitive details only for admin and pro talents
                 if (showFullDetails) {
-                  emailData.bookerEmail = booking.booker_email;
-                  emailData.bookerPhone = booking.booker_phone;
+                  emailData.booker_email = booking.booker_email;
+                  emailData.booker_phone = booking.booker_phone;
                   emailData.description = booking.description;
                   emailData.budget = booking.budget;
-                  emailData.budgetCurrency = booking.budget_currency;
-                  emailData.eventAddress = booking.event_address;
+                  emailData.budget_currency = booking.budget_currency;
+                  emailData.event_address = booking.event_address;
                 }
               }
             }
