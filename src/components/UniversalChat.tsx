@@ -16,7 +16,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 export const UniversalChat = () => {
   const { isOpen, closeChat, messages, sendMessage, loadingMessages, channelInfo, setUserInteracting } = useChat();
   const { user } = useAuth();
-  const { canAcceptBooking, isProUser, isTalent } = useTalentBookingLimit();
+  const { canReceiveBooking, isProUser, isTalent } = useTalentBookingLimit();
   const { filterMessage } = useChatFilterPro(isProUser);
   const [newMessage, setNewMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);

@@ -4,8 +4,8 @@ import { useAuth } from './useAuth';
 
 export const useTalentBookingLimit = () => {
   const { user } = useAuth();
-  const [canAcceptBooking, setCanAcceptBooking] = useState(true);
-  const [acceptedBookingsThisMonth, setAcceptedBookingsThisMonth] = useState(0);
+  const [canReceiveBooking, setCanReceiveBooking] = useState(true);
+  const [receivedBookingsThisMonth, setReceivedBookingsThisMonth] = useState(0);
   const [isProUser, setIsProUser] = useState(false);
   const [loading, setLoading] = useState(true);
   const [talentId, setTalentId] = useState<string | null>(null);
@@ -23,7 +23,7 @@ export const useTalentBookingLimit = () => {
 
       if (!profile) {
         // User is not a talent, no limits apply
-        setCanAcceptBooking(true);
+        setCanReceiveBooking(true);
         setIsProUser(false);
         setTalentId(null);
         setLoading(false);
@@ -36,25 +36,25 @@ export const useTalentBookingLimit = () => {
 
       // If pro talent, no limits
       if (isPro) {
-        setCanAcceptBooking(true);
-        setAcceptedBookingsThisMonth(0);
+        setCanReceiveBooking(true);
+        setReceivedBookingsThisMonth(0);
         setLoading(false);
         return;
       }
 
-      // For non-pro talents, get accepted bookings count using the database function
+      // For non-pro talents, get received bookings count using the database function
       const { data: countData, error } = await supabase
-        .rpc('get_talent_accepted_bookings_count', { talent_id_param: profile.id });
+        .rpc('get_talent_received_bookings_count', { talent_id_param: profile.id });
 
       if (error) {
-        console.error('Error getting accepted bookings count:', error);
-        setAcceptedBookingsThisMonth(0);
+        console.error('Error getting received bookings count:', error);
+        setReceivedBookingsThisMonth(0);
       } else {
-        setAcceptedBookingsThisMonth(countData || 0);
+        setReceivedBookingsThisMonth(countData || 0);
       }
 
-      // Non-pro talents can accept up to 1 booking per month
-      setCanAcceptBooking((countData || 0) < 1);
+      // Non-pro talents can receive up to 1 booking per month
+      setCanReceiveBooking((countData || 0) < 1);
       
     } catch (error) {
       console.error('Error checking talent booking limit:', error);
@@ -68,8 +68,8 @@ export const useTalentBookingLimit = () => {
   }, [user?.id]);
 
   return {
-    canAcceptBooking,
-    acceptedBookingsThisMonth,
+    canReceiveBooking,
+    receivedBookingsThisMonth,
     isProUser,
     loading,
     maxBookingsPerMonth: isProUser ? 'Unlimited' : 1,

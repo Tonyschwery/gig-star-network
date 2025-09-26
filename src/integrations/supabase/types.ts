@@ -789,6 +789,10 @@ export type Database = {
         Args: { talent_id_param: string }
         Returns: number
       }
+      get_talent_received_bookings_count: {
+        Args: { talent_id_param: string }
+        Returns: number
+      }
       get_user_location_preference: {
         Args: { user_id_param?: string }
         Returns: string

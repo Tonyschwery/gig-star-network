@@ -21,7 +21,7 @@ export const TalentDashboardTabs = ({ profile }: TalentDashboardTabsProps) => {
     const [directBookings, setDirectBookings] = useState<Booking[]>([]);
     const [eventRequests, setEventRequests] = useState<EventRequest[]>([]);
     const [loading, setLoading] = useState(true);
-    const { acceptedBookingsThisMonth, isProUser } = useTalentBookingLimit();
+    const { receivedBookingsThisMonth, isProUser } = useTalentBookingLimit();
 
   const fetchData = useCallback(async () => {
     if (!profile || !profile.id) {
@@ -98,9 +98,9 @@ export const TalentDashboardTabs = ({ profile }: TalentDashboardTabsProps) => {
                         {directBookings.length > 0
                             ? directBookings.map((b) => {
                                 // Blur contact details for ALL pending bookings when non-pro talent has reached limit
-                                const shouldBlurContact = !isProUser && 
-                                    acceptedBookingsThisMonth >= 1 && 
-                                    b.status === 'pending';
+                const shouldBlurContact = !isProUser && 
+                    receivedBookingsThisMonth >= 1 && 
+                    b.status === 'pending';
                                 
                                 return (
                         <BookingCard 

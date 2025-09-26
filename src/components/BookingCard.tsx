@@ -41,7 +41,7 @@ interface BookingCardProps {
 export const BookingCard = ({ booking, mode, onUpdate, onRemove, shouldBlurContact = false }: BookingCardProps) => {
   const { toast } = useToast();
   const { openChat } = useChat();
-  const { canAcceptBooking, isProUser, acceptedBookingsThisMonth, refetchLimit } = useTalentBookingLimit();
+  const { canReceiveBooking, isProUser, receivedBookingsThisMonth, refetchLimit } = useTalentBookingLimit();
   const navigate = useNavigate();
   const [showRemoveDialog, setShowRemoveDialog] = useState(false);
   const [showDeclineDialog, setShowDeclineDialog] = useState(false);
@@ -221,20 +221,6 @@ export const BookingCard = ({ booking, mode, onUpdate, onRemove, shouldBlurConta
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
-            {canAcceptBooking || isProUser ? (
-              <Button onClick={() => handleUpdateStatus('accepted')} size="sm">
-                <Check className="h-4 w-4 mr-2" />Accept
-              </Button>
-            ) : (
-              <Button 
-                onClick={() => navigate('/pricing')} 
-                size="sm" 
-                className="relative bg-gradient-to-br from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-white border-amber-300"
-              >
-                <Crown className="h-4 w-4 mr-2" />
-                Upgrade to Pro to Accept
-              </Button>
-            )}
           </div>
         )}
         
