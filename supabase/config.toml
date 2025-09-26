@@ -20,3 +20,6 @@ verify_jwt = true
 
 [functions.paypal-webhook-listener]
 verify_jwt = false
+
+[functions.cleanup-expired-bookings]
+verify_jwt = false
