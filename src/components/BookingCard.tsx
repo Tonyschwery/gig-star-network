@@ -12,6 +12,7 @@ import { useChat } from "@/contexts/ChatContext";
 import { useTalentBookingLimit } from "@/hooks/useTalentBookingLimit";
 import { ProFeatureWrapper } from "@/components/ProFeatureWrapper";
 import { useNavigate } from "react-router-dom";
+import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 
 export interface Booking {
   id: string;
@@ -43,6 +44,7 @@ export const BookingCard = ({ booking, mode, onUpdate, onRemove, shouldBlurConta
   const { openChat } = useChat();
   const { canReceiveBooking, isProUser, receivedBookingsThisMonth, refetchLimit } = useTalentBookingLimit();
   const navigate = useNavigate();
+  const { unreadCount } = useUnreadMessages();
   const [showRemoveDialog, setShowRemoveDialog] = useState(false);
   const [showDeclineDialog, setShowDeclineDialog] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
@@ -194,8 +196,16 @@ export const BookingCard = ({ booking, mode, onUpdate, onRemove, shouldBlurConta
       </div>
       
       <div className="flex flex-wrap gap-2 pt-2 border-t mt-2">
-        <Button onClick={() => openChat(booking.id, 'booking')} variant="outline" size="sm">
+        <Button onClick={() => openChat(booking.id, 'booking')} variant="outline" size="sm" className="relative">
           <MessageCircle className="h-4 w-4 mr-2" />Chat
+          {unreadCount > 0 && (
+            <Badge 
+              variant="destructive" 
+              className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs animate-pulse"
+            >
+              {unreadCount > 9 ? '9+' : unreadCount}
+            </Badge>
+          )}
         </Button>
         
         {mode === 'talent' && booking.status === 'pending' && (

@@ -12,10 +12,13 @@ import { TalentDashboardTabs } from "@/components/TalentDashboardTabs"; // <-- I
 import { SubscriptionButton } from "@/components/SubscriptionButton";
 import { Badge } from "@/components/ui/badge";
 import { ModeSwitch } from "@/components/ModeSwitch";
+import { useUnreadMessages } from "@/hooks/useUnreadMessages";
+import { MessageCircle } from "lucide-react";
 
 const TalentDashboard = () => {
   const { user, profile, signOut } = useAuth();
   const navigate = useNavigate();
+  const { unreadCount: chatUnreadCount } = useUnreadMessages();
   
   useRealtimeNotifications();
 
@@ -54,8 +57,14 @@ const TalentDashboard = () => {
               <p className="text-muted-foreground text-sm sm:text-base">Manage your bookings and event opportunities</p>
             </div>
             
-            <div className="hidden sm:block">
+            <div className="hidden sm:flex items-center gap-2">
               <NotificationCenter />
+              {chatUnreadCount > 0 && (
+                <Badge variant="destructive" className="animate-pulse flex items-center gap-1">
+                  <MessageCircle className="h-3 w-3" />
+                  {chatUnreadCount} Chat{chatUnreadCount !== 1 ? 's' : ''}
+                </Badge>
+              )}
             </div>
           </div>
           
@@ -75,8 +84,14 @@ const TalentDashboard = () => {
                 </Button>
             </div>
             
-            <div className="sm:hidden self-start">
+            <div className="sm:hidden self-start flex flex-col gap-2">
               <NotificationCenter />
+              {chatUnreadCount > 0 && (
+                <Badge variant="destructive" className="animate-pulse flex items-center gap-1 w-fit">
+                  <MessageCircle className="h-3 w-3" />
+                  {chatUnreadCount} Chat{chatUnreadCount !== 1 ? 's' : ''}
+                </Badge>
+              )}
             </div>
           </div>
         </div>

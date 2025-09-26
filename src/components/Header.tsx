@@ -18,12 +18,14 @@ import { SubscriptionButton } from "@/components/SubscriptionButton";
 import { ModeSwitch } from "@/components/ModeSwitch";
 import { useUserMode } from "@/contexts/UserModeContext";
 import { useUnreadNotifications } from "@/hooks/useUnreadNotifications";
+import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 
 export function Header() {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { mode } = useUserMode();
   const { unreadCount } = useUnreadNotifications();
+  const { unreadCount: chatUnreadCount } = useUnreadMessages();
   const [talentName, setTalentName] = useState<string | null>(null);
   const [talentId, setTalentId] = useState<string | null>(null);
   const [isProTalent, setIsProTalent] = useState<boolean>(false);
@@ -204,7 +206,14 @@ export function Header() {
                   {/* Location selector and mode switch and notifications */}
                   <LocationSelector />
                   {talentName && <ModeSwitch />}
-                  <NotificationCenter />
+                  <div className="flex items-center gap-2">
+                    <NotificationCenter />
+                    {chatUnreadCount > 0 && (
+                      <Badge variant="destructive" className="animate-pulse">
+                        {chatUnreadCount} Chat{chatUnreadCount !== 1 ? 's' : ''}
+                      </Badge>
+                    )}
+                  </div>
                   
                    {user && !talentName && user.user_metadata?.user_type === 'talent' && !profilePictureUrl && (
                      <Button 
@@ -379,8 +388,13 @@ export function Header() {
                     </div>
                     
                     {/* Notifications in mobile menu */}
-                    <div className="py-2">
+                    <div className="py-2 space-y-2">
                       <NotificationCenter />
+                      {chatUnreadCount > 0 && (
+                        <Badge variant="destructive" className="animate-pulse">
+                          {chatUnreadCount} Unread Chat Message{chatUnreadCount !== 1 ? 's' : ''}
+                        </Badge>
+                      )}
                     </div>
                       
                        {user && !talentName && user.user_metadata?.user_type === 'talent' && !profilePictureUrl && (

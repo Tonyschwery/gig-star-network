@@ -8,10 +8,14 @@ import { BookerDashboardTabs } from "@/components/BookerDashboardTabs";
 import { UniversalChat } from "@/components/UniversalChat";
 import { NotificationCenter } from "@/components/NotificationCenter";
 import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
+import { useUnreadMessages } from "@/hooks/useUnreadMessages";
+import { Badge } from "@/components/ui/badge";
+import { MessageCircle } from "lucide-react";
 
 const BookerDashboard = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const { unreadCount: chatUnreadCount } = useUnreadMessages();
   
   // Enable real-time notifications
   useRealtimeNotifications();
@@ -50,8 +54,14 @@ const BookerDashboard = () => {
             </div>
             
             {/* Notification Center - Desktop */}
-            <div className="hidden sm:block">
+            <div className="hidden sm:flex items-center gap-2">
               <NotificationCenter />
+              {chatUnreadCount > 0 && (
+                <Badge variant="destructive" className="animate-pulse flex items-center gap-1">
+                  <MessageCircle className="h-3 w-3" />
+                  {chatUnreadCount} Chat{chatUnreadCount !== 1 ? 's' : ''}
+                </Badge>
+              )}
             </div>
           </div>
           
@@ -87,8 +97,14 @@ const BookerDashboard = () => {
             </div>
             
             {/* Notification Center - Mobile */}
-            <div className="sm:hidden self-start">
+            <div className="sm:hidden self-start flex flex-col gap-2">
               <NotificationCenter />
+              {chatUnreadCount > 0 && (
+                <Badge variant="destructive" className="animate-pulse flex items-center gap-1 w-fit">
+                  <MessageCircle className="h-3 w-3" />
+                  {chatUnreadCount} Chat{chatUnreadCount !== 1 ? 's' : ''}
+                </Badge>
+              )}
             </div>
           </div>
         </div>
