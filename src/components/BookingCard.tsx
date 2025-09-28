@@ -56,9 +56,20 @@ export const BookingCard = ({ booking, mode, onUpdate, onRemove, shouldBlurConta
 
   const handleUpdateStatus = async (newStatus: string) => {
     try {
+      console.log(`Updating booking ${booking.id} status to ${newStatus}`);
       const { error } = await supabase.from('bookings').update({ status: newStatus }).eq('id', booking.id);
       if (error) throw new Error(error.message);
-      toast({ title: `Booking ${newStatus}` });
+      
+      // Immediately remove from local state if declined or cancelled
+      if ((newStatus === 'declined' || newStatus === 'cancelled') && onRemove) {
+        console.log('Removing booking from UI immediately:', booking.id);
+        onRemove(booking.id);
+      }
+      
+      toast({ 
+        title: `Booking ${newStatus}`,
+        description: `The booking has been ${newStatus} successfully.`
+      });
       
       // Refresh booking limit for talents after accepting a booking
       if (newStatus === 'accepted' && mode === 'talent') {

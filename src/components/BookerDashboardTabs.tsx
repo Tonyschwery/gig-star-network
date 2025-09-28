@@ -54,6 +54,7 @@ export const BookerDashboardTabs = ({ userId }: { userId: string }) => {
 
         if (requestsResult.error) console.error("Error fetching requests:", requestsResult.error.message);
         else {
+            console.log('Fetched event requests:', requestsResult.data?.length || 0, 'records');
             setEventRequests(requestsResult.data as EventRequest[] || []);
             setHasMoreRequests(requestsResult.data.length === PAGE_SIZE);
             setRequestsPage(1);
@@ -61,6 +62,25 @@ export const BookerDashboardTabs = ({ userId }: { userId: string }) => {
 
         setLoading(false);
     }, [userId]);
+
+    // Enhanced removal handlers with logging
+    const handleBookingRemove = useCallback((bookingId: string) => {
+        console.log('Removing booking from booker dashboard:', bookingId);
+        setDirectBookings(prev => {
+            const filtered = prev.filter(booking => booking.id !== bookingId);
+            console.log('Bookings after removal:', filtered.length);
+            return filtered;
+        });
+    }, []);
+
+    const handleEventRequestRemove = useCallback((requestId: string) => {
+        console.log('Removing event request from booker dashboard:', requestId);
+        setEventRequests(prev => {
+            const filtered = prev.filter(r => r.id !== requestId);
+            console.log('Event requests after removal:', filtered.length);
+            return filtered;
+        });
+    }, []);
 
     useEffect(() => {
         fetchInitialData();
@@ -136,10 +156,7 @@ export const BookerDashboardTabs = ({ userId }: { userId: string }) => {
                                 booking={b} 
                                 mode="booker" 
                                 onUpdate={fetchInitialData} 
-                                onRemove={(bookingId) => {
-                                    console.log('Removing booking from booker dashboard:', bookingId);
-                                    setDirectBookings(prev => prev.filter(booking => booking.id !== bookingId));
-                                }} 
+                                onRemove={handleBookingRemove} 
                             />)
                         ) : (
                             <p className="text-muted-foreground text-center py-8">You have not made any direct bookings.</p>
@@ -163,9 +180,7 @@ export const BookerDashboardTabs = ({ userId }: { userId: string }) => {
                     request={req} 
                     isActionable={true} 
                     mode="booker"
-                    onRemove={(requestId) => {
-                        setEventRequests(prev => prev.filter(r => r.id !== requestId));
-                    }}
+                    onRemove={handleEventRequestRemove}
                 />
             })
         ) : (

@@ -27,7 +27,11 @@ const NEVER_CACHE = [
   /\/functions\//,
   /\.lovableproject\.com.*\/api/,
   /ipapi\.co/,
-  /api\.ipify\.org/
+  /api\.ipify\.org/,
+  // Chrome-specific: Never cache dashboard or profile pages
+  /\/dashboard/,
+  /\/profile/,
+  /\/booking/
 ];
 
 // Dynamic content that benefits from stale-while-revalidate

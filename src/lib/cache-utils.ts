@@ -38,4 +38,20 @@ export const clearCacheAfterOperation = () => {
       }
     });
   }
+  
+  // Chrome-specific cache busting
+  if (/Chrome|Chromium/i.test(navigator.userAgent) && !/Edge|OPR/i.test(navigator.userAgent)) {
+    console.log('Applying Chrome-specific cache clearing');
+    // Force browser cache refresh for dynamic content
+    const timestamp = Date.now();
+    const links = document.querySelectorAll('link[rel="stylesheet"]');
+    links.forEach(link => {
+      const href = (link as HTMLLinkElement).href;
+      if (href.includes('?')) {
+        (link as HTMLLinkElement).href = href.split('?')[0] + `?v=${timestamp}`;
+      } else {
+        (link as HTMLLinkElement).href = href + `?v=${timestamp}`;
+      }
+    });
+  }
 };

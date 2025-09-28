@@ -35,7 +35,7 @@ export const TalentDashboardTabs = ({ profile }: TalentDashboardTabsProps) => {
       .from('bookings')
       .select(`*, talent_profiles(artist_name)`)
       .eq('talent_id', profile.id)
-      .not('status', 'in', '("declined", "cancelled")')
+      .not('status', 'in', '(declined,cancelled)')
       .order('event_date', { ascending: false });
 
     if (bookingsError) {
@@ -50,7 +50,7 @@ export const TalentDashboardTabs = ({ profile }: TalentDashboardTabsProps) => {
         .from('event_requests')
         .select('*')
         .eq('event_location', profile.location)
-        .not('status', 'in', '("declined", "cancelled")')
+        .not('status', 'in', '(declined,cancelled)')
         .order('created_at', { ascending: false });
 
       if (requestsError) {
@@ -66,7 +66,20 @@ export const TalentDashboardTabs = ({ profile }: TalentDashboardTabsProps) => {
   // Handle immediate removal from local state when booking is deleted
   const handleBookingRemove = useCallback((bookingId: string) => {
     console.log('Removing booking from local state:', bookingId);
-    setDirectBookings(prev => prev.filter(booking => booking.id !== bookingId));
+    setDirectBookings(prev => {
+      const filtered = prev.filter(booking => booking.id !== bookingId);
+      console.log('Bookings after removal:', filtered.length);
+      return filtered;
+    });
+  }, []);
+
+  const handleEventRequestRemove = useCallback((requestId: string) => {
+    console.log('Removing event request from local state:', requestId);
+    setEventRequests(prev => {
+      const filtered = prev.filter(request => request.id !== requestId);
+      console.log('Event requests after removal:', filtered.length);
+      return filtered;
+    });
   }, []);
 
   useEffect(() => {
@@ -125,9 +138,7 @@ export const TalentDashboardTabs = ({ profile }: TalentDashboardTabsProps) => {
                                     request={req} 
                                     isActionable={profile.is_pro_subscriber || false}
                                     mode="talent"
-                                    onRemove={(requestId) => {
-                                        setEventRequests(prev => prev.filter(r => r.id !== requestId));
-                                    }}
+                                    onRemove={handleEventRequestRemove}
                                 />
                               ))
                             : <p className="text-muted-foreground text-center py-8">No event requests match your location at this time.</p>}
