@@ -28,26 +28,14 @@ export const useLocationDetection = () => {
     error: null
   });
 
-  // Get location from IP (fallback method) with improved caching and error handling
+  // Get location from IP (fallback method)
   const getLocationFromIP = async (): Promise<string | null> => {
     try {
-      // Check cache first to prevent multiple requests
-      const cacheKey = 'ipLocation';
-      const cacheTimeKey = 'ipLocationTime';
-      const cached = localStorage.getItem(cacheKey);
-      const cacheTime = localStorage.getItem(cacheTimeKey);
-      
-      // Use cached result if less than 1 hour old
-      if (cached && cacheTime && (Date.now() - parseInt(cacheTime)) < 3600000) {
-        return cached;
-      }
-
       // Add timeout and abort controller to prevent hanging requests
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 3000); // Shorter 3 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
 
-      // Use alternative service that doesn't have CORS issues
-      const response = await fetch('https://api.country.is/', {
+      const response = await fetch('https://ipapi.co/json/', {
         signal: controller.signal,
         headers: {
           'Accept': 'application/json',
@@ -61,18 +49,14 @@ export const useLocationDetection = () => {
       }
       
       const data = await response.json();
-      if (data.country) {
-        // Cache the result
-        localStorage.setItem(cacheKey, data.country);
-        localStorage.setItem(cacheTimeKey, Date.now().toString());
-        return data.country;
+      if (data.country_name) {
+        return data.country_name;
       }
       return null;
     } catch (error) {
-      // Return cached result even if expired, better than nothing
-      const cached = localStorage.getItem('ipLocation');
-      if (cached) {
-        return cached;
+      // Silently fail to avoid console spam and performance issues
+      if (error.name !== 'AbortError') {
+        console.warn('Location detection from IP failed, using fallback');
       }
       return null;
     }
@@ -272,35 +256,29 @@ export const useLocationDetection = () => {
     }
 
     // Always try IP-based detection for proximity sorting (non-intrusive)
-    // But prevent multiple simultaneous calls and use strong cache
+    // But prevent multiple simultaneous calls and use cache
     if (!state.detectedLocation && !state.isDetecting) {
-      const cachedLocation = localStorage.getItem('ipLocation');
-      const cacheTime = localStorage.getItem('ipLocationTime');
+      const cachedLocation = sessionStorage.getItem('detectedLocation');
+      const cacheTime = sessionStorage.getItem('detectedLocationTime');
       const now = Date.now();
       
-      // Use cached location if it's less than 24 hours old (longer cache)
-      if (cachedLocation && cacheTime && (now - parseInt(cacheTime)) < 86400000) {
+      // Use cached location if it's less than 1 hour old
+      if (cachedLocation && cacheTime && (now - parseInt(cacheTime)) < 3600000) {
         setState(prev => ({ ...prev, detectedLocation: cachedLocation }));
       } else {
-        // Debounce multiple calls - only allow one request per minute
-        const lastRequestTime = parseInt(sessionStorage.getItem('lastLocationRequest') || '0');
-        if (now - lastRequestTime < 60000) {
-          // Use cached location even if older
-          if (cachedLocation) {
-            setState(prev => ({ ...prev, detectedLocation: cachedLocation }));
-          }
-          return;
-        }
-        
         // Only fetch if not already detecting
         setState(prev => ({ ...prev, isDetecting: true }));
-        sessionStorage.setItem('lastLocationRequest', now.toString());
-        
         getLocationFromIP().then(ipLocation => {
-          setState(prev => ({ ...prev, detectedLocation: ipLocation || cachedLocation, isDetecting: false }));
+          if (ipLocation) {
+            setState(prev => ({ ...prev, detectedLocation: ipLocation, isDetecting: false }));
+            // Cache the result
+            sessionStorage.setItem('detectedLocation', ipLocation);
+            sessionStorage.setItem('detectedLocationTime', now.toString());
+          } else {
+            setState(prev => ({ ...prev, isDetecting: false }));
+          }
         }).catch(() => {
-          // Use cached location on error
-          setState(prev => ({ ...prev, detectedLocation: cachedLocation, isDetecting: false }));
+          setState(prev => ({ ...prev, isDetecting: false }));
         });
       }
     }

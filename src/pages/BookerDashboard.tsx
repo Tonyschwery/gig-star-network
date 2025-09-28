@@ -22,7 +22,7 @@ const BookerDashboard = () => {
 
   useEffect(() => {
     if (!user) {
-      navigate('/auth');
+      navigate('/login');
       return;
     }
   }, [user, navigate]);

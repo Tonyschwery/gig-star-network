@@ -28,36 +28,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [status, setStatus] = useState<UserStatus>('LOADING');
   const [mode, setMode] = useState<UserMode>('booking');
 
-  // Add loading timeout to prevent infinite loading
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      if (loading) {
-        console.warn('[AUTH] Loading timeout reached, forcing completion');
-        setLoading(false);
-        setStatus('LOGGED_OUT');
-      }
-    }, 10000); // 10 second timeout
-
-    return () => clearTimeout(timeout);
-  }, [loading]);
-
   useEffect(() => {
     let isInitialLoad = true;
-    let cleanup = false;
-    
-    console.log('[AUTH] Setting up auth state listener');
     
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (cleanup) return;
-      
-      console.log('[AUTH] Auth state change:', { event, hasSession: !!session, userId: session?.user?.id });
-      
       const currentUser = session?.user ?? null;
       const hasUserChanged = user?.id !== currentUser?.id;
       
       // Only show loading for initial load or actual user changes
       if (isInitialLoad || hasUserChanged || event === 'SIGNED_OUT' || event === 'SIGNED_IN') {
-        console.log('[AUTH] Setting loading to true');
         setLoading(true);
       }
       
@@ -65,7 +44,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(currentUser);
 
       if (!currentUser) {
-        console.log('[AUTH] No user, setting LOGGED_OUT');
         setStatus('LOGGED_OUT');
         setProfile(null);
         setLoading(false);
@@ -73,101 +51,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      try {
-        // Unified Role Checking Logic with timeout
-        if (currentUser.email === 'admin@qtalent.live') {
-          console.log('[AUTH] Admin user detected');
-          setStatus('ADMIN');
-          setProfile({ full_name: 'Admin' });
-          setLoading(false);
+      // Unified Role Checking Logic
+      if (currentUser.email === 'admin@qtalent.live') {
+        setStatus('ADMIN');
+        setProfile({ full_name: 'Admin' });
+      } else {
+        // Check for a talent profile first
+        const { data: talentProfile } = await supabase.from('talent_profiles').select('*').eq('user_id', currentUser.id).single();
+        if (talentProfile) {
+          setProfile(talentProfile);
+          setStatus(talentProfile.artist_name ? 'TALENT_COMPLETE' : 'TALENT_NEEDS_ONBOARDING');
+          setMode('artist');
         } else {
-          console.log('[AUTH] Checking user profiles...');
-          
-          try {
-            // Direct query with shorter timeout and better error handling
-            console.log('[AUTH] Querying talent profile...');
-            const { data: talentProfile, error: talentError } = await supabase
-              .from('talent_profiles')
-              .select('id, artist_name, is_pro_subscriber, subscription_status')
-              .eq('user_id', currentUser.id)
-              .maybeSingle();
-            
-            if (talentError) {
-              console.error('[AUTH] Talent query error:', talentError);
-              throw talentError;
-            }
-            
-            if (talentProfile) {
-              console.log('[AUTH] Talent profile found:', { 
-                hasArtistName: !!talentProfile.artist_name,
-                isComplete: !!talentProfile.artist_name
-              });
-              setProfile(talentProfile);
-              setStatus(talentProfile.artist_name ? 'TALENT_COMPLETE' : 'TALENT_NEEDS_ONBOARDING');
-              setMode('artist');
-            } else {
-              console.log('[AUTH] No talent profile, checking booker profile...');
-              const { data: bookerProfile, error: bookerError } = await supabase
-                .from('profiles')
-                .select('id, email, full_name, user_type')
-                .eq('id', currentUser.id)
-                .maybeSingle();
-              
-              if (bookerError) {
-                console.warn('[AUTH] Booker query error:', bookerError);
-              }
-              
-              if (bookerProfile) {
-                console.log('[AUTH] Booker profile found');
-                setProfile(bookerProfile);
-                setStatus('BOOKER');
-              } else {
-                console.log('[AUTH] No profiles found, creating basic profile');
-                // Create a basic booker profile if none exists
-                setProfile({ 
-                  id: currentUser.id, 
-                  email: currentUser.email,
-                  user_type: currentUser.user_metadata?.user_type || 'booker'
-                });
-                setStatus('BOOKER');
-              }
-            }
-          } catch (error) {
-            console.warn('[AUTH] Profile queries failed, using fallback:', error.message);
-            // Smart fallback based on user metadata
-            const userType = currentUser.user_metadata?.user_type;
-            if (userType === 'talent') {
-              setProfile({ 
-                id: currentUser.id, 
-                email: currentUser.email,
-                user_type: 'talent'
-              });
-              setStatus('TALENT_NEEDS_ONBOARDING');
-              setMode('artist');
-            } else {
-              setProfile({ 
-                id: currentUser.id, 
-                email: currentUser.email,
-                user_type: 'booker'
-              });
-              setStatus('BOOKER');
-            }
+          // If not a talent, check for a booker profile
+          const { data: bookerProfile } = await supabase.from('profiles').select('*').eq('id', currentUser.id).single();
+          if (bookerProfile) {
+            setProfile(bookerProfile);
+            setStatus('BOOKER');
+          } else {
+            // Fallback for users who might exist before the profile trigger was made
+            setStatus('LOGGED_OUT'); // Or handle as an error
           }
         }
-      } catch (error) {
-        console.error('[AUTH] Error in auth state change:', error);
-        setStatus('LOGGED_OUT');
-      } finally {
-        console.log('[AUTH] Setting loading to false');
-        setLoading(false);
-        isInitialLoad = false;
       }
+      setLoading(false);
+      isInitialLoad = false;
     });
 
-    return () => {
-      cleanup = true;
-      subscription.unsubscribe();
-    };
+    return () => subscription.unsubscribe();
   }, []);
 
   const signOut = async () => {

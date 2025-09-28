@@ -24,8 +24,8 @@ const Auth = () => {
   const { state } = useLocation();
   const mode = state?.mode || 'talent';
 
-  const title = 'Welcome to Qtalent';
-  const description = 'Sign in or create your account to continue';
+  const title = mode === 'booker' ? 'Welcome to Qtalent' : 'Join as a Talent';
+  const description = mode === 'booker' ? 'Please sign in or sign up to proceed.' : 'Create your profile to get booked';
   
   // This effect redirects a user if they are ALREADY logged in and happen to land on this page.
   useEffect(() => {
@@ -91,23 +91,11 @@ const Auth = () => {
       } 
       // Rule 4: Otherwise, send them to their default dashboard.
       else {
-        try {
-          // Add timeout to prevent hanging
-          const profileQuery = supabase.from('talent_profiles').select('id').eq('user_id', data.user.id).maybeSingle();
-          const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Profile query timeout')), 5000)
-          );
-          
-          const { data: profile } = await Promise.race([profileQuery, timeoutPromise]) as any;
-          
-          if (profile) {
+        const { data: profile } = await supabase.from('talent_profiles').select('id').eq('user_id', data.user.id).maybeSingle();
+        if (profile) {
             navigate('/talent-dashboard');
-          } else {
+        } else {
             navigate('/booker-dashboard');
-          }
-        } catch (error) {
-          console.warn('Profile query failed, defaulting to booker dashboard:', error);
-          navigate('/booker-dashboard');
         }
       }
     }
@@ -115,14 +103,10 @@ const Auth = () => {
   };
 
   if (authLoading && !user) {
-    console.log('[AUTH PAGE] Showing loading spinner, authLoading:', authLoading, 'user:', !!user);
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="flex flex-col items-center space-y-4">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-          <p className="text-sm text-muted-foreground">Loading authentication...</p>
+        <div className="min-h-screen bg-background flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         </div>
-      </div>
     );
   }
 
