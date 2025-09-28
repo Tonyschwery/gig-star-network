@@ -24,8 +24,8 @@ const Auth = () => {
   const { state } = useLocation();
   const mode = state?.mode || 'talent';
 
-  const title = mode === 'booker' ? 'Welcome to Qtalent' : 'Join as a Talent';
-  const description = mode === 'booker' ? 'Please sign in or sign up to proceed.' : 'Create your profile to get booked';
+  const title = 'Welcome to Qtalent';
+  const description = 'Sign in or create your account to continue';
   
   // This effect redirects a user if they are ALREADY logged in and happen to land on this page.
   useEffect(() => {

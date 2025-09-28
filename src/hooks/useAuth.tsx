@@ -83,43 +83,75 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } else {
           console.log('[AUTH] Checking user profiles...');
           
-          // Add timeout to prevent hanging
-          const profileTimeout = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Profile query timeout')), 5000)
-          );
-          
           try {
-            // Check for a talent profile first
-            const talentQuery = supabase.from('talent_profiles').select('*').eq('user_id', currentUser.id).maybeSingle();
-            const { data: talentProfile } = await Promise.race([talentQuery, profileTimeout]) as any;
+            // Direct query with shorter timeout and better error handling
+            console.log('[AUTH] Querying talent profile...');
+            const { data: talentProfile, error: talentError } = await supabase
+              .from('talent_profiles')
+              .select('id, artist_name, is_pro_subscriber, subscription_status')
+              .eq('user_id', currentUser.id)
+              .maybeSingle();
+            
+            if (talentError) {
+              console.error('[AUTH] Talent query error:', talentError);
+              throw talentError;
+            }
             
             if (talentProfile) {
-              console.log('[AUTH] Talent profile found:', !!talentProfile.artist_name);
+              console.log('[AUTH] Talent profile found:', { 
+                hasArtistName: !!talentProfile.artist_name,
+                isComplete: !!talentProfile.artist_name
+              });
               setProfile(talentProfile);
               setStatus(talentProfile.artist_name ? 'TALENT_COMPLETE' : 'TALENT_NEEDS_ONBOARDING');
               setMode('artist');
             } else {
               console.log('[AUTH] No talent profile, checking booker profile...');
-              // If not a talent, check for a booker profile
-              const bookerQuery = supabase.from('profiles').select('*').eq('id', currentUser.id).maybeSingle();
-              const { data: bookerProfile } = await Promise.race([bookerQuery, profileTimeout]) as any;
+              const { data: bookerProfile, error: bookerError } = await supabase
+                .from('profiles')
+                .select('id, email, full_name, user_type')
+                .eq('id', currentUser.id)
+                .maybeSingle();
+              
+              if (bookerError) {
+                console.warn('[AUTH] Booker query error:', bookerError);
+              }
               
               if (bookerProfile) {
                 console.log('[AUTH] Booker profile found');
                 setProfile(bookerProfile);
                 setStatus('BOOKER');
               } else {
-                console.log('[AUTH] No profiles found, defaulting to BOOKER');
+                console.log('[AUTH] No profiles found, creating basic profile');
                 // Create a basic booker profile if none exists
-                setProfile({ id: currentUser.id, email: currentUser.email });
+                setProfile({ 
+                  id: currentUser.id, 
+                  email: currentUser.email,
+                  user_type: currentUser.user_metadata?.user_type || 'booker'
+                });
                 setStatus('BOOKER');
               }
             }
           } catch (error) {
-            console.warn('[AUTH] Profile query failed:', error);
-            // Fallback to booker if queries fail
-            setProfile({ id: currentUser.id, email: currentUser.email });
-            setStatus('BOOKER');
+            console.warn('[AUTH] Profile queries failed, using fallback:', error.message);
+            // Smart fallback based on user metadata
+            const userType = currentUser.user_metadata?.user_type;
+            if (userType === 'talent') {
+              setProfile({ 
+                id: currentUser.id, 
+                email: currentUser.email,
+                user_type: 'talent'
+              });
+              setStatus('TALENT_NEEDS_ONBOARDING');
+              setMode('artist');
+            } else {
+              setProfile({ 
+                id: currentUser.id, 
+                email: currentUser.email,
+                user_type: 'booker'
+              });
+              setStatus('BOOKER');
+            }
           }
         }
       } catch (error) {

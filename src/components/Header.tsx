@@ -50,29 +50,29 @@ export function Header() {
     if (!user) return;
 
     try {
-      // Use the secure function to get talent profile data
-      const { data: profileData, error } = await supabase.rpc('get_user_talent_profile');
+      // Direct query instead of RPC to avoid timeouts
+      const { data: profileData, error } = await supabase
+        .from('talent_profiles')
+        .select('id, artist_name, is_pro_subscriber, picture_url')
+        .eq('user_id', user.id)
+        .maybeSingle();
       
       if (error) {
-        console.error('Error fetching talent profile:', error);
+        console.error('[HEADER] Error fetching talent profile:', error);
         return;
       }
 
-      if (profileData && profileData.length > 0) {
-        const profile = profileData[0];
-        setTalentName(profile.artist_name || null);
-        setTalentId(profile.id || null);
-        setIsProTalent(profile.is_pro_subscriber || false);
-        
-        // Get picture URL separately since it's not in the secure function
-        const { data: pictureData } = await supabase
-          .from('talent_profiles')
-          .select('picture_url')
-          .eq('user_id', user.id)
-          .maybeSingle();
-          
-        setProfilePictureUrl(pictureData?.picture_url || null);
+      if (profileData) {
+        console.log('[HEADER] Talent profile found:', {
+          hasArtistName: !!profileData.artist_name,
+          hasPicture: !!profileData.picture_url
+        });
+        setTalentName(profileData.artist_name || null);
+        setTalentId(profileData.id || null);
+        setIsProTalent(profileData.is_pro_subscriber || false);
+        setProfilePictureUrl(profileData.picture_url || null);
       } else {
+        console.log('[HEADER] No talent profile found');
         // Reset all states if no profile found
         setTalentName(null);
         setTalentId(null);
@@ -80,7 +80,7 @@ export function Header() {
         setProfilePictureUrl(null);
       }
     } catch (error) {
-      console.error('Error fetching talent profile:', error);
+      console.error('[HEADER] Error fetching talent profile:', error);
       // Reset states on error to avoid showing incomplete data
       setTalentName(null);
       setTalentId(null);
@@ -215,7 +215,7 @@ export function Header() {
                     )}
                   </div>
                   
-                   {user && !talentName && user.user_metadata?.user_type === 'talent' && !profilePictureUrl && (
+                   {user && user.user_metadata?.user_type === 'talent' && !talentName && (
                      <Button 
                        className="hero-button text-sm px-4"
                        size="sm"
@@ -397,7 +397,7 @@ export function Header() {
                       )}
                     </div>
                       
-                       {user && !talentName && user.user_metadata?.user_type === 'talent' && !profilePictureUrl && (
+                       {user && user.user_metadata?.user_type === 'talent' && !talentName && (
                          <Button 
                            className="w-full hero-button mt-2"
                            onClick={handleTalentSignup}
