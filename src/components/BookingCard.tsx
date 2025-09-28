@@ -179,7 +179,7 @@ export const BookingCard = ({ booking, mode, onUpdate, onRemove, shouldBlurConta
                   💰 Unlock Contact Details & Earn More!
                 </p>
                 <p className="text-xs text-amber-600 dark:text-amber-400">
-                  Pro subscribers keep 100% of their earnings and get premium features. This is how our platform supports talented artists like you!
+                  Unlock contact details, get featured on our homepage, receive priority matching for indirect bookings, and showcase your professional status with a golden Pro badge!
                 </p>
               </div>
             </div>
