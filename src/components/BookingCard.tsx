@@ -171,10 +171,26 @@ export const BookingCard = ({ booking, mode, onUpdate, onRemove, shouldBlurConta
         )}
         
         {mode === 'talent' && shouldBlurContact && !isProUser && (booking.booker_email || booking.booker_phone) && (
-          <div className="mt-2 p-2 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-800">
-            <p className="text-xs text-amber-700 dark:text-amber-300 font-medium">
-              Upgrade to Pro to see booker contact details
-            </p>
+          <div className="mt-2 p-3 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 rounded-lg border border-amber-200 dark:border-amber-800">
+            <div className="flex items-start gap-2 mb-2">
+              <Crown className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="text-xs text-amber-700 dark:text-amber-300 font-bold mb-1">
+                  💰 Unlock Contact Details & Earn More!
+                </p>
+                <p className="text-xs text-amber-600 dark:text-amber-400">
+                  Pro subscribers keep 100% of their earnings and get premium features. This is how our platform supports talented artists like you!
+                </p>
+              </div>
+            </div>
+            <Button 
+              size="sm" 
+              onClick={() => window.open('/pricing', '_blank')}
+              className="w-full bg-gradient-to-br from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-white text-xs font-bold shadow-lg"
+            >
+              <Crown className="h-3 w-3 mr-1" />
+              Upgrade to Pro - Start Earning More!
+            </Button>
           </div>
         )}
         
