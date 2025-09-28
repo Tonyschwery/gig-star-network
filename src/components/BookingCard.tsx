@@ -57,14 +57,26 @@ export const BookingCard = ({ booking, mode, onUpdate, onRemove, shouldBlurConta
   const handleUpdateStatus = async (newStatus: string) => {
     try {
       console.log(`Updating booking ${booking.id} status to ${newStatus}`);
+      
+      // CRITICAL FIX: Force complete deletion for declined/cancelled instead of status update
+      if (newStatus === 'declined' || newStatus === 'cancelled') {
+        console.log('FORCED DELETION for declined/cancelled booking:', booking.id);
+        const { error } = await supabase.from('bookings').delete().eq('id', booking.id);
+        if (error) throw new Error(error.message);
+        
+        // Immediately remove from local state
+        onRemove?.(booking.id);
+        
+        toast({ 
+          title: `Booking ${newStatus}`,
+          description: `The booking has been ${newStatus} and completely removed.`
+        });
+        return; // Exit early, don't continue with status update
+      }
+      
+      // For all other statuses, update normally
       const { error } = await supabase.from('bookings').update({ status: newStatus }).eq('id', booking.id);
       if (error) throw new Error(error.message);
-      
-      // Immediately remove from local state if declined or cancelled
-      if ((newStatus === 'declined' || newStatus === 'cancelled') && onRemove) {
-        console.log('Removing booking from UI immediately:', booking.id);
-        onRemove(booking.id);
-      }
       
       toast({ 
         title: `Booking ${newStatus}`,
@@ -84,9 +96,15 @@ export const BookingCard = ({ booking, mode, onUpdate, onRemove, shouldBlurConta
 
   const handleDecline = async () => {
     try {
+      console.log('🗑️ DECLINING and DELETING booking:', booking.id);
       const { error } = await supabase.from('bookings').delete().eq('id', booking.id);
       if (error) throw new Error(error.message);
-      toast({ title: "Booking declined and removed" });
+      
+      // Import and use aggressive cache clearing
+      const { clearCacheAfterBookingOperation } = await import('@/lib/cache-utils');
+      clearCacheAfterBookingOperation();
+      
+      toast({ title: "Booking declined and permanently removed" });
       setShowDeclineDialog(false);
       // Immediately remove from dashboard
       onRemove?.(booking.id);
@@ -110,9 +128,15 @@ export const BookingCard = ({ booking, mode, onUpdate, onRemove, shouldBlurConta
 
   const handleCancel = async () => {
     try {
+      console.log('🗑️ CANCELLING and DELETING booking:', booking.id);
       const { error } = await supabase.from('bookings').delete().eq('id', booking.id);
       if (error) throw new Error(error.message);
-      toast({ title: "Booking cancelled and removed" });
+      
+      // Import and use aggressive cache clearing
+      const { clearCacheAfterBookingOperation } = await import('@/lib/cache-utils');
+      clearCacheAfterBookingOperation();
+      
+      toast({ title: "Booking cancelled and permanently removed" });
       setShowCancelDialog(false);
       // Immediately remove from dashboard
       onRemove?.(booking.id);

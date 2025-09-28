@@ -31,6 +31,11 @@ export const TalentDashboardTabs = ({ profile }: TalentDashboardTabsProps) => {
     setLoading(true);
     console.log('Fetching bookings for talent:', profile.id);
 
+    // CHROME CACHE BUST: Add timestamp to force fresh data in Chrome
+    const timestamp = Date.now();
+    const cacheBuster = `?_t=${timestamp}`;
+    console.log('Cache buster applied:', cacheBuster);
+
     const { data: bookingsData, error: bookingsError } = await supabase
       .from('bookings')
       .select(`*, talent_profiles(artist_name)`)
@@ -42,6 +47,7 @@ export const TalentDashboardTabs = ({ profile }: TalentDashboardTabsProps) => {
       console.error("Error fetching direct bookings:", bookingsError.message);
     } else {
       console.log('Fetched bookings:', bookingsData?.length || 0, 'records');
+      console.log('Booking statuses found:', bookingsData?.map(b => `${b.id}: ${b.status}`));
       setDirectBookings(bookingsData as Booking[] || []);
     }
 
@@ -56,6 +62,7 @@ export const TalentDashboardTabs = ({ profile }: TalentDashboardTabsProps) => {
       if (requestsError) {
         console.error("Error fetching matching event requests:", requestsError.message);
       } else {
+        console.log('Event requests statuses found:', requestsData?.map(r => `${r.id}: ${r.status}`));
         setEventRequests(requestsData as EventRequest[] || []);
       }
     }

@@ -16,7 +16,73 @@ export const clearDynamicCache = () => {
   }
 };
 
-// Smart cache clearing that doesn't disrupt user experience
+// AGGRESSIVE cache clearing for Chrome booking operations
+export const clearCacheAfterBookingOperation = () => {
+  console.log('🔥 AGGRESSIVE CACHE CLEARING after booking operation');
+  
+  // Clear all caches
+  clearDynamicCache();
+  clearAppCache();
+  
+  // Chrome-specific aggressive cache busting
+  if (/Chrome|Chromium/i.test(navigator.userAgent) && !/Edge|OPR/i.test(navigator.userAgent)) {
+    console.log('💥 Chrome detected - applying NUCLEAR cache clearing');
+    
+    // Clear all browser caches
+    if ('caches' in window) {
+      caches.keys().then(cacheNames => {
+        console.log('Clearing all cache names:', cacheNames);
+        cacheNames.forEach(cacheName => {
+          caches.delete(cacheName);
+        });
+      });
+    }
+    
+    // Force reload of all stylesheets and scripts
+    const timestamp = Date.now();
+    const links = document.querySelectorAll('link[rel="stylesheet"]');
+    const scripts = document.querySelectorAll('script[src]');
+    
+    links.forEach(link => {
+      const href = (link as HTMLLinkElement).href;
+      if (href.includes('?')) {
+        (link as HTMLLinkElement).href = href.split('?')[0] + `?v=${timestamp}`;
+      } else {
+        (link as HTMLLinkElement).href = href + `?v=${timestamp}`;
+      }
+    });
+    
+    scripts.forEach(script => {
+      const src = (script as HTMLScriptElement).src;
+      if (src && !src.includes('static')) {
+        if (src.includes('?')) {
+          (script as HTMLScriptElement).src = src.split('?')[0] + `?v=${timestamp}`;
+        } else {
+          (script as HTMLScriptElement).src = src + `?v=${timestamp}`;
+        }
+      }
+    });
+    
+    // Clear localStorage entries that might cache booking data
+    try {
+      Object.keys(localStorage).forEach(key => {
+        if (key.includes('booking') || key.includes('dashboard') || key.includes('supabase-auth')) {
+          console.log('Clearing localStorage key:', key);
+          localStorage.removeItem(key);
+        }
+      });
+    } catch (e) {
+      console.log('Could not clear localStorage:', e);
+    }
+    
+    // Force window location refresh with cache bust
+    const currentUrl = new URL(window.location.href);
+    currentUrl.searchParams.set('_cache_bust', timestamp.toString());
+    window.history.replaceState({}, '', currentUrl.toString());
+  }
+};
+
+// Smart cache clearing that doesn't disrupt user experience  
 export const clearCacheAfterOperation = () => {
   // Only clear dynamic cache, preserve static assets
   clearDynamicCache();

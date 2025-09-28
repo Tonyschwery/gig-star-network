@@ -24,7 +24,10 @@ export const BookerDashboardTabs = ({ userId }: { userId: string }) => {
         if (!userId) return;
         setLoading(true);
 
-        console.log('Fetching initial bookings for user:', userId);
+        // CHROME CACHE BUST: Add timestamp to force fresh data in Chrome
+        const timestamp = Date.now();
+        console.log('Fetching initial bookings for user:', userId, 'at timestamp:', timestamp);
+        
         const bookingsQuery = supabase
             .from('bookings')
             .select(`*, talent_profiles(artist_name)`)
@@ -47,6 +50,7 @@ export const BookerDashboardTabs = ({ userId }: { userId: string }) => {
         if (bookingsResult.error) console.error("Error fetching bookings:", bookingsResult.error.message);
         else {
             console.log('Fetched bookings:', bookingsResult.data?.length || 0, 'records');
+            console.log('Booking statuses found:', bookingsResult.data?.map(b => `${b.id}: ${b.status}`));
             setDirectBookings(bookingsResult.data as Booking[] || []);
             setHasMoreBookings(bookingsResult.data.length === PAGE_SIZE);
             setBookingsPage(1);
@@ -55,6 +59,7 @@ export const BookerDashboardTabs = ({ userId }: { userId: string }) => {
         if (requestsResult.error) console.error("Error fetching requests:", requestsResult.error.message);
         else {
             console.log('Fetched event requests:', requestsResult.data?.length || 0, 'records');
+            console.log('Event request statuses found:', requestsResult.data?.map(r => `${r.id}: ${r.status}`));
             setEventRequests(requestsResult.data as EventRequest[] || []);
             setHasMoreRequests(requestsResult.data.length === PAGE_SIZE);
             setRequestsPage(1);
