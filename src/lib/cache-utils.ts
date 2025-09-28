@@ -1,4 +1,4 @@
-// Cache utility functions for managing service worker cache
+// Smart cache utility functions for coordinated cache management
 
 export const clearAppCache = () => {
   if ('serviceWorker' in navigator) {
@@ -16,11 +16,26 @@ export const clearDynamicCache = () => {
   }
 };
 
-// Utility to clear cache after data operations
+// Smart cache clearing that doesn't disrupt user experience
 export const clearCacheAfterOperation = () => {
+  // Only clear dynamic cache, preserve static assets
   clearDynamicCache();
-  // Also clear React Query cache if needed
+  
+  // Invalidate React Query cache more selectively
   if (typeof window !== 'undefined' && 'queryClient' in window && window.queryClient) {
-    (window as any).queryClient.invalidateQueries();
+    const queryClient = (window as any).queryClient;
+    // Only invalidate queries that might be stale, not all queries
+    queryClient.invalidateQueries({ 
+      predicate: (query: any) => {
+        // Invalidate user-specific queries but keep static data
+        return query.queryKey?.some((key: string) => 
+          typeof key === 'string' && (
+            key.includes('profile') || 
+            key.includes('booking') || 
+            key.includes('talent')
+          )
+        );
+      }
+    });
   }
 };

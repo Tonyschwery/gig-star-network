@@ -9,12 +9,17 @@ export function AdminRoute({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // If the check is done and the user is NOT an admin, redirect them to the homepage.
     if (!loading && status !== 'ADMIN') {
       navigate('/'); 
     }
   }, [status, loading, navigate]);
 
+  // Show admin content immediately if authorized
+  if (status === 'ADMIN') {
+    return <>{children}</>;
+  }
+
+  // Only show loading during initial check
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -23,6 +28,5 @@ export function AdminRoute({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // Only render the admin pages if the status is correct.
-  return status === 'ADMIN' ? <>{children}</> : null;
+  return null;
 }

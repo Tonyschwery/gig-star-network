@@ -8,11 +8,10 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
-    // Disable caching in development
+    // Smart caching headers that work with service worker
     headers: mode === 'development' ? {
-      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-      'Pragma': 'no-cache',
-      'Expires': '0'
+      'Cache-Control': 'no-cache',
+      'ETag': 'false'
     } : undefined,
   },
   plugins: [
@@ -26,23 +25,22 @@ export default defineConfig(({ mode }) => ({
     },
   },
   build: {
-    // Aggressive cache-busting and performance optimization
+    // Smart cache-busting that works with service worker
     rollupOptions: {
       output: {
-        // Hash all files with timestamps for maximum cache-busting
-        entryFileNames: `assets/[name].[hash].${Date.now()}.js`,
-        chunkFileNames: `assets/[name].[hash].${Date.now()}.js`,
+        // Use hash-based naming without timestamps for better caching
+        entryFileNames: `assets/[name].[hash].js`,
+        chunkFileNames: `assets/[name].[hash].js`,
         assetFileNames: (assetInfo) => {
-          const timestamp = Date.now();
           if (/\.(css)$/.test(assetInfo.name || '')) {
-            return `assets/[name].[hash].${timestamp}.css`;
+            return `assets/[name].[hash].css`;
           }
           if (/\.(png|jpe?g|gif|svg|ico|webp|avif)$/.test(assetInfo.name || '')) {
-            return `assets/images/[name].[hash].${timestamp}[extname]`;
+            return `assets/images/[name].[hash][extname]`;
           }
-          return `assets/[name].[hash].${timestamp}[extname]`;
+          return `assets/[name].[hash][extname]`;
         },
-        // Manual chunking for better caching strategies
+        // Optimized chunking for service worker cache efficiency
         manualChunks: {
           vendor: ['react', 'react-dom'],
           router: ['react-router-dom'],
@@ -52,14 +50,11 @@ export default defineConfig(({ mode }) => ({
         },
       },
     },
-    // Performance optimizations
     target: 'esnext',
     minify: mode === 'production' ? 'esbuild' : false,
     chunkSizeWarningLimit: 1000,
     sourcemap: mode === 'development',
-    // Enable code splitting
     cssCodeSplit: true,
-    // Improve build speed
     reportCompressedSize: false,
   },
   // Enhanced performance optimizations
@@ -79,12 +74,11 @@ export default defineConfig(({ mode }) => ({
   },
   // Asset handling with better compression
   assetsInclude: ['**/*.png', '**/*.jpg', '**/*.jpeg', '**/*.gif', '**/*.svg', '**/*.webp'],
-  // Preview server optimizations
+  // Preview server with coordinated caching
   preview: {
     headers: {
-      'Cache-Control': 'no-cache, no-store, must-revalidate',
-      'Pragma': 'no-cache',
-      'Expires': '0'
+      'Cache-Control': 'public, max-age=31536000, immutable',
+      'ETag': 'false'
     }
   }
 }));

@@ -29,16 +29,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [mode, setMode] = useState<UserMode>('booking');
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      setSession(session);
+    let isInitialLoad = true;
+    
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       const currentUser = session?.user ?? null;
+      const hasUserChanged = user?.id !== currentUser?.id;
+      
+      // Only show loading for initial load or actual user changes
+      if (isInitialLoad || hasUserChanged || event === 'SIGNED_OUT' || event === 'SIGNED_IN') {
+        setLoading(true);
+      }
+      
+      setSession(session);
       setUser(currentUser);
-      setLoading(true);
 
       if (!currentUser) {
         setStatus('LOGGED_OUT');
         setProfile(null);
         setLoading(false);
+        isInitialLoad = false;
         return;
       }
 
@@ -66,6 +75,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       }
       setLoading(false);
+      isInitialLoad = false;
     });
 
     return () => subscription.unsubscribe();
@@ -73,28 +83,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     try {
-      // Clear all auth-related data first
+      // Clear auth-related data
       setLoading(true);
       setUser(null);
       setSession(null);
       setProfile(null);
       setStatus('LOGGED_OUT');
       
-      // Clear any stored session data
-      localStorage.removeItem('supabase.auth.token');
-      sessionStorage.clear();
+      // Clear cache but don't force reload
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.ready.then(registration => {
+          registration.active?.postMessage({ type: 'CLEAR_DYNAMIC_CACHE' });
+        });
+      }
       
       // Sign out from Supabase
       const { error } = await supabase.auth.signOut();
       if (error) {
         console.error('Signout error:', error);
-        // Force reload to clear any stuck state
-        window.location.reload();
+        // Just log the error, don't force reload
       }
     } catch (error) {
       console.error('Error during signout:', error);
-      // Force reload as fallback
-      window.location.reload();
+      // Don't force reload, let the app handle gracefully
     } finally {
       setLoading(false);
     }

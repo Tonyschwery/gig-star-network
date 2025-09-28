@@ -31,6 +31,12 @@ export function ProtectedTalentRoute({ children }: { children: React.ReactNode }
     const isAuthorized = status === 'TALENT_COMPLETE' || status === 'TALENT_NEEDS_ONBOARDING' || 
                         (user?.user_metadata?.user_type === 'talent' && status === 'BOOKER');
 
+    // Show talent content immediately if authorized
+    if (isAuthorized) {
+        return <>{children}</>;
+    }
+
+    // Only show loading during initial check
     if (loading) {
         return (
             <div className="min-h-screen bg-background flex items-center justify-center">
@@ -39,5 +45,5 @@ export function ProtectedTalentRoute({ children }: { children: React.ReactNode }
         );
     }
 
-    return isAuthorized ? <>{children}</> : null;
+    return null;
 }

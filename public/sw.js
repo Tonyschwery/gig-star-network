@@ -1,5 +1,5 @@
-// Advanced Service Worker with Intelligent Cache Management
-const VERSION = '2.2.0';
+// Optimized Service Worker with Smart Cache Management
+const VERSION = '3.0.0';
 const STATIC_CACHE = 'qtalent-static-v' + VERSION;
 const DYNAMIC_CACHE = 'qtalent-dynamic-v' + VERSION;
 const API_CACHE = 'qtalent-api-v' + VERSION;
@@ -36,47 +36,40 @@ const DYNAMIC_CONTENT = [
   /\.html$/
 ];
 
-// Install event - aggressive cache cleanup and immediate activation
+// Install event - smart cache management without forced activation
 self.addEventListener('install', function(event) {
   console.log('SW: Installing version', VERSION);
-  self.skipWaiting(); // Force immediate activation
+  // Don't force immediate activation to prevent state conflicts
   
   event.waitUntil(
     caches.keys().then(function(cacheNames) {
-      // Delete all old caches immediately
-      const deletePromises = cacheNames
-        .filter(name => !name.includes(VERSION))
-        .map(name => {
-          console.log('SW: Deleting old cache:', name);
-          return caches.delete(name);
-        });
-      return Promise.all(deletePromises);
+      // Only delete old versions when safe
+      const oldCaches = cacheNames.filter(name => 
+        name.startsWith('qtalent-') && !name.includes(VERSION)
+      );
+      if (oldCaches.length > 0) {
+        console.log('SW: Scheduling cleanup of old caches:', oldCaches);
+        return Promise.all(oldCaches.map(name => caches.delete(name)));
+      }
     })
   );
 });
 
-// Activate event - take control and clean up
+// Activate event - gentle takeover without disruption
 self.addEventListener('activate', function(event) {
   console.log('SW: Activating version', VERSION);
   
   event.waitUntil(
     Promise.all([
-      // Clean up any remaining old caches
+      // Clean up only conflicting old caches
       caches.keys().then(function(cacheNames) {
-        return Promise.all(
-          cacheNames
-            .filter(name => !name.includes(VERSION))
-            .map(name => caches.delete(name))
+        const conflictingCaches = cacheNames.filter(name => 
+          name.startsWith('qtalent-') && !name.includes(VERSION)
         );
+        return Promise.all(conflictingCaches.map(name => caches.delete(name)));
       }),
-      // Take control of all clients immediately
-      self.clients.claim(),
-      // Send message to all clients about update
-      self.clients.matchAll().then(clients => {
-        clients.forEach(client => {
-          client.postMessage({ type: 'SW_UPDATED', version: VERSION });
-        });
-      })
+      // Take control gradually to avoid disruption
+      self.clients.claim()
     ])
   );
 });
@@ -218,27 +211,34 @@ self.addEventListener('notificationclick', function(event) {
   }
 });
 
-// Handle messages from the main thread
+// Handle messages from the main thread with smart cache clearing
 self.addEventListener('message', function(event) {
   if (event.data.type === 'CLEAR_DYNAMIC_CACHE') {
     event.waitUntil(
-      Promise.all([
-        caches.delete(DYNAMIC_CACHE),
-        caches.delete(API_CACHE)
-      ]).then(() => {
-        console.log('SW: Dynamic and API caches cleared for auth state change');
+      caches.open(DYNAMIC_CACHE).then(cache => {
+        // Clear only user-specific dynamic content, keep static assets
+        return cache.keys().then(keys => {
+          const userSpecificKeys = keys.filter(request => 
+            request.url.includes('/dashboard') || 
+            request.url.includes('/profile') ||
+            request.url.includes('supabase')
+          );
+          return Promise.all(userSpecificKeys.map(key => cache.delete(key)));
+        });
+      }).then(() => {
+        console.log('SW: User-specific dynamic cache cleared');
       })
     );
   }
   
   if (event.data.type === 'CLEAR_ALL_CACHE') {
     event.waitUntil(
-      caches.keys().then(function(cacheNames) {
-        return Promise.all(
-          cacheNames.map(name => caches.delete(name))
-        );
-      }).then(() => {
-        console.log('SW: All caches cleared');
+      Promise.all([
+        caches.delete(DYNAMIC_CACHE),
+        caches.delete(API_CACHE)
+        // Keep static cache to avoid complete reload
+      ]).then(() => {
+        console.log('SW: Dynamic caches cleared, static cache preserved');
       })
     );
   }

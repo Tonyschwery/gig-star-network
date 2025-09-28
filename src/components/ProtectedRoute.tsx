@@ -11,15 +11,18 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!loading && status === 'LOGGED_OUT') {
-      // If the check is done and the user is logged out, send them to the auth page
-      // and remember where they were trying to go.
       navigate('/auth', { replace: true, state: { from: location, mode: 'booker' } });
     }
   }, [status, loading, navigate, location]);
 
-  // Define who is authorized to see these general protected pages.
   const isAuthorized = status === 'BOOKER' || status === 'TALENT_COMPLETE' || status === 'ADMIN';
 
+  // Show content immediately if authorized, avoid loading screen flicker
+  if (isAuthorized) {
+    return <>{children}</>;
+  }
+
+  // Only show loading screen during initial auth check
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -28,6 +31,6 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // If authorized, show the page. Otherwise, show nothing while we redirect.
-  return isAuthorized ? <>{children}</> : null;
+  // Show nothing while redirecting
+  return null;
 }
