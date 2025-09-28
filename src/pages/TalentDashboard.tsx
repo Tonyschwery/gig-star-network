@@ -24,7 +24,7 @@ const TalentDashboard = () => {
 
   useEffect(() => {
     if (!user) {
-      navigate('/login');
+      navigate('/auth');
     }
   }, [user, navigate]);
 

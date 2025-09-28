@@ -93,7 +93,7 @@ export function Header() {
     if (user) {
       signOut();
     } else {
-      navigate("/login");
+      navigate("/auth");
     }
   };
 
@@ -444,7 +444,7 @@ export function Header() {
                      <Button 
                        variant="outline" 
                        className="w-full"
-                       onClick={() => navigate("/login")}
+                       onClick={() => navigate("/auth")}
                      >
                        Login
                      </Button>

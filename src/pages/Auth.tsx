@@ -91,11 +91,23 @@ const Auth = () => {
       } 
       // Rule 4: Otherwise, send them to their default dashboard.
       else {
-        const { data: profile } = await supabase.from('talent_profiles').select('id').eq('user_id', data.user.id).maybeSingle();
-        if (profile) {
+        try {
+          // Add timeout to prevent hanging
+          const profileQuery = supabase.from('talent_profiles').select('id').eq('user_id', data.user.id).maybeSingle();
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Profile query timeout')), 5000)
+          );
+          
+          const { data: profile } = await Promise.race([profileQuery, timeoutPromise]) as any;
+          
+          if (profile) {
             navigate('/talent-dashboard');
-        } else {
+          } else {
             navigate('/booker-dashboard');
+          }
+        } catch (error) {
+          console.warn('Profile query failed, defaulting to booker dashboard:', error);
+          navigate('/booker-dashboard');
         }
       }
     }
