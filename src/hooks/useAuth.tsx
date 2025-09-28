@@ -28,15 +28,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [status, setStatus] = useState<UserStatus>('LOADING');
   const [mode, setMode] = useState<UserMode>('booking');
 
+  // Add loading timeout to prevent infinite loading
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (loading) {
+        console.warn('[AUTH] Loading timeout reached, forcing completion');
+        setLoading(false);
+        setStatus('LOGGED_OUT');
+      }
+    }, 10000); // 10 second timeout
+
+    return () => clearTimeout(timeout);
+  }, [loading]);
+
   useEffect(() => {
     let isInitialLoad = true;
+    let cleanup = false;
+    
+    console.log('[AUTH] Setting up auth state listener');
     
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (cleanup) return;
+      
+      console.log('[AUTH] Auth state change:', { event, hasSession: !!session, userId: session?.user?.id });
+      
       const currentUser = session?.user ?? null;
       const hasUserChanged = user?.id !== currentUser?.id;
       
       // Only show loading for initial load or actual user changes
       if (isInitialLoad || hasUserChanged || event === 'SIGNED_OUT' || event === 'SIGNED_IN') {
+        console.log('[AUTH] Setting loading to true');
         setLoading(true);
       }
       
@@ -44,6 +65,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(currentUser);
 
       if (!currentUser) {
+        console.log('[AUTH] No user, setting LOGGED_OUT');
         setStatus('LOGGED_OUT');
         setProfile(null);
         setLoading(false);
@@ -51,34 +73,69 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      // Unified Role Checking Logic
-      if (currentUser.email === 'admin@qtalent.live') {
-        setStatus('ADMIN');
-        setProfile({ full_name: 'Admin' });
-      } else {
-        // Check for a talent profile first
-        const { data: talentProfile } = await supabase.from('talent_profiles').select('*').eq('user_id', currentUser.id).single();
-        if (talentProfile) {
-          setProfile(talentProfile);
-          setStatus(talentProfile.artist_name ? 'TALENT_COMPLETE' : 'TALENT_NEEDS_ONBOARDING');
-          setMode('artist');
+      try {
+        // Unified Role Checking Logic with timeout
+        if (currentUser.email === 'admin@qtalent.live') {
+          console.log('[AUTH] Admin user detected');
+          setStatus('ADMIN');
+          setProfile({ full_name: 'Admin' });
+          setLoading(false);
         } else {
-          // If not a talent, check for a booker profile
-          const { data: bookerProfile } = await supabase.from('profiles').select('*').eq('id', currentUser.id).single();
-          if (bookerProfile) {
-            setProfile(bookerProfile);
+          console.log('[AUTH] Checking user profiles...');
+          
+          // Add timeout to prevent hanging
+          const profileTimeout = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Profile query timeout')), 5000)
+          );
+          
+          try {
+            // Check for a talent profile first
+            const talentQuery = supabase.from('talent_profiles').select('*').eq('user_id', currentUser.id).maybeSingle();
+            const { data: talentProfile } = await Promise.race([talentQuery, profileTimeout]) as any;
+            
+            if (talentProfile) {
+              console.log('[AUTH] Talent profile found:', !!talentProfile.artist_name);
+              setProfile(talentProfile);
+              setStatus(talentProfile.artist_name ? 'TALENT_COMPLETE' : 'TALENT_NEEDS_ONBOARDING');
+              setMode('artist');
+            } else {
+              console.log('[AUTH] No talent profile, checking booker profile...');
+              // If not a talent, check for a booker profile
+              const bookerQuery = supabase.from('profiles').select('*').eq('id', currentUser.id).maybeSingle();
+              const { data: bookerProfile } = await Promise.race([bookerQuery, profileTimeout]) as any;
+              
+              if (bookerProfile) {
+                console.log('[AUTH] Booker profile found');
+                setProfile(bookerProfile);
+                setStatus('BOOKER');
+              } else {
+                console.log('[AUTH] No profiles found, defaulting to BOOKER');
+                // Create a basic booker profile if none exists
+                setProfile({ id: currentUser.id, email: currentUser.email });
+                setStatus('BOOKER');
+              }
+            }
+          } catch (error) {
+            console.warn('[AUTH] Profile query failed:', error);
+            // Fallback to booker if queries fail
+            setProfile({ id: currentUser.id, email: currentUser.email });
             setStatus('BOOKER');
-          } else {
-            // Fallback for users who might exist before the profile trigger was made
-            setStatus('LOGGED_OUT'); // Or handle as an error
           }
         }
+      } catch (error) {
+        console.error('[AUTH] Error in auth state change:', error);
+        setStatus('LOGGED_OUT');
+      } finally {
+        console.log('[AUTH] Setting loading to false');
+        setLoading(false);
+        isInitialLoad = false;
       }
-      setLoading(false);
-      isInitialLoad = false;
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      cleanup = true;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signOut = async () => {
