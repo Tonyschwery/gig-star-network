@@ -38,6 +38,9 @@ export function EventRequestForm() {
   const [eventType, setEventType] = useState("");
   const [description, setDescription] = useState("");
   const [talentTypeNeeded, setTalentTypeNeeded] = useState("");
+  
+  // Local state for selected location to override detected location
+  const [selectedLocation, setSelectedLocation] = useState<string>("");
 
   // control calendar popover
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
@@ -45,8 +48,13 @@ export function EventRequestForm() {
   const eventTypes = ["wedding", "birthday", "corporate", "opening", "club", "school", "festival", "private party", "other"];
   const talentTypes = ["Singer", "Guitarist", "Pianist", "DJ", "Band", "Violinist", "Saxophonist", "Drummer", "Other"];
 
-  // Get current location for form validation and submission
-  const currentLocation = userLocation || detectedLocation || 'Worldwide';
+  // Get current location for form validation and submission - prioritize manually selected location
+  const currentLocation = selectedLocation || userLocation || detectedLocation || 'Worldwide';
+  
+  const handleLocationChange = (location: string) => {
+    console.log('EventRequestForm: Location changed to:', location);
+    setSelectedLocation(location);
+  };
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,6 +69,7 @@ export function EventRequestForm() {
     }
     setIsSubmitting(true);
     try {
+      console.log('EventRequestForm: Submitting with location:', currentLocation);
       const { error } = await supabase.from('event_requests').insert({
         user_id: user.id,
         booker_email: user.email,
@@ -68,7 +77,7 @@ export function EventRequestForm() {
         booker_phone: bookerPhone,
         event_date: format(eventDate, 'yyyy-MM-dd'),
         event_duration: parseInt(eventDuration, 10),
-        event_location: currentLocation, // Use standardized country name
+        event_location: currentLocation, // Use manually selected location first
         event_type: eventType,
         description: eventAddress ? `${description}\n\nVenue: ${eventAddress}` : description,
         talent_type_needed: talentTypeNeeded,
@@ -139,7 +148,7 @@ export function EventRequestForm() {
       </div>
       <div className="space-y-2">
         <Label htmlFor="event-location">Event Location *</Label>
-        <LocationSelector />
+        <LocationSelector onLocationChange={handleLocationChange} />
         <p className="text-xs text-muted-foreground">
           Selected location: {currentLocation === 'Worldwide' ? 'Please select a country' : currentLocation}
         </p>

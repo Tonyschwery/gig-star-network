@@ -12,7 +12,11 @@ import { useLocationDetection } from '@/hooks/useLocationDetection';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { countries, sortCountriesByProximity } from '@/lib/countries';
 
-export const LocationSelector = () => {
+interface LocationSelectorProps {
+  onLocationChange?: (location: string) => void;
+}
+
+export const LocationSelector = ({ onLocationChange }: LocationSelectorProps) => {
   const { 
     userLocation, 
     detectedLocation, 
@@ -27,7 +31,9 @@ export const LocationSelector = () => {
   const [isOpen, setIsOpen] = useState(false);
 
   const handleLocationSelect = (location: string) => {
+    console.log('LocationSelector: Location selected:', location);
     saveLocation(location, true);
+    onLocationChange?.(location);
     setIsOpen(false);
   };
 
