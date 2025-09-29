@@ -11,6 +11,10 @@ interface TalentProfile {
     id: string;
     location?: string;
     is_pro_subscriber?: boolean;
+    artist_name?: string;
+    user_id?: string;
+    // Allow any additional properties from the actual talent profile
+    [key: string]: any;
 }
 
 interface TalentDashboardTabsProps {
