@@ -312,6 +312,39 @@ export type Database = {
           },
         ]
       }
+      conversation_risk_tracking: {
+        Row: {
+          channel_id: string
+          channel_type: string
+          created_at: string
+          detected_patterns: string[] | null
+          id: string
+          last_updated: string
+          risk_score: number
+          sender_id: string
+        }
+        Insert: {
+          channel_id: string
+          channel_type: string
+          created_at?: string
+          detected_patterns?: string[] | null
+          id?: string
+          last_updated?: string
+          risk_score?: number
+          sender_id: string
+        }
+        Update: {
+          channel_id?: string
+          channel_type?: string
+          created_at?: string
+          detected_patterns?: string[] | null
+          id?: string
+          last_updated?: string
+          risk_score?: number
+          sender_id?: string
+        }
+        Relationships: []
+      }
       email_logs: {
         Row: {
           created_at: string | null
