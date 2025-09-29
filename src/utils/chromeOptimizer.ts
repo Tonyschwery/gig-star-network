@@ -52,18 +52,18 @@ export const disableServiceWorkerInChrome = () => {
   }
 };
 
-// Initialize Chrome optimizations
+// Initialize Chrome optimizations WITHOUT clearing auth caches
 export const initChromeOptimizations = () => {
   if (!isChromeOrChromium()) return;
   
-  console.log('Applying Chrome-specific optimizations');
+  console.log('Applying Chrome-specific optimizations (preserving auth)');
   addChromeHeaders();
   
-  // Clear Chrome cache on page load
+  // Clear Chrome cache on page load but preserve auth data
   if ('caches' in window) {
     caches.keys().then(cacheNames => {
       cacheNames.forEach(cacheName => {
-        if (cacheName.includes('dynamic') || cacheName.includes('api')) {
+        if ((cacheName.includes('dynamic') || cacheName.includes('api')) && !cacheName.includes('auth')) {
           caches.delete(cacheName);
         }
       });

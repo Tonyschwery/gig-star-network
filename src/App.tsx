@@ -10,7 +10,6 @@ import { ChatProvider } from "./contexts/ChatContext";
 import { UniversalChat } from "./components/UniversalChat";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
-import Login from "./pages/Login";
 import BookerDashboard from "./pages/BookerDashboard";
 import TalentOnboarding from "./pages/TalentOnboarding";
 import TalentProfile from "./pages/TalentProfile";
@@ -38,7 +37,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
-            <Route path="/login" element={<Login />} />
+            <Route path="/login" element={<Auth />} />
             
             {/* The old AdminProvider wrapper is now removed */}
             <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>

@@ -93,7 +93,7 @@ export function Header() {
     if (user) {
       signOut();
     } else {
-      navigate("/login");
+      navigate("/auth", { state: { mode: 'booker' } });
     }
   };
 
@@ -265,12 +265,12 @@ export function Header() {
                     Sign In
                   </Button>
                   
-                  <Button 
-                    className="hero-button font-medium"
-                    onClick={() => navigate("/auth")}
-                  >
-                    Join as a Talent
-                  </Button>
+                   <Button 
+                     className="hero-button font-medium"
+                     onClick={() => navigate("/auth", { state: { mode: 'talent' } })}
+                   >
+                     Join as a Talent
+                   </Button>
                 </>
               )}
             </div>

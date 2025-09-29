@@ -22,7 +22,7 @@ const STATIC_ASSETS = [
 const NEVER_CACHE = [
   /supabase/,
   /\/api\//,
-  /\/auth\//,
+  /\/auth/,
   /\/rest\//,
   /\/functions\//,
   /\.lovableproject\.com.*\/api/,
@@ -31,7 +31,10 @@ const NEVER_CACHE = [
   // Chrome-specific: Never cache dashboard or profile pages
   /\/dashboard/,
   /\/profile/,
-  /\/booking/
+  /\/booking/,
+  // Never cache authentication endpoints
+  /\/auth$/,
+  /\/login$/
 ];
 
 // Dynamic content that benefits from stale-while-revalidate
@@ -220,17 +223,18 @@ self.addEventListener('message', function(event) {
   if (event.data.type === 'CLEAR_DYNAMIC_CACHE') {
     event.waitUntil(
       caches.open(DYNAMIC_CACHE).then(cache => {
-        // Clear only user-specific dynamic content, keep static assets
+        // Clear only user-specific dynamic content, PRESERVE auth-related caches
         return cache.keys().then(keys => {
           const userSpecificKeys = keys.filter(request => 
-            request.url.includes('/dashboard') || 
-            request.url.includes('/profile') ||
-            request.url.includes('supabase')
+            (request.url.includes('/dashboard') || 
+             request.url.includes('/profile')) &&
+            !request.url.includes('/auth') &&
+            !request.url.includes('supabase-auth')
           );
           return Promise.all(userSpecificKeys.map(key => cache.delete(key)));
         });
       }).then(() => {
-        console.log('SW: User-specific dynamic cache cleared');
+        console.log('SW: User-specific dynamic cache cleared (auth preserved)');
       })
     );
   }

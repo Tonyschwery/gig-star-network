@@ -63,10 +63,10 @@ export const clearCacheAfterBookingOperation = () => {
       }
     });
     
-    // Clear localStorage entries that might cache booking data
+    // Clear localStorage entries EXCEPT Supabase auth data
     try {
       Object.keys(localStorage).forEach(key => {
-        if (key.includes('booking') || key.includes('dashboard') || key.includes('supabase-auth')) {
+        if ((key.includes('booking') || key.includes('dashboard')) && !key.includes('supabase-auth')) {
           console.log('Clearing localStorage key:', key);
           localStorage.removeItem(key);
         }
