@@ -5,7 +5,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { initChromeOptimizations } from "./utils/chromeOptimizer";
 import App from "./App.tsx";
 import "./index.css";
-import { ProStatusProvider } from "./contexts/ProStatusContext";
 
 // Initialize Chrome optimizations immediately
 initChromeOptimizations();
@@ -16,9 +15,7 @@ createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <ProStatusProvider>
-          <App />
-        </ProStatusProvider>
+        <App />
       </BrowserRouter>
     </QueryClientProvider>
   </StrictMode>,
