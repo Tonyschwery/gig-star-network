@@ -46,72 +46,12 @@ export const BookingCard = ({ booking, mode, onUpdate, onRemove, shouldBlurConta
   const navigate = useNavigate();
   const { unreadCount } = useUnreadMessages();
   const [showRemoveDialog, setShowRemoveDialog] = useState(false);
-  const [showDeclineDialog, setShowDeclineDialog] = useState(false);
-  const [showCancelDialog, setShowCancelDialog] = useState(false);
 
   // Safety check
   if (!booking) {
     return null;
   }
 
-  const handleUpdateStatus = async (newStatus: string) => {
-    try {
-      console.log(`Updating booking ${booking.id} status to ${newStatus}`);
-      
-      // CRITICAL FIX: Force complete deletion for declined/cancelled instead of status update
-      if (newStatus === 'declined' || newStatus === 'cancelled') {
-        console.log('FORCED DELETION for declined/cancelled booking:', booking.id);
-        const { error } = await supabase.from('bookings').delete().eq('id', booking.id);
-        if (error) throw new Error(error.message);
-        
-        // Immediately remove from local state
-        onRemove?.(booking.id);
-        
-        toast({ 
-          title: `Booking ${newStatus}`,
-          description: `The booking has been ${newStatus} and completely removed.`
-        });
-        return; // Exit early, don't continue with status update
-      }
-      
-      // For all other statuses, update normally
-      const { error } = await supabase.from('bookings').update({ status: newStatus }).eq('id', booking.id);
-      if (error) throw new Error(error.message);
-      
-      toast({ 
-        title: `Booking ${newStatus}`,
-        description: `The booking has been ${newStatus} successfully.`
-      });
-      
-      // Refresh booking limit for talents after accepting a booking
-      if (newStatus === 'accepted' && mode === 'talent') {
-        refetchLimit();
-      }
-      
-      onUpdate?.();
-    } catch (error: any) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    }
-  };
-
-  const handleDecline = async () => {
-    try {
-      console.log('🗑️ DECLINING and DELETING booking:', booking.id);
-      const { error } = await supabase.from('bookings').delete().eq('id', booking.id);
-      if (error) throw new Error(error.message);
-      
-      // Import and use aggressive cache clearing
-      const { clearCacheAfterBookingOperation } = await import('@/lib/cache-utils');
-      clearCacheAfterBookingOperation();
-      
-      toast({ title: "Booking declined and permanently removed" });
-      setShowDeclineDialog(false);
-      // Immediately remove from dashboard
-      onRemove?.(booking.id);
-    } catch (error: any) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    }
-  };
 
   const handleRemove = async () => {
     try {
@@ -126,24 +66,6 @@ export const BookingCard = ({ booking, mode, onUpdate, onRemove, shouldBlurConta
     }
   };
 
-  const handleCancel = async () => {
-    try {
-      console.log('🗑️ CANCELLING and DELETING booking:', booking.id);
-      const { error } = await supabase.from('bookings').delete().eq('id', booking.id);
-      if (error) throw new Error(error.message);
-      
-      // Import and use aggressive cache clearing
-      const { clearCacheAfterBookingOperation } = await import('@/lib/cache-utils');
-      clearCacheAfterBookingOperation();
-      
-      toast({ title: "Booking cancelled and permanently removed" });
-      setShowCancelDialog(false);
-      // Immediately remove from dashboard
-      onRemove?.(booking.id);
-    } catch (error: any) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    }
-  };
 
   const getStatusBadgeVariant = (status: string): "default" | "secondary" | "outline" | "destructive" => {
     switch (status) {
@@ -259,70 +181,24 @@ export const BookingCard = ({ booking, mode, onUpdate, onRemove, shouldBlurConta
           )}
         </Button>
         
-        {mode === 'talent' && booking.status === 'pending' && (
-          <div className="flex-grow flex justify-end gap-2">
-            <AlertDialog open={showDeclineDialog} onOpenChange={setShowDeclineDialog}>
-              <AlertDialogTrigger asChild>
-                <Button variant="destructive" size="sm">
-                  <X className="h-4 w-4 mr-2" />Decline
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Decline Booking</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Are you sure you want to decline this booking? This will notify the booker and remove the booking request.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleDecline} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                    Decline
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </div>
-        )}
-        
-        {mode === 'booker' && booking.status === 'pending' && (
-          <div className="flex-grow flex justify-end">
-            {/* Remove button is now handled by the top-right button */}
-          </div>
-        )}
-        
         {mode === 'admin' && (
-          <div className="flex-grow flex justify-end">
-            {/* Remove button is now handled by the top-right button */}
-          </div>
-        )}
-        
-        {mode === 'booker' && booking.status === 'accepted' && (
-          <div className="flex-grow flex justify-end">
-            <Button onClick={() => handleUpdateStatus('confirmed')} size="sm">
-              <Check className="h-4 w-4 mr-2" />Confirm Booking
-            </Button>
-          </div>
-        )}
-
-        {(booking.status === 'pending') && (
-          <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+          <AlertDialog open={showRemoveDialog} onOpenChange={setShowRemoveDialog}>
             <AlertDialogTrigger asChild>
-              <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive-foreground hover:bg-destructive/90">
-                <X className="h-4 w-4 mr-2" />Cancel Booking
+              <Button variant="destructive" size="sm">
+                <Trash2 className="h-4 w-4 mr-2" />Remove
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Cancel Booking</AlertDialogTitle>
+                <AlertDialogTitle>Remove Booking</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Are you sure you want to cancel this booking? This action will update the booking status to cancelled.
+                  Are you sure you want to remove this booking? This action cannot be undone.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Keep Booking</AlertDialogCancel>
-                <AlertDialogAction onClick={handleCancel} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                  Cancel Booking
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleRemove} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                  Remove
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>

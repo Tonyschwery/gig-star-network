@@ -38,28 +38,25 @@ serve(async (req) => {
       throw new Error(`Failed to fetch past bookings: ${fetchError.message}`);
     }
 
-    console.log('CLEANUP - Found past events to cleanup:', pastBookings?.length || 0);
+    console.log('CLEANUP - Found past events to delete:', pastBookings?.length || 0);
 
     if (pastBookings && pastBookings.length > 0) {
-      // Update these bookings to 'completed' status
+      // Delete these past bookings completely
       const bookingIds = pastBookings.map(booking => booking.id);
       
-      console.log('CLEANUP - Updating booking IDs to completed:', bookingIds);
+      console.log('CLEANUP - Deleting booking IDs:', bookingIds);
 
-      const { error: updateError } = await supabase
+      const { error: deleteError } = await supabase
         .from('bookings')
-        .update({ 
-          status: 'completed',
-          updated_at: new Date().toISOString()
-        })
+        .delete()
         .in('id', bookingIds);
 
-      if (updateError) {
-        console.error('CLEANUP - Error updating bookings:', updateError);
-        throw new Error(`Failed to update bookings: ${updateError.message}`);
+      if (deleteError) {
+        console.error('CLEANUP - Error deleting bookings:', deleteError);
+        throw new Error(`Failed to delete bookings: ${deleteError.message}`);
       }
 
-      console.log('CLEANUP - Successfully updated', pastBookings.length, 'past events to completed status');
+      console.log('CLEANUP - Successfully deleted', pastBookings.length, 'past events from database');
 
       // Delete chat messages for completed past events
       const { error: chatCleanupError } = await supabase
@@ -72,17 +69,17 @@ serve(async (req) => {
         console.log('CLEANUP - Successfully cleaned up expired chat messages');
       }
 
-      // Log details of what was updated
+      // Log details of what was deleted
       pastBookings.forEach(booking => {
-        console.log(`CLEANUP - Updated booking ${booking.id}: ${booking.event_type} on ${booking.event_date} from ${booking.status} to completed`);
+        console.log(`CLEANUP - Deleted booking ${booking.id}: ${booking.event_type} on ${booking.event_date} (was ${booking.status})`);
       });
     }
 
     return new Response(
       JSON.stringify({
         success: true,
-        updatedCount: pastBookings?.length || 0,
-        message: `Updated ${pastBookings?.length || 0} past events to completed status`
+        deletedCount: pastBookings?.length || 0,
+        message: `Deleted ${pastBookings?.length || 0} past events from database`
       }),
       {
         status: 200,
