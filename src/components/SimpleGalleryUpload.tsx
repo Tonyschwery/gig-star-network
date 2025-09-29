@@ -1,8 +1,9 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { Upload, X, ImageIcon, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useProStatus } from '@/contexts/ProStatusContext';
 
 interface SimpleGalleryUploadProps {
   currentImages: string[];
@@ -19,43 +20,10 @@ export function SimpleGalleryUpload({
 }: SimpleGalleryUploadProps) {
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
-  const [isProUser, setIsProUser] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { toast } = useToast();
-
-  useEffect(() => {
-    let isMounted = true;
-    
-    // Check if user is Pro to determine max images
-    const checkProStatus = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user && isMounted) {
-          const { data: profile } = await supabase
-            .from('talent_profiles')
-            .select('is_pro_subscriber')
-            .eq('user_id', user.id)
-            .maybeSingle();
-          
-          if (isMounted) {
-            setIsProUser(profile?.is_pro_subscriber || false);
-          }
-        }
-      } catch (error) {
-        console.error('Error checking Pro status:', error);
-        if (isMounted) {
-          setIsProUser(false);
-        }
-      }
-    };
-    
-    checkProStatus();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+  const { isProUser } = useProStatus();
 
   const effectiveMaxImages = isProUser ? Math.max(maxImages, 10) : 1; // Pro users get 10, Free users get 1
 

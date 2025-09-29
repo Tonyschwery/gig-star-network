@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -20,9 +20,13 @@ import {
   ArrowLeft,
   Camera,
   Plus,
-  X
+  X,
+  CheckCircle,
+  AlertCircle
 } from "lucide-react";
 import { ProFeatureWrapper } from "@/components/ProFeatureWrapper";
+import { useProStatus } from "@/contexts/ProStatusContext";
+import { useProfileSave } from "@/hooks/useProfileSave";
 
 interface TalentProfile {
   id: string;
@@ -50,14 +54,17 @@ const TalentProfileEdit = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { isProUser, refreshProStatus } = useProStatus();
+  const { saving, saveProfile } = useProfileSave();
+  
   const [profile, setProfile] = useState<TalentProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
   const [customGenre, setCustomGenre] = useState('');
   const [galleryImages, setGalleryImages] = useState<string[]>([]);
-  const [autoSaveTimer, setAutoSaveTimer] = useState<NodeJS.Timeout | null>(null);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [lastSaveStatus, setLastSaveStatus] = useState<'success' | 'error' | null>(null);
 
   useEffect(() => {
     if (!user) {
@@ -148,136 +155,72 @@ const TalentProfileEdit = () => {
     }
   };
 
-  const handleGenreToggle = (genre: string) => {
-    setSelectedGenres(prev => 
-      prev.includes(genre) 
+  const handleGenreToggle = useCallback((genre: string) => {
+    setSelectedGenres(prev => {
+      const newGenres = prev.includes(genre) 
         ? prev.filter(g => g !== genre)
-        : [...prev, genre]
-    );
-  };
+        : [...prev, genre];
+      setHasUnsavedChanges(true);
+      return newGenres;
+    });
+  }, []);
 
-  const handleAutoSave = async (field: string, value: any) => {
-    if (!profile || !user) return;
-
-    // Only allow auto-save for Pro subscribers for Pro features
-    const proOnlyFields = ['soundcloud_link', 'youtube_link', 'gallery_images'];
-    if (proOnlyFields.includes(field) && !profile.is_pro_subscriber) {
-      toast({
-        title: "Pro feature required",
-        description: "Upgrade to Pro to save this information",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    // Clear existing timer
-    if (autoSaveTimer) {
-      clearTimeout(autoSaveTimer);
-    }
-
-    // Set new timer for debounced auto-save
-    const timer = setTimeout(async () => {
-      try {
-        const { error } = await supabase
-          .from('talent_profiles')
-          .update({ [field]: value })
-          .eq('id', profile.id);
-
-        if (error) throw error;
-
-        toast({
-          title: "Auto-saved",
-          description: `${field.replace('_', ' ')} updated successfully!`,
-        });
-      } catch (error) {
-        console.error('Auto-save error:', error);
-        toast({
-          title: "Auto-save failed",
-          description: `Failed to save ${field.replace('_', ' ')}`,
-          variant: "destructive"
-        });
-      }
-    }, 2000); // 2 second delay
-
-    setAutoSaveTimer(timer);
-  };
-
-  const handleGalleryChange = async (newImages: string[]) => {
-    setGalleryImages(newImages);
+  const handleFieldChange = useCallback((field: string, value: any) => {
+    if (!profile) return;
     
-    // Auto-save gallery for Pro users
-    if (profile?.is_pro_subscriber) {
-      try {
-        const { error } = await supabase
-          .from('talent_profiles')
-          .update({ gallery_images: newImages })
-          .eq('id', profile.id);
+    setProfile(prev => prev ? { ...prev, [field]: value } : null);
+    setHasUnsavedChanges(true);
+    setLastSaveStatus(null);
+  }, [profile]);
 
-        if (error) throw error;
+  const saveChanges = useCallback(async (specificUpdates?: Record<string, any>) => {
+    if (!profile) return;
 
+    const updates = specificUpdates || {
+      act: profile.act,
+      location: profile.location,
+      nationality: profile.nationality,
+      music_genres: [...selectedGenres, ...(customGenre.trim() ? [customGenre.trim()] : [])],
+      custom_genre: customGenre.trim() || null,
+      gallery_images: galleryImages,
+      soundcloud_link: profile.soundcloud_link,
+      youtube_link: profile.youtube_link,
+      biography: profile.biography,
+      rate_per_hour: profile.rate_per_hour
+    };
+
+    await saveProfile({
+      profileId: profile.id,
+      updates,
+      onSuccess: () => {
+        setHasUnsavedChanges(false);
+        setLastSaveStatus('success');
         toast({
-          title: "Gallery updated",
-          description: "Images saved successfully!",
+          title: "Success",
+          description: "Profile updated successfully!",
         });
-      } catch (error) {
-        console.error('Error saving gallery:', error);
-        toast({
-          title: "Error",
-          description: "Failed to save gallery images",
-          variant: "destructive"
-        });
+      },
+      onError: () => {
+        setLastSaveStatus('error');
       }
+    });
+  }, [profile, selectedGenres, customGenre, galleryImages, saveProfile, toast]);
+
+  const handleGalleryChange = useCallback(async (newImages: string[]) => {
+    setGalleryImages(newImages);
+    setHasUnsavedChanges(true);
+    
+    // Auto-save gallery for Pro users only
+    if (isProUser && profile) {
+      await saveChanges({ gallery_images: newImages });
     }
-  };
+  }, [isProUser, profile, saveChanges]);
 
   const handleSaveProfile = async () => {
-    if (!profile || !user) return;
-
-    setSaving(true);
-
-    try {
-      // Prepare music genres array
-      const allGenres = [...selectedGenres];
-      if (customGenre.trim()) {
-        allGenres.push(customGenre.trim());
-      }
-
-      const { error } = await supabase
-        .from('talent_profiles')
-        .update({
-          act: profile.act as any,
-          location: profile.location,
-          nationality: profile.nationality,
-          music_genres: allGenres,
-          custom_genre: customGenre.trim() || null,
-          gallery_images: galleryImages,
-          soundcloud_link: profile.soundcloud_link,
-          youtube_link: profile.youtube_link,
-          biography: profile.biography,
-          rate_per_hour: profile.rate_per_hour
-        })
-        .eq('id', profile.id);
-
-      if (error) {
-        throw error;
-      }
-
-      toast({
-        title: "Success",
-        description: "Profile updated successfully!"
-      });
-
-      // Navigate back to dashboard
+    await saveChanges();
+    if (!saving) {
+      // Only navigate if save was successful
       navigate('/talent-dashboard');
-    } catch (error) {
-      console.error('Error updating profile:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update profile. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setSaving(false);
     }
   };
 
@@ -327,11 +270,36 @@ const TalentProfileEdit = () => {
             
             <Button
               onClick={handleSaveProfile}
-              disabled={saving}
+              disabled={saving || !hasUnsavedChanges}
               className="flex-shrink-0 hero-button"
+              variant={hasUnsavedChanges ? "default" : "secondary"}
             >
-              <Save className="h-4 w-4 mr-2" />
-              {saving ? "Saving..." : "Save Changes"}
+              {saving ? (
+                <>
+                  <div className="h-4 w-4 mr-2 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                  Saving...
+                </>
+              ) : lastSaveStatus === 'success' ? (
+                <>
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Saved
+                </>
+              ) : lastSaveStatus === 'error' ? (
+                <>
+                  <AlertCircle className="h-4 w-4 mr-2" />
+                  Try Again
+                </>
+              ) : hasUnsavedChanges ? (
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  Save Changes
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  All Saved
+                </>
+              )}
             </Button>
           </div>
         </div>
@@ -398,7 +366,7 @@ const TalentProfileEdit = () => {
                 </div>
                 <div>
                   <Label className="text-sm font-medium">Act Type</Label>
-                  <Select value={profile.act} onValueChange={(value) => setProfile({ ...profile, act: value })}>
+                  <Select value={profile.act} onValueChange={(value) => handleFieldChange('act', value)}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -413,7 +381,7 @@ const TalentProfileEdit = () => {
                 </div>
                 <div>
                   <Label className="text-sm font-medium">Talent Location (Where you're available)</Label>
-                  <Select value={profile.location || ''} onValueChange={(value) => setProfile({ ...profile, location: value })}>
+                  <Select value={profile.location || ''} onValueChange={(value) => handleFieldChange('location', value)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select location" />
                     </SelectTrigger>
@@ -428,7 +396,7 @@ const TalentProfileEdit = () => {
                 </div>
                 <div>
                   <Label className="text-sm font-medium">Nationality</Label>
-                  <Select value={profile.nationality} onValueChange={(value) => setProfile({ ...profile, nationality: value })}>
+                  <Select value={profile.nationality} onValueChange={(value) => handleFieldChange('nationality', value)}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -450,9 +418,9 @@ const TalentProfileEdit = () => {
                     type="number"
                     placeholder="Enter your rate"
                     value={profile.rate_per_hour || ''}
-                    onChange={(e) => setProfile({ ...profile, rate_per_hour: parseFloat(e.target.value) || undefined })}
+                    onChange={(e) => handleFieldChange('rate_per_hour', parseFloat(e.target.value) || undefined)}
                   />
-                  <Select value={profile.currency} onValueChange={(value) => setProfile({ ...profile, currency: value })}>
+                  <Select value={profile.currency} onValueChange={(value) => handleFieldChange('currency', value)}>
                     <SelectTrigger className="w-24">
                       <SelectValue />
                     </SelectTrigger>
@@ -489,7 +457,10 @@ const TalentProfileEdit = () => {
                     <Input
                       placeholder="Add your own genre"
                       value={customGenre}
-                      onChange={(e) => setCustomGenre(e.target.value)}
+                      onChange={(e) => {
+                        setCustomGenre(e.target.value);
+                        setHasUnsavedChanges(true);
+                      }}
                     />
                   </div>
                   
@@ -527,7 +498,7 @@ const TalentProfileEdit = () => {
                 <Textarea
                   placeholder="Tell us about yourself and your talent..."
                   value={profile.biography}
-                  onChange={(e) => setProfile({ ...profile, biography: e.target.value })}
+                  onChange={(e) => handleFieldChange('biography', e.target.value)}
                   rows={4}
                 />
               </div>
@@ -543,14 +514,7 @@ const TalentProfileEdit = () => {
                     <Input
                       placeholder="https://soundcloud.com/..."
                       value={profile.soundcloud_link || ''}
-                      onChange={(e) => {
-                        const newValue = e.target.value;
-                        setProfile({ ...profile, soundcloud_link: newValue });
-                        // Auto-save for Pro users only
-                        if (profile.is_pro_subscriber) {
-                          handleAutoSave('soundcloud_link', newValue);
-                        }
-                      }}
+                      onChange={(e) => handleFieldChange('soundcloud_link', e.target.value)}
                     />
                   </div>
                   <div>
@@ -558,14 +522,7 @@ const TalentProfileEdit = () => {
                     <Input
                       placeholder="https://youtube.com/..."
                       value={profile.youtube_link || ''}
-                      onChange={(e) => {
-                        const newValue = e.target.value;
-                        setProfile({ ...profile, youtube_link: newValue });
-                        // Auto-save for Pro users only
-                        if (profile.is_pro_subscriber) {
-                          handleAutoSave('youtube_link', newValue);
-                        }
-                      }}
+                      onChange={(e) => handleFieldChange('youtube_link', e.target.value)}
                     />
                   </div>
                 </div>

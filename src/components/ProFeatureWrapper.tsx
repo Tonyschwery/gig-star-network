@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Crown } from 'lucide-react';
 import { SubscriptionModal } from './SubscriptionModal';
 import { Button } from './ui/button';
 import { cn } from '@/lib/utils';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
+import { useProStatus } from '@/contexts/ProStatusContext';
 
 interface ProFeatureWrapperProps {
   children: React.ReactNode;
@@ -25,31 +25,9 @@ export function ProFeatureWrapper({
   context = 'dashboard'
 }: ProFeatureWrapperProps) {
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
-  const [profileId, setProfileId] = useState<string | null>(null);
-  const [isCurrentUserPro, setIsCurrentUserPro] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    // Get the current user's talent profile ID and Pro status
-    const fetchProfile = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data } = await supabase
-          .from('talent_profiles')
-          .select('id, is_pro_subscriber')
-          .eq('user_id', user.id)
-          .maybeSingle();
-        
-        if (data) {
-          setProfileId(data.id);
-          setIsCurrentUserPro(data.is_pro_subscriber || false);
-        }
-      }
-    };
-
-    fetchProfile();
-  }, []);
+  const { isProUser, loading } = useProStatus();
 
 
   const handleUpgradeClick = () => {
@@ -63,8 +41,19 @@ export function ProFeatureWrapper({
     }
   };
 
+  // Show loading state while checking Pro status
+  if (loading) {
+    return (
+      <div className={cn("relative opacity-70", className)}>
+        <div className="animate-pulse">
+          {children}
+        </div>
+      </div>
+    );
+  }
+
   // If user is already Pro, don't restrict anything
-  if (isCurrentUserPro) {
+  if (isProUser) {
     return <>{children}</>;
   }
 
