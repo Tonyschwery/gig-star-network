@@ -207,18 +207,11 @@ export default function () {
                   ))}
                 </div>
                 
-                {plan.name === 'Pro' ? (
+                {plan.name === 'Pro' && (
                   <SubscriptionButton 
                     variant={plan.popular ? "default" : "outline"}
                     className="w-full text-sm md:text-base py-2 md:py-3"
                   />
-                ) : (
-                  <Button 
-                    className={`w-full text-sm md:text-base py-2 md:py-3 ${plan.popular ? 'hero-button' : 'outline-button'}`}
-                    onClick={() => handleGetStarted(plan.name)}
-                  >
-                    {plan.buttonText}
-                  </Button>
                 )}
               </CardContent>
             </Card>

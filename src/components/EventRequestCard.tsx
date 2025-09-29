@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Calendar, Clock, MapPin, MessageCircle, X, Mail, Phone, UserX, Trash2 } from "lucide-react";
+import { Calendar, Clock, MapPin, MessageCircle, X, Mail, Phone, Trash2, Crown } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { useChat } from "@/contexts/ChatContext";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -38,8 +39,8 @@ interface EventRequestCardProps {
 export const EventRequestCard = ({ request, isActionable = false, mode, onRemove }: EventRequestCardProps) => {
   const { openChat } = useChat();
   const [showRemoveDialog, setShowRemoveDialog] = useState(false);
-  const [showDeclineDialog, setShowDeclineDialog] = useState(false);
   const { unreadCount } = useUnreadMessages();
+  const navigate = useNavigate();
 
   if (!request) {
     return null;
@@ -65,25 +66,6 @@ export const EventRequestCard = ({ request, isActionable = false, mode, onRemove
     }
   };
 
-  const handleDecline = async () => {
-    try {
-      const { error } = await supabase
-        .from('event_requests')
-        .update({ status: 'declined' })
-        .eq('id', request.id);
-
-      if (error) throw error;
-
-      toast.success('Request declined');
-      setShowDeclineDialog(false);
-      if (onRemove) {
-        onRemove(request.id);
-      }
-    } catch (error) {
-      console.error('Error declining request:', error);
-      toast.error('Failed to decline request');
-    }
-  };
 
   const isBlurred = mode === 'talent' && !isActionable;
 
@@ -188,36 +170,32 @@ export const EventRequestCard = ({ request, isActionable = false, mode, onRemove
           </div>
         )}
 
+        {/* Pro Feature Upgrade Section for blurred content */}
+        {isBlurred && (
+          <div className="border border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50 p-4 rounded-lg mb-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="bg-gradient-to-br from-amber-400 to-orange-500 p-2 rounded-full">
+                  <Crown className="h-4 w-4 text-white" />
+                </div>
+                <div>
+                  <h4 className="font-semibold text-sm text-amber-900">Upgrade to Pro</h4>
+                  <p className="text-xs text-amber-700">Get full access to booker details and unlimited messaging</p>
+                </div>
+              </div>
+              <Button
+                size="sm"
+                className="bg-gradient-to-br from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-white shadow-lg"
+                onClick={() => navigate('/pricing')}
+              >
+                Upgrade
+              </Button>
+            </div>
+          </div>
+        )}
+
         <div className="border-t pt-3 flex justify-between items-center">
           <div className="flex gap-2">
-            {mode === 'talent' && (
-              <AlertDialog open={showDeclineDialog} onOpenChange={setShowDeclineDialog}>
-                <AlertDialogTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="text-destructive hover:bg-destructive hover:text-destructive-foreground"
-                  >
-                    <UserX className="h-4 w-4 mr-2" />
-                    Decline
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Decline Request</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Are you sure you want to decline this event request? This will notify the booker that you are not available.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleDecline} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                      Decline
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            )}
             {mode === 'admin' && onRemove && (
               <AlertDialog>
                 <AlertDialogTrigger asChild>
