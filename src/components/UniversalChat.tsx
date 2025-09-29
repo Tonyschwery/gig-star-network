@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useChat, Message } from '@/contexts/ChatContext';
 import { useAuth } from '@/hooks/useAuth';
 import { useTalentBookingLimit } from '@/hooks/useTalentBookingLimit';
-import { useChatFilterPro } from '@/hooks/useChatFilterPro';
+import { useAdvancedChatFilter } from '@/hooks/useAdvancedChatFilter';
 import { useRecipientTalentStatus } from '@/hooks/useRecipientTalentStatus';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,8 +19,12 @@ export const UniversalChat = () => {
   const { isOpen, closeChat, messages, sendMessage, loadingMessages, channelInfo, setUserInteracting } = useChat();
   const { user } = useAuth();
   const { canReceiveBooking, isProUser, isTalent } = useTalentBookingLimit();
-  const { filterMessage } = useChatFilterPro(isProUser);
   const { isRecipientNonProTalent } = useRecipientTalentStatus(channelInfo, user?.id);
+  const { filterMessage, updateConversationBuffer } = useAdvancedChatFilter(
+    channelInfo, 
+    user?.id, 
+    isRecipientNonProTalent || isProUser // Pro users bypass filtering
+  );
   const { toast } = useToast();
   const [newMessage, setNewMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -38,6 +42,13 @@ export const UniversalChat = () => {
     scrollToBottom();
   }, [messages, loadingMessages]);
 
+  // Update conversation buffer when messages change
+  useEffect(() => {
+    if (messages.length > 0) {
+      updateConversationBuffer(messages);
+    }
+  }, [messages, updateConversationBuffer]);
+
   // Communicate interaction state to context
   useEffect(() => {
     setUserInteracting(isTyping || isHovering || isFocused);
@@ -46,7 +57,7 @@ export const UniversalChat = () => {
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
     if (newMessage.trim() && user?.id) {
-      // Apply filtering for non-pro talents (existing logic)
+      // Apply advanced filtering for non-pro talents (sender is talent)
       if (isTalent && !isProUser) {
         const filterResult = filterMessage(newMessage);
         if (filterResult.isBlocked) {
@@ -56,16 +67,23 @@ export const UniversalChat = () => {
         }
       }
       
-      // NEW: Apply filtering when bookers message non-pro talents
+      // Apply advanced filtering when bookers message non-pro talents (recipient is non-pro talent)
       if (!isTalent && isRecipientNonProTalent) {
         const filterResult = filterMessage(newMessage);
         if (filterResult.isBlocked) {
+          const isAdvancedPattern = filterResult.riskScore && filterResult.riskScore >= 60;
           toast({
             title: "Contact Information Blocked",
-            description: "The talent you're messaging needs to upgrade to Pro to receive contact details. This helps our platform support talented artists!",
+            description: isAdvancedPattern
+              ? "Advanced pattern detected - splitting contact info across messages is not allowed. The talent needs Pro to receive contact details."
+              : "The talent you're messaging needs to upgrade to Pro to receive contact details. This helps our platform support talented artists!",
             variant: "default",
           });
-          setShowFilteredMessage("The talent needs Pro to receive contact details");
+          setShowFilteredMessage(
+            isAdvancedPattern
+              ? "⚠️ Multi-message contact sharing detected - Pro upgrade required"
+              : "The talent needs Pro to receive contact details"
+          );
           setNewMessage("");
           return;
         }
