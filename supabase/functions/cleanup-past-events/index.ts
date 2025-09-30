@@ -25,13 +25,11 @@ serve(async (req) => {
     
     console.log('CLEANUP - Looking for events before:', todayISO);
 
-    // Find bookings where event_date is in the past and status is not 'completed'
+    // Find ALL bookings where event_date is in the past (automatic cleanup)
     const { data: pastBookings, error: fetchError } = await supabase
       .from('bookings')
       .select('id, event_date, status, event_type')
-      .lt('event_date', todayISO)
-      .neq('status', 'completed')
-      .neq('status', 'declined');
+      .lt('event_date', todayISO);
 
     if (fetchError) {
       console.error('CLEANUP - Error fetching past bookings:', fetchError);
