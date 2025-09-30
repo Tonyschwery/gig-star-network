@@ -37,68 +37,88 @@ const Auth = () => {
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    // This correctly sets the user_type metadata during signup
-    const userType = mode === 'booker' ? 'booker' : 'talent';
-    const { error } = await supabase.auth.signUp({ 
-        email, 
-        password, 
-        options: { 
-          emailRedirectTo: `${window.location.origin}/`,
-          data: { name: name, user_type: userType } 
-        } 
-    });
-    if (error) {
-        toast({ title: "Sign up failed", description: error.message, variant: "destructive" });
-    } else {
-        toast({ title: "Success!", description: "Please check your email to verify your account." });
+    
+    try {
+      // Clear any existing auth state before signing up with new account
+      const { forceClearAuth } = await import('@/lib/auth-utils');
+      await forceClearAuth();
+      
+      // This correctly sets the user_type metadata during signup
+      const userType = mode === 'booker' ? 'booker' : 'talent';
+      const { error } = await supabase.auth.signUp({ 
+          email, 
+          password, 
+          options: { 
+            emailRedirectTo: `${window.location.origin}/`,
+            data: { name: name, user_type: userType } 
+          } 
+      });
+      if (error) {
+          toast({ title: "Sign up failed", description: error.message, variant: "destructive" });
+      } else {
+          toast({ title: "Success!", description: "Please check your email to verify your account." });
+      }
+    } catch (error) {
+      toast({ title: "Sign up failed", description: "An unexpected error occurred", variant: "destructive" });
     }
+    
     setLoading(false);
   };
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const { error, data } = await supabase.auth.signInWithPassword({ email, password });
-
-    if (error) {
-      toast({ title: "Sign in failed", description: error.message, variant: "destructive" });
-      setLoading(false);
-      return;
-    } 
     
-    // This is the smart redirect logic that runs AFTER a successful login
-    if (data.user) {
-      toast({ title: "Signed in successfully!" });
+    try {
+      // Clear any existing auth state before signing in with new account
+      const { forceClearAuth } = await import('@/lib/auth-utils');
+      await forceClearAuth();
       
-      const intent = state?.intent;
-      const talentId = state?.talentId;
-      const from = state?.from?.pathname || null;
+      const { error, data } = await supabase.auth.signInWithPassword({ email, password });
 
-      // Rule 1: If user is the admin, always go to the admin panel.
-      if (data.user.email === 'admin@qtalent.live') {
-        navigate('/admin');
+      if (error) {
+        toast({ title: "Sign in failed", description: error.message, variant: "destructive" });
+        setLoading(false);
+        return;
       } 
-      // Rule 2: Handle specific intents first
-      else if (intent === 'event-form') {
-        navigate('/your-event');
-      }
-      else if (intent === 'booking-form' && talentId) {
-        navigate(`/talent/${talentId}`, { state: { openBookingForm: true } });
-      }
-      // Rule 3: If user was sent here from another page, send them back.
-      else if (from) {
-        navigate(from);
-      } 
-      // Rule 4: Otherwise, send them to their default dashboard.
-      else {
-        const { data: profile } = await supabase.from('talent_profiles').select('id').eq('user_id', data.user.id).maybeSingle();
-        if (profile) {
-            navigate('/talent-dashboard');
-        } else {
-            navigate('/booker-dashboard');
+      
+      // This is the smart redirect logic that runs AFTER a successful login
+      if (data.user) {
+        toast({ title: "Signed in successfully!" });
+        
+        const intent = state?.intent;
+        const talentId = state?.talentId;
+        const from = state?.from?.pathname || null;
+
+        // Rule 1: If user is the admin, always go to the admin panel.
+        if (data.user.email === 'admin@qtalent.live') {
+          navigate('/admin');
+        } 
+        // Rule 2: Handle specific intents first
+        else if (intent === 'event-form') {
+          navigate('/your-event');
+        }
+        else if (intent === 'booking-form' && talentId) {
+          navigate(`/talent/${talentId}`, { state: { openBookingForm: true } });
+        }
+        // Rule 3: If user was sent here from another page, send them back.
+        else if (from) {
+          navigate(from);
+        } 
+        // Rule 4: Otherwise, send them to their default dashboard.
+        else {
+          const { data: profile } = await supabase.from('talent_profiles').select('id').eq('user_id', data.user.id).maybeSingle();
+          if (profile) {
+              navigate('/talent-dashboard');
+          } else {
+              navigate('/booker-dashboard');
+          }
         }
       }
+    } catch (error) {
+      toast({ title: "Sign in failed", description: "An unexpected error occurred", variant: "destructive" });
     }
+    
     setLoading(false);
   };
 

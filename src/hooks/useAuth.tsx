@@ -30,8 +30,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     let isInitialLoad = true;
+    let mounted = true;
+    
+    // Validate session on mount to detect stuck states
+    const initAuth = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        // If there's an error getting the session, clear everything
+        if (error) {
+          console.error('Session error on init:', error);
+          const { forceClearAuth } = await import('@/lib/auth-utils');
+          await forceClearAuth();
+          if (mounted) {
+            setLoading(false);
+            window.location.href = '/';
+          }
+          return;
+        }
+        
+        // Initial session set
+        if (mounted) {
+          setSession(session);
+          setUser(session?.user ?? null);
+        }
+      } catch (error) {
+        console.error('Init auth error:', error);
+        if (mounted) setLoading(false);
+      }
+    };
+    
+    initAuth();
     
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!mounted) return;
+      
       const currentUser = session?.user ?? null;
       const hasUserChanged = user?.id !== currentUser?.id;
       
@@ -78,7 +111,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isInitialLoad = false;
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signOut = async () => {
@@ -90,23 +126,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setProfile(null);
       setStatus('LOGGED_OUT');
       
-      // Clear cache but don't force reload
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.ready.then(registration => {
-          registration.active?.postMessage({ type: 'CLEAR_DYNAMIC_CACHE' });
-        });
-      }
+      // Use comprehensive auth clearing
+      const { forceClearAuth } = await import('@/lib/auth-utils');
+      await forceClearAuth();
       
-      // Sign out from Supabase
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        console.error('Signout error:', error);
-        // Just log the error, don't force reload
-      }
+      // Redirect to home with clean state
+      window.location.href = '/';
     } catch (error) {
       console.error('Error during signout:', error);
-      // Don't force reload, let the app handle gracefully
-    } finally {
       setLoading(false);
     }
   };
