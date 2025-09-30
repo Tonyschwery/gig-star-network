@@ -1,19 +1,20 @@
-import { useState, useEffect } from "react";
+import { useMemo, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Star, MapPin, Music, Mic, Camera, Brush, User, Filter, X, Crown, Search } from "lucide-react";
+import { Star, MapPin, Music, Mic, User, Filter, X } from "lucide-react";
 import { ProBadge } from "@/components/ProBadge";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useLocationDetection } from "@/hooks/useLocationDetection";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 interface TalentProfile {
   id: string;
   artist_name: string;
   act: string;
-  gender?: string; // Optional since public view might not include it
+  gender?: string;
   age: string;
   location?: string;
   rate_per_hour?: number;
@@ -30,173 +31,140 @@ interface TalentProfile {
   subscription_started_at?: string;
 }
 
+// Single optimized query function
+const fetchTalents = async (): Promise<TalentProfile[]> => {
+  console.log('🔄 Fetching talents...');
+  
+  const { data, error } = await supabase
+    .from('talent_profiles')
+    .select('*')
+    .order('is_pro_subscriber', { ascending: false })
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('❌ Error fetching talents:', error);
+    throw error;
+  }
+
+  console.log('✅ Talents fetched:', data.length);
+  return data as TalentProfile[];
+};
+
 export function TalentGrid() {
   const [searchParams] = useSearchParams();
   const { userLocation } = useLocationDetection();
-  const [talents, setTalents] = useState<TalentProfile[]>([]);
-  const [filteredTalents, setFilteredTalents] = useState<TalentProfile[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [activeFilters, setActiveFilters] = useState({
+  const queryClient = useQueryClient();
+
+  const activeFilters = useMemo(() => ({
     location: searchParams.get('location') || '',
     date: searchParams.get('date') || '',
     type: searchParams.get('type') || ''
+  }), [searchParams]);
+
+  // React Query with caching
+  const { data: talents = [], isLoading, error } = useQuery({
+    queryKey: ['talents'],
+    queryFn: fetchTalents,
+    staleTime: 5 * 60 * 1000, // 5 minutes cache
+    gcTime: 10 * 60 * 1000, // 10 minutes garbage collection
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    retry: 1
   });
 
+  // Real-time subscription with debounce
   useEffect(() => {
-    fetchTalents();
+    let debounceTimer: NodeJS.Timeout;
     
-    // Set up real-time subscription for new talents
-    const subscription = supabase
-      .channel('talent_profiles_changes')
+    const channel = supabase
+      .channel('talent-changes')
       .on('postgres_changes', { 
-        event: 'INSERT', 
+        event: '*', 
         schema: 'public', 
         table: 'talent_profiles' 
       }, () => {
-        fetchTalents(); // Refresh the list when new talent is added
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+          console.log('🔄 Real-time update, invalidating cache...');
+          queryClient.invalidateQueries({ queryKey: ['talents'] });
+        }, 500); // 500ms debounce
       })
       .subscribe();
 
     return () => {
-      subscription.unsubscribe();
+      clearTimeout(debounceTimer);
+      supabase.removeChannel(channel);
     };
-  }, [userLocation]);
+  }, [queryClient]);
 
-  // Update filters when URL parameters change
-  useEffect(() => {
-    setActiveFilters({
-      location: searchParams.get('location') || '',
-      date: searchParams.get('date') || '',
-      type: searchParams.get('type') || ''
-    });
-  }, [searchParams]);
-
-  // Apply filters whenever talents or filters change
-  useEffect(() => {
-    applyFilters();
-  }, [talents, activeFilters]);
-
-  const fetchTalents = async () => {
-    console.log('[TalentGrid] Starting to fetch talents...');
-    try {
-      // Try direct talent_profiles table query as fallback
-      let { data, error } = await supabase
-        .from('talent_profiles_public')
-        .select('*')
-        .order('is_pro_subscriber', { ascending: false })
-        .order('created_at', { ascending: false });
-
-      console.log('[TalentGrid] talent_profiles_public Query result:', { data, error });
-
-      // If talent_profiles_public fails or returns empty, try direct table access
-      if (!data || data.length === 0) {
-        console.log('[TalentGrid] Trying direct talent_profiles table...');
-        const directResult = await supabase
-          .from('talent_profiles')
-          .select(`
-            id, artist_name, act, gender, age, location, rate_per_hour, 
-            currency, music_genres, custom_genre, picture_url, 
-            soundcloud_link, youtube_link, biography, nationality, 
-            created_at, is_pro_subscriber, gallery_images
-          `)
-          .order('is_pro_subscriber', { ascending: false })
-          .order('created_at', { ascending: false });
-        
-        console.log('[TalentGrid] Direct talent_profiles query result:', directResult);
-        data = directResult.data;
-        error = directResult.error;
-      }
-
-      if (error) {
-        console.error('[TalentGrid] Error fetching talents:', error);
-        return;
-      }
-
-      console.log('[TalentGrid] Setting talents data:', data);
-      setTalents(data || []);
-    } catch (error) {
-      console.error('[TalentGrid] Catch error:', error);
-    } finally {
-      console.log('[TalentGrid] Setting loading to false');
-      setLoading(false);
-    }
-  };
-
-  const applyFilters = () => {
+  // Memoized filtering
+  const filteredTalents = useMemo(() => {
     let filtered = [...talents];
 
-    // Filter by location (country)
     if (activeFilters.location && activeFilters.location !== 'all') {
       const locationQuery = activeFilters.location.toLowerCase();
       filtered = filtered.filter(talent => {
         const talentLocation = talent.location?.toLowerCase() || '';
         const talentNationality = talent.nationality?.toLowerCase() || '';
         return talentLocation.includes(locationQuery) || 
-               talentNationality.includes(locationQuery) ||
-               talentLocation === locationQuery ||
-               talentNationality === locationQuery;
+               talentNationality.includes(locationQuery);
       });
     }
 
-    // Filter by talent type
     if (activeFilters.type && activeFilters.type !== 'all') {
       filtered = filtered.filter(talent => 
         talent.act.toLowerCase() === activeFilters.type.toLowerCase()
       );
     }
 
-    // Date filtering placeholder - can be enhanced with booking system
-    if (activeFilters.date) {
-      // For now, we show all talents regardless of date
-      // This can be enhanced when booking system is implemented
-      console.log('Filtering by date:', activeFilters.date);
-    }
-
-    setFilteredTalents(filtered);
-  };
+    return filtered;
+  }, [talents, activeFilters]);
 
   const clearFilters = () => {
     window.history.pushState({}, '', window.location.pathname);
-    setActiveFilters({ location: '', date: '', type: '' });
   };
 
   const hasActiveFilters = (activeFilters.location && activeFilters.location !== 'all') || 
-                          activeFilters.date || 
                           (activeFilters.type && activeFilters.type !== 'all');
   const talentsToShow = hasActiveFilters ? filteredTalents : talents;
-  
-  console.log('[TalentGrid] Render state:', { 
-    talentsLength: talents.length, 
-    filteredTalentsLength: filteredTalents.length,
-    hasActiveFilters, 
-    talentsToShowLength: talentsToShow.length,
-    loading 
-  });
 
-  if (loading) {
-      return (
-        <section id="talents" className="py-20 bg-gradient-to-b from-background to-muted/30">
-          <div className="container mx-auto px-4">
-            <div className="text-center mb-16">
-              <div className="inline-flex items-center gap-2 bg-accent/10 px-4 py-2 rounded-full mb-6">
-                <div className="h-2 w-2 bg-accent rounded-full animate-pulse"></div>
-                <span className="text-sm font-medium text-accent">Discovering Talents</span>
-              </div>
-              <h2 className="text-4xl font-bold mb-6">Loading Amazing Talent...</h2>
-              <p className="text-muted-foreground text-lg">
-                Finding the perfect performers for your event
-              </p>
+  if (isLoading) {
+    return (
+      <section id="talents" className="py-20 bg-gradient-to-b from-background to-muted/30">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-16">
+            <div className="inline-flex items-center gap-2 bg-accent/10 px-4 py-2 rounded-full mb-6">
+              <div className="h-2 w-2 bg-accent rounded-full animate-pulse"></div>
+              <span className="text-sm font-medium text-accent">Discovering Talents</span>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {[...Array(6)].map((_, i) => (
-                <div key={i} className="animate-pulse">
-                  <div className="bg-muted/50 rounded-2xl h-80 backdrop-blur-sm"></div>
-                </div>
-              ))}
-            </div>
+            <h2 className="text-4xl font-bold mb-6">Loading Amazing Talent...</h2>
+            <p className="text-muted-foreground text-lg">
+              Finding the perfect performers for your event
+            </p>
           </div>
-        </section>
-      );
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="animate-pulse">
+                <div className="bg-muted/50 rounded-2xl h-80 backdrop-blur-sm"></div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (error) {
+    return (
+      <section id="talents" className="py-20">
+        <div className="container mx-auto px-4 text-center">
+          <p className="text-destructive mb-4">Failed to load talents</p>
+          <Button onClick={() => queryClient.invalidateQueries({ queryKey: ['talents'] })}>
+            Retry
+          </Button>
+        </div>
+      </section>
+    );
   }
 
   return (
@@ -236,12 +204,6 @@ export function TalentGrid() {
             {activeFilters.location && activeFilters.location !== 'all' && (
               <Badge variant="secondary" className="gap-1">
                 Location: {activeFilters.location}
-              </Badge>
-            )}
-            
-            {activeFilters.date && (
-              <Badge variant="secondary" className="gap-1">
-                Date: {new Date(activeFilters.date).toLocaleDateString()}
               </Badge>
             )}
             
@@ -314,16 +276,14 @@ function TalentCard({ talent }: TalentCardProps) {
   const getActIcon = (act: string) => {
     switch (act.toLowerCase()) {
       case 'dj':
-        return <Music className="h-4 w-4" />;
-      case 'singer':
-        return <Mic className="h-4 w-4" />;
       case 'band':
-        return <Music className="h-4 w-4" />;
       case 'saxophonist':
       case 'keyboardist':
       case 'drummer':
       case 'percussionist':
         return <Music className="h-4 w-4" />;
+      case 'singer':
+        return <Mic className="h-4 w-4" />;
       default:
         return <User className="h-4 w-4" />;
     }
@@ -335,18 +295,9 @@ function TalentCard({ talent }: TalentCardProps) {
 
   const getCurrencySymbol = (currency: string) => {
     const symbols: Record<string, string> = {
-      'USD': '$',
-      'EUR': '€',
-      'GBP': '£',
-      'AED': 'د.إ',
-      'SAR': 'ر.س',
-      'QAR': 'ر.ق',
-      'KWD': 'د.ك',
-      'BHD': '.د.ب',
-      'OMR': 'ر.ع.',
-      'JOD': 'د.ا',
-      'LBP': 'ل.ل',
-      'EGP': 'ج.م'
+      'USD': '$', 'EUR': '€', 'GBP': '£', 'AED': 'د.إ', 'SAR': 'ر.س',
+      'QAR': 'ر.ق', 'KWD': 'د.ك', 'BHD': '.د.ب', 'OMR': 'ر.ع.',
+      'JOD': 'د.ا', 'LBP': 'ل.ل', 'EGP': 'ج.م'
     };
     return symbols[currency] || currency;
   };
@@ -366,20 +317,17 @@ function TalentCard({ talent }: TalentCardProps) {
           <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
         </div>
         
-        {/* Act Badge */}
         <div className="absolute top-4 left-4 flex items-center space-x-2 bg-black/70 backdrop-blur-sm rounded-full px-3 py-1.5 text-white">
           {getActIcon(talent.act)}
           <span className="text-sm font-medium">{formatAct(talent.act)}</span>
         </div>
         
-        {/* Pro Badge */}
         {talent.is_pro_subscriber && (
           <div className="absolute top-4 right-4">
             <ProBadge size="sm" />
           </div>
         )}
         
-        {/* Hover Actions */}
         <div className="absolute inset-x-4 bottom-4 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
           <Button 
             size="sm"
@@ -410,7 +358,6 @@ function TalentCard({ talent }: TalentCardProps) {
           </div>
         </div>
 
-        {/* Genres */}
         <div className="flex flex-wrap gap-2">
           {talent.music_genres && talent.music_genres.slice(0, 3).map((genre) => (
             <Badge key={genre} variant="secondary" className="text-xs font-medium">
@@ -429,7 +376,6 @@ function TalentCard({ talent }: TalentCardProps) {
           )}
         </div>
 
-        {/* Rating & Price */}
         <div className="flex items-center justify-between pt-2 border-t border-border/50">
           <div className="flex items-center space-x-2">
             <div className="flex items-center space-x-1 bg-yellow-50 dark:bg-yellow-900/20 px-2 py-1 rounded-full">
