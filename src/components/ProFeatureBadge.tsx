@@ -25,17 +25,12 @@ export function ProFeatureBadge({
     return (
       <Badge 
         className={cn(
-          "bg-brand-secondary text-primary-foreground border border-brand-gold gap-1 hover:bg-brand-secondary/80 transition-colors",
+          "bg-gradient-to-r from-amber-500 to-yellow-600 text-white border-2 border-amber-400 shadow-lg hover:shadow-xl transition-all duration-300 hover:from-amber-600 hover:to-yellow-700 gap-1",
           sizeClasses[size],
           className
         )}
-        style={{
-          background: 'hsl(var(--brand-secondary))',
-          borderColor: 'hsl(var(--brand-gold))',
-          color: 'hsl(var(--primary-foreground))'
-        }}
       >
-        <Crown className="h-3 w-3" style={{ color: 'hsl(var(--brand-gold))' }} />
+        <Crown className="h-3 w-3 drop-shadow-sm" />
         {feature}
       </Badge>
     );
@@ -58,12 +53,12 @@ export function ProFeatureBadge({
 
 export function ProComparisonList() {
   const features = [
-    { name: "Platform Commission", free: "20%", pro: "0%" },
     { name: "Gallery Photos", free: "5 max", pro: "Unlimited" },
     { name: "Search Priority", free: "Standard", pro: "Top Results" },
     { name: "Premium Gigs", free: "Limited", pro: "Full Access" },
     { name: "Profile Badge", free: "Standard", pro: "Golden Crown" },
     { name: "Customer Support", free: "Standard", pro: "Priority" },
+    { name: "Booking Requests", free: "Limited", pro: "Unlimited" },
   ];
 
   return (
@@ -79,8 +74,8 @@ export function ProComparisonList() {
                 <div className="text-sm font-medium">{feature.free}</div>
               </div>
               <div className="text-right">
-                <div className="text-xs" style={{ color: 'hsl(var(--brand-gold))' }}>Pro</div>
-                <div className="text-sm font-medium" style={{ color: 'hsl(var(--brand-gold))' }}>{feature.pro}</div>
+                <div className="text-xs text-amber-500">Pro</div>
+                <div className="text-sm font-medium text-amber-500">{feature.pro}</div>
               </div>
             </div>
           </div>

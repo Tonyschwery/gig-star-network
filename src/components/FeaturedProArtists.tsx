@@ -95,7 +95,7 @@ export function FeaturedProArtists() {
             <h2 className="text-headline">Featured Pro Artists</h2>
           </div>
           <p className="text-subhead max-w-2xl mx-auto">
-            Discover our premium talent with verified profiles, unlimited booking requests, and zero platform commission
+            Discover our premium verified talents with unlimited booking requests and priority visibility
           </p>
         </div>
 
@@ -165,9 +165,9 @@ export function FeaturedProArtists() {
                       </div>
                     )}
                   </div>
-                  <div className="flex items-center gap-1 text-xs text-brand-success">
+                  <div className="flex items-center gap-1 text-xs text-amber-500">
                     <Crown className="h-3 w-3" />
-                    <span>0% Commission</span>
+                    <span>Pro Member</span>
                   </div>
                 </div>
 

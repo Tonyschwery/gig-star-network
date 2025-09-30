@@ -132,12 +132,13 @@ export function NotificationCenter() {
         <div className="p-4">
           <div className="flex items-center justify-between mb-4">
             <h4 className="font-medium leading-none">Notifications</h4>
-            {unreadCount > 0 && (
+            {notifications.length > 0 && (
               <Button
                 onClick={markAllAsRead}
                 variant="ghost"
                 size="sm"
                 className="text-xs text-muted-foreground hover:text-foreground h-auto py-1 px-2"
+                disabled={unreadCount === 0}
               >
                 <CheckCheck className="h-3 w-3 mr-1" />
                 Mark all read

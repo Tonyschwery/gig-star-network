@@ -226,7 +226,7 @@ export function HeroSection() {
                 <Crown className="h-6 w-6 text-brand-warning" />
                 <h3 className="text-xl font-bold text-foreground">Featured Pro Artists</h3>
               </div>
-              <p className="text-sm text-muted-foreground">Premium talents with verified profiles & zero commission</p>
+              <p className="text-sm text-muted-foreground">Premium verified talents with unlimited bookings</p>
             </div>
             
             {featuredTalents.length > 0 ? (
