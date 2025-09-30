@@ -23,3 +23,6 @@ verify_jwt = false
 
 [functions.cleanup-expired-bookings]
 verify_jwt = false
+
+[functions.cleanup-past-events]
+verify_jwt = false
