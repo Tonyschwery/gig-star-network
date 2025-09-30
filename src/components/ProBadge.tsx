@@ -24,16 +24,11 @@ export function ProBadge({ size = "default", className, showIcon = true }: ProBa
   return (
     <Badge 
       className={cn(
-        "bg-brand-secondary text-primary-foreground border border-brand-gold shadow-lg hover:shadow-xl transition-all duration-300 relative overflow-hidden",
-        "hover:bg-brand-secondary/80",
+        "bg-gradient-to-r from-amber-500 to-yellow-600 text-white border-2 border-amber-400 shadow-lg hover:shadow-xl transition-all duration-300 relative overflow-hidden",
+        "hover:from-amber-600 hover:to-yellow-700",
         sizeClasses[size],
         className
       )}
-      style={{
-        background: 'hsl(var(--brand-secondary))',
-        borderColor: 'hsl(var(--brand-gold))',
-        color: 'hsl(var(--primary-foreground))'
-      }}
     >
       {showIcon && <Crown className={cn("mr-1.5 drop-shadow-sm", iconSizes[size])} />}
       <span className="relative z-10 drop-shadow-sm tracking-wide">PRO</span>

@@ -240,13 +240,14 @@ export const useLocationDetection = () => {
     }
   }, [user, state.isDetecting, state.userLocation]);
 
-  // Initialize on mount - Always try IP detection for proximity sorting
+  // Initialize on mount - Always auto-detect unless manually overridden
   useEffect(() => {
     // Load from localStorage first
     const savedLocation = localStorage.getItem('userLocation');
     const isOverride = localStorage.getItem('locationOverride') === 'true';
     
-    if (savedLocation) {
+    if (savedLocation && isOverride) {
+      // User manually set location, respect their choice
       setState(prev => ({ ...prev, userLocation: savedLocation }));
     }
 
@@ -265,6 +266,11 @@ export const useLocationDetection = () => {
       // Use cached location if it's less than 1 hour old
       if (cachedLocation && cacheTime && (now - parseInt(cacheTime)) < 3600000) {
         setState(prev => ({ ...prev, detectedLocation: cachedLocation }));
+        // Auto-apply if no manual override
+        if (!isOverride) {
+          setState(prev => ({ ...prev, userLocation: cachedLocation }));
+          localStorage.setItem('userLocation', cachedLocation);
+        }
       } else {
         // Only fetch if not already detecting
         setState(prev => ({ ...prev, isDetecting: true }));
@@ -274,6 +280,11 @@ export const useLocationDetection = () => {
             // Cache the result
             sessionStorage.setItem('detectedLocation', ipLocation);
             sessionStorage.setItem('detectedLocationTime', now.toString());
+            // Auto-apply if no manual override
+            if (!isOverride) {
+              setState(prev => ({ ...prev, userLocation: ipLocation }));
+              localStorage.setItem('userLocation', ipLocation);
+            }
           } else {
             setState(prev => ({ ...prev, isDetecting: false }));
           }
@@ -283,9 +294,8 @@ export const useLocationDetection = () => {
       }
     }
 
-    // Only auto-detect GPS on desktop and if no location is set
-    // Mobile browsers require user interaction for location access
-    if (!isMobile && !savedLocation && !state.detectedLocation) {
+    // Auto-detect on desktop unless manually overridden
+    if (!isMobile && !isOverride && !state.detectedLocation) {
       detectLocation();
     }
   }, [user, loadUserPreferences, isMobile]);

@@ -5,10 +5,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useChat } from '@/contexts/ChatContext';
 import { useNavigate } from 'react-router-dom';
-import { Bell } from 'lucide-react';
+import { Bell, CheckCheck } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from '@/components/ui/button';
 import { formatDistanceToNow } from 'date-fns';
+import { useToast } from '@/hooks/use-toast';
 
 interface Notification {
   id: string;
@@ -25,6 +26,7 @@ export function NotificationCenter() {
   const { user } = useAuth();
   const { openChat } = useChat();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const unreadCount = notifications.filter(n => !n.is_read).length;
 
@@ -51,6 +53,31 @@ export function NotificationCenter() {
 
     return () => { supabase.removeChannel(subscription); };
   }, [user]);
+
+  const markAllAsRead = async () => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .update({ is_read: true })
+        .eq('user_id', user.id)
+        .eq('is_read', false);
+
+      if (error) throw error;
+
+      setNotifications(prev => 
+        prev.map(notif => ({ ...notif, is_read: true }))
+      );
+
+      toast({
+        title: "All notifications marked as read",
+        description: "You're all caught up!",
+      });
+    } catch (error) {
+      console.error('Error marking all as read:', error);
+    }
+  };
 
   const handleNotificationClick = async (notification: Notification) => {
     console.log('Notification clicked:', notification);
@@ -103,7 +130,20 @@ export function NotificationCenter() {
       </PopoverTrigger>
       <PopoverContent className="w-80">
         <div className="p-4">
-          <h4 className="font-medium leading-none mb-4">Notifications</h4>
+          <div className="flex items-center justify-between mb-4">
+            <h4 className="font-medium leading-none">Notifications</h4>
+            {unreadCount > 0 && (
+              <Button
+                onClick={markAllAsRead}
+                variant="ghost"
+                size="sm"
+                className="text-xs text-muted-foreground hover:text-foreground h-auto py-1 px-2"
+              >
+                <CheckCheck className="h-3 w-3 mr-1" />
+                Mark all read
+              </Button>
+            )}
+          </div>
           {notifications.length === 0 ? (
             <p className="text-sm text-muted-foreground">No new notifications.</p>
           ) : (
