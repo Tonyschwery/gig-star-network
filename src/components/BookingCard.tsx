@@ -69,8 +69,7 @@ export const BookingCard = ({ booking, mode, onUpdate, onRemove, shouldBlurConta
 
   const getStatusBadgeVariant = (status: string): "default" | "secondary" | "outline" | "destructive" => {
     switch (status) {
-      case 'confirmed': return 'default'; // Using default for success (often blue or black)
-      case 'accepted': return 'secondary';
+      case 'confirmed': return 'default';
       case 'pending': return 'secondary';
       case 'cancelled':
       case 'declined':
