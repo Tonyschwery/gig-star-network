@@ -1,8 +1,8 @@
 // FILE: src/pages/Auth.tsx
-import { forceClearAuth } from "@/lib/auth-utils"; // ✅ ADDED
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { forceClearAuth } from "@/lib/auth-utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,127 +20,118 @@ const Auth = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, loading: authLoading } = useAuth();
-  
   const { state } = useLocation();
-  const mode = state?.mode || 'talent';
+  const mode = state?.mode || "talent";
 
-  const title = mode === 'booker' ? 'Welcome to Qtalent' : 'Join as a Talent';
-  const description = mode === 'booker' ? 'Please sign in or sign up to proceed.' : 'Create your profile to get booked';
-  
+  const title = mode === "booker" ? "Welcome to Qtalent" : "Join as a Talent";
+  const description = mode === "booker" ? "Please sign in or sign up to proceed." : "Create your profile to get booked";
+
+  // Clear session/cache if the page is refreshed while on Auth page
   useEffect(() => {
     const handleBeforeUnload = async () => {
       await forceClearAuth();
     };
     window.addEventListener("beforeunload", handleBeforeUnload);
-    return () => {
-      window.removeEventListener("beforeunload", handleBeforeUnload);
-    };
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, []);
 
+  // Redirect if already logged in
   useEffect(() => {
     if (!authLoading && user) {
-      navigate('/');
+      navigate("/");
     }
   }, [user, authLoading, navigate]);
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    
-    try {
-      // Clear any existing auth state before signing up with new account
-      await forceClearAuth(); // ✅ UPDATED
 
-      
-      // This correctly sets the user_type metadata during signup
-      const userType = mode === 'booker' ? 'booker' : 'talent';
-      // Redirect talent signups to onboarding form after email confirmation
-      const redirectTo = userType === 'talent' 
+    try {
+      // Force clear any old session/cache
+      await forceClearAuth();
+
+      const userType = mode === "booker" ? "booker" : "talent";
+      const redirectTo = userType === "talent"
         ? `${window.location.origin}/talent-onboarding`
         : `${window.location.origin}/`;
-      
-      const { error } = await supabase.auth.signUp({ 
-          email, 
-          password, 
-          options: { 
-            emailRedirectTo: redirectTo,
-            data: { name: name, user_type: userType } 
-          } 
+
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: redirectTo,
+          data: { name, user_type: userType },
+        },
       });
+
       if (error) {
-          toast({ title: "Sign up failed", description: error.message, variant: "destructive" });
+        toast({ title: "Sign up failed", description: error.message, variant: "destructive" });
       } else {
-          toast({ title: "Success!", description: "Please check your email to verify your account." });
+        toast({ title: "Success!", description: "Please check your email to verify your account." });
       }
     } catch (error) {
       toast({ title: "Sign up failed", description: "An unexpected error occurred", variant: "destructive" });
     }
-    
+
     setLoading(false);
   };
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    
+
     try {
-      // Clear any existing auth state before signing in with new account
-      const { forceClearAuth } = await import('@/lib/auth-utils');
+      // Force clear any old session/cache before login
       await forceClearAuth();
-      
+
       const { error, data } = await supabase.auth.signInWithPassword({ email, password });
 
       if (error) {
         toast({ title: "Sign in failed", description: error.message, variant: "destructive" });
         setLoading(false);
         return;
-      } 
-      
-      // This is the smart redirect logic that runs AFTER a successful login
+      }
+
       if (data.user) {
         toast({ title: "Signed in successfully!" });
-        
+
         const intent = state?.intent;
         const talentId = state?.talentId;
         const from = state?.from?.pathname || null;
 
-        // Rule 1: If user is the admin, always go to the admin panel.
-        if (data.user.email === 'admin@qtalent.live') {
-          navigate('/admin');
-        } 
-        // Rule 2: Handle specific intents first
-        else if (intent === 'event-form') {
-          navigate('/your-event');
-        }
-        else if (intent === 'booking-form' && talentId) {
+        if (data.user.email === "admin@qtalent.live") {
+          navigate("/admin");
+        } else if (intent === "event-form") {
+          navigate("/your-event");
+        } else if (intent === "booking-form" && talentId) {
           navigate(`/talent/${talentId}`, { state: { openBookingForm: true } });
-        }
-        // Rule 3: If user was sent here from another page, send them back.
-        else if (from) {
+        } else if (from) {
           navigate(from);
-        } 
-        // Rule 4: Otherwise, send them to their default dashboard.
-        else {
-          const { data: profile } = await supabase.from('talent_profiles').select('id').eq('user_id', data.user.id).maybeSingle();
+        } else {
+          const { data: profile } = await supabase
+            .from("talent_profiles")
+            .select("id")
+            .eq("user_id", data.user.id)
+            .maybeSingle();
           if (profile) {
-              navigate('/talent-dashboard');
+            navigate("/talent-dashboard");
           } else {
-              navigate('/booker-dashboard');
+            navigate("/booker-dashboard");
           }
         }
       }
     } catch (error) {
       toast({ title: "Sign in failed", description: "An unexpected error occurred", variant: "destructive" });
     }
-    
+
     setLoading(false);
   };
 
   if (authLoading && !user) {
     return (
-        <div className="min-h-screen bg-background flex items-center justify-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        </div>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
     );
   }
 
@@ -165,30 +156,67 @@ const Auth = () => {
                 <form onSubmit={handleSignIn} className="space-y-4 pt-4">
                   <div className="space-y-2">
                     <Label htmlFor="login-email">Email</Label>
-                    <Input id="login-email" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                    <Input
+                      id="login-email"
+                      type="email"
+                      placeholder="you@example.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="login-password">Password</Label>
-                    <Input id="login-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                    <Input
+                      id="login-password"
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                    />
                   </div>
-                  <Button type="submit" disabled={loading} className="w-full">{loading ? 'Signing In...' : 'Sign In'}</Button>
+                  <Button type="submit" disabled={loading} className="w-full">
+                    {loading ? "Signing In..." : "Sign In"}
+                  </Button>
                 </form>
               </TabsContent>
               <TabsContent value="signup">
                 <form onSubmit={handleSignUp} className="space-y-4 pt-4">
                   <div className="space-y-2">
                     <Label htmlFor="signup-name">Full Name</Label>
-                    <Input id="signup-name" placeholder="Your Name" value={name} onChange={(e) => setName(e.target.value)} required />
+                    <Input
+                      id="signup-name"
+                      placeholder="Your Name"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      required
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="signup-email">Email</Label>
-                    <Input id="signup-email" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                    <Input
+                      id="signup-email"
+                      type="email"
+                      placeholder="you@example.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="signup-password">Password</Label>
-                    <Input id="signup-password" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                    <Input
+                      id="signup-password"
+                      type="password"
+                      placeholder="••••••••"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                    />
                   </div>
-                  <Button type="submit" disabled={loading} className="w-full">{loading ? 'Creating Account...' : 'Create Account'}</Button>
+                  <Button type="submit" disabled={loading} className="w-full">
+                    {loading ? "Creating Account..." : "Create Account"}
+                  </Button>
                 </form>
               </TabsContent>
             </Tabs>
