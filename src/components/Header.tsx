@@ -19,7 +19,6 @@ import { ModeSwitch } from "@/components/ModeSwitch";
 import { useUserMode } from "@/contexts/UserModeContext";
 import { useUnreadNotifications } from "@/hooks/useUnreadNotifications";
 import { useUnreadMessages } from "@/hooks/useUnreadMessages";
-import { forceClearAuth } from '@/lib/auth-utils';
 
 export function Header() {
   const navigate = useNavigate();
@@ -106,26 +105,13 @@ export function Header() {
     }
   };
 
-  const handleTalentSignup = async () => {
-    if (user) {
-      // Check if user signed up as talent but hasn't completed profile
-      const userMetadata = user.user_metadata;
-      const isTalentSignup = userMetadata?.user_type === 'talent';
-      
-      if (isTalentSignup && !talentName) {
-        // User signed up as talent but hasn't completed onboarding
-        // FORCE CLEAR EVERYTHING before navigating - cache, cookies, storage, everything
-        await forceClearAuth({ fullClear: true });
-        
-        // Use hard navigation to ensure completely fresh page load
-        window.location.href = "/talent-onboarding";
-      } else if (!isTalentSignup) {
-        // User is a booker wanting to become talent - not allowed
-        navigate("/");
-      }
+  const handleTalentSignup = () => {
+    if (user && !talentName) {
+      // User is logged in but doesn't have a talent profile
+      navigate("/talent-onboarding");
     } else {
-      // User is not logged in, go to talent auth signup
-      navigate("/auth", { state: { mode: 'talent' } });
+      // User is not logged in, go to auth
+      navigate("/auth");
     }
   };
 

@@ -1,3 +1,5 @@
+// FILE: src/pages/Auth.tsx
+
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,108 +12,121 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { ArrowLeft } from "lucide-react";
 
-// Only clear app-specific cache, NOT Supabase session
-const clearAppCache = () => {
-  try {
-    sessionStorage.removeItem("temp_user_mode");
-    // Add any app-specific cache you want to clear here
-  } catch (e) {
-    console.warn("App cache clear failed", e);
-  }
-};
-
 const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
-
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, loading: authLoading } = useAuth();
+  
   const { state } = useLocation();
-  const mode = state?.mode || "talent";
+  const mode = state?.mode || 'talent';
 
-  const title = mode === "booker" ? "Welcome to Qtalent" : "Join as a Talent";
-  const description = mode === "booker" ? "Please sign in or sign up to proceed." : "Create your profile to get booked";
-
-  // Redirect if already logged in
+  const title = mode === 'booker' ? 'Welcome to Qtalent' : 'Join as a Talent';
+  const description = mode === 'booker' ? 'Please sign in or sign up to proceed.' : 'Create your profile to get booked';
+  
+  // This effect redirects a user if they are ALREADY logged in and happen to land on this page.
   useEffect(() => {
     if (!authLoading && user) {
-      // Detect if Talent or Booker
-      supabase
-        .from("talent_profiles")
-        .select("id")
-        .eq("user_id", user.id)
-        .maybeSingle()
-        .then(({ data: profile }) => {
-          if (profile) navigate("/talent-dashboard");
-          else navigate("/booker-dashboard");
-        })
-        .catch(() => navigate("/"));
+        navigate('/');
     }
   }, [user, authLoading, navigate]);
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    clearAppCache(); // fast cache clear, does not affect Supabase session
-
-    const userType = mode === "booker" ? "booker" : "talent";
-    const redirectTo = userType === "talent"
-      ? `${window.location.origin}/talent-onboarding`
-      : `${window.location.origin}/`;
-
+    
     try {
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: { emailRedirectTo: redirectTo, data: { name, user_type: userType } },
+      // Clear any existing auth state before signing up with new account
+      const { forceClearAuth } = await import('@/lib/auth-utils');
+      await forceClearAuth();
+      
+      // This correctly sets the user_type metadata during signup
+      const userType = mode === 'booker' ? 'booker' : 'talent';
+      const { error } = await supabase.auth.signUp({ 
+          email, 
+          password, 
+          options: { 
+            emailRedirectTo: `${window.location.origin}/`,
+            data: { name: name, user_type: userType } 
+          } 
       });
-
-      if (error) toast({ title: "Sign up failed", description: error.message, variant: "destructive" });
-      else toast({ title: "Success!", description: "Please check your email to verify your account." });
-    } catch (err) {
-      toast({ title: "Sign up failed", description: "Unexpected error", variant: "destructive" });
+      if (error) {
+          toast({ title: "Sign up failed", description: error.message, variant: "destructive" });
+      } else {
+          toast({ title: "Success!", description: "Please check your email to verify your account." });
+      }
+    } catch (error) {
+      toast({ title: "Sign up failed", description: "An unexpected error occurred", variant: "destructive" });
     }
+    
     setLoading(false);
   };
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    clearAppCache(); // fast cache clear, no page reload
-
+    
     try {
+      // Clear any existing auth state before signing in with new account
+      const { forceClearAuth } = await import('@/lib/auth-utils');
+      await forceClearAuth();
+      
       const { error, data } = await supabase.auth.signInWithPassword({ email, password });
+
       if (error) {
         toast({ title: "Sign in failed", description: error.message, variant: "destructive" });
-      } else if (data.user) {
+        setLoading(false);
+        return;
+      } 
+      
+      // This is the smart redirect logic that runs AFTER a successful login
+      if (data.user) {
         toast({ title: "Signed in successfully!" });
+        
+        const intent = state?.intent;
+        const talentId = state?.talentId;
+        const from = state?.from?.pathname || null;
 
-        // Redirect based on Talent/Booker
-        const { data: profile } = await supabase
-          .from("talent_profiles")
-          .select("id")
-          .eq("user_id", data.user.id)
-          .maybeSingle();
-
-        if (data.user.email === "admin@qtalent.live") navigate("/admin");
-        else if (profile) navigate("/talent-dashboard");
-        else navigate("/booker-dashboard");
+        // Rule 1: If user is the admin, always go to the admin panel.
+        if (data.user.email === 'admin@qtalent.live') {
+          navigate('/admin');
+        } 
+        // Rule 2: Handle specific intents first
+        else if (intent === 'event-form') {
+          navigate('/your-event');
+        }
+        else if (intent === 'booking-form' && talentId) {
+          navigate(`/talent/${talentId}`, { state: { openBookingForm: true } });
+        }
+        // Rule 3: If user was sent here from another page, send them back.
+        else if (from) {
+          navigate(from);
+        } 
+        // Rule 4: Otherwise, send them to their default dashboard.
+        else {
+          const { data: profile } = await supabase.from('talent_profiles').select('id').eq('user_id', data.user.id).maybeSingle();
+          if (profile) {
+              navigate('/talent-dashboard');
+          } else {
+              navigate('/booker-dashboard');
+          }
+        }
       }
-    } catch (err) {
-      toast({ title: "Sign in failed", description: "Unexpected error", variant: "destructive" });
+    } catch (error) {
+      toast({ title: "Sign in failed", description: "An unexpected error occurred", variant: "destructive" });
     }
-
+    
     setLoading(false);
   };
 
   if (authLoading && !user) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
+        <div className="min-h-screen bg-background flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
     );
   }
 
@@ -142,7 +157,7 @@ const Auth = () => {
                     <Label htmlFor="login-password">Password</Label>
                     <Input id="login-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
                   </div>
-                  <Button type="submit" disabled={loading} className="w-full">{loading ? "Signing In..." : "Sign In"}</Button>
+                  <Button type="submit" disabled={loading} className="w-full">{loading ? 'Signing In...' : 'Sign In'}</Button>
                 </form>
               </TabsContent>
               <TabsContent value="signup">
@@ -159,7 +174,7 @@ const Auth = () => {
                     <Label htmlFor="signup-password">Password</Label>
                     <Input id="signup-password" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required />
                   </div>
-                  <Button type="submit" disabled={loading} className="w-full">{loading ? "Creating Account..." : "Create Account"}</Button>
+                  <Button type="submit" disabled={loading} className="w-full">{loading ? 'Creating Account...' : 'Create Account'}</Button>
                 </form>
               </TabsContent>
             </Tabs>

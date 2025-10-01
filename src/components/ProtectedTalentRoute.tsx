@@ -3,7 +3,6 @@
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
-import { forceClearAuth } from '@/lib/auth-utils';
 
 export function ProtectedTalentRoute({ children }: { children: React.ReactNode }) {
     const { status, loading, user } = useAuth();
@@ -11,29 +10,26 @@ export function ProtectedTalentRoute({ children }: { children: React.ReactNode }
     const location = useLocation();
 
     useEffect(() => {
-        const checkAuth = async () => {
-            if (loading) {
-                return; // Do nothing while auth state is loading
-            }
+        if (loading) {
+            return; // Do nothing while auth state is loading
+        }
 
-            // Define which statuses are considered a "Talent"
-            const isTalent = status === 'TALENT_COMPLETE' || status === 'TALENT_NEEDS_ONBOARDING';
-
-            if (status === 'LOGGED_OUT') {
-                // Clear cache before redirecting to auth
-                await forceClearAuth();
-                navigate('/auth', { replace: true, state: { from: location, mode: 'talent' } });
-            } else if (!isTalent) {
-                // If logged in but not as a talent (e.g., a Booker), clear cache and send to homepage
-                await forceClearAuth();
-                navigate('/');
-            }
-        };
+        // Define which statuses are considered a "Talent"
+        const isTalent = status === 'TALENT_COMPLETE' || status === 'TALENT_NEEDS_ONBOARDING';
         
-        checkAuth();
+        // Also allow users who signed up as talent but haven't completed onboarding yet
+        const isTalentSignup = user?.user_metadata?.user_type === 'talent' && status === 'BOOKER';
+
+        if (status === 'LOGGED_OUT') {
+            navigate('/auth', { replace: true, state: { from: location, mode: 'talent' } });
+        } else if (!isTalent && !isTalentSignup) {
+            // If logged in but not as a talent (e.g., a Booker), send to homepage
+            navigate('/');
+        }
     }, [status, loading, navigate, location, user]);
 
-    const isAuthorized = status === 'TALENT_COMPLETE' || status === 'TALENT_NEEDS_ONBOARDING';
+    const isAuthorized = status === 'TALENT_COMPLETE' || status === 'TALENT_NEEDS_ONBOARDING' || 
+                        (user?.user_metadata?.user_type === 'talent' && status === 'BOOKER');
 
     // Show talent content immediately if authorized
     if (isAuthorized) {

@@ -49,32 +49,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return;
         }
         
-        // Detect stale session - check if user exists but profiles don't match expectations
-        if (session?.user) {
-          const userMetadata = session.user.user_metadata;
-          
-          // Check if metadata says talent but no talent profile exists
-          if (userMetadata?.user_type === 'talent') {
-            const { data: talentProfile } = await supabase
-              .from('talent_profiles')
-              .select('id')
-              .eq('user_id', session.user.id)
-              .maybeSingle();
-            
-            // If metadata says talent but profile doesn't exist, session might be stale
-            if (!talentProfile && window.location.pathname.includes('talent-dashboard')) {
-              console.warn('Stale session detected: talent metadata but no profile');
-              const { forceClearAuth } = await import('@/lib/auth-utils');
-              await forceClearAuth();
-              if (mounted) {
-                setLoading(false);
-                window.location.href = '/';
-              }
-              return;
-            }
-          }
-        }
-        
         // Initial session set
         if (mounted) {
           setSession(session);
@@ -122,23 +96,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setStatus(talentProfile.artist_name ? 'TALENT_COMPLETE' : 'TALENT_NEEDS_ONBOARDING');
           setMode('artist');
         } else {
-          // Check if user signed up as talent but hasn't completed profile yet
-          const userMetadata = currentUser.user_metadata;
-          if (userMetadata?.user_type === 'talent') {
-            // User signed up as talent but no profile exists yet
-            setStatus('TALENT_NEEDS_ONBOARDING');
-            setProfile(null);
-            setMode('artist');
+          // If not a talent, check for a booker profile
+          const { data: bookerProfile } = await supabase.from('profiles').select('*').eq('id', currentUser.id).single();
+          if (bookerProfile) {
+            setProfile(bookerProfile);
+            setStatus('BOOKER');
           } else {
-            // If not a talent, check for a booker profile
-            const { data: bookerProfile } = await supabase.from('profiles').select('*').eq('id', currentUser.id).single();
-            if (bookerProfile) {
-              setProfile(bookerProfile);
-              setStatus('BOOKER');
-            } else {
-              // Fallback for users who might exist before the profile trigger was made
-              setStatus('LOGGED_OUT'); // Or handle as an error
-            }
+            // Fallback for users who might exist before the profile trigger was made
+            setStatus('LOGGED_OUT'); // Or handle as an error
           }
         }
       }

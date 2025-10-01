@@ -19,7 +19,6 @@ import { SubscriptionModal } from '@/components/SubscriptionModal';
 import { useEmailNotifications } from '@/hooks/useEmailNotifications';
 import { useLocationDetection } from '@/hooks/useLocationDetection';
 import { LocationSelector } from '@/components/LocationSelector';
-import { forceClearAuth } from '@/lib/auth-utils';
 
 const MUSIC_GENRES = [
   'afro-house',
@@ -124,18 +123,6 @@ export default function TalentOnboarding() {
     currency: 'USD',
     location: ''
   });
-
-  // Force clear everything on mount to ensure completely fresh state
-  useEffect(() => {
-    const clearOnMount = async () => {
-      try {
-        await forceClearAuth({ fullClear: false });
-      } catch (error) {
-        console.error('Error clearing cache on mount:', error);
-      }
-    };
-    clearOnMount();
-  }, []);
 
   // Update form location when user location changes
   useEffect(() => {
@@ -298,13 +285,10 @@ export default function TalentOnboarding() {
         // Don't show error to user for email issues
       }
 
-      // Clear EVERYTHING before navigating - cache, cookies, storage, database cache
-      await forceClearAuth({ fullClear: true });
-      
-      // Navigate to dashboard with hard reload after clearing cache
+      // Navigate to dashboard without forcing refresh
       setTimeout(() => {
-        window.location.href = '/talent-dashboard';
-      }, 500);
+        navigate('/talent-dashboard');
+      }, 1000);
     } catch (error) {
       console.error('Error creating profile:', error);
       toast({
