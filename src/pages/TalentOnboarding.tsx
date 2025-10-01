@@ -129,7 +129,7 @@ export default function TalentOnboarding() {
   useEffect(() => {
     const clearOnMount = async () => {
       try {
-        //await forceClearAuth({ fullClear: true });//my edit
+        await forceClearAuth({ fullClear: false });
       } catch (error) {
         console.error('Error clearing cache on mount:', error);
       }
