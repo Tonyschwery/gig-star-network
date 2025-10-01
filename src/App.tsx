@@ -28,7 +28,7 @@ import { AdminRoute } from "./components/AdminRoute";
 import YourEvent from "./pages/YourEvent";
 import Pricing from "./pages/Pricing";
 import { forceClearAuth } from "@/lib/auth-utils";
-import ResetButton from "./components/ResetButton"; // optional Reset button
+
 
 const App = () => {
   const navigate = useNavigate();
