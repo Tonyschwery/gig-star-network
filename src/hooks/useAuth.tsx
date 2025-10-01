@@ -122,14 +122,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setStatus(talentProfile.artist_name ? 'TALENT_COMPLETE' : 'TALENT_NEEDS_ONBOARDING');
           setMode('artist');
         } else {
-          // If not a talent, check for a booker profile
-          const { data: bookerProfile } = await supabase.from('profiles').select('*').eq('id', currentUser.id).single();
-          if (bookerProfile) {
-            setProfile(bookerProfile);
-            setStatus('BOOKER');
+          // Check if user signed up as talent but hasn't completed profile yet
+          const userMetadata = currentUser.user_metadata;
+          if (userMetadata?.user_type === 'talent') {
+            // User signed up as talent but no profile exists yet
+            setStatus('TALENT_NEEDS_ONBOARDING');
+            setProfile(null);
+            setMode('artist');
           } else {
-            // Fallback for users who might exist before the profile trigger was made
-            setStatus('LOGGED_OUT'); // Or handle as an error
+            // If not a talent, check for a booker profile
+            const { data: bookerProfile } = await supabase.from('profiles').select('*').eq('id', currentUser.id).single();
+            if (bookerProfile) {
+              setProfile(bookerProfile);
+              setStatus('BOOKER');
+            } else {
+              // Fallback for users who might exist before the profile trigger was made
+              setStatus('LOGGED_OUT'); // Or handle as an error
+            }
           }
         }
       }

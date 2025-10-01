@@ -107,14 +107,24 @@ export function Header() {
   };
 
   const handleTalentSignup = async () => {
-    if (user && !talentName) {
-      // Clear cache before navigating to onboarding to ensure fresh state
-      await forceClearAuth();
-      // Use window.location for hard navigation to ensure clean state
-      window.location.href = "/talent-onboarding";
+    if (user) {
+      // Check if user signed up as talent but hasn't completed profile
+      const userMetadata = user.user_metadata;
+      const isTalentSignup = userMetadata?.user_type === 'talent';
+      
+      if (isTalentSignup && !talentName) {
+        // User signed up as talent but hasn't completed onboarding
+        // Clear cache before navigating to onboarding to ensure fresh state
+        await forceClearAuth();
+        // Use window.location for hard navigation to ensure clean state
+        window.location.href = "/talent-onboarding";
+      } else if (!isTalentSignup) {
+        // User is a booker wanting to become talent - not allowed
+        navigate("/");
+      }
     } else {
-      // User is not logged in, go to auth
-      navigate("/auth");
+      // User is not logged in, go to talent auth signup
+      navigate("/auth", { state: { mode: 'talent' } });
     }
   };
 

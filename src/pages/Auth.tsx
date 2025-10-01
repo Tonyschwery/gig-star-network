@@ -54,11 +54,16 @@ const Auth = () => {
       
       // This correctly sets the user_type metadata during signup
       const userType = mode === 'booker' ? 'booker' : 'talent';
+      // Redirect talent signups to onboarding form after email confirmation
+      const redirectTo = userType === 'talent' 
+        ? `${window.location.origin}/talent-onboarding`
+        : `${window.location.origin}/`;
+      
       const { error } = await supabase.auth.signUp({ 
           email, 
           password, 
           options: { 
-            emailRedirectTo: `${window.location.origin}/`,
+            emailRedirectTo: redirectTo,
             data: { name: name, user_type: userType } 
           } 
       });

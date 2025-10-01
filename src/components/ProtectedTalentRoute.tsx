@@ -18,15 +18,12 @@ export function ProtectedTalentRoute({ children }: { children: React.ReactNode }
 
             // Define which statuses are considered a "Talent"
             const isTalent = status === 'TALENT_COMPLETE' || status === 'TALENT_NEEDS_ONBOARDING';
-            
-            // Also allow users who signed up as talent but haven't completed onboarding yet
-            const isTalentSignup = user?.user_metadata?.user_type === 'talent' && status === 'BOOKER';
 
             if (status === 'LOGGED_OUT') {
                 // Clear cache before redirecting to auth
                 await forceClearAuth();
                 navigate('/auth', { replace: true, state: { from: location, mode: 'talent' } });
-            } else if (!isTalent && !isTalentSignup) {
+            } else if (!isTalent) {
                 // If logged in but not as a talent (e.g., a Booker), clear cache and send to homepage
                 await forceClearAuth();
                 navigate('/');
@@ -36,8 +33,7 @@ export function ProtectedTalentRoute({ children }: { children: React.ReactNode }
         checkAuth();
     }, [status, loading, navigate, location, user]);
 
-    const isAuthorized = status === 'TALENT_COMPLETE' || status === 'TALENT_NEEDS_ONBOARDING' || 
-                        (user?.user_metadata?.user_type === 'talent' && status === 'BOOKER');
+    const isAuthorized = status === 'TALENT_COMPLETE' || status === 'TALENT_NEEDS_ONBOARDING';
 
     // Show talent content immediately if authorized
     if (isAuthorized) {
