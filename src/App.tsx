@@ -42,7 +42,7 @@ const App = () => {
     if (wasReloading === 'true') {
       sessionStorage.removeItem('isReloading');
       // Clear everything after reload
-      forceClearAuth({ fullClear: true }).catch(console.error);
+      //forceClearAuth({ fullClear: true }).catch(console.error);
     }
 
     window.addEventListener('beforeunload', handleBeforeUnload);
