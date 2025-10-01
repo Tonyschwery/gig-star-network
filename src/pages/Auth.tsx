@@ -17,6 +17,7 @@ const Auth = () => {
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
+
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, loading: authLoading } = useAuth();
@@ -26,15 +27,6 @@ const Auth = () => {
   const title = mode === "booker" ? "Welcome to Qtalent" : "Join as a Talent";
   const description = mode === "booker" ? "Please sign in or sign up to proceed." : "Create your profile to get booked";
 
-  // Clear session/cache if the page is refreshed while on Auth page
-  useEffect(() => {
-    const handleBeforeUnload = async () => {
-      await forceClearAuth();
-    };
-    window.addEventListener("beforeunload", handleBeforeUnload);
-    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
-  }, []);
-
   // Redirect if already logged in
   useEffect(() => {
     if (!authLoading && user) {
@@ -42,89 +34,26 @@ const Auth = () => {
     }
   }, [user, authLoading, navigate]);
 
+  // Helper: clear cache/session + reload
+  const resetAndReload = async () => {
+    try {
+      setLoading(true);
+      await forceClearAuth({ fullClear: true });
+      window.location.reload(); // Full reload ensures Supabase/IndexedDB/session reset
+    } catch (err) {
+      console.error("Failed to reset auth", err);
+      setLoading(false);
+    }
+  };
+
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-
-    try {
-      // Force clear any old session/cache
-      await forceClearAuth();
-
-      const userType = mode === "booker" ? "booker" : "talent";
-      const redirectTo = userType === "talent"
-        ? `${window.location.origin}/talent-onboarding`
-        : `${window.location.origin}/`;
-
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: redirectTo,
-          data: { name, user_type: userType },
-        },
-      });
-
-      if (error) {
-        toast({ title: "Sign up failed", description: error.message, variant: "destructive" });
-      } else {
-        toast({ title: "Success!", description: "Please check your email to verify your account." });
-      }
-    } catch (error) {
-      toast({ title: "Sign up failed", description: "An unexpected error occurred", variant: "destructive" });
-    }
-
-    setLoading(false);
+    await resetAndReload(); // Clear old session/cache before signup
   };
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-
-    try {
-      // Force clear any old session/cache before login
-      await forceClearAuth();
-
-      const { error, data } = await supabase.auth.signInWithPassword({ email, password });
-
-      if (error) {
-        toast({ title: "Sign in failed", description: error.message, variant: "destructive" });
-        setLoading(false);
-        return;
-      }
-
-      if (data.user) {
-        toast({ title: "Signed in successfully!" });
-
-        const intent = state?.intent;
-        const talentId = state?.talentId;
-        const from = state?.from?.pathname || null;
-
-        if (data.user.email === "admin@qtalent.live") {
-          navigate("/admin");
-        } else if (intent === "event-form") {
-          navigate("/your-event");
-        } else if (intent === "booking-form" && talentId) {
-          navigate(`/talent/${talentId}`, { state: { openBookingForm: true } });
-        } else if (from) {
-          navigate(from);
-        } else {
-          const { data: profile } = await supabase
-            .from("talent_profiles")
-            .select("id")
-            .eq("user_id", data.user.id)
-            .maybeSingle();
-          if (profile) {
-            navigate("/talent-dashboard");
-          } else {
-            navigate("/booker-dashboard");
-          }
-        }
-      }
-    } catch (error) {
-      toast({ title: "Sign in failed", description: "An unexpected error occurred", variant: "destructive" });
-    }
-
-    setLoading(false);
+    await resetAndReload(); // Clear old session/cache before login
   };
 
   if (authLoading && !user) {
