@@ -28,29 +28,30 @@ import { AdminRoute } from "./components/AdminRoute";
 import YourEvent from "./pages/YourEvent";
 import Pricing from "./pages/Pricing";
 import { forceClearAuth } from "@/lib/auth-utils";
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 const App = () => {
-  // Force clear everything on page refresh/reload
+  const navigate = useNavigate();
+
   useEffect(() => {
-    const handleBeforeUnload = () => {
-      // Mark that we're about to reload
-      sessionStorage.setItem('isReloading', 'true');
+    const handlePopState = async () => {
+      try {
+        // Only clear cache/session when user presses back
+        await forceClearAuth({ fullClear: true });
+        // Optionally redirect to home
+        navigate("/", { replace: true });
+      } catch (err) {
+        console.error(err);
+      }
     };
 
-    // On mount, check if this is after a reload
-    const wasReloading = sessionStorage.getItem('isReloading');
-    if (wasReloading === 'true') {
-      sessionStorage.removeItem('isReloading');
-      // Clear everything after reload
-      forceClearAuth({ fullClear: true }).catch(console.error);
-    }
+    window.addEventListener("popstate", handlePopState);
 
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    
     return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener("popstate", handlePopState);
     };
-  }, []);
+  }, [navigate]);
 
   return (
     <AuthProvider>
