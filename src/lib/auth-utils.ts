@@ -1,13 +1,8 @@
 // lib/auth-utils.ts
-import { createClient } from "@supabase/supabase-js";
-
-export const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || "",
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
-);
+import { supabase } from "@/integrations/supabase/client";
 
 /**
- * resetAuthState()
+ * forceClearAuth() / resetAuthState()
  * - signs out via Supabase (so server cookies are cleared if used)
  * - clears supabase-related localStorage keys
  * - clears sessionStorage
@@ -19,7 +14,7 @@ export const supabase = createClient(
  * Call this only when switching accounts / before signup or login when you want a fresh state,
  * or on the signup page mount to handle "refresh during signup".
  */
-export async function resetAuthState(opts?: { fullClear?: boolean }) {
+export async function forceClearAuth(opts?: { fullClear?: boolean }) {
   const fullClear = !!opts?.fullClear;
 
   // 1) Ask Supabase to sign out (this is important to clear any server cookies)

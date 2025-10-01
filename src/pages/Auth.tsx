@@ -27,16 +27,19 @@ const Auth = () => {
   const title = mode === 'booker' ? 'Welcome to Qtalent' : 'Join as a Talent';
   const description = mode === 'booker' ? 'Please sign in or sign up to proceed.' : 'Create your profile to get booked';
   
-  // This effect redirects a user if they are ALREADY logged in and happen to land on this page.
   useEffect(() => {
     const handleBeforeUnload = async () => {
-    await forceClearAuth();
-  };
+      await forceClearAuth();
+    };
     window.addEventListener("beforeunload", handleBeforeUnload);
-  return () => {
-    window.removeEventListener("beforeunload", handleBeforeUnload);
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, []);
+
+  useEffect(() => {
     if (!authLoading && user) {
-        navigate('/');
+      navigate('/');
     }
   }, [user, authLoading, navigate]);
 
