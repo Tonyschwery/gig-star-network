@@ -1,4 +1,3 @@
-// FILE: src/pages/Auth.tsx
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -27,133 +26,61 @@ const Auth = () => {
   const title = mode === "booker" ? "Welcome to Qtalent" : "Join as a Talent";
   const description = mode === "booker" ? "Please sign in or sign up to proceed." : "Create your profile to get booked";
 
+  // Clear old session/cache only when visiting Auth page
+  useEffect(() => {
+    const clearOldSession = async () => {
+      await forceClearAuth({ fullClear: true });
+    };
+    clearOldSession();
+  }, []);
+
   // Redirect if already logged in
   useEffect(() => {
-    if (!authLoading && user) {
-      navigate("/");
-    }
+    if (!authLoading && user) navigate("/");
   }, [user, authLoading, navigate]);
-
-  // Helper: clear cache/session + reload
-  const resetAndReload = async () => {
-    try {
-      setLoading(true);
-      await forceClearAuth({ fullClear: true });
-      window.location.reload(); // Full reload ensures Supabase/IndexedDB/session reset
-    } catch (err) {
-      console.error("Failed to reset auth", err);
-      setLoading(false);
-    }
-  };
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    await resetAndReload(); // Clear old session/cache before signup
+    setLoading(true);
+    try {
+      await forceClearAuth({ fullClear: true });
+      const userType = mode === "booker" ? "booker" : "talent";
+      const redirectTo = userType === "talent" ? `${window.location.origin}/talent-onboarding` : `${window.location.origin}/`;
+
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: redirectTo,
+          data: { name, user_type: userType },
+        },
+      });
+
+      if (error) toast({ title: "Sign up failed", description: error.message, variant: "destructive" });
+      else toast({ title: "Success!", description: "Please check your email to verify your account." });
+    } catch (err) {
+      toast({ title: "Sign up failed", description: "Unexpected error", variant: "destructive" });
+    }
+    setLoading(false);
   };
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    await resetAndReload(); // Clear old session/cache before login
-  };
+    setLoading(true);
+    try {
+      await forceClearAuth({ fullClear: true });
+      const { error, data } = await supabase.auth.signInWithPassword({ email, password });
 
-  if (authLoading && !user) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
+      if (error) {
+        toast({ title: "Sign in failed", description: error.message, variant: "destructive" });
+        setLoading(false);
+        return;
+      }
 
-  return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <Button variant="ghost" onClick={() => navigate("/")} className="mb-4">
-          <ArrowLeft className="h-4 w-4 mr-2" /> Back to Home
-        </Button>
-        <Card>
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl">{title}</CardTitle>
-            <CardDescription>{description}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Tabs defaultValue="login" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="login">Login</TabsTrigger>
-                <TabsTrigger value="signup">Sign Up</TabsTrigger>
-              </TabsList>
-              <TabsContent value="login">
-                <form onSubmit={handleSignIn} className="space-y-4 pt-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="login-email">Email</Label>
-                    <Input
-                      id="login-email"
-                      type="email"
-                      placeholder="you@example.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="login-password">Password</Label>
-                    <Input
-                      id="login-password"
-                      type="password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <Button type="submit" disabled={loading} className="w-full">
-                    {loading ? "Signing In..." : "Sign In"}
-                  </Button>
-                </form>
-              </TabsContent>
-              <TabsContent value="signup">
-                <form onSubmit={handleSignUp} className="space-y-4 pt-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-name">Full Name</Label>
-                    <Input
-                      id="signup-name"
-                      placeholder="Your Name"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-email">Email</Label>
-                    <Input
-                      id="signup-email"
-                      type="email"
-                      placeholder="you@example.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-password">Password</Label>
-                    <Input
-                      id="signup-password"
-                      type="password"
-                      placeholder="••••••••"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <Button type="submit" disabled={loading} className="w-full">
-                    {loading ? "Creating Account..." : "Create Account"}
-                  </Button>
-                </form>
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  );
-};
+      if (data.user) {
+        toast({ title: "Signed in successfully!" });
 
-export default Auth;
+        const intent = state?.intent;
+        const talentId = state?.talentId;
+        const from = state?.from?.pathname || null;
+
