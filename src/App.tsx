@@ -51,7 +51,7 @@ const App = () => {
     return () => {
       window.removeEventListener("popstate", handlePopState);
     };
-  }, [navigate]);
+  }, [navigate]);};
 
   return (
     <AuthProvider>
