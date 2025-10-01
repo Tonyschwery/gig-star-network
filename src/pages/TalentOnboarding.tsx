@@ -19,6 +19,7 @@ import { SubscriptionModal } from '@/components/SubscriptionModal';
 import { useEmailNotifications } from '@/hooks/useEmailNotifications';
 import { useLocationDetection } from '@/hooks/useLocationDetection';
 import { LocationSelector } from '@/components/LocationSelector';
+import { forceClearAuth } from '@/lib/auth-utils';
 
 const MUSIC_GENRES = [
   'afro-house',
@@ -285,10 +286,13 @@ export default function TalentOnboarding() {
         // Don't show error to user for email issues
       }
 
-      // Navigate to dashboard without forcing refresh
+      // Clear all auth cache before navigating to ensure fresh state
+      await forceClearAuth();
+      
+      // Navigate to dashboard after clearing cache
       setTimeout(() => {
-        navigate('/talent-dashboard');
-      }, 1000);
+        window.location.href = '/talent-dashboard';
+      }, 500);
     } catch (error) {
       console.error('Error creating profile:', error);
       toast({

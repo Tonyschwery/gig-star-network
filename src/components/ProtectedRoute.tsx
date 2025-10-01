@@ -3,6 +3,7 @@
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
+import { forceClearAuth } from '@/lib/auth-utils';
 
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { status, loading } = useAuth();
@@ -10,9 +11,15 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const location = useLocation();
 
   useEffect(() => {
-    if (!loading && status === 'LOGGED_OUT') {
-      navigate('/auth', { replace: true, state: { from: location, mode: 'booker' } });
-    }
+    const checkAuth = async () => {
+      if (!loading && status === 'LOGGED_OUT') {
+        // Clear cache before redirecting
+        await forceClearAuth();
+        navigate('/auth', { replace: true, state: { from: location, mode: 'booker' } });
+      }
+    };
+    
+    checkAuth();
   }, [status, loading, navigate, location]);
 
   const isAuthorized = status === 'BOOKER' || status === 'TALENT_COMPLETE' || status === 'ADMIN';

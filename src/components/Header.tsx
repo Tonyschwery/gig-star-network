@@ -19,6 +19,7 @@ import { ModeSwitch } from "@/components/ModeSwitch";
 import { useUserMode } from "@/contexts/UserModeContext";
 import { useUnreadNotifications } from "@/hooks/useUnreadNotifications";
 import { useUnreadMessages } from "@/hooks/useUnreadMessages";
+import { forceClearAuth } from '@/lib/auth-utils';
 
 export function Header() {
   const navigate = useNavigate();
@@ -105,10 +106,12 @@ export function Header() {
     }
   };
 
-  const handleTalentSignup = () => {
+  const handleTalentSignup = async () => {
     if (user && !talentName) {
-      // User is logged in but doesn't have a talent profile
-      navigate("/talent-onboarding");
+      // Clear cache before navigating to onboarding to ensure fresh state
+      await forceClearAuth();
+      // Use window.location for hard navigation to ensure clean state
+      window.location.href = "/talent-onboarding";
     } else {
       // User is not logged in, go to auth
       navigate("/auth");

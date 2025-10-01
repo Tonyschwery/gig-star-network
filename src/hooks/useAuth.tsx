@@ -49,6 +49,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return;
         }
         
+        // Detect stale session - check if user exists but profiles don't match expectations
+        if (session?.user) {
+          const userMetadata = session.user.user_metadata;
+          
+          // Check if metadata says talent but no talent profile exists
+          if (userMetadata?.user_type === 'talent') {
+            const { data: talentProfile } = await supabase
+              .from('talent_profiles')
+              .select('id')
+              .eq('user_id', session.user.id)
+              .maybeSingle();
+            
+            // If metadata says talent but profile doesn't exist, session might be stale
+            if (!talentProfile && window.location.pathname.includes('talent-dashboard')) {
+              console.warn('Stale session detected: talent metadata but no profile');
+              const { forceClearAuth } = await import('@/lib/auth-utils');
+              await forceClearAuth();
+              if (mounted) {
+                setLoading(false);
+                window.location.href = '/';
+              }
+              return;
+            }
+          }
+        }
+        
         // Initial session set
         if (mounted) {
           setSession(session);
