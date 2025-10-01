@@ -1,5 +1,5 @@
 // FILE: src/pages/Auth.tsx
-
+import { forceClearAuth } from "@/lib/auth-utils"; // ✅ ADDED
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -29,6 +29,12 @@ const Auth = () => {
   
   // This effect redirects a user if they are ALREADY logged in and happen to land on this page.
   useEffect(() => {
+    const handleBeforeUnload = async () => {
+    await forceClearAuth();
+  };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+  return () => {
+    window.removeEventListener("beforeunload", handleBeforeUnload);
     if (!authLoading && user) {
         navigate('/');
     }
@@ -40,8 +46,8 @@ const Auth = () => {
     
     try {
       // Clear any existing auth state before signing up with new account
-      const { forceClearAuth } = await import('@/lib/auth-utils');
-      await forceClearAuth();
+      await forceClearAuth(); // ✅ UPDATED
+
       
       // This correctly sets the user_type metadata during signup
       const userType = mode === 'booker' ? 'booker' : 'talent';
