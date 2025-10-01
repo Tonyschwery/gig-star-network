@@ -1,5 +1,3 @@
-// FILE: src/App.tsx
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -29,27 +27,22 @@ import YourEvent from "./pages/YourEvent";
 import Pricing from "./pages/Pricing";
 import { forceClearAuth } from "@/lib/auth-utils";
 
-
 const App = () => {
   const navigate = useNavigate();
 
-  // Back button detection - only clears session/cache when user presses Back
+  // Back button handler - only clear cache/session on back
   useEffect(() => {
     const handlePopState = async () => {
       try {
         await forceClearAuth({ fullClear: true });
-        // Redirect to homepage after clearing
         navigate("/", { replace: true });
       } catch (err) {
-        console.error("Failed to clear cache/session on back button:", err);
+        console.error("Failed clearing on back button:", err);
       }
     };
 
     window.addEventListener("popstate", handlePopState);
-
-    return () => {
-      window.removeEventListener("popstate", handlePopState);
-    };
+    return () => window.removeEventListener("popstate", handlePopState);
   }, [navigate]);
 
   return (
@@ -61,9 +54,6 @@ const App = () => {
               <Toaster />
               <Sonner />
               <UniversalChat />
-              
-              {/* Optional: manual Reset button anywhere you want */}
-              {/* <ResetButton /> */}
 
               <Routes>
                 <Route path="/" element={<Index />} />
