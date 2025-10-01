@@ -3,7 +3,7 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import { AuthProvider } from "./hooks/useAuth";
 import { UserModeProvider } from "./contexts/UserModeContext";
@@ -28,21 +28,20 @@ import { AdminRoute } from "./components/AdminRoute";
 import YourEvent from "./pages/YourEvent";
 import Pricing from "./pages/Pricing";
 import { forceClearAuth } from "@/lib/auth-utils";
-import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import ResetButton from "./components/ResetButton"; // optional Reset button
 
 const App = () => {
   const navigate = useNavigate();
 
+  // Back button detection - only clears session/cache when user presses Back
   useEffect(() => {
     const handlePopState = async () => {
       try {
-        // Only clear cache/session when user presses back
         await forceClearAuth({ fullClear: true });
-        // Optionally redirect to home
+        // Redirect to homepage after clearing
         navigate("/", { replace: true });
       } catch (err) {
-        console.error(err);
+        console.error("Failed to clear cache/session on back button:", err);
       }
     };
 
@@ -51,7 +50,7 @@ const App = () => {
     return () => {
       window.removeEventListener("popstate", handlePopState);
     };
-  }, [navigate]);};
+  }, [navigate]);
 
   return (
     <AuthProvider>
@@ -62,26 +61,29 @@ const App = () => {
               <Toaster />
               <Sonner />
               <UniversalChat />
+              
+              {/* Optional: manual Reset button anywhere you want */}
+              {/* <ResetButton /> */}
+
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/login" element={<Auth />} />
-                
-                {/* The old AdminProvider wrapper is now removed */}
+
                 <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
                   <Route index element={<AdminDashboard />} />
                   <Route path="users" element={<AdminUsers />} />
                   <Route path="bookings" element={<AdminBookings />} />
                 </Route>
-                
+
                 <Route path="/booker-dashboard" element={<ProtectedRoute><BookerDashboard /></ProtectedRoute>} />
                 <Route path="/your-event" element={<ProtectedRoute><YourEvent /></ProtectedRoute>} />
                 <Route path="/pricing" element={<Pricing />} />
-                
+
                 <Route path="/talent-onboarding" element={<ProtectedTalentRoute><TalentOnboarding /></ProtectedTalentRoute>} />
                 <Route path="/talent-dashboard" element={<ProtectedTalentRoute><TalentDashboard /></ProtectedTalentRoute>} />
                 <Route path="/talent-profile-edit" element={<ProtectedTalentRoute><TalentProfileEdit /></ProtectedTalentRoute>} />
-                
+
                 <Route path="/talent/:id" element={<TalentProfile />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
