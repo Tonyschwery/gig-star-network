@@ -114,9 +114,10 @@ export function Header() {
       
       if (isTalentSignup && !talentName) {
         // User signed up as talent but hasn't completed onboarding
-        // Clear cache before navigating to onboarding to ensure fresh state
-        await forceClearAuth();
-        // Use window.location for hard navigation to ensure clean state
+        // FORCE CLEAR EVERYTHING before navigating - cache, cookies, storage, everything
+        await forceClearAuth({ fullClear: true });
+        
+        // Use hard navigation to ensure completely fresh page load
         window.location.href = "/talent-onboarding";
       } else if (!isTalentSignup) {
         // User is a booker wanting to become talent - not allowed

@@ -125,6 +125,18 @@ export default function TalentOnboarding() {
     location: ''
   });
 
+  // Force clear everything on mount to ensure completely fresh state
+  useEffect(() => {
+    const clearOnMount = async () => {
+      try {
+        await forceClearAuth({ fullClear: true });
+      } catch (error) {
+        console.error('Error clearing cache on mount:', error);
+      }
+    };
+    clearOnMount();
+  }, []);
+
   // Update form location when user location changes
   useEffect(() => {
     const currentLocation = userLocation || detectedLocation;
@@ -286,10 +298,10 @@ export default function TalentOnboarding() {
         // Don't show error to user for email issues
       }
 
-      // Clear all auth cache before navigating to ensure fresh state
-      await forceClearAuth();
+      // Clear EVERYTHING before navigating - cache, cookies, storage, database cache
+      await forceClearAuth({ fullClear: true });
       
-      // Navigate to dashboard after clearing cache
+      // Navigate to dashboard with hard reload after clearing cache
       setTimeout(() => {
         window.location.href = '/talent-dashboard';
       }, 500);
