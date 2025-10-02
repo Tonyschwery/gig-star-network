@@ -19,6 +19,8 @@ import { SubscriptionModal } from '@/components/SubscriptionModal';
 import { useEmailNotifications } from '@/hooks/useEmailNotifications';
 import { useLocationDetection } from '@/hooks/useLocationDetection';
 import { LocationSelector } from '@/components/LocationSelector';
+import { useAuth } from '@/hooks/useAuth';
+import { forceClearAuth } from '@/lib/auth-utils';
 
 const MUSIC_GENRES = [
   'afro-house',
@@ -101,9 +103,11 @@ const CURRENCIES = [
 export default function TalentOnboarding() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user, loading: authLoading } = useAuth();
   const { sendTalentProfileEmails } = useEmailNotifications();
   const { userLocation, detectedLocation, saveLocation } = useLocationDetection();
   const [loading, setLoading] = useState(false);
+  const [pageInitialized, setPageInitialized] = useState(false);
   const [pictureFile, setPictureFile] = useState<File | null>(null);
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
   const [galleryImages, setGalleryImages] = useState<string[]>([]);
@@ -123,6 +127,38 @@ export default function TalentOnboarding() {
     currency: 'USD',
     location: ''
   });
+
+  // Validate auth and session on mount/refresh
+  useEffect(() => {
+    const initializePage = async () => {
+      // Wait for auth to finish loading
+      if (authLoading) return;
+      
+      // If no user after auth loads, clear everything and redirect
+      if (!user) {
+        await forceClearAuth();
+        navigate('/auth', { state: { mode: 'talent' } });
+        return;
+      }
+
+      // Check if user already has a profile
+      const { data: existingProfile } = await supabase
+        .from('talent_profiles')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (existingProfile) {
+        // User already has profile, redirect to dashboard
+        navigate('/talent-dashboard');
+        return;
+      }
+
+      setPageInitialized(true);
+    };
+
+    initializePage();
+  }, [authLoading, user, navigate]);
 
   // Update form location when user location changes
   useEffect(() => {
@@ -285,10 +321,9 @@ export default function TalentOnboarding() {
         // Don't show error to user for email issues
       }
 
-      // Navigate to dashboard without forcing refresh
-      setTimeout(() => {
-        navigate('/talent-dashboard');
-      }, 1000);
+      // Clear cache and navigate with hard refresh
+      await forceClearAuth();
+      window.location.href = '/talent-dashboard';
     } catch (error) {
       console.error('Error creating profile:', error);
       toast({
@@ -319,6 +354,15 @@ export default function TalentOnboarding() {
 
   // Get current location for validation
   const selectedLocation = formData.location || userLocation || detectedLocation;
+
+  // Show loading spinner while auth is loading or page is initializing
+  if (authLoading || !pageInitialized) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
