@@ -128,16 +128,38 @@ export default function TalentOnboarding() {
     location: ''
   });
 
+  // Handle page refresh - clear cache immediately
+  useEffect(() => {
+    const handlePageRefresh = async () => {
+      // Check if this is a page refresh (not initial navigation)
+      const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
+      const isRefresh = navigation?.type === 'reload';
+      const hasCleared = sessionStorage.getItem('onboarding-cache-cleared');
+      
+      if (isRefresh && !hasCleared) {
+        console.log('Detected refresh on onboarding page - clearing cache');
+        sessionStorage.setItem('onboarding-cache-cleared', 'true');
+        await forceClearAuth();
+        // Force complete reload after cache clear
+        window.location.reload();
+        return;
+      }
+    };
+
+    handlePageRefresh();
+  }, []);
+
   // Validate auth and session on mount/refresh
   useEffect(() => {
     const initializePage = async () => {
       // Wait for auth to finish loading
       if (authLoading) return;
       
+      // Clear the cache cleared flag once auth is ready
+      sessionStorage.removeItem('onboarding-cache-cleared');
+      
       // If no user after auth loads, clear everything and redirect
       if (!user) {
-        // Clear the refresh marker to prevent loops
-        sessionStorage.removeItem('page-refreshed');
         await forceClearAuth();
         navigate('/auth', { state: { mode: 'talent' } });
         return;
@@ -152,13 +174,10 @@ export default function TalentOnboarding() {
 
       if (existingProfile) {
         // User already has profile, redirect to dashboard
-        sessionStorage.removeItem('page-refreshed');
         navigate('/talent-dashboard');
         return;
       }
 
-      // Clear the refresh marker once initialized
-      sessionStorage.removeItem('page-refreshed');
       setPageInitialized(true);
     };
 

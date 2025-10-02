@@ -1,7 +1,5 @@
 // FILE: src/App.tsx
 
-import { useEffect } from "react";
-import { useLocation } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -11,7 +9,6 @@ import { UserModeProvider } from "./contexts/UserModeContext";
 import { ChatProvider } from "./contexts/ChatContext";
 import { ProStatusProvider } from "./contexts/ProStatusContext";
 import { UniversalChat } from "./components/UniversalChat";
-import { forceClearAuth } from "@/lib/auth-utils";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import BookerDashboard from "./pages/BookerDashboard";
@@ -31,28 +28,6 @@ import YourEvent from "./pages/YourEvent";
 import Pricing from "./pages/Pricing";
 
 const AppContent = () => {
-  const location = useLocation();
-
-  // Clear cache when refresh happens on talent onboarding page
-  useEffect(() => {
-    const handleOnboardingRefresh = async () => {
-      const isOnboardingPage = location.pathname === '/talent-onboarding';
-      const wasRefreshed = sessionStorage.getItem('page-refreshed');
-      
-      if (isOnboardingPage && wasRefreshed === 'true') {
-        sessionStorage.removeItem('page-refreshed');
-        await forceClearAuth();
-        // Force a complete reload to ensure clean state
-        window.location.reload();
-      } else if (isOnboardingPage) {
-        // Mark that we're on the onboarding page
-        sessionStorage.setItem('page-refreshed', 'true');
-      }
-    };
-
-    handleOnboardingRefresh();
-  }, [location.pathname]);
-
   return (
     <>
       <Toaster />
