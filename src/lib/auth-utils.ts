@@ -1,6 +1,34 @@
 import { supabase } from '@/integrations/supabase/client';
 
 /**
+ * Clears browser cache without touching authentication
+ * Use this to clear stale data while keeping user logged in
+ */
+export async function clearCacheOnly() {
+  try {
+    // Clear service worker cache
+    if ('serviceWorker' in navigator) {
+      const cacheNames = await caches.keys();
+      await Promise.all(cacheNames.map(name => caches.delete(name)));
+    }
+
+    // Clear only non-auth localStorage items
+    const allKeys = Object.keys(localStorage);
+    const authKeys = allKeys.filter(key => key.includes('supabase') || key.includes('sb-'));
+    
+    allKeys.forEach(key => {
+      if (!authKeys.includes(key)) {
+        localStorage.removeItem(key);
+      }
+    });
+
+    console.log('Cache cleared while preserving auth');
+  } catch (error) {
+    console.error('Error clearing cache:', error);
+  }
+}
+
+/**
  * Forcefully clears all authentication data and session storage
  * Use this when switching accounts or resolving stuck auth states
  */

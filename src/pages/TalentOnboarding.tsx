@@ -20,7 +20,7 @@ import { useEmailNotifications } from '@/hooks/useEmailNotifications';
 import { useLocationDetection } from '@/hooks/useLocationDetection';
 import { LocationSelector } from '@/components/LocationSelector';
 import { useAuth } from '@/hooks/useAuth';
-import { forceClearAuth } from '@/lib/auth-utils';
+import { clearCacheOnly } from '@/lib/auth-utils';
 
 const MUSIC_GENRES = [
   'afro-house',
@@ -128,7 +128,7 @@ export default function TalentOnboarding() {
     location: ''
   });
 
-  // Handle page refresh - clear cache immediately
+  // Handle page refresh - clear cache but keep auth
   useEffect(() => {
     const handlePageRefresh = async () => {
       // Check if this is a page refresh (not initial navigation)
@@ -137,12 +137,10 @@ export default function TalentOnboarding() {
       const hasCleared = sessionStorage.getItem('onboarding-cache-cleared');
       
       if (isRefresh && !hasCleared) {
-        console.log('Detected refresh on onboarding page - clearing cache');
+        console.log('Detected refresh on onboarding page - clearing cache only');
         sessionStorage.setItem('onboarding-cache-cleared', 'true');
-        await forceClearAuth();
-        // Force complete reload after cache clear
-        window.location.reload();
-        return;
+        // Clear cache but keep user authenticated
+        await clearCacheOnly();
       }
     };
 
@@ -158,10 +156,9 @@ export default function TalentOnboarding() {
       // Clear the cache cleared flag once auth is ready
       sessionStorage.removeItem('onboarding-cache-cleared');
       
-      // If no user after auth loads, clear everything and redirect
+      // If no user after auth loads, redirect to auth
       if (!user) {
-        await forceClearAuth();
-        navigate('/auth', { state: { mode: 'talent' } });
+        navigate('/auth', { state: { mode: 'talent' }, replace: true });
         return;
       }
 
@@ -174,7 +171,7 @@ export default function TalentOnboarding() {
 
       if (existingProfile) {
         // User already has profile, redirect to dashboard
-        navigate('/talent-dashboard');
+        navigate('/talent-dashboard', { replace: true });
         return;
       }
 
@@ -183,6 +180,13 @@ export default function TalentOnboarding() {
 
     initializePage();
   }, [authLoading, user, navigate]);
+
+  // Clean up session storage when component unmounts
+  useEffect(() => {
+    return () => {
+      sessionStorage.removeItem('onboarding-cache-cleared');
+    };
+  }, []);
 
   // Update form location when user location changes
   useEffect(() => {
@@ -345,9 +349,8 @@ export default function TalentOnboarding() {
         // Don't show error to user for email issues
       }
 
-      // Clear cache and navigate with hard refresh
-      await forceClearAuth();
-      window.location.href = '/talent-dashboard';
+      // Navigate to dashboard - cache will clear on next page load
+      navigate('/talent-dashboard', { replace: true });
     } catch (error) {
       console.error('Error creating profile:', error);
       toast({

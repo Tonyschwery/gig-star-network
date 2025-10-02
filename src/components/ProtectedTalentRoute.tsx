@@ -24,7 +24,7 @@ export function ProtectedTalentRoute({ children }: { children: React.ReactNode }
             navigate('/auth', { replace: true, state: { from: location, mode: 'talent' } });
         } else if (!isTalent && !isTalentSignup) {
             // If logged in but not as a talent (e.g., a Booker), send to homepage
-            navigate('/');
+            navigate('/', { replace: true });
         }
     }, [status, loading, navigate, location, user]);
 
@@ -32,11 +32,11 @@ export function ProtectedTalentRoute({ children }: { children: React.ReactNode }
                         (user?.user_metadata?.user_type === 'talent' && status === 'BOOKER');
 
     // Show talent content immediately if authorized
-    if (isAuthorized) {
+    if (isAuthorized && !loading) {
         return <>{children}</>;
     }
 
-    // Only show loading during initial check
+    // Show loading during initial check
     if (loading) {
         return (
             <div className="min-h-screen bg-background flex items-center justify-center">
@@ -45,5 +45,6 @@ export function ProtectedTalentRoute({ children }: { children: React.ReactNode }
         );
     }
 
+    // Waiting for redirect
     return null;
 }
