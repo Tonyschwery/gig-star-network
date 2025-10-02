@@ -136,6 +136,8 @@ export default function TalentOnboarding() {
       
       // If no user after auth loads, clear everything and redirect
       if (!user) {
+        // Clear the refresh marker to prevent loops
+        sessionStorage.removeItem('page-refreshed');
         await forceClearAuth();
         navigate('/auth', { state: { mode: 'talent' } });
         return;
@@ -150,10 +152,13 @@ export default function TalentOnboarding() {
 
       if (existingProfile) {
         // User already has profile, redirect to dashboard
+        sessionStorage.removeItem('page-refreshed');
         navigate('/talent-dashboard');
         return;
       }
 
+      // Clear the refresh marker once initialized
+      sessionStorage.removeItem('page-refreshed');
       setPageInitialized(true);
     };
 
