@@ -39,13 +39,12 @@ const Auth = () => {
     setLoading(true);
     
     try {
-      // Clear any existing auth state before signing up with new account
-      const { forceClearAuth } = await import('@/lib/auth-utils');
-      await forceClearAuth();
+      // Sign out any existing session before creating new account
+      await supabase.auth.signOut();
       
       // This correctly sets the user_type metadata during signup
       const userType = mode === 'booker' ? 'booker' : 'talent';
-      const { error } = await supabase.auth.signUp({ 
+      const { error } = await supabase.auth.signUp({
           email, 
           password, 
           options: { 
@@ -70,9 +69,8 @@ const Auth = () => {
     setLoading(true);
     
     try {
-      // Clear any existing auth state before signing in with new account
-      const { forceClearAuth } = await import('@/lib/auth-utils');
-      await forceClearAuth();
+      // Sign out any existing session before signing in
+      await supabase.auth.signOut();
       
       const { error, data } = await supabase.auth.signInWithPassword({ email, password });
 
