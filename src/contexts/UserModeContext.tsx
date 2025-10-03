@@ -12,9 +12,10 @@ interface UserModeContextType {
 const UserModeContext = createContext<UserModeContextType | undefined>(undefined);
 
 export function UserModeProvider({ children }: { children: React.ReactNode }) {
-  const { status, mode, setMode } = useAuth();
+  const { role, profileStatus, mode, setMode } = useAuth();
   
-  const canSwitchToArtist = status === 'TALENT_COMPLETE';
+  // User can switch to artist mode if they are a talent with a complete profile
+  const canSwitchToArtist = role === 'talent' && profileStatus === 'complete';
 
   const value = { mode, setMode, canSwitchToArtist };
 

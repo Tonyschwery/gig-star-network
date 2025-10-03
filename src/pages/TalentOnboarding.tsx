@@ -20,7 +20,6 @@ import { useEmailNotifications } from '@/hooks/useEmailNotifications';
 import { useLocationDetection } from '@/hooks/useLocationDetection';
 import { LocationSelector } from '@/components/LocationSelector';
 import { useAuth } from '@/hooks/useAuth';
-import { clearCacheOnly } from '@/lib/auth-utils';
 
 const MUSIC_GENRES = [
   'afro-house',
@@ -128,65 +127,50 @@ export default function TalentOnboarding() {
     location: ''
   });
 
-  // Handle page refresh - clear cache but keep auth
-  useEffect(() => {
-    const handlePageRefresh = async () => {
-      // Check if this is a page refresh (not initial navigation)
-      const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
-      const isRefresh = navigation?.type === 'reload';
-      const hasCleared = sessionStorage.getItem('onboarding-cache-cleared');
-      
-      if (isRefresh && !hasCleared) {
-        console.log('Detected refresh on onboarding page - clearing cache only');
-        sessionStorage.setItem('onboarding-cache-cleared', 'true');
-        // Clear cache but keep user authenticated
-        await clearCacheOnly();
-      }
-    };
-
-    handlePageRefresh();
-  }, []);
-
-  // Validate auth and session on mount/refresh
+  // Initialize page state - validate session and check existing profile
   useEffect(() => {
     const initializePage = async () => {
-      // Wait for auth to finish loading
-      if (authLoading) return;
+      if (authLoading) {
+        console.log('[TalentOnboarding] Waiting for auth to load');
+        return;
+      }
+
+      console.log('[TalentOnboarding] Auth loaded, validating session');
       
-      // Clear the cache cleared flag once auth is ready
-      sessionStorage.removeItem('onboarding-cache-cleared');
+      // Validate session is actually valid using getUser() instead of cached session
+      const { data: { user: validatedUser }, error } = await supabase.auth.getUser();
       
-      // If no user after auth loads, redirect to auth
-      if (!user) {
+      if (error || !validatedUser) {
+        console.log('[TalentOnboarding] Session invalid, redirecting to auth');
         navigate('/auth', { state: { mode: 'talent' }, replace: true });
         return;
       }
 
-      // Check if user already has a profile
-      const { data: existingProfile } = await supabase
+      console.log('[TalentOnboarding] Session valid, checking existing profile');
+
+      // Check if user already has a talent profile
+      const { data: existingProfile, error: profileError } = await supabase
         .from('talent_profiles')
-        .select('id')
-        .eq('user_id', user.id)
+        .select('*')
+        .eq('user_id', validatedUser.id)
         .maybeSingle();
 
-      if (existingProfile) {
-        // User already has profile, redirect to dashboard
+      if (profileError) {
+        console.error('[TalentOnboarding] Error checking profile:', profileError);
+      }
+
+      if (existingProfile && existingProfile.artist_name) {
+        console.log('[TalentOnboarding] Profile exists, redirecting to dashboard');
         navigate('/talent-dashboard', { replace: true });
         return;
       }
 
+      console.log('[TalentOnboarding] No profile found, showing onboarding form');
       setPageInitialized(true);
     };
 
     initializePage();
   }, [authLoading, user, navigate]);
-
-  // Clean up session storage when component unmounts
-  useEffect(() => {
-    return () => {
-      sessionStorage.removeItem('onboarding-cache-cleared');
-    };
-  }, []);
 
   // Update form location when user location changes
   useEffect(() => {
@@ -346,13 +330,29 @@ export default function TalentOnboarding() {
         }
       } catch (emailError) {
         console.error('Error sending talent profile emails:', emailError);
-        // Don't show error to user for email issues
+      // Don't show error to user for email issues
       }
 
-      // Navigate to dashboard - cache will clear on next page load
+      console.log('[TalentOnboarding] Profile created, validating session before navigation');
+      
+      // Validate session before navigation to ensure it's still valid
+      const { data: { user: validatedUser }, error: validationError } = await supabase.auth.getUser();
+      
+      if (validationError || !validatedUser) {
+        console.error('[TalentOnboarding] Session invalid after profile creation');
+        toast({
+          title: "Session Error",
+          description: "Please log in again to continue.",
+          variant: "destructive"
+        });
+        navigate('/auth', { state: { mode: 'talent' }, replace: true });
+        return;
+      }
+
+      console.log('[TalentOnboarding] Session valid, navigating to dashboard');
       navigate('/talent-dashboard', { replace: true });
     } catch (error) {
-      console.error('Error creating profile:', error);
+      console.error('[TalentOnboarding] Error creating profile:', error);
       toast({
         title: "Error",
         description: "Something went wrong. Please try again.",

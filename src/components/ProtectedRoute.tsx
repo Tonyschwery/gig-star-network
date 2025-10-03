@@ -10,19 +10,27 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const location = useLocation();
 
   useEffect(() => {
-    if (!loading && status === 'LOGGED_OUT') {
+    if (loading) {
+      console.log('[ProtectedRoute] Still loading auth');
+      return;
+    }
+
+    console.log('[ProtectedRoute] Auth loaded - Status:', status);
+
+    if (status === 'LOGGED_OUT') {
+      console.log('[ProtectedRoute] Not logged in, redirecting to auth');
       navigate('/auth', { replace: true, state: { from: location, mode: 'booker' } });
     }
   }, [status, loading, navigate, location]);
 
-  const isAuthorized = status === 'BOOKER' || status === 'TALENT_COMPLETE' || status === 'ADMIN';
+  const isAuthorized = status === 'AUTHENTICATED';
 
-  // Show content immediately if authorized, avoid loading screen flicker
-  if (isAuthorized) {
+  // Show content immediately if authorized
+  if (isAuthorized && !loading) {
     return <>{children}</>;
   }
 
-  // Only show loading screen during initial auth check
+  // Show loading screen during auth check
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">

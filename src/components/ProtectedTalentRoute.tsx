@@ -5,38 +5,43 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
 
 export function ProtectedTalentRoute({ children }: { children: React.ReactNode }) {
-    const { status, loading, user } = useAuth();
+    const { status, loading, role } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
 
     useEffect(() => {
         if (loading) {
-            return; // Do nothing while auth state is loading
+            console.log('[ProtectedTalentRoute] Still loading auth');
+            return; // Wait for auth to complete
         }
 
-        // Define which statuses are considered a "Talent"
-        const isTalent = status === 'TALENT_COMPLETE' || status === 'TALENT_NEEDS_ONBOARDING';
-        
-        // Also allow users who signed up as talent but haven't completed onboarding yet
-        const isTalentSignup = user?.user_metadata?.user_type === 'talent' && status === 'BOOKER';
+        console.log('[ProtectedTalentRoute] Auth loaded - Status:', status, 'Role:', role);
 
+        // If not logged in, redirect to auth
         if (status === 'LOGGED_OUT') {
+            console.log('[ProtectedTalentRoute] Not logged in, redirecting to auth');
             navigate('/auth', { replace: true, state: { from: location, mode: 'talent' } });
-        } else if (!isTalent && !isTalentSignup) {
-            // If logged in but not as a talent (e.g., a Booker), send to homepage
-            navigate('/', { replace: true });
+            return;
         }
-    }, [status, loading, navigate, location, user]);
 
-    const isAuthorized = status === 'TALENT_COMPLETE' || status === 'TALENT_NEEDS_ONBOARDING' || 
-                        (user?.user_metadata?.user_type === 'talent' && status === 'BOOKER');
+        // If logged in but not a talent, redirect to home
+        if (role !== 'talent' && role !== 'admin') {
+            console.log('[ProtectedTalentRoute] Not a talent user, redirecting to home');
+            navigate('/', { replace: true });
+            return;
+        }
 
-    // Show talent content immediately if authorized
+        console.log('[ProtectedTalentRoute] Access granted');
+    }, [status, loading, role, navigate, location]);
+
+    // Show content if authorized (talent or admin)
+    const isAuthorized = status === 'AUTHENTICATED' && (role === 'talent' || role === 'admin');
+
     if (isAuthorized && !loading) {
         return <>{children}</>;
     }
 
-    // Show loading during initial check
+    // Show loading
     if (loading) {
         return (
             <div className="min-h-screen bg-background flex items-center justify-center">
