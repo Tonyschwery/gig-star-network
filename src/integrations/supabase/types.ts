@@ -543,24 +543,30 @@ export type Database = {
           email: string | null
           full_name: string | null
           id: string
+          onboarding_complete: boolean | null
+          onboarding_draft: Json | null
+          role: string | null
           updated_at: string | null
-          user_type: string | null
         }
         Insert: {
           created_at?: string | null
           email?: string | null
           full_name?: string | null
           id: string
+          onboarding_complete?: boolean | null
+          onboarding_draft?: Json | null
+          role?: string | null
           updated_at?: string | null
-          user_type?: string | null
         }
         Update: {
           created_at?: string | null
           email?: string | null
           full_name?: string | null
           id?: string
+          onboarding_complete?: boolean | null
+          onboarding_draft?: Json | null
+          role?: string | null
           updated_at?: string | null
-          user_type?: string | null
         }
         Relationships: []
       }
@@ -797,6 +803,19 @@ export type Database = {
       create_admin_support_booking: {
         Args: { user_id_param: string }
         Returns: string
+      }
+      ensure_profile: {
+        Args: { p_email: string; p_role: string; p_user_id: string }
+        Returns: {
+          created_at: string | null
+          email: string | null
+          full_name: string | null
+          id: string
+          onboarding_complete: boolean | null
+          onboarding_draft: Json | null
+          role: string | null
+          updated_at: string | null
+        }
       }
       get_admin_permissions: {
         Args: { user_id_param?: string }

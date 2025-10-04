@@ -1,7 +1,8 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { debounce } from 'lodash';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -102,11 +103,13 @@ const CURRENCIES = [
 export default function TalentOnboarding() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, onboardingComplete, onboardingDraft, refreshProfile } = useAuth();
   const { sendTalentProfileEmails } = useEmailNotifications();
   const { userLocation, detectedLocation, saveLocation } = useLocationDetection();
   const [loading, setLoading] = useState(false);
   const [pageInitialized, setPageInitialized] = useState(false);
+  const [draftLoaded, setDraftLoaded] = useState(false);
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [pictureFile, setPictureFile] = useState<File | null>(null);
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
   const [galleryImages, setGalleryImages] = useState<string[]>([]);
@@ -127,7 +130,41 @@ export default function TalentOnboarding() {
     location: ''
   });
 
-  // Initialize page state - validate session and check existing profile
+  // Load draft data from Supabase on mount
+  useEffect(() => {
+    if (onboardingDraft && !draftLoaded) {
+      console.log('[TalentOnboarding] Loading draft from Supabase:', onboardingDraft);
+      
+      setFormData(prev => ({
+        ...prev,
+        artistName: onboardingDraft.artistName || prev.artistName,
+        act: onboardingDraft.act || prev.act,
+        gender: onboardingDraft.gender || prev.gender,
+        musicGenres: onboardingDraft.musicGenres || prev.musicGenres,
+        customGenre: onboardingDraft.customGenre || prev.customGenre,
+        soundcloudLink: onboardingDraft.soundcloudLink || prev.soundcloudLink,
+        youtubeLink: onboardingDraft.youtubeLink || prev.youtubeLink,
+        biography: onboardingDraft.biography || prev.biography,
+        age: onboardingDraft.age || prev.age,
+        countryOfResidence: onboardingDraft.countryOfResidence || prev.countryOfResidence,
+        ratePerHour: onboardingDraft.ratePerHour || prev.ratePerHour,
+        currency: onboardingDraft.currency || prev.currency,
+        location: onboardingDraft.location || prev.location,
+      }));
+      
+      setDraftLoaded(true);
+    }
+  }, [onboardingDraft, draftLoaded]);
+
+  // Redirect if already completed onboarding
+  useEffect(() => {
+    if (!authLoading && onboardingComplete) {
+      console.log('[TalentOnboarding] Onboarding already complete, redirecting to dashboard');
+      navigate('/talent-dashboard', { replace: true });
+    }
+  }, [authLoading, onboardingComplete, navigate]);
+
+  // Initialize page state - validate session
   useEffect(() => {
     const initializePage = async () => {
       if (authLoading) {
@@ -146,31 +183,49 @@ export default function TalentOnboarding() {
         return;
       }
 
-      console.log('[TalentOnboarding] Session valid, checking existing profile');
-
-      // Check if user already has a talent profile
-      const { data: existingProfile, error: profileError } = await supabase
-        .from('talent_profiles')
-        .select('*')
-        .eq('user_id', validatedUser.id)
-        .maybeSingle();
-
-      if (profileError) {
-        console.error('[TalentOnboarding] Error checking profile:', profileError);
-      }
-
-      if (existingProfile && existingProfile.artist_name) {
-        console.log('[TalentOnboarding] Profile exists, redirecting to dashboard');
-        navigate('/talent-dashboard', { replace: true });
-        return;
-      }
-
-      console.log('[TalentOnboarding] No profile found, showing onboarding form');
+      console.log('[TalentOnboarding] Session valid');
       setPageInitialized(true);
     };
 
     initializePage();
   }, [authLoading, user, navigate]);
+
+  // Debounced autosave function
+  const saveDraftToSupabase = useCallback(
+    debounce(async (draftData: any) => {
+      if (!user) return;
+      
+      setIsSavingDraft(true);
+      console.log('[TalentOnboarding] Autosaving draft to Supabase');
+      
+      const { error } = await supabase
+        .from('profiles')
+        .update({ onboarding_draft: draftData })
+        .eq('id', user.id);
+      
+      if (error) {
+        console.error('[TalentOnboarding] Error saving draft:', error);
+      } else {
+        console.log('[TalentOnboarding] Draft saved successfully');
+      }
+      
+      setIsSavingDraft(false);
+    }, 1500),
+    [user]
+  );
+
+  // Auto-save draft whenever form data changes
+  useEffect(() => {
+    if (!user || !draftLoaded) return;
+
+    const draftData = {
+      ...formData,
+      galleryImages,
+      profileImageUrl,
+    };
+
+    saveDraftToSupabase(draftData);
+  }, [formData, galleryImages, profileImageUrl, user, draftLoaded, saveDraftToSupabase]);
 
   // Update form location when user location changes
   useEffect(() => {
@@ -309,31 +364,29 @@ export default function TalentOnboarding() {
         return;
       }
 
+      console.log('[TalentOnboarding] Profile created, marking onboarding complete');
+      
+      // Mark onboarding as complete in profiles table
+      const { error: profileUpdateError } = await supabase
+        .from('profiles')
+        .update({ 
+          onboarding_complete: true,
+          onboarding_draft: null // Clear draft after completion
+        })
+        .eq('id', user.id);
+
+      if (profileUpdateError) {
+        console.error('[TalentOnboarding] Error updating profile onboarding status:', profileUpdateError);
+      }
+
       // Show success toast
       toast({
         title: "Profile created successfully!",
         description: "Welcome to our talent community",
       });
 
-      // Send talent profile emails via frontend
-      try {
-        if (talentProfile && user.email) {
-          await sendTalentProfileEmails(
-            user.id,
-            user.email,
-            formData.artistName,
-            talentProfile.id,
-            formData.act,
-            parseFloat(formData.ratePerHour),
-            formData.currency
-          );
-        }
-      } catch (emailError) {
-        console.error('Error sending talent profile emails:', emailError);
-      // Don't show error to user for email issues
-      }
-
-      console.log('[TalentOnboarding] Profile created, validating session before navigation');
+      // Refresh auth context to update onboarding status
+      await refreshProfile();
       
       // Validate session before navigation to ensure it's still valid
       const { data: { user: validatedUser }, error: validationError } = await supabase.auth.getUser();
@@ -395,13 +448,22 @@ export default function TalentOnboarding() {
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <Card className="w-full max-w-2xl form-card border-0">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold flex items-center justify-center gap-2">
-            <Music className="h-6 w-6" />
-            Complete Your Talent Profile
-          </CardTitle>
-          <p className="text-muted-foreground">
-            Tell us about yourself to get started as a talent
-          </p>
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <CardTitle className="text-2xl font-bold flex items-center justify-center gap-2">
+                <Music className="h-6 w-6" />
+                Complete Your Talent Profile
+              </CardTitle>
+              <p className="text-muted-foreground mt-2">
+                Tell us about yourself to get started as a talent
+              </p>
+            </div>
+            {isSavingDraft && (
+              <span className="text-xs text-muted-foreground whitespace-nowrap ml-4">
+                Saving draft...
+              </span>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">

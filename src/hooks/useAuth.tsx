@@ -21,6 +21,8 @@ interface AuthContextType {
   mode: UserMode;
   setMode: (mode: UserMode) => void;
   refreshProfile: () => Promise<void>;
+  onboardingComplete: boolean;
+  onboardingDraft: any | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -34,6 +36,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [role, setRole] = useState<UserRole | null>(null);
   const [profileStatus, setProfileStatus] = useState<ProfileStatus>('none');
   const [mode, setMode] = useState<UserMode>('booking');
+  const [onboardingComplete, setOnboardingComplete] = useState<boolean>(false);
+  const [onboardingDraft, setOnboardingDraft] = useState<any | null>(null);
 
   // Helper to determine role from user metadata (synchronous, no DB query)
   const getUserRole = (user: User | null): UserRole | null => {
@@ -98,7 +102,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       if (userRole === 'admin') {
         setProfile({ full_name: 'Admin' });
+        setOnboardingComplete(true);
         return;
+      }
+      
+      // Load base profile for onboarding status
+      const { data: baseProfile } = await supabase
+        .from('profiles')
+        .select('onboarding_complete, onboarding_draft')
+        .eq('id', user.id)
+        .maybeSingle();
+      
+      if (baseProfile) {
+        setOnboardingComplete(baseProfile.onboarding_complete || false);
+        setOnboardingDraft(baseProfile.onboarding_draft || null);
       }
       
       if (userRole === 'talent') {
@@ -240,7 +257,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signOut, 
     mode, 
     setMode,
-    refreshProfile
+    refreshProfile,
+    onboardingComplete,
+    onboardingDraft
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
