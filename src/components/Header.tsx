@@ -267,7 +267,7 @@ export function Header() {
                   
                    <Button 
                      className="hero-button font-medium"
-                     onClick={() => navigate("/auth", { state: { mode: 'talent' } })}
+                     onClick={() => navigate("/talent-onboarding")}
                    >
                      Join as a Talent
                    </Button>

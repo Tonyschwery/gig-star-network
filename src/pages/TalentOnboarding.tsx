@@ -114,6 +114,13 @@ export default function TalentOnboarding() {
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
   const [galleryImages, setGalleryImages] = useState<string[]>([]);
   const [showProDialog, setShowProDialog] = useState(false);
+  
+  // Auth fields for new users
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  
   const [formData, setFormData] = useState({
     artistName: '',
     act: '',
@@ -130,10 +137,14 @@ export default function TalentOnboarding() {
     location: ''
   });
 
-  // Load draft data from Supabase on mount
+  // Load draft data from Supabase or localStorage
   useEffect(() => {
-    if (onboardingDraft && !draftLoaded) {
+    if (user && onboardingDraft && !draftLoaded) {
       console.log('[TalentOnboarding] Loading draft from Supabase:', onboardingDraft);
+      
+      if (onboardingDraft.email) setEmail(onboardingDraft.email);
+      if (onboardingDraft.fullName) setFullName(onboardingDraft.fullName);
+      if (onboardingDraft.phoneNumber) setPhoneNumber(onboardingDraft.phoneNumber);
       
       setFormData(prev => ({
         ...prev,
@@ -153,60 +164,79 @@ export default function TalentOnboarding() {
       }));
       
       setDraftLoaded(true);
+    } else if (!user && !draftLoaded) {
+      // Load from localStorage for non-authenticated users
+      const localDraft = localStorage.getItem('talent_onboarding_draft');
+      if (localDraft) {
+        try {
+          const draft = JSON.parse(localDraft);
+          console.log('[TalentOnboarding] Loading draft from localStorage:', draft);
+          
+          if (draft.email) setEmail(draft.email);
+          if (draft.fullName) setFullName(draft.fullName);
+          if (draft.phoneNumber) setPhoneNumber(draft.phoneNumber);
+          
+          setFormData(prev => ({
+            ...prev,
+            artistName: draft.artistName || prev.artistName,
+            act: draft.act || prev.act,
+            gender: draft.gender || prev.gender,
+            musicGenres: draft.musicGenres || prev.musicGenres,
+            customGenre: draft.customGenre || prev.customGenre,
+            soundcloudLink: draft.soundcloudLink || prev.soundcloudLink,
+            youtubeLink: draft.youtubeLink || prev.youtubeLink,
+            biography: draft.biography || prev.biography,
+            age: draft.age || prev.age,
+            countryOfResidence: draft.countryOfResidence || prev.countryOfResidence,
+            ratePerHour: draft.ratePerHour || prev.ratePerHour,
+            currency: draft.currency || prev.currency,
+            location: draft.location || prev.location,
+          }));
+        } catch (error) {
+          console.error('[TalentOnboarding] Error loading localStorage draft:', error);
+        }
+      }
+      setDraftLoaded(true);
     }
-  }, [onboardingDraft, draftLoaded]);
+  }, [user, onboardingDraft, draftLoaded]);
 
-  // Redirect if already completed onboarding
+  // Redirect if already completed onboarding (only for logged-in users)
   useEffect(() => {
-    if (!authLoading && onboardingComplete) {
+    if (!authLoading && user && onboardingComplete) {
       console.log('[TalentOnboarding] Onboarding already complete, redirecting to dashboard');
       navigate('/talent-dashboard', { replace: true });
     }
-  }, [authLoading, onboardingComplete, navigate]);
+  }, [authLoading, user, onboardingComplete, navigate]);
 
-  // Initialize page state - validate session
+  // Initialize page
   useEffect(() => {
-    const initializePage = async () => {
-      if (authLoading) {
-        console.log('[TalentOnboarding] Waiting for auth to load');
-        return;
-      }
-
-      console.log('[TalentOnboarding] Auth loaded, validating session');
-      
-      // Validate session is actually valid using getUser() instead of cached session
-      const { data: { user: validatedUser }, error } = await supabase.auth.getUser();
-      
-      if (error || !validatedUser) {
-        console.log('[TalentOnboarding] Session invalid, redirecting to auth');
-        navigate('/auth', { state: { mode: 'talent' }, replace: true });
-        return;
-      }
-
-      console.log('[TalentOnboarding] Session valid');
+    if (!authLoading) {
       setPageInitialized(true);
-    };
-
-    initializePage();
-  }, [authLoading, user, navigate]);
+    }
+  }, [authLoading]);
 
   // Debounced autosave function
   const saveDraftToSupabase = useCallback(
     debounce(async (draftData: any) => {
-      if (!user) return;
-      
       setIsSavingDraft(true);
-      console.log('[TalentOnboarding] Autosaving draft to Supabase');
+      console.log('[TalentOnboarding] Autosaving draft');
       
-      const { error } = await supabase
-        .from('profiles')
-        .update({ onboarding_draft: draftData })
-        .eq('id', user.id);
-      
-      if (error) {
-        console.error('[TalentOnboarding] Error saving draft:', error);
+      if (user) {
+        // Save to Supabase for logged-in users
+        const { error } = await supabase
+          .from('profiles')
+          .update({ onboarding_draft: draftData })
+          .eq('id', user.id);
+        
+        if (error) {
+          console.error('[TalentOnboarding] Error saving draft:', error);
+        } else {
+          console.log('[TalentOnboarding] Draft saved to Supabase');
+        }
       } else {
-        console.log('[TalentOnboarding] Draft saved successfully');
+        // Save to localStorage for non-logged-in users
+        localStorage.setItem('talent_onboarding_draft', JSON.stringify(draftData));
+        console.log('[TalentOnboarding] Draft saved to localStorage');
       }
       
       setIsSavingDraft(false);
@@ -216,16 +246,19 @@ export default function TalentOnboarding() {
 
   // Auto-save draft whenever form data changes
   useEffect(() => {
-    if (!user || !draftLoaded) return;
+    if (!draftLoaded) return;
 
     const draftData = {
+      email,
+      fullName,
+      phoneNumber,
       ...formData,
       galleryImages,
       profileImageUrl,
     };
 
     saveDraftToSupabase(draftData);
-  }, [formData, galleryImages, profileImageUrl, user, draftLoaded, saveDraftToSupabase]);
+  }, [email, fullName, phoneNumber, formData, galleryImages, profileImageUrl, draftLoaded, saveDraftToSupabase]);
 
   // Update form location when user location changes
   useEffect(() => {
@@ -288,22 +321,69 @@ export default function TalentOnboarding() {
     setLoading(true);
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        toast({
-          title: "Authentication error",
-          description: "Please sign in again",
-          variant: "destructive",
+      let currentUser = user;
+      
+      // If user is not logged in, sign them up first
+      if (!currentUser) {
+        console.log('[TalentOnboarding] User not authenticated, signing up...');
+        
+        // Validate required auth fields
+        if (!email || !password || !fullName) {
+          toast({
+            variant: "destructive",
+            title: "Missing information",
+            description: "Please provide your email, password, and full name."
+          });
+          setLoading(false);
+          return;
+        }
+
+        // Sign up the user
+        const { data: authData, error: signUpError } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            emailRedirectTo: `${window.location.origin}/talent-dashboard`,
+            data: { 
+              name: fullName,
+              user_type: 'talent',
+              phone: phoneNumber
+            }
+          }
         });
-        navigate('/auth');
-        return;
+
+        if (signUpError) {
+          toast({
+            variant: "destructive",
+            title: "Sign up failed",
+            description: signUpError.message
+          });
+          setLoading(false);
+          return;
+        }
+
+        if (!authData.user) {
+          toast({
+            variant: "destructive",
+            title: "Sign up failed",
+            description: "Unable to create account. Please try again."
+          });
+          setLoading(false);
+          return;
+        }
+
+        currentUser = authData.user;
+        console.log('[TalentOnboarding] User signed up successfully:', currentUser.id);
+        
+        // Wait a moment for the trigger to create the profile
+        await new Promise(resolve => setTimeout(resolve, 1500));
       }
 
       // Check if user is Pro subscriber (for Pro features)
       const { data: existingProfile } = await supabase
         .from('talent_profiles')
         .select('is_pro_subscriber')
-        .eq('user_id', user.id)
+        .eq('user_id', currentUser.id)
         .maybeSingle();
       
       const isProUser = existingProfile?.is_pro_subscriber || false;
@@ -311,13 +391,14 @@ export default function TalentOnboarding() {
       // Upload picture if provided
       let pictureUrl = null;
       if (pictureFile) {
-        pictureUrl = await uploadPicture(user.id);
+        pictureUrl = await uploadPicture(currentUser.id);
         if (!pictureUrl) {
           toast({
             title: "Upload failed",
             description: "Failed to upload profile picture",
             variant: "destructive",
           });
+          setLoading(false);
           return;
         }
       }
@@ -330,7 +411,7 @@ export default function TalentOnboarding() {
 
       // Create talent profile - only include Pro features if user is Pro
       const profileData = {
-        user_id: user.id,
+        user_id: currentUser.id,
         artist_name: formData.artistName,
         act: formData.act as any,
         gender: formData.gender as any,
@@ -361,6 +442,7 @@ export default function TalentOnboarding() {
           description: error.message,
           variant: "destructive",
         });
+        setLoading(false);
         return;
       }
 
@@ -373,42 +455,31 @@ export default function TalentOnboarding() {
           onboarding_complete: true,
           onboarding_draft: null // Clear draft after completion
         })
-        .eq('id', user.id);
+        .eq('id', currentUser.id);
 
       if (profileUpdateError) {
         console.error('[TalentOnboarding] Error updating profile onboarding status:', profileUpdateError);
       }
 
+      // Clear localStorage draft
+      localStorage.removeItem('talent_onboarding_draft');
+      
       // Show success toast
       toast({
         title: "Profile created successfully!",
-        description: "Welcome to our talent community",
+        description: user ? "Welcome to our talent community" : "Your account and profile have been created successfully! Please check your email to verify your account.",
       });
 
       // Refresh auth context to update onboarding status
       await refreshProfile();
       
-      // Validate session before navigation to ensure it's still valid
-      const { data: { user: validatedUser }, error: validationError } = await supabase.auth.getUser();
-      
-      if (validationError || !validatedUser) {
-        console.error('[TalentOnboarding] Session invalid after profile creation');
-        toast({
-          title: "Session Error",
-          description: "Please log in again to continue.",
-          variant: "destructive"
-        });
-        navigate('/auth', { state: { mode: 'talent' }, replace: true });
-        return;
-      }
-
-      console.log('[TalentOnboarding] Session valid, navigating to dashboard');
+      console.log('[TalentOnboarding] Navigating to dashboard');
       navigate('/talent-dashboard', { replace: true });
-    } catch (error) {
+    } catch (error: any) {
       console.error('[TalentOnboarding] Error creating profile:', error);
       toast({
         title: "Error",
-        description: "Something went wrong. Please try again.",
+        description: error.message || "Something went wrong. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -467,6 +538,70 @@ export default function TalentOnboarding() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
+            
+            {/* Auth Fields (only show if user is not logged in) */}
+            {!user && (
+              <div className="space-y-4 pb-6 border-b border-border">
+                <h3 className="text-lg font-semibold">Account Information</h3>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email *</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="your@email.com"
+                    required={!user}
+                    autoComplete="email"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password *</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Create a secure password (min 6 characters)"
+                    required={!user}
+                    minLength={6}
+                    autoComplete="new-password"
+                  />
+                  <p className="text-xs text-muted-foreground">Minimum 6 characters</p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="fullName">Full Name *</Label>
+                  <Input
+                    id="fullName"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    placeholder="Your full name"
+                    required={!user}
+                    autoComplete="name"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="phoneNumber">Phone Number (Optional)</Label>
+                  <Input
+                    id="phoneNumber"
+                    type="tel"
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    placeholder="+1234567890"
+                    autoComplete="tel"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Profile Fields */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Profile Information</h3>
+            
             {/* Artist Name */}
             <div className="space-y-2">
               <Label htmlFor="artistName">Artist Name *</Label>
@@ -677,12 +812,14 @@ export default function TalentOnboarding() {
               </p>
             </div>
 
+            </div>
+
             <Button 
               type="submit" 
               className="w-full" 
-              disabled={loading || !formData.artistName || !formData.act || !formData.gender || formData.musicGenres.length === 0 || !formData.biography || !formData.age || !formData.countryOfResidence || !formData.ratePerHour || !selectedLocation || !pictureFile}
+              disabled={loading || (!user && (!email || !password || !fullName)) || !formData.artistName || !formData.act || !formData.gender || formData.musicGenres.length === 0 || !formData.biography || !formData.age || !formData.countryOfResidence || !formData.ratePerHour || !selectedLocation || !pictureFile}
             >
-              {loading ? "Creating Profile..." : "Complete Profile"}
+              {loading ? (user ? "Creating Profile..." : "Creating Account & Profile...") : (user ? "Complete Profile" : "Sign Up & Complete Profile")}
             </Button>
           </form>
 

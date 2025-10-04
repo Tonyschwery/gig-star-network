@@ -49,7 +49,7 @@ const AppContent = () => {
               <Route path="/your-event" element={<ProtectedRoute><YourEvent /></ProtectedRoute>} />
               <Route path="/pricing" element={<Pricing />} />
               
-              <Route path="/talent-onboarding" element={<ProtectedTalentRoute><TalentOnboarding /></ProtectedTalentRoute>} />
+              <Route path="/talent-onboarding" element={<TalentOnboarding />} />
               <Route path="/talent-dashboard" element={<ProtectedTalentRoute><TalentDashboard /></ProtectedTalentRoute>} />
               <Route path="/talent-profile-edit" element={<ProtectedTalentRoute><TalentProfileEdit /></ProtectedTalentRoute>} />
               
