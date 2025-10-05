@@ -742,13 +742,14 @@ export default function TalentOnboarding() {
 
             {/* Picture Upload */}
             <div className="space-y-2">
-              <Label>Profile Picture *</Label>
+              <Label>Profile Picture (Optional but recommended)</Label>
               <SimpleAvatarUpload
                 currentImage={profileImageUrl}
                 onImageChange={handleAvatarImageChange}
                 onFileChange={handleAvatarFileChange}
                 disabled={loading}
               />
+              <p className="text-xs text-muted-foreground">Upload a picture to make your profile more attractive</p>
             </div>
 
             {/* Gallery Photos */}
@@ -794,13 +795,12 @@ export default function TalentOnboarding() {
 
             {/* Biography */}
             <div className="space-y-2">
-              <Label htmlFor="biography">Biography *</Label>
+              <Label htmlFor="biography">Biography (Tell us about yourself)</Label>
               <Textarea
                 id="biography"
-                placeholder="Tell us about yourself and your musical journey..."
+                placeholder="Tell us about yourself and your musical journey... (Optional but recommended)"
                 value={formData.biography}
                 onChange={(e) => setFormData(prev => ({ ...prev, biography: e.target.value }))}
-                required
                 rows={4}
               />
             </div>
@@ -886,10 +886,15 @@ export default function TalentOnboarding() {
             <Button 
               type="submit" 
               className="w-full" 
-              disabled={loading || (!user && (!email || !password || !fullName)) || !formData.artistName || !formData.act || !formData.gender || formData.musicGenres.length === 0 || !formData.biography || !formData.age || !formData.countryOfResidence || !formData.ratePerHour || !selectedLocation || !pictureFile}
+              disabled={loading || (!user && (!email || !password || !fullName)) || !formData.artistName || !formData.act || !formData.gender || formData.musicGenres.length === 0 || !formData.age || !formData.countryOfResidence || !formData.ratePerHour || !selectedLocation}
             >
               {loading ? (user ? "Creating Profile..." : "Creating Account & Profile...") : (user ? "Complete Profile" : "Sign Up & Complete Profile")}
             </Button>
+            {(!formData.biography || !pictureFile) && (
+              <p className="text-sm text-yellow-600 dark:text-yellow-500 text-center mt-2">
+                💡 Tip: Add a biography and profile picture to make your profile stand out!
+              </p>
+            )}
           </form>
 
         </CardContent>
