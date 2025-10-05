@@ -375,8 +375,47 @@ export default function TalentOnboarding() {
         currentUser = authData.user;
         console.log('[TalentOnboarding] User signed up successfully:', currentUser.id);
         
-        // Wait a moment for the trigger to create the profile
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        // Wait and verify profile was created by trigger (with retries)
+        let profileExists = false;
+        const maxRetries = 3;
+        const delays = [500, 1000, 2000];
+        
+        for (let i = 0; i < maxRetries; i++) {
+          await new Promise(resolve => setTimeout(resolve, delays[i]));
+          
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('id', currentUser.id)
+            .maybeSingle();
+          
+          if (profile) {
+            profileExists = true;
+            console.log('[TalentOnboarding] Profile found on retry', i + 1);
+            break;
+          }
+        }
+        
+        // If profile still doesn't exist, use ensure_profile function
+        if (!profileExists) {
+          console.log('[TalentOnboarding] Profile not found after retries, calling ensure_profile');
+          const { error: ensureError } = await supabase.rpc('ensure_profile', {
+            p_user_id: currentUser.id,
+            p_email: email,
+            p_role: 'talent'
+          });
+          
+          if (ensureError) {
+            console.error('[TalentOnboarding] ensure_profile error:', ensureError);
+            toast({
+              title: "Profile Creation Failed",
+              description: "Could not create user profile. Please contact support.",
+              variant: "destructive",
+            });
+            setLoading(false);
+            return;
+          }
+        }
       }
 
       // Check if user is Pro subscriber (for Pro features)
@@ -432,11 +471,12 @@ export default function TalentOnboarding() {
 
       const { data: talentProfile, error } = await supabase
         .from('talent_profiles')
-        .insert(profileData)
+        .upsert(profileData)
         .select('id')
         .single();
 
       if (error) {
+        console.error('[TalentOnboarding] Error creating talent profile:', error);
         toast({
           title: "Profile creation failed",
           description: error.message,
@@ -446,28 +486,57 @@ export default function TalentOnboarding() {
         return;
       }
 
-      console.log('[TalentOnboarding] Profile created, marking onboarding complete');
+      console.log('[TalentOnboarding] ✅ Talent profile created successfully');
       
-      // Mark onboarding as complete in profiles table
+      // Save location preference to user_preferences
+      const locationToSave = formData.location || userLocation || detectedLocation;
+      if (locationToSave) {
+        const { error: locationError } = await supabase
+          .from('user_preferences')
+          .upsert({
+            user_id: currentUser.id,
+            preferred_location: locationToSave,
+            detected_location: detectedLocation || null,
+            location_override: !!formData.location,
+          });
+        
+        if (locationError) {
+          console.warn('[TalentOnboarding] Error saving location preference:', locationError);
+        } else {
+          console.log('[TalentOnboarding] ✅ Location preference saved');
+        }
+      }
+      
+      // Mark onboarding as complete ONLY if talent profile was created successfully
       const { error: profileUpdateError } = await supabase
         .from('profiles')
         .update({ 
           onboarding_complete: true,
-          onboarding_draft: null // Clear draft after completion
+          onboarding_draft: null,
+          role: 'talent'
         })
         .eq('id', currentUser.id);
 
       if (profileUpdateError) {
         console.error('[TalentOnboarding] Error updating profile onboarding status:', profileUpdateError);
+        toast({
+          title: "Warning",
+          description: "Profile saved but onboarding status not updated. Please refresh the page.",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
       }
+      
+      console.log('[TalentOnboarding] ✅ Onboarding marked complete');
 
       // Clear localStorage draft
       localStorage.removeItem('talent_onboarding_draft');
       
       // Show success toast
       toast({
-        title: "Profile created successfully!",
-        description: user ? "Welcome to our talent community" : "Your account and profile have been created successfully! Please check your email to verify your account.",
+        title: "Success!",
+        description: user ? "Profile updated successfully!" : "Welcome to QTalent! Your artist profile is now live.",
       });
 
       // Refresh auth context to update onboarding status

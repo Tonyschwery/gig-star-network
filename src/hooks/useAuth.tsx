@@ -106,16 +106,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
       
+      // Ensure profile exists using secure database function
+      const { data: ensuredProfile, error: ensureError } = await supabase
+        .rpc('ensure_profile', {
+          p_user_id: user.id,
+          p_email: user.email!,
+          p_role: userRole
+        });
+      
+      if (ensureError) {
+        console.error('[Auth] Error ensuring profile:', ensureError);
+      }
+      
       // Load base profile for onboarding status
       const { data: baseProfile } = await supabase
         .from('profiles')
-        .select('onboarding_complete, onboarding_draft')
+        .select('onboarding_complete, onboarding_draft, role')
         .eq('id', user.id)
         .maybeSingle();
       
       if (baseProfile) {
         setOnboardingComplete(baseProfile.onboarding_complete || false);
         setOnboardingDraft(baseProfile.onboarding_draft || null);
+        
+        // Update role from database if it exists
+        if (baseProfile.role) {
+          setRole(baseProfile.role as UserRole);
+        }
       }
       
       if (userRole === 'talent') {
