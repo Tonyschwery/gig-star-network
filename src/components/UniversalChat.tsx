@@ -163,17 +163,17 @@ export const UniversalChat = () => {
           <div className="p-4 border-t bg-background">
             {/* Pro upgrade prompt for non-pro talents */}
             {isTalent && !isProUser && (
-              <div className="mb-3 p-3 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 rounded-lg border border-amber-200 dark:border-amber-800">
-                <p className="text-xs text-amber-700 dark:text-amber-300 font-medium mb-2">
-                  🚀 <strong>Unlock Pro Features:</strong> Share contact details, unlimited messaging, and earn 100% of your bookings! This is how our platform grows and supports amazing artists like you.
+              <div className="mb-2 p-2 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 rounded-md border border-amber-200/50 dark:border-amber-800/50">
+                <p className="text-[11px] text-amber-700 dark:text-amber-300 font-medium mb-1.5 leading-tight">
+                  💎 <strong>Upgrade to Pro:</strong> Share contact info & keep 100% earnings
                 </p>
                 <Button 
                   size="sm" 
                   onClick={() => window.open('/pricing', '_blank')}
-                  className="bg-gradient-to-br from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-white shadow-lg"
+                  className="h-7 text-xs bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white"
                 >
                   <Crown className="h-3 w-3 mr-1" />
-                  Upgrade to Pro - Start Earning More!
+                  Go Pro
                 </Button>
               </div>
             )}
@@ -196,7 +196,7 @@ export const UniversalChat = () => {
                 </p>
               </div>
             )}
-            <form onSubmit={handleSendMessage} className="flex items-center gap-2">
+            <form onSubmit={handleSendMessage} className="flex items-end gap-2">
               <Textarea
                 value={newMessage}
                 onChange={(e) => {
@@ -234,7 +234,7 @@ export const UniversalChat = () => {
                     ? "This talent can't receive contact details (Free plan)..."
                     : "Type your message..."
                 }
-                className="resize-none"
+                className="resize-none min-h-[44px] text-base leading-tight py-3"
                 rows={1}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && !e.shiftKey) {
@@ -243,7 +243,7 @@ export const UniversalChat = () => {
                   }
                 }}
               />
-              <Button type="submit" size="icon" disabled={!newMessage.trim()}>
+              <Button type="submit" size="icon" className="h-[44px] w-[44px] flex-shrink-0" disabled={!newMessage.trim()}>
                 <Send className="h-4 w-4" />
               </Button>
             </form>
