@@ -11,7 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Upload, Music } from 'lucide-react';
+import { Upload, Music, AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { countries, sortCountriesByProximity } from '@/lib/countries';
 import { SimpleGalleryUpload } from '@/components/SimpleGalleryUpload';
 import { SimpleAvatarUpload } from '@/components/SimpleAvatarUpload';
@@ -535,8 +536,8 @@ export default function TalentOnboarding() {
       
       // Show success toast
       toast({
-        title: "Success!",
-        description: user ? "Profile updated successfully!" : "Welcome to QTalent! Your artist profile is now live.",
+        title: "Success! 🎉",
+        description: user ? "Your profile has been updated and you're now listed as a talent!" : "Welcome to QTalent! Your artist profile is now live and visible to bookers.",
       });
 
       // Refresh auth context to update onboarding status
@@ -574,6 +575,32 @@ export default function TalentOnboarding() {
 
   // Get current location for validation
   const selectedLocation = formData.location || userLocation || detectedLocation;
+
+  // Validation function to check all required fields
+  const getValidationErrors = () => {
+    const errors: string[] = [];
+    
+    // Auth fields (only for non-logged-in users)
+    if (!user) {
+      if (!email) errors.push("Email address");
+      if (!password) errors.push("Password (min 6 characters)");
+      if (!fullName) errors.push("Full name");
+    }
+    
+    // Profile fields (required for all)
+    if (!formData.artistName) errors.push("Artist name");
+    if (!formData.act) errors.push("Act type");
+    if (!formData.gender) errors.push("Gender");
+    if (formData.musicGenres.length === 0) errors.push("At least one music genre");
+    if (!formData.age) errors.push("Age range");
+    if (!formData.countryOfResidence) errors.push("Country of residence");
+    if (!formData.ratePerHour) errors.push("Rate per hour");
+    if (!selectedLocation) errors.push("Location");
+    if (!pictureFile && !profileImageUrl) errors.push("Profile picture");
+    if (!formData.biography || formData.biography.trim().length === 0) errors.push("Biography");
+    
+    return errors;
+  };
 
   // Show loading spinner while auth is loading or page is initializing
   if (authLoading || !pageInitialized) {
@@ -742,14 +769,14 @@ export default function TalentOnboarding() {
 
             {/* Picture Upload */}
             <div className="space-y-2">
-              <Label>Profile Picture (Optional but recommended)</Label>
+              <Label>Profile Picture *</Label>
               <SimpleAvatarUpload
                 currentImage={profileImageUrl}
                 onImageChange={handleAvatarImageChange}
                 onFileChange={handleAvatarFileChange}
                 disabled={loading}
               />
-              <p className="text-xs text-muted-foreground">Upload a picture to make your profile more attractive</p>
+              <p className="text-xs text-muted-foreground">Required - upload a professional photo</p>
             </div>
 
             {/* Gallery Photos */}
@@ -795,12 +822,13 @@ export default function TalentOnboarding() {
 
             {/* Biography */}
             <div className="space-y-2">
-              <Label htmlFor="biography">Biography (Tell us about yourself)</Label>
+              <Label htmlFor="biography">Biography *</Label>
               <Textarea
                 id="biography"
-                placeholder="Tell us about yourself and your musical journey... (Optional but recommended)"
+                placeholder="Tell us about yourself and your musical journey..."
                 value={formData.biography}
                 onChange={(e) => setFormData(prev => ({ ...prev, biography: e.target.value }))}
+                required
                 rows={4}
               />
             </div>
@@ -883,18 +911,28 @@ export default function TalentOnboarding() {
 
             </div>
 
+            {/* Validation Errors Alert */}
+            {getValidationErrors().length > 0 && (
+              <Alert variant="destructive" className="mt-4">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Please complete the following required fields:</AlertTitle>
+                <AlertDescription>
+                  <ul className="list-disc list-inside mt-2 space-y-1">
+                    {getValidationErrors().map((error, idx) => (
+                      <li key={idx}>{error}</li>
+                    ))}
+                  </ul>
+                </AlertDescription>
+              </Alert>
+            )}
+
             <Button 
               type="submit" 
-              className="w-full" 
-              disabled={loading || (!user && (!email || !password || !fullName)) || !formData.artistName || !formData.act || !formData.gender || formData.musicGenres.length === 0 || !formData.age || !formData.countryOfResidence || !formData.ratePerHour || !selectedLocation}
+              className="w-full mt-4" 
+              disabled={loading || getValidationErrors().length > 0}
             >
               {loading ? (user ? "Creating Profile..." : "Creating Account & Profile...") : (user ? "Complete Profile" : "Sign Up & Complete Profile")}
             </Button>
-            {(!formData.biography || !pictureFile) && (
-              <p className="text-sm text-yellow-600 dark:text-yellow-500 text-center mt-2">
-                💡 Tip: Add a biography and profile picture to make your profile stand out!
-              </p>
-            )}
           </form>
 
         </CardContent>
