@@ -534,17 +534,13 @@ export default function TalentOnboarding() {
       // Clear localStorage draft
       localStorage.removeItem('talent_onboarding_draft');
       
-      // Show success toast
-      toast({
-        title: "Success! 🎉",
-        description: user ? "Your profile has been updated and you're now listed as a talent!" : "Welcome to QTalent! Your artist profile is now live and visible to bookers.",
-      });
-
-      // Refresh auth context to update onboarding status
-      await refreshProfile();
+      // Sign out the user
+      await supabase.auth.signOut();
       
-      console.log('[TalentOnboarding] Navigating to dashboard');
-      navigate('/talent-dashboard', { replace: true });
+      console.log('[TalentOnboarding] User signed out, redirecting to auth page');
+      
+      // Redirect to auth page with success flag
+      navigate('/auth?registered=true', { replace: true });
     } catch (error: any) {
       console.error('[TalentOnboarding] Error creating profile:', error);
       toast({

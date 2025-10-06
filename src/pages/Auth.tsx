@@ -1,16 +1,17 @@
 // FILE: src/pages/Auth.tsx
 
 import { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, CheckCircle } from "lucide-react";
 
 const Auth = () => {
   const [email, setEmail] = useState("");
@@ -20,9 +21,11 @@ const Auth = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, loading: authLoading } = useAuth();
+  const [searchParams] = useSearchParams();
   
   const { state } = useLocation();
   const mode = state?.mode || 'talent';
+  const justRegistered = searchParams.get('registered') === 'true';
 
   const title = mode === 'booker' ? 'Welcome to Qtalent' : 'Join as a Talent';
   const description = mode === 'booker' ? 'Please sign in or sign up to proceed.' : 'Create your profile to get booked';
@@ -134,6 +137,17 @@ const Auth = () => {
         <Button variant="ghost" onClick={() => navigate("/")} className="mb-4">
           <ArrowLeft className="h-4 w-4 mr-2" /> Back to Home
         </Button>
+        
+        {justRegistered && (
+          <Alert className="mb-4 border-green-500 bg-green-50 dark:bg-green-950">
+            <CheckCircle className="h-4 w-4 text-green-600" />
+            <AlertTitle className="text-green-800 dark:text-green-200">🎉 Congratulations!</AlertTitle>
+            <AlertDescription className="text-green-700 dark:text-green-300">
+              Your talent profile has been created successfully! Please sign in below to access your dashboard.
+            </AlertDescription>
+          </Alert>
+        )}
+        
         <Card>
           <CardHeader className="text-center">
             <CardTitle className="text-2xl">{title}</CardTitle>
