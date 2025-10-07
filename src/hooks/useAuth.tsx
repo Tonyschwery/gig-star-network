@@ -178,6 +178,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isProcessing = true;
       
       try {
+        // Inside the processSession function...
+
+const processSession = async (session: Session | null) => {
+  if (!mounted || isProcessing) return;
+  isProcessing = true;
+
+  try {
+    // --- ADD THESE 3 LINES HERE ---
+    if (session) {
+      await supabase.auth.refreshSession();
+    }
+    // --- END OF ADDITION ---
         const currentUser = session?.user ?? null;
         console.log('[Auth] Processing session for user:', currentUser?.email);
         
