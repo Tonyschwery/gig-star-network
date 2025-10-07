@@ -87,32 +87,35 @@ const Auth = () => {
       if (data.user) {
         toast({ title: "Signed in successfully!" });
         
+        // CRITICAL: Give Supabase time to establish the session properly
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
         const intent = state?.intent;
         const talentId = state?.talentId;
         const from = state?.from?.pathname || null;
 
         // Rule 1: If user is the admin, always go to the admin panel.
         if (data.user.email === 'admin@qtalent.live') {
-          navigate('/admin');
+          navigate('/admin', { replace: true });
         } 
         // Rule 2: Handle specific intents first
         else if (intent === 'event-form') {
-          navigate('/your-event');
+          navigate('/your-event', { replace: true });
         }
         else if (intent === 'booking-form' && talentId) {
-          navigate(`/talent/${talentId}`, { state: { openBookingForm: true } });
+          navigate(`/talent/${talentId}`, { state: { openBookingForm: true }, replace: true });
         }
         // Rule 3: If user was sent here from another page, send them back.
-        else if (from) {
-          navigate(from);
+        else if (from && from !== '/auth' && from !== '/') {
+          navigate(from, { replace: true });
         } 
-        // Rule 4: Otherwise, send them to their default dashboard.
+        // Rule 4: Check user type from metadata (faster than DB query)
         else {
-          const { data: profile } = await supabase.from('talent_profiles').select('id').eq('user_id', data.user.id).maybeSingle();
-          if (profile) {
-              navigate('/talent-dashboard');
+          const userType = data.user.user_metadata?.user_type;
+          if (userType === 'talent') {
+            navigate('/talent-dashboard', { replace: true });
           } else {
-              navigate('/booker-dashboard');
+            navigate('/booker-dashboard', { replace: true });
           }
         }
       }

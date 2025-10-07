@@ -10,35 +10,31 @@ export function ProtectedTalentRoute({ children }: { children: React.ReactNode }
     const location = useLocation();
 
     useEffect(() => {
+        // CRITICAL: Wait for auth to fully load before any redirects
         if (loading) {
-            console.log('[ProtectedTalentRoute] Still loading auth');
-            return; // Wait for auth to complete
+            return;
         }
 
-        console.log('[ProtectedTalentRoute] Auth loaded - Status:', status, 'Role:', role, 'Onboarding:', onboardingComplete);
-
-        // If not logged in, redirect to auth
+        // Not authenticated - redirect to auth
         if (status === 'LOGGED_OUT') {
-            console.log('[ProtectedTalentRoute] Not logged in, redirecting to auth');
             navigate('/auth', { replace: true, state: { from: location, mode: 'talent' } });
             return;
         }
 
-        // If logged in but not a talent, redirect to home
-        if (role !== 'talent' && role !== 'admin') {
-            console.log('[ProtectedTalentRoute] Not a talent user, redirecting to home');
+        // Wrong role - redirect to home
+        if (status === 'AUTHENTICATED' && role && role !== 'talent' && role !== 'admin') {
             navigate('/', { replace: true });
             return;
         }
 
-        // If talent but hasn't completed onboarding and not already on onboarding page
-        if (role === 'talent' && !onboardingComplete && location.pathname !== '/talent-onboarding') {
-            console.log('[ProtectedTalentRoute] Talent user with incomplete onboarding, redirecting to /talent-onboarding');
-            navigate('/talent-onboarding', { replace: true });
-            return;
+        // CRITICAL FIX: Only check onboarding for talent users when not already on the onboarding page
+        // This prevents redirect loops after completing onboarding
+        if (status === 'AUTHENTICATED' && role === 'talent' && location.pathname !== '/talent-onboarding') {
+            // If onboarding is NOT complete, redirect to onboarding
+            if (!onboardingComplete) {
+                navigate('/talent-onboarding', { replace: true });
+            }
         }
-
-        console.log('[ProtectedTalentRoute] Access granted');
     }, [status, loading, role, onboardingComplete, navigate, location]);
 
     // Show content if authorized (talent or admin)

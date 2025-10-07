@@ -508,7 +508,7 @@ export default function TalentOnboarding() {
         }
       }
       
-      // Mark onboarding as complete ONLY if talent profile was created successfully
+      // CRITICAL: Mark onboarding as complete in profiles table
       const { error: profileUpdateError } = await supabase
         .from('profiles')
         .update({ 
@@ -519,28 +519,35 @@ export default function TalentOnboarding() {
         .eq('id', currentUser.id);
 
       if (profileUpdateError) {
-        console.error('[TalentOnboarding] Error updating profile onboarding status:', profileUpdateError);
+        console.error('[TalentOnboarding] CRITICAL - Error updating onboarding status:', profileUpdateError);
         toast({
-          title: "Warning",
-          description: "Profile saved but onboarding status not updated. Please refresh the page.",
+          title: "Error",
+          description: "Failed to complete onboarding. Please try again or contact support.",
           variant: "destructive",
         });
         setLoading(false);
         return;
       }
       
-      console.log('[TalentOnboarding] ✅ Onboarding marked complete');
+      console.log('[TalentOnboarding] ✅ Onboarding complete, profile saved');
 
       // Clear localStorage draft
       localStorage.removeItem('talent_onboarding_draft');
       
-      // Sign out the user
+      // Show success message
+      toast({
+        title: "Success! 🎉",
+        description: "Your talent profile is now live! Please sign in to access your dashboard.",
+      });
+      
+      // Wait a moment for the user to see the success message
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Sign out to ensure clean state
       await supabase.auth.signOut();
       
-      console.log('[TalentOnboarding] User signed out, redirecting to auth page');
-      
       // Redirect to auth page with success flag
-      navigate('/auth?registered=true', { replace: true });
+      window.location.href = '/auth?registered=true';
     } catch (error: any) {
       console.error('[TalentOnboarding] Error creating profile:', error);
       toast({
