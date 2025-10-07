@@ -1,13 +1,11 @@
-// FILE: src/hooks/useAuth.ts
+import React, { useState, useEffect, createContext, useContext } from "react";
+import { User, Session } from "@supabase/supabase-js";
+import { supabase } from "@/integrations/supabase/client";
 
-import { useState, useEffect, createContext, useContext } from 'react';
-import { User, Session } from '@supabase/supabase-js';
-import { supabase } from '@/integrations/supabase/client';
-
-type UserStatus = 'LOADING' | 'LOGGED_OUT' | 'AUTHENTICATED';
-type UserRole = 'booker' | 'talent' | 'admin';
-type ProfileStatus = 'incomplete' | 'complete' | 'none';
-type UserMode = 'booking' | 'artist';
+type UserStatus = "LOADING" | "LOGGED_OUT" | "AUTHENTICATED";
+type UserRole = "booker" | "talent" | "admin";
+type ProfileStatus = "incomplete" | "complete" | "none";
+type UserMode = "booking" | "artist";
 
 interface AuthContextType {
   user: User | null;
@@ -32,136 +30,104 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<any | null>(null);
-  const [status, setStatus] = useState<UserStatus>('LOADING');
+  const [status, setStatus] = useState<UserStatus>("LOADING");
   const [role, setRole] = useState<UserRole | null>(null);
-  const [profileStatus, setProfileStatus] = useState<ProfileStatus>('none');
-  const [mode, setMode] = useState<UserMode>('booking');
+  const [profileStatus, setProfileStatus] = useState<ProfileStatus>("none");
+  const [mode, setMode] = useState<UserMode>("booking");
   const [onboardingComplete, setOnboardingComplete] = useState<boolean>(false);
   const [onboardingDraft, setOnboardingDraft] = useState<any | null>(null);
 
-  // Helper to determine role from user metadata (synchronous, no DB query)
   const getUserRole = (user: User | null): UserRole | null => {
     if (!user) return null;
-    
-    // Check for admin email
-    if (user.email === 'admin@qtalent.live') {
-      return 'admin';
+    if (user.email === "admin@qtalent.live") {
+      return "admin";
     }
-    
-    // Get role from user_metadata (set during signup)
     const userType = user.user_metadata?.user_type;
-    if (userType === 'talent') return 'talent';
-    if (userType === 'booker') return 'booker';
-    
-    // Default to booker if not specified
-    return 'booker';
+    if (userType === "talent") return "talent";
+    if (userType === "booker") return "booker";
+    return "booker";
   };
 
-  // Helper to check profile status (only queries DB for profile completion)
   const checkProfileStatus = async (user: User, userRole: UserRole): Promise<ProfileStatus> => {
     try {
-      if (userRole === 'talent') {
+      if (userRole === "talent") {
         const { data: talentProfile, error } = await supabase
-          .from('talent_profiles')
-          .select('*')
-          .eq('user_id', user.id)
+          .from("talent_profiles")
+          .select("*")
+          .eq("user_id", user.id)
           .maybeSingle();
-        
         if (error) {
-          console.error('Error checking talent profile:', error);
-          return 'none';
+          console.error("Error checking talent profile:", error);
+          return "none";
         }
-        
-        if (!talentProfile) return 'incomplete';
-        if (talentProfile.artist_name) return 'complete';
-        return 'incomplete';
-      } else if (userRole === 'booker') {
+        if (!talentProfile) return "incomplete";
+        if (talentProfile.artist_name) return "complete";
+        return "incomplete";
+      } else if (userRole === "booker") {
         const { data: bookerProfile, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
+          .from("profiles")
+          .select("*")
+          .eq("id", user.id)
           .maybeSingle();
-        
         if (error) {
-          console.error('Error checking booker profile:', error);
-          return 'none';
+          console.error("Error checking booker profile:", error);
+          return "none";
         }
-        
-        return bookerProfile ? 'complete' : 'incomplete';
+        return bookerProfile ? "complete" : "incomplete";
       }
-      
-      return 'none';
+      return "none";
     } catch (error) {
-      console.error('Error in checkProfileStatus:', error);
-      return 'none';
+      console.error("Error in checkProfileStatus:", error);
+      return "none";
     }
   };
 
-  // Helper to load profile data
   const loadProfile = async (user: User, userRole: UserRole) => {
     try {
-      if (userRole === 'admin') {
-        setProfile({ full_name: 'Admin' });
+      if (userRole === "admin") {
+        setProfile({ full_name: "Admin" });
         setOnboardingComplete(true);
         return;
       }
-      
-      // Ensure profile exists using secure database function
-      const { data: ensuredProfile, error: ensureError } = await supabase
-        .rpc('ensure_profile', {
-          p_user_id: user.id,
-          p_email: user.email!,
-          p_role: userRole
-        });
-      
+      const { error: ensureError } = await supabase.rpc("ensure_profile", {
+        p_user_id: user.id,
+        p_email: user.email!,
+        p_role: userRole,
+      });
       if (ensureError) {
-        console.error('[Auth] Error ensuring profile:', ensureError);
+        console.error("[Auth] Error ensuring profile:", ensureError);
       }
-      
-      // Load base profile for onboarding status
       const { data: baseProfile } = await supabase
-        .from('profiles')
-        .select('onboarding_complete, onboarding_draft, role')
-        .eq('id', user.id)
+        .from("profiles")
+        .select("onboarding_complete, onboarding_draft, role")
+        .eq("id", user.id)
         .maybeSingle();
-      
       if (baseProfile) {
         setOnboardingComplete(baseProfile.onboarding_complete || false);
         setOnboardingDraft(baseProfile.onboarding_draft || null);
-        
-        // Update role from database if it exists
         if (baseProfile.role) {
           setRole(baseProfile.role as UserRole);
         }
       }
-      
-      if (userRole === 'talent') {
+      if (userRole === "talent") {
         const { data: talentProfile } = await supabase
-          .from('talent_profiles')
-          .select('*')
-          .eq('user_id', user.id)
+          .from("talent_profiles")
+          .select("*")
+          .eq("user_id", user.id)
           .maybeSingle();
-        
         setProfile(talentProfile);
-      } else if (userRole === 'booker') {
-        const { data: bookerProfile } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .maybeSingle();
-        
+      } else if (userRole === "booker") {
+        const { data: bookerProfile } = await supabase.from("profiles").select("*").eq("id", user.id).maybeSingle();
         setProfile(bookerProfile);
       }
     } catch (error) {
-      console.error('Error loading profile:', error);
+      console.error("Error loading profile:", error);
     }
   };
 
-  // Refresh profile data (can be called after profile updates)
   const refreshProfile = async () => {
     if (!user || !role) return;
-    
-    console.log('[Auth] Refreshing profile data');
+    console.log("[Auth] Refreshing profile data");
     const newProfileStatus = await checkProfileStatus(user, role);
     setProfileStatus(newProfileStatus);
     await loadProfile(user, role);
@@ -170,94 +136,56 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let mounted = true;
     let isProcessing = false;
-    
-    console.log('[Auth] Initializing auth listener');
-    
-    const processSession = async (session: any) => {
+    console.log("[Auth] Initializing auth listener");
+    const processSession = async (session: Session | null) => {
       if (!mounted || isProcessing) return;
       isProcessing = true;
-      
       try {
-        // Inside the processSession function...
-
-const processSession = async (session: Session | null) => {
-  if (!mounted || isProcessing) return;
-  isProcessing = true;
-
-  try {
-    // --- ADD THESE 3 LINES HERE ---
-    if (session) {
-      await supabase.auth.refreshSession();
-    }
-    // --- END OF ADDITION ---
+        if (session) {
+          await supabase.auth.refreshSession();
+        }
         const currentUser = session?.user ?? null;
-        console.log('[Auth] Processing session for user:', currentUser?.email);
-        
-        // Update session and user immediately
         setSession(session);
         setUser(currentUser);
-
-        // Handle logged out state
         if (!currentUser) {
-          console.log('[Auth] No user, setting logged out state');
-          setStatus('LOGGED_OUT');
+          setStatus("LOGGED_OUT");
           setRole(null);
-          setProfileStatus('none');
           setProfile(null);
           setOnboardingComplete(false);
           setOnboardingDraft(null);
           setLoading(false);
           return;
         }
-
-        // Keep loading true while we fetch profile data
         setLoading(true);
-
-        // Determine user role from metadata (synchronous)
         const userRole = getUserRole(currentUser);
-        console.log('[Auth] User role determined:', userRole);
         setRole(userRole);
-        
-        // Set mode based on role
-        if (userRole === 'talent') {
-          setMode('artist');
+        if (userRole === "talent") {
+          setMode("artist");
         } else {
-          setMode('booking');
+          setMode("booking");
         }
-
-        // CRITICAL: Load profile data FIRST before marking as authenticated
-        // This ensures onboardingComplete is properly set
         await loadProfile(currentUser, userRole!);
-        
-        // Check profile status
         const profStatus = await checkProfileStatus(currentUser, userRole!);
-        console.log('[Auth] Profile status:', profStatus);
         setProfileStatus(profStatus);
-        
-        // Mark as authenticated ONLY after all data is loaded
-        setStatus('AUTHENTICATED');
-        console.log('[Auth] Auth initialization complete, onboarding status loaded');
+        setStatus("AUTHENTICATED");
+      } catch (error) {
+        console.error("[Auth] Error processing session:", error);
       } finally {
         setLoading(false);
         isProcessing = false;
       }
     };
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!mounted) return;
-      console.log('[Auth] State change:', event);
       await processSession(session);
     });
-
-    // Initial session check - wait for it to complete
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!mounted) return;
-      console.log('[Auth] Initial session check');
       processSession(session);
     });
-
     return () => {
-      console.log('[Auth] Cleaning up auth listener');
       mounted = false;
       subscription.unsubscribe();
     };
@@ -265,46 +193,37 @@ const processSession = async (session: Session | null) => {
 
   const signOut = async () => {
     try {
-      console.log('[Auth] Signing out');
       setLoading(true);
-      
-      // Sign out from Supabase
       await supabase.auth.signOut();
-      
-      // Clear state
       setUser(null);
       setSession(null);
       setProfile(null);
       setRole(null);
-      setProfileStatus('none');
-      setStatus('LOGGED_OUT');
-      
-      // Clear storage
+      setProfileStatus("none");
+      setStatus("LOGGED_OUT");
       localStorage.clear();
       sessionStorage.clear();
-      
-      // Redirect to home
-      window.location.href = '/';
+      window.location.href = "/";
     } catch (error) {
-      console.error('[Auth] Error during signout:', error);
+      console.error("[Auth] Error during signout:", error);
       setLoading(false);
     }
   };
 
-  const value = { 
-    user, 
-    session, 
-    loading, 
-    status, 
-    role, 
-    profileStatus, 
-    profile, 
-    signOut, 
-    mode, 
+  const value = {
+    user,
+    session,
+    loading,
+    status,
+    role,
+    profileStatus,
+    profile,
+    signOut,
+    mode,
     setMode,
     refreshProfile,
     onboardingComplete,
-    onboardingDraft
+    onboardingDraft,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
@@ -313,7 +232,7 @@ const processSession = async (session: Session | null) => {
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 }
