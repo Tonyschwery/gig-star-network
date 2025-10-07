@@ -61,7 +61,6 @@ const fileToBase64 = (file: File): Promise<string> =>
     reader.onerror = (error) => reject(error);
   });
 
-
 export default function TalentOnboarding() {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -215,7 +214,7 @@ export default function TalentOnboarding() {
       if (pictureFile) {
         draftData.profileImageUrl = await fileToBase64(pictureFile);
       }
-      localStorage.setItem('talent_onboarding_draft', JSON.stringify(draftData));
+      localStorage.setItem("talent_onboarding_draft", JSON.stringify(draftData));
 
       setSignupMessageVisible(true);
       toast({ title: "Check your email!", description: "We've sent a magic link to sign you in." });
@@ -288,8 +287,7 @@ export default function TalentOnboarding() {
               <AlertCircle className="h-4 w-4" />
               <AlertTitle>Magic Link Sent</AlertTitle>
               <AlertDescription>
-                We've sent a sign-in link to **{email}**. Please click the link to confirm your account and
-                continue.
+                We've sent a sign-in link to **{email}**. Please click the link to confirm your account and continue.
               </AlertDescription>
             </Alert>
           </CardContent>
@@ -550,3 +548,4 @@ export default function TalentOnboarding() {
       </Card>
     </div>
   );
+}
