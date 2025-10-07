@@ -114,6 +114,7 @@ export default function TalentOnboarding() {
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
   const [galleryImages, setGalleryImages] = useState<string[]>([]);
   const [showProDialog, setShowProDialog] = useState(false);
+  const [signupMessageVisible, setSignupMessageVisible] = useState(false);
 
   // Auth fields for new users
   const [email, setEmail] = useState("");
