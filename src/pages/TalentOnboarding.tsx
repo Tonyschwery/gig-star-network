@@ -132,8 +132,7 @@ export default function TalentOnboarding() {
     setLoading(true);
 
     try {
-      // This logic is for a logged-in user who is returning to complete their profile.
-      // It is a fallback and remains unchanged.
+      // Fallback logic for an already logged-in user completing their profile.
       if (user) {
         const pictureUrl = await uploadPicture(user.id);
         if (!pictureUrl && pictureFile) {
@@ -169,7 +168,7 @@ export default function TalentOnboarding() {
         return;
       }
 
-      // **NEW LOGIC FOR NEW USERS**
+      // **MAIN LOGIC FOR NEW USERS**
       // This sends all form data to Supabase for the database trigger to process.
       if (!email || !fullName) {
         toast({
@@ -180,7 +179,7 @@ export default function TalentOnboarding() {
         setLoading(false);
         return;
       }
-      
+
       const allGenres = [...formData.musicGenres];
       if (formData.customGenre.trim()) {
         allGenres.push(formData.customGenre.trim());
@@ -218,7 +217,6 @@ export default function TalentOnboarding() {
 
       setSignupMessageVisible(true);
       toast({ title: "Check your email!", description: "We've sent a magic link to complete your sign-up." });
-
     } catch (error: any) {
       console.error("[TalentOnboarding] Error:", error);
       toast({ title: "Error", description: error.message || "An unexpected error occurred.", variant: "destructive" });
@@ -524,7 +522,7 @@ export default function TalentOnboarding() {
                     ))}
                   </ul>
                 </AlertDescription>
-              </Aler>
+              </Alert>
             )}
             <Button type="submit" className="w-full mt-4" disabled={loading || getValidationErrors().length > 0}>
               {loading
