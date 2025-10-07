@@ -310,50 +310,101 @@ export default function TalentOnboarding() {
     return data.publicUrl;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
+  // --- REPLACE your old handleSubmit function with this new one ---
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setLoading(true);
 
-    try {
-      let currentUser = user;
+  try {
+    // --- LOGIC FOR A LOGGED-IN USER COMPLETING THEIR PROFILE ---
+    if (user) {
+      const pictureUrl = await uploadPicture(user.id);
+      if (!pictureUrl && pictureFile) { // Only fail if a new upload fails
+        setLoading(false);
+        return;
+      }
 
-      // If user is not logged in, sign them up first
-      if (!currentUser) {
-        console.log("[TalentOnboarding] User not authenticated, signing up...");
+      const allGenres = [...formData.musicGenres];
+      if (formData.customGenre.trim()) {
+        allGenres.push(formData.customGenre.trim());
+      }
 
-        // Validate required auth fields
-        if (!email || !password || !fullName) {
-          toast({
-            variant: "destructive",
-            title: "Missing information",
-            description: "Please provide your email, password, and full name.",
-          });
-          setLoading(false);
-          return;
-        }
+      const profileData = {
+        user_id: user.id,
+        artist_name: formData.artistName,
+        act: formData.act as any,
+        gender: formData.gender as any,
+        music_genres: allGenres,
+        biography: formData.biography,
+        age: formData.age,
+        nationality: formData.countryOfResidence,
+        rate_per_hour: parseFloat(formData.ratePerHour),
+        currency: formData.currency,
+        location: formData.location || userLocation || detectedLocation || '',
+        picture_url: pictureUrl,
+        // Pro features would be handled here based on subscription status
+      };
 
-        // Sign up the user
-        const { data: authData, error: signUpError } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/talent-dashboard`,
-            data: {
-              name: fullName,
-              user_type: "talent",
-              phone: phoneNumber,
-            },
-          },
-        });
-        await supabase.auth.setSession(authData.session);
+      const { error: upsertError } = await supabase.from('talent_profiles').upsert(profileData);
+      if (upsertError) throw upsertError;
 
-        if (signUpError) {
-          toast({
-            variant: "destructive",
-            title: "Sign up failed",
-            description: signUpError.message,
-          });
-          setLoading(false);
+      const { error: profileUpdateError } = await supabase
+        .from('profiles')
+        .update({ onboarding_complete: true, onboarding_draft: null, role: 'talent' })
+        .eq('id', user.id);
+      if (profileUpdateError) throw profileUpdateError;
+
+      toast({ title: "Success! 🎉", description: "Your talent profile is now live!" });
+      setTimeout(() => window.location.href = '/talent-dashboard', 1500);
+      return;
+    }
+
+    // --- LOGIC FOR A NEW USER SIGNING UP ---
+    if (!email || !password || !fullName) {
+      toast({ variant: "destructive", title: "Missing information", description: "Please provide your email, password, and full name." });
+      setLoading(false);
+      return;
+    }
+
+    const { data: authData, error: signUpError } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/talent-onboarding`,
+        data: { name: fullName, user_type: 'talent', phone: phoneNumber }
+      }
+    });
+
+    if (signUpError) throw signUpError;
+    if (!authData.user) throw new Error("Signup failed, user not created.");
+
+    const draftData = { ...formData, email, fullName, phoneNumber };
+
+    // Save the form data as a draft to the new user's profile
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .update({ onboarding_draft: draftData })
+      .eq('id', authData.user.id);
+
+    if (profileError) {
+      console.error("Error saving draft to new profile:", profileError);
+    }
+
+    // Show a success message and instruct user to check email
+    setSignupMessageVisible(true);
+    toast({ title: "Account Created!", description: "Please check your email to verify your account." });
+
+  } catch (error: any) {
+    console.error('[TalentOnboarding] Error during handleSubmit:', error);
+    toast({
+      title: "Error",
+      description: error.message || "Something went wrong. Please try again.",
+      variant: "destructive",
+    });
+  } finally {
+    setLoading(false);
+  }
+};
           return;
         }
 
