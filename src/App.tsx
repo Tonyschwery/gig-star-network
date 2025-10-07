@@ -4,6 +4,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Routes, Route } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client"; // Ensure supabase is imported
 import { AuthProvider } from "./hooks/useAuth";
 import { UserModeProvider } from "./contexts/UserModeContext";
 import { ChatProvider } from "./contexts/ChatContext";
@@ -28,14 +29,10 @@ import YourEvent from "./pages/YourEvent";
 import Pricing from "./pages/Pricing";
 import AuthCallback from "./pages/AuthCallback";
 
-// Add this listener right here:
+// ✅ Diagnostic listener added here
 supabase.auth.onAuthStateChange((event, session) => {
   console.log("Supabase Auth State Change Event:", { event, session });
 });
-
-function App() {
-  // ... rest of your App component
-}
 
 const AppContent = () => {
   return (
@@ -49,7 +46,6 @@ const AppContent = () => {
         <Route path="/auth" element={<Auth />} />
         <Route path="/login" element={<Auth />} />
 
-        {/* The old AdminProvider wrapper is now removed */}
         <Route
           path="/admin"
           element={
