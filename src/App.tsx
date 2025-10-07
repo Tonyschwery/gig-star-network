@@ -26,7 +26,16 @@ import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AdminRoute } from "./components/AdminRoute";
 import YourEvent from "./pages/YourEvent";
 import Pricing from "./pages/Pricing";
-import AuthCallback from './pages/AuthCallback';
+import AuthCallback from "./pages/AuthCallback";
+
+// Add this listener right here:
+supabase.auth.onAuthStateChange((event, session) => {
+  console.log("Supabase Auth State Change Event:", { event, session });
+});
+
+function App() {
+  // ... rest of your App component
+}
 
 const AppContent = () => {
   return (
@@ -35,29 +44,64 @@ const AppContent = () => {
       <Sonner />
       <UniversalChat />
       <Routes>
-              <Route path="/auth/callback" element={<AuthCallback />} />
-              <Route path="/" element={<Index />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/login" element={<Auth />} />
-              
-              {/* The old AdminProvider wrapper is now removed */}
-              <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
-                <Route index element={<AdminDashboard />} />
-                <Route path="users" element={<AdminUsers />} />
-                <Route path="bookings" element={<AdminBookings />} />
-              </Route>
-              
-              <Route path="/booker-dashboard" element={<ProtectedRoute><BookerDashboard /></ProtectedRoute>} />
-              <Route path="/your-event" element={<ProtectedRoute><YourEvent /></ProtectedRoute>} />
-              <Route path="/pricing" element={<Pricing />} />
-              
-              <Route path="/talent-onboarding" element={<TalentOnboarding />} />
-              <Route path="/talent-dashboard" element={<ProtectedTalentRoute><TalentDashboard /></ProtectedTalentRoute>} />
-              <Route path="/talent-profile-edit" element={<ProtectedTalentRoute><TalentProfileEdit /></ProtectedTalentRoute>} />
-              
-              <Route path="/talent/:id" element={<TalentProfile />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
+        <Route path="/auth/callback" element={<AuthCallback />} />
+        <Route path="/" element={<Index />} />
+        <Route path="/auth" element={<Auth />} />
+        <Route path="/login" element={<Auth />} />
+
+        {/* The old AdminProvider wrapper is now removed */}
+        <Route
+          path="/admin"
+          element={
+            <AdminRoute>
+              <AdminLayout />
+            </AdminRoute>
+          }
+        >
+          <Route index element={<AdminDashboard />} />
+          <Route path="users" element={<AdminUsers />} />
+          <Route path="bookings" element={<AdminBookings />} />
+        </Route>
+
+        <Route
+          path="/booker-dashboard"
+          element={
+            <ProtectedRoute>
+              <BookerDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/your-event"
+          element={
+            <ProtectedRoute>
+              <YourEvent />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/pricing" element={<Pricing />} />
+
+        <Route path="/talent-onboarding" element={<TalentOnboarding />} />
+        <Route
+          path="/talent-dashboard"
+          element={
+            <ProtectedTalentRoute>
+              <TalentDashboard />
+            </ProtectedTalentRoute>
+          }
+        />
+        <Route
+          path="/talent-profile-edit"
+          element={
+            <ProtectedTalentRoute>
+              <TalentProfileEdit />
+            </ProtectedTalentRoute>
+          }
+        />
+
+        <Route path="/talent/:id" element={<TalentProfile />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
     </>
   );
 };
