@@ -105,7 +105,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       // Ensure profile exists using secure database function
-      const { data: ensuredProfile, error: ensureError } = await supabase.rpc("ensure_profile", {
+      const { error: ensureError } = await supabase.rpc("ensure_profile", {
         p_user_id: user.id,
         p_email: user.email!,
         p_role: userRole,
@@ -166,19 +166,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     console.log("[Auth] Initializing auth listener");
 
-    const processSession = async (session: Session | null) => {
+    const processSession = async (session: any) => {
       if (!mounted || isProcessing) return;
       isProcessing = true;
 
       try {
-        // --- FIX FOR CACHING ON REFRESH ---
-        // Force a session refresh to get the latest user data from the server,
-        // bypassing the client-side cache.
-        if (session) {
-          await supabase.auth.refreshSession();
-        }
-        // --- END FIX ---
-
         const currentUser = session?.user ?? null;
         console.log("[Auth] Processing session for user:", currentUser?.email);
 
