@@ -26,6 +26,7 @@ import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AdminRoute } from "./components/AdminRoute";
 import YourEvent from "./pages/YourEvent";
 import Pricing from "./pages/Pricing";
+import AuthCallback from './pages/AuthCallback';
 
 const AppContent = () => {
   return (
@@ -34,6 +35,7 @@ const AppContent = () => {
       <Sonner />
       <UniversalChat />
       <Routes>
+              <Route path="/auth/callback" element={<AuthCallback />} />
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/login" element={<Auth />} />
