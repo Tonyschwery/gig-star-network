@@ -650,6 +650,28 @@ const handleSubmit = async (e: React.FormEvent) => {
       </div>
     );
   }
+// --- ADD THIS NEW BLOCK OF CODE RIGHT HERE ---
+if (signupMessageVisible) {
+  return (
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl font-bold">Thank You for Signing Up!</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Please Check Your Email</AlertTitle>
+            <AlertDescription>
+              We've sent a verification link to **{email}**. Please click the link to confirm your account and complete your profile.
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+// --- END OF ADDITION ---
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
