@@ -67,7 +67,7 @@ export default function TalentOnboarding() {
   const { user, loading: authLoading, onboardingComplete, onboardingDraft } = useAuth();
   const { userLocation, detectedLocation } = useLocationDetection();
   const [loading, setLoading] = useState(false);
-  const [pageInitialized, setPageInitialized] = useState(false);
+  //const [pageInitialized, setPageInitialized] = useState(false);
   const [draftLoaded, setDraftLoaded] = useState(false);
   const [pictureFile, setPictureFile] = useState<File | null>(null);
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
@@ -123,9 +123,9 @@ export default function TalentOnboarding() {
     }
   }, [authLoading, user, onboardingComplete, navigate]);
 
-  useEffect(() => {
-    if (!authLoading) setPageInitialized(true);
-  }, [authLoading]);
+  //useEffect(() => {
+  //if (!authLoading) setPageInitialized(true);
+  //}, [authLoading]);
 
   const uploadPicture = async (userId: string): Promise<string | null> => {
     if (!pictureFile) return profileImageUrl; // Return existing if no new file
@@ -267,13 +267,13 @@ export default function TalentOnboarding() {
     return errors;
   };
 
-  if (authLoading || !pageInitialized) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
+  //if (authLoading || !pageInitialized) {
+  // return (
+  //<div className="min-h-screen bg-background flex items-center justify-center">
+  // <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+  //</div>
+  // );
+  // }
 
   if (signupMessageVisible) {
     return (
