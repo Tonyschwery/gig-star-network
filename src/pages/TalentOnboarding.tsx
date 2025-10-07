@@ -537,17 +537,15 @@ export default function TalentOnboarding() {
       // Show success message
       toast({
         title: "Success! 🎉",
-        description: "Your talent profile is now live! Please sign in to access your dashboard.",
+        description: "Your talent profile is now live! Redirecting to your dashboard...",
       });
       
       // Wait a moment for the user to see the success message
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 1500));
       
-      // Sign out to ensure clean state
-      await supabase.auth.signOut();
-      
-      // Redirect to auth page with success flag
-      window.location.href = '/auth?registered=true';
+      // Force a full page reload to talent dashboard
+      // This ensures auth state is completely re-initialized with the new onboarding_complete flag
+      window.location.href = '/talent-dashboard';
     } catch (error: any) {
       console.error('[TalentOnboarding] Error creating profile:', error);
       toast({

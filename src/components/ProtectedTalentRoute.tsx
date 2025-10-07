@@ -12,30 +12,46 @@ export function ProtectedTalentRoute({ children }: { children: React.ReactNode }
     useEffect(() => {
         // CRITICAL: Wait for auth to fully load before any redirects
         if (loading) {
+            console.log('[ProtectedTalentRoute] Still loading, waiting...');
             return;
         }
 
+        console.log('[ProtectedTalentRoute] Auth loaded:', { 
+            status, 
+            role, 
+            onboardingComplete, 
+            pathname: location.pathname 
+        });
+
         // Not authenticated - redirect to auth
         if (status === 'LOGGED_OUT') {
+            console.log('[ProtectedTalentRoute] Not authenticated, redirecting to auth');
             navigate('/auth', { replace: true, state: { from: location, mode: 'talent' } });
             return;
         }
 
+        // Only proceed if authenticated
+        if (status !== 'AUTHENTICATED') {
+            return;
+        }
+
         // Wrong role - redirect to home
-        if (status === 'AUTHENTICATED' && role && role !== 'talent' && role !== 'admin') {
+        if (role && role !== 'talent' && role !== 'admin') {
+            console.log('[ProtectedTalentRoute] Wrong role, redirecting to home');
             navigate('/', { replace: true });
             return;
         }
 
-        // CRITICAL FIX: Only check onboarding for talent users when not already on the onboarding page
-        // This prevents redirect loops after completing onboarding
-        if (status === 'AUTHENTICATED' && role === 'talent' && location.pathname !== '/talent-onboarding') {
-            // If onboarding is NOT complete, redirect to onboarding
+        // Only check onboarding for talent users when not already on the onboarding page
+        if (role === 'talent' && location.pathname !== '/talent-onboarding') {
             if (!onboardingComplete) {
+                console.log('[ProtectedTalentRoute] Onboarding incomplete, redirecting to onboarding');
                 navigate('/talent-onboarding', { replace: true });
+            } else {
+                console.log('[ProtectedTalentRoute] Onboarding complete, allowing access');
             }
         }
-    }, [status, loading, role, onboardingComplete, navigate, location]);
+    }, [status, loading, role, onboardingComplete, navigate, location.pathname]);
 
     // Show content if authorized (talent or admin)
     const isAuthorized = status === 'AUTHENTICATED' && (role === 'talent' || role === 'admin');

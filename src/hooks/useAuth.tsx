@@ -169,63 +169,79 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     let mounted = true;
+    let isProcessing = false;
     
     console.log('[Auth] Initializing auth listener');
     
+    const processSession = async (session: any) => {
+      if (!mounted || isProcessing) return;
+      isProcessing = true;
+      
+      try {
+        const currentUser = session?.user ?? null;
+        console.log('[Auth] Processing session for user:', currentUser?.email);
+        
+        // Update session and user immediately
+        setSession(session);
+        setUser(currentUser);
+
+        // Handle logged out state
+        if (!currentUser) {
+          console.log('[Auth] No user, setting logged out state');
+          setStatus('LOGGED_OUT');
+          setRole(null);
+          setProfileStatus('none');
+          setProfile(null);
+          setOnboardingComplete(false);
+          setOnboardingDraft(null);
+          setLoading(false);
+          return;
+        }
+
+        // Keep loading true while we fetch profile data
+        setLoading(true);
+
+        // Determine user role from metadata (synchronous)
+        const userRole = getUserRole(currentUser);
+        console.log('[Auth] User role determined:', userRole);
+        setRole(userRole);
+        
+        // Set mode based on role
+        if (userRole === 'talent') {
+          setMode('artist');
+        } else {
+          setMode('booking');
+        }
+
+        // CRITICAL: Load profile data FIRST before marking as authenticated
+        // This ensures onboardingComplete is properly set
+        await loadProfile(currentUser, userRole!);
+        
+        // Check profile status
+        const profStatus = await checkProfileStatus(currentUser, userRole!);
+        console.log('[Auth] Profile status:', profStatus);
+        setProfileStatus(profStatus);
+        
+        // Mark as authenticated ONLY after all data is loaded
+        setStatus('AUTHENTICATED');
+        console.log('[Auth] Auth initialization complete, onboarding status loaded');
+      } finally {
+        setLoading(false);
+        isProcessing = false;
+      }
+    };
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!mounted) return;
-      
-      console.log('[Auth] State change:', event, 'User:', session?.user?.email);
-      
-      const currentUser = session?.user ?? null;
-      
-      // Update session and user immediately
-      setSession(session);
-      setUser(currentUser);
-
-      // Handle logged out state
-      if (!currentUser) {
-        console.log('[Auth] No user, setting logged out state');
-        setStatus('LOGGED_OUT');
-        setRole(null);
-        setProfileStatus('none');
-        setProfile(null);
-        setLoading(false);
-        return;
-      }
-
-      // Determine user role from metadata (synchronous)
-      const userRole = getUserRole(currentUser);
-      console.log('[Auth] User role determined:', userRole);
-      setRole(userRole);
-      
-      // Set mode based on role
-      if (userRole === 'talent') {
-        setMode('artist');
-      } else {
-        setMode('booking');
-      }
-
-      // Check profile status (async, but doesn't block)
-      const profStatus = await checkProfileStatus(currentUser, userRole!);
-      console.log('[Auth] Profile status:', profStatus);
-      setProfileStatus(profStatus);
-      
-      // Load profile data
-      await loadProfile(currentUser, userRole!);
-      
-      // Mark as authenticated
-      setStatus('AUTHENTICATED');
-      setLoading(false);
-      
-      console.log('[Auth] Auth initialization complete');
+      console.log('[Auth] State change:', event);
+      await processSession(session);
     });
 
-    // Initial session check
+    // Initial session check - wait for it to complete
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!mounted) return;
-      // The onAuthStateChange will handle the session
-      console.log('[Auth] Initial session loaded:', session?.user?.email);
+      console.log('[Auth] Initial session check');
+      processSession(session);
     });
 
     return () => {
