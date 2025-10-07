@@ -52,22 +52,12 @@ const CURRENCIES = [
   { value: "QAR", label: "QAR (ر.ق)" },
 ];
 
-// Helper to convert a file to a base64 string
-const fileToBase64 = (file: File): Promise<string> =>
-  new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = (error) => reject(error);
-  });
-
 export default function TalentOnboarding() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, loading: authLoading, onboardingComplete, onboardingDraft } = useAuth();
   const { userLocation, detectedLocation } = useLocationDetection();
   const [loading, setLoading] = useState(false);
-  //const [pageInitialized, setPageInitialized] = useState(false);
   const [draftLoaded, setDraftLoaded] = useState(false);
   const [pictureFile, setPictureFile] = useState<File | null>(null);
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
@@ -123,12 +113,8 @@ export default function TalentOnboarding() {
     }
   }, [authLoading, user, onboardingComplete, navigate]);
 
-  //useEffect(() => {
-  //if (!authLoading) setPageInitialized(true);
-  //}, [authLoading]);
-
   const uploadPicture = async (userId: string): Promise<string | null> => {
-    if (!pictureFile) return profileImageUrl; // Return existing if no new file
+    if (!pictureFile) return profileImageUrl;
     const fileExt = pictureFile.name.split(".").pop();
     const fileName = `${userId}/profile.${fileExt}`;
     const { error } = await supabase.storage.from("talent-pictures").upload(fileName, pictureFile, { upsert: true });
@@ -146,17 +132,16 @@ export default function TalentOnboarding() {
     setLoading(true);
 
     try {
-      // Logic for an already logged-in user completing their profile
+      // This logic is for a logged-in user who is returning to complete their profile.
+      // It is a fallback and remains unchanged.
       if (user) {
         const pictureUrl = await uploadPicture(user.id);
         if (!pictureUrl && pictureFile) {
           setLoading(false);
           return;
         }
-
         const allGenres = [...formData.musicGenres];
         if (formData.customGenre.trim()) allGenres.push(formData.customGenre.trim());
-
         const profileData = {
           user_id: user.id,
           artist_name: formData.artistName,
@@ -171,23 +156,21 @@ export default function TalentOnboarding() {
           location: formData.location || userLocation || detectedLocation || "",
           picture_url: pictureUrl,
         };
-
         const { error: upsertError } = await supabase.from("talent_profiles").upsert(profileData);
         if (upsertError) throw upsertError;
-
         const { error: profileUpdateError } = await supabase
           .from("profiles")
           .update({ onboarding_complete: true, onboarding_draft: null, role: "talent" })
           .eq("id", user.id);
         if (profileUpdateError) throw profileUpdateError;
-
         toast({ title: "Success! 🎉", description: "Your talent profile is now live!" });
         localStorage.removeItem("talent_onboarding_draft");
         setTimeout(() => (window.location.href = "/talent-dashboard"), 1500);
         return;
       }
 
-      // Logic for a brand new user signing up with a MAGIC LINK
+      // **NEW LOGIC FOR NEW USERS**
+      // This sends all form data to Supabase for the database trigger to process.
       if (!email || !fullName) {
         toast({
           variant: "destructive",
@@ -197,27 +180,45 @@ export default function TalentOnboarding() {
         setLoading(false);
         return;
       }
+      
+      const allGenres = [...formData.musicGenres];
+      if (formData.customGenre.trim()) {
+        allGenres.push(formData.customGenre.trim());
+      }
+
+      const profileDataForDB = {
+        artist_name: formData.artistName,
+        act: formData.act,
+        gender: formData.gender,
+        music_genres: allGenres,
+        biography: formData.biography,
+        age: formData.age,
+        nationality: formData.countryOfResidence,
+        rate_per_hour: formData.ratePerHour ? parseFloat(formData.ratePerHour) : null,
+        currency: formData.currency,
+        location: formData.location || userLocation || detectedLocation || "",
+      };
 
       const { error: otpError } = await supabase.auth.signInWithOtp({
         email,
         options: {
           emailRedirectTo: `${window.location.origin}/talent-dashboard`,
-          data: { name: fullName, user_type: "talent", phone: phoneNumber },
+          data: {
+            ...profileDataForDB,
+            name: fullName,
+            user_type: "talent",
+            phone: phoneNumber,
+          },
         },
       });
 
       if (otpError) throw otpError;
 
-      // When the user is created via magic link, save their form data as a draft
-      // so it can be loaded once they confirm their email and return.
-      const draftData: any = { ...formData, email, fullName, phoneNumber };
-      if (pictureFile) {
-        draftData.profileImageUrl = await fileToBase64(pictureFile);
-      }
-      localStorage.setItem("talent_onboarding_draft", JSON.stringify(draftData));
+      localStorage.removeItem("talent_onboarding_draft");
 
       setSignupMessageVisible(true);
-      toast({ title: "Check your email!", description: "We've sent a magic link to sign you in." });
+      toast({ title: "Check your email!", description: "We've sent a magic link to complete your sign-up." });
+
     } catch (error: any) {
       console.error("[TalentOnboarding] Error:", error);
       toast({ title: "Error", description: error.message || "An unexpected error occurred.", variant: "destructive" });
@@ -266,14 +267,6 @@ export default function TalentOnboarding() {
     if (!formData.biography) errors.push("Biography");
     return errors;
   };
-
-  //if (authLoading || !pageInitialized) {
-  // return (
-  //<div className="min-h-screen bg-background flex items-center justify-center">
-  // <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-  //</div>
-  // );
-  // }
 
   if (signupMessageVisible) {
     return (
@@ -326,7 +319,6 @@ export default function TalentOnboarding() {
                     autoComplete="email"
                   />
                 </div>
-                {/* PASSWORD FIELD REMOVED FOR MAGIC LINK FLOW */}
                 <div className="space-y-2">
                   <Label htmlFor="fullName">Full Name *</Label>
                   <Input
@@ -532,7 +524,7 @@ export default function TalentOnboarding() {
                     ))}
                   </ul>
                 </AlertDescription>
-              </Alert>
+              </Aler>
             )}
             <Button type="submit" className="w-full mt-4" disabled={loading || getValidationErrors().length > 0}>
               {loading
