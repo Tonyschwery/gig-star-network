@@ -198,11 +198,14 @@ export default function TalentOnboarding() {
       }
 
       const { data: authData, error: signUpError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/talent-onboarding`,
-          data: { name: fullName, user_type: "talent", phone: phoneNumber },
+  email,
+  password,
+  options: {
+    // Corrected the path to redirect to the dashboard
+    emailRedirectTo: `${window.location.origin}/talent-dashboard`,
+    data: { name: fullName, user_type: "talent", phone: phoneNumber },
+  }
+});
         },
       });
 
