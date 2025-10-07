@@ -38,17 +38,15 @@ const Auth = () => {
 
     const userType = mode === "booker" ? "booker" : "talent";
 
-    // We pass the user's original intent (where they were trying to go)
-    // in the redirect URL's hash. The callback page will read this.
+    // FIX: Pass the state in query parameters (?) instead of the hash (#)
     const redirectTo = new URL(`${window.location.origin}/auth/callback`);
-    redirectTo.hash = JSON.stringify(state || {});
+    redirectTo.searchParams.set("state", JSON.stringify(state || {}));
 
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
         emailRedirectTo: redirectTo.toString(),
         data: {
-          // Send name and user_type only if name is filled (i.e., signing up)
           ...(name && { name: name, user_type: userType }),
         },
       },
