@@ -1,10 +1,20 @@
 // FILE: src/components/EventRequestCard.tsx
 
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Calendar, Clock, MapPin, MessageCircle, X, Mail, Phone, Trash2, Crown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
@@ -32,7 +42,7 @@ export interface EventRequest {
 interface EventRequestCardProps {
   request: EventRequest;
   isActionable?: boolean;
-  mode: 'talent' | 'booker' | 'admin';
+  mode: "talent" | "booker" | "admin";
   onRemove?: (requestId: string) => void;
 }
 
@@ -40,39 +50,31 @@ export const EventRequestCard = ({ request, isActionable = false, mode, onRemove
   const { openChat } = useChat();
   const [showRemoveDialog, setShowRemoveDialog] = useState(false);
   const { unreadCount } = useUnreadMessages();
-  const navigate = useNavigate();
+  const navigate = useNavigate(); // ✅ Only one instance of useNavigate()
 
-  if (!request) {
-    return null;
-  }
+  if (!request) return null;
 
   const handleRemove = async () => {
     try {
-      const { error } = await supabase
-        .from('event_requests')
-        .delete()
-        .eq('id', request.id);
+      const { error } = await supabase.from("event_requests").delete().eq("id", request.id);
 
       if (error) throw error;
 
-      toast.success('Request removed successfully');
+      toast.success("Request removed successfully");
       setShowRemoveDialog(false);
-      if (onRemove) {
-        onRemove(request.id);
-      }
+      if (onRemove) onRemove(request.id);
     } catch (error) {
-      console.error('Error removing request:', error);
-      toast.error('Failed to remove request');
+      console.error("Error removing request:", error);
+      toast.error("Failed to remove request");
     }
   };
 
-
-  const isBlurred = mode === 'talent' && !isActionable;
+  const isBlurred = mode === "talent" && !isActionable;
 
   return (
     <Card className="overflow-hidden transition-all hover:shadow-md bg-card text-card-foreground relative">
       {/* Remove Button for Booker and Talent */}
-      {(mode === 'booker' || mode === 'talent') && (
+      {(mode === "booker" || mode === "talent") && (
         <AlertDialog open={showRemoveDialog} onOpenChange={setShowRemoveDialog}>
           <AlertDialogTrigger asChild>
             <Button
@@ -92,7 +94,10 @@ export const EventRequestCard = ({ request, isActionable = false, mode, onRemove
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={handleRemove} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              <AlertDialogAction
+                onClick={handleRemove}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
                 Remove
               </AlertDialogAction>
             </AlertDialogFooter>
@@ -105,18 +110,18 @@ export const EventRequestCard = ({ request, isActionable = false, mode, onRemove
           <div className="flex-1">
             <CardTitle className="flex items-center gap-3 mb-2 text-base font-semibold">
               <span className="capitalize">Event Type: {request.event_type}</span>
-              <Badge variant={request.status === 'pending' ? 'secondary' : 'default'} className="capitalize">
+              <Badge variant={request.status === "pending" ? "secondary" : "default"} className="capitalize">
                 {request.status}
               </Badge>
             </CardTitle>
             <p className="text-sm text-muted-foreground flex items-center">
               <Calendar className="inline h-4 w-4 mr-1.5" />
-              {request.event_date ? format(new Date(request.event_date), 'PPP') : 'No date specified'}
+              {request.event_date ? format(new Date(request.event_date), "PPP") : "No date specified"}
             </p>
           </div>
         </div>
       </CardHeader>
-      
+
       <CardContent className="space-y-4">
         {/* Booker Information */}
         <div className="border rounded-lg p-3 bg-muted/30">
@@ -164,9 +169,7 @@ export const EventRequestCard = ({ request, isActionable = false, mode, onRemove
         {request.description && (
           <div className="border-t pt-3">
             <h4 className="font-medium mb-2 text-sm text-foreground">Event Description:</h4>
-            <p className="text-sm text-muted-foreground bg-muted/50 p-3 rounded">
-              {request.description}
-            </p>
+            <p className="text-sm text-muted-foreground bg-muted/50 p-3 rounded">{request.description}</p>
           </div>
         )}
 
@@ -175,11 +178,13 @@ export const EventRequestCard = ({ request, isActionable = false, mode, onRemove
           <div className="mb-2 p-2 bg-primary/5 dark:bg-primary/10 rounded border border-primary/20">
             <p className="text-[10px] text-muted-foreground mb-1 leading-tight flex items-center gap-1">
               <Crown className="h-3 w-3 text-primary" />
-              <span><strong>Pro:</strong> Unlock contact details & unlimited messaging</span>
+              <span>
+                <strong>Pro:</strong> Unlock contact details & unlimited messaging
+              </span>
             </p>
-            <Button 
-              size="sm" 
-              onClick={() => navigate('/pricing')}
+            <Button
+              size="sm"
+              onClick={() => navigate("/pricing")} // ✅ Same-tab safe navigation
               className="h-6 text-[10px] w-full"
               variant="default"
             >
@@ -190,7 +195,7 @@ export const EventRequestCard = ({ request, isActionable = false, mode, onRemove
 
         <div className="border-t pt-3 flex justify-between items-center">
           <div className="flex gap-2">
-            {mode === 'admin' && onRemove && (
+            {mode === "admin" && onRemove && (
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button
@@ -211,7 +216,10 @@ export const EventRequestCard = ({ request, isActionable = false, mode, onRemove
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleRemove} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                    <AlertDialogAction
+                      onClick={handleRemove}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
                       Delete
                     </AlertDialogAction>
                   </AlertDialogFooter>
@@ -221,15 +229,21 @@ export const EventRequestCard = ({ request, isActionable = false, mode, onRemove
           </div>
 
           <div>
-            {mode === 'booker' ? (
-              <Button onClick={() => openChat(request.id, 'event_request')} size="sm" variant="outline" className="relative">
-                <MessageCircle className="h-4 w-4 mr-2" />Chat with QTalent Team
+            {mode === "booker" ? (
+              <Button
+                onClick={() => openChat(request.id, "event_request")}
+                size="sm"
+                variant="outline"
+                className="relative"
+              >
+                <MessageCircle className="h-4 w-4 mr-2" />
+                Chat with QTalent Team
                 {unreadCount > 0 && (
-                  <Badge 
-                    variant="destructive" 
+                  <Badge
+                    variant="destructive"
                     className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs animate-pulse"
                   >
-                    {unreadCount > 9 ? '9+' : unreadCount}
+                    {unreadCount > 9 ? "9+" : unreadCount}
                   </Badge>
                 )}
               </Button>
@@ -238,20 +252,20 @@ export const EventRequestCard = ({ request, isActionable = false, mode, onRemove
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <span tabIndex={0}>
-                      <Button 
-                        onClick={() => openChat(request.id, 'event_request')} 
-                        size="sm" 
+                      <Button
+                        onClick={() => openChat(request.id, "event_request")}
+                        size="sm"
                         disabled={!isActionable}
                         className={cn("relative", isBlurred && "opacity-50")}
                       >
                         <MessageCircle className="h-4 w-4 mr-2" />
                         Chat with Booker
                         {unreadCount > 0 && (
-                          <Badge 
-                            variant="destructive" 
+                          <Badge
+                            variant="destructive"
                             className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs animate-pulse"
                           >
-                            {unreadCount > 9 ? '9+' : unreadCount}
+                            {unreadCount > 9 ? "9+" : unreadCount}
                           </Badge>
                         )}
                       </Button>
