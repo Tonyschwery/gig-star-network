@@ -20,7 +20,6 @@ import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { useChat } from "@/contexts/ChatContext";
 import { useTalentBookingLimit } from "@/hooks/useTalentBookingLimit";
-import { ProFeatureWrapper } from "@/components/ProFeatureWrapper";
 import { useNavigate } from "react-router-dom";
 import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 
@@ -50,18 +49,15 @@ interface BookingCardProps {
 }
 
 export const BookingCard = ({ booking, mode, onUpdate, onRemove, shouldBlurContact = false }: BookingCardProps) => {
-  const navigate = useNavigate();
+  const navigate = useNavigate(); // ✅ Only once — correctly placed here
   const { toast } = useToast();
   const { openChat } = useChat();
-  const { canReceiveBooking, isProUser, receivedBookingsThisMonth, refetchLimit } = useTalentBookingLimit();
-  const navigate = useNavigate();
+  const { canReceiveBooking, isProUser } = useTalentBookingLimit();
   const { unreadCount } = useUnreadMessages();
   const [showRemoveDialog, setShowRemoveDialog] = useState(false);
 
   // Safety check
-  if (!booking) {
-    return null;
-  }
+  if (!booking) return null;
 
   const handleRemove = async () => {
     try {
@@ -69,7 +65,6 @@ export const BookingCard = ({ booking, mode, onUpdate, onRemove, shouldBlurConta
       if (error) throw new Error(error.message);
       toast({ title: "Booking removed" });
       setShowRemoveDialog(false);
-      // Immediately remove from dashboard
       onRemove?.(booking.id);
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -153,7 +148,12 @@ export const BookingCard = ({ booking, mode, onUpdate, onRemove, shouldBlurConta
                 <strong>Pro:</strong> Unlock contact details & start earning
               </span>
             </p>
-            <Button size="sm" onClick={() => navigate("/pricing")} className="h-6 text-[10px] w-full" variant="default">
+            <Button
+              size="sm"
+              onClick={() => navigate("/pricing")} // ✅ safe client-side navigation
+              className="h-6 text-[10px] w-full"
+              variant="default"
+            >
               Upgrade
             </Button>
           </div>
