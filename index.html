@@ -8,11 +8,17 @@
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
     <title>Qtalent.live | Book Live Talent for Any Event</title>
-    <meta name="description" content="Connect with exceptional live talent for your events. Book verified performers, musicians, artists, and creators with ease. Professional booking made simple." />
+    <meta
+      name="description"
+      content="Connect with exceptional live talent for your events. Book verified performers, musicians, artists, and creators with ease. Professional booking made simple."
+    />
     <meta name="author" content="Qtalent.live" />
 
     <meta property="og:title" content="Qtalent.live | Book Live Talent for Any Event" />
-    <meta property="og:description" content="Connect with exceptional live talent for your events. Book verified performers, musicians, artists, and creators with ease." />
+    <meta
+      property="og:description"
+      content="Connect with exceptional live talent for your events. Book verified performers, musicians, artists, and creators with ease."
+    />
     <meta property="og:type" content="website" />
     <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
 
@@ -20,30 +26,30 @@
     <meta name="twitter:site" content="@qtalentlive" />
     <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
     <style>
-    /* Styles for the react-phone-number-input component */
-    .phone-input .PhoneInputInput {
-      flex: 1 1 0%;
-      min-width: 0;
-      width: 100%;
-      height: 2.5rem; /* 40px */
-      padding: 0.5rem 0.75rem;
-      font-size: 0.875rem; /* 14px */
-      line-height: 1.25rem;
-      border: 1px solid hsl(var(--input));
-      border-radius: 0.5rem; /* Assuming var(--radius) is 0.5rem */
-      background-color: transparent;
-      transition: all 0.2s;
-    }
-    .phone-input .PhoneInputInput:focus {
-      outline: 2px solid transparent;
-      outline-offset: 2px;
-      border-color: hsl(var(--ring));
-      box-shadow: 0 0 0 1px hsl(var(--ring));
-    }
-    .phone-input .PhoneInputCountry {
-      margin-right: 0.5rem;
-    }
-  </style>
+      /* Styles for the react-phone-number-input component */
+      .phone-input .PhoneInputInput {
+        flex: 1 1 0%;
+        min-width: 0;
+        width: 100%;
+        height: 2.5rem; /* 40px */
+        padding: 0.5rem 0.75rem;
+        font-size: 0.875rem; /* 14px */
+        line-height: 1.25rem;
+        border: 1px solid hsl(var(--input));
+        border-radius: 0.5rem; /* Assuming var(--radius) is 0.5rem */
+        background-color: transparent;
+        transition: all 0.2s;
+      }
+      .phone-input .PhoneInputInput:focus {
+        outline: 2px solid transparent;
+        outline-offset: 2px;
+        border-color: hsl(var(--ring));
+        box-shadow: 0 0 0 1px hsl(var(--ring));
+      }
+      .phone-input .PhoneInputCountry {
+        margin-right: 0.5rem;
+      }
+    </style>
   </head>
 
   <body>
@@ -51,12 +57,12 @@
     <script type="module" src="/src/main.tsx"></script>
     <!-- Service Worker Registration with Cache Management -->
     <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', function() {
-          navigator.serviceWorker.register('/sw.js')
-            .then(function(registration) {
-              console.log('SW registered: ', registration);
-              
+      //if ('serviceWorker' in navigator) {
+        //window.addEventListener('load', function() {
+          //navigator.serviceWorker.register('/sw.js')
+            //.then(function(registration) {
+              //console.log('SW registered: ', registration);
+
               // Listen for service worker messages
               navigator.serviceWorker.addEventListener('message', function(event) {
                 if (event.data.type === 'SW_UPDATED') {
@@ -64,7 +70,7 @@
                   window.location.reload();
                 }
               });
-              
+
               // Force update when new content is available
               registration.addEventListener('updatefound', function() {
                 const newWorker = registration.installing;
@@ -78,18 +84,18 @@
                   });
                 }
               });
-              
+
               // Handle auth state changes more responsively
               const originalPushState = window.history.pushState;
               const originalReplaceState = window.history.replaceState;
-              
+
               // Add global cache clearing function
               window.clearAppCache = function() {
                 navigator.serviceWorker.ready.then(registration => {
                   registration.active?.postMessage({ type: 'CLEAR_ALL_CACHE' });
                 });
               };
-              
+
               window.history.pushState = function(...args) {
                 originalPushState.apply(window.history, args);
                 // Clear cache on navigation for fresh data
@@ -99,7 +105,7 @@
                   });
                 }
               };
-              
+
               window.history.replaceState = function(...args) {
                 originalReplaceState.apply(window.history, args);
                 // Clear cache on auth/data state changes
@@ -109,7 +115,7 @@
                   });
                 }
               };
-              
+
               // Clear cache on page visibility change (when user returns to tab)
               document.addEventListener('visibilitychange', function() {
                 if (!document.hidden) {
