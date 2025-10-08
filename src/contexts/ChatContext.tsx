@@ -1,23 +1,16 @@
-// FILE: src/contexts/ChatContext.tsx
-
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { RealtimeChannel } from "@supabase/supabase-js";
+import { useProStatus } from "./ProStatusContext";
 
-// ✅ FIX: Exported the Message interface so other components can use it.
-export interface Message {
+export interface ChannelInfo {
+  type: "booking" | "event_request";
   id: number;
-  created_at: string;
-  sender_id: string;
-  content: string;
-  conversation_id: number;
-  booking_id?: number;
-  event_request_id?: number;
 }
 
-interface Conversation {
+export interface Conversation {
   id: number;
   created_at: string;
   booking_id: number | null;
@@ -29,22 +22,33 @@ interface Conversation {
     id: string;
     full_name: string;
     picture_url?: string;
+    role?: string;
   };
 }
 
-// ✅ FIX: Restored all missing properties to the context type
+export interface Message {
+  id: number;
+  created_at: string;
+  sender_id: string;
+  content: string;
+  conversation_id: number;
+  booking_id?: number;
+  event_request_id?: number;
+}
+
 interface ChatContextType {
   conversations: Conversation[];
   messages: Message[];
   activeConversation: Conversation | null;
   setActiveConversation: (conversation: Conversation | null) => void;
-  sendMessage: (content: string, bookingId?: number, eventRequestId?: number) => Promise<void>;
+  sendMessage: (content: string) => Promise<void>;
   loading: boolean;
   error: string | null;
   isOpen: boolean;
-  openChat: (conversation: Conversation) => void;
+  openChat: (participantId: string, context?: { bookingId?: number; eventRequestId?: number }) => Promise<void>;
   closeChat: () => void;
   loadingMessages: boolean;
+  channelInfo: ChannelInfo | null;
   setUserInteracting: (isInteracting: boolean) => void;
 }
 
@@ -52,6 +56,7 @@ const ChatContext = createContext<ChatContextType | undefined>(undefined);
 
 export const ChatProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();
+  const { isPro } = useProStatus();
   const { toast } = useToast();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -60,20 +65,9 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [messageChannel, setMessageChannel] = useState<RealtimeChannel | null>(null);
-
-  // ✅ FIX: Restored all missing state and functions
   const [isOpen, setIsOpen] = useState(false);
+  const [channelInfo, setChannelInfo] = useState<ChannelInfo | null>(null);
   const [userInteracting, setUserInteracting] = useState(false);
-
-  const openChat = (conversation: Conversation) => {
-    setActiveConversation(conversation);
-    setIsOpen(true);
-  };
-
-  const closeChat = () => {
-    setIsOpen(false);
-    setActiveConversation(null);
-  };
 
   useEffect(() => {
     const fetchConversations = async () => {
@@ -85,10 +79,9 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
         setLoading(true);
         const { data, error } = await supabase.rpc("get_user_conversations", { p_user_id: user.id });
         if (error) throw error;
-        setConversations((data as Conversation[]) || []);
+        setConversations(data || []);
       } catch (e: any) {
         setError(e.message);
-        console.error("Error fetching conversations:", e);
       } finally {
         setLoading(false);
       }
@@ -100,7 +93,6 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
     if (messageChannel) {
       messageChannel.unsubscribe();
     }
-
     if (user) {
       const channel = supabase
         .channel(`chat_messages_user_${user.id}`)
@@ -134,8 +126,8 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const fetchMessages = async () => {
       if (activeConversation) {
+        setLoadingMessages(true);
         try {
-          setLoadingMessages(true);
           const { data, error } = await supabase
             .from("chat_messages")
             .select("*")
@@ -145,7 +137,6 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
           setMessages(data || []);
         } catch (e: any) {
           setError(e.message);
-          console.error("Error fetching messages:", e);
         } finally {
           setLoadingMessages(false);
         }
@@ -169,24 +160,55 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
     if (activeConversation) {
       markAsRead();
     }
-  }, [activeConversation, user]);
+  }, [activeConversation, user, messages]);
+
+  const openChat = useCallback(
+    async (participantId: string, context?: { bookingId?: number; eventRequestId?: number }) => {
+      if (!user) return;
+      let existingConvo = conversations.find(
+        (c) =>
+          c.other_participant.id === participantId &&
+          c.booking_id === (context?.bookingId || null) &&
+          c.event_request_id === (context?.eventRequestId || null),
+      );
+      if (existingConvo) {
+        setActiveConversation(existingConvo);
+        setIsOpen(true);
+      } else {
+        try {
+          const { data, error } = await supabase.rpc("get_or_create_conversation", {
+            p_user_1_id: user.id,
+            p_user_2_id: participantId,
+            p_booking_id: context?.bookingId,
+            p_event_request_id: context?.eventRequestId,
+          });
+          if (error) throw error;
+          const newConvo = data[0];
+          setConversations((prev) => [...prev, newConvo]);
+          setActiveConversation(newConvo);
+          setIsOpen(true);
+        } catch (e: any) {
+          setError(e.message);
+          toast({ title: "Error", description: "Could not start chat.", variant: "destructive" });
+        }
+      }
+    },
+    [user, conversations, toast],
+  );
+
+  const closeChat = () => {
+    setIsOpen(false);
+    setActiveConversation(null);
+  };
 
   const sendMessage = useCallback(
-    async (content: string, bookingId?: number, eventRequestId?: number) => {
+    async (content: string) => {
       if (!user || !activeConversation) return;
 
-      const { data: profile } = await supabase
-        .from("talent_profiles")
-        .select("is_pro_subscriber")
-        .eq("user_id", user.id)
-        .single();
-
-      const isPro = profile?.is_pro_subscriber || false;
-
       if (!isPro) {
+        // ✅ THIS IS THE ONLY LINE THAT HAS BEEN CHANGED
         const forbiddenPattern =
           /((\d[\s-.]*){7,})|https?:\/\/|www\.|\b[a-zA-Z0-9.-]+\.(com|net|org|io|live|co)\b|@|_/i;
-
         if (forbiddenPattern.test(content)) {
           toast({
             title: "Upgrade to Pro",
@@ -201,8 +223,8 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
         sender_id: user.id,
         conversation_id: activeConversation.id,
         content,
-        booking_id: bookingId,
-        event_request_id: eventRequestId,
+        booking_id: activeConversation.booking_id,
+        event_request_id: activeConversation.event_request_id,
       });
 
       if (error) {
@@ -214,7 +236,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
         });
       }
     },
-    [user, activeConversation, toast],
+    [user, activeConversation, isPro, toast],
   );
 
   return (
@@ -231,6 +253,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
         openChat,
         closeChat,
         loadingMessages,
+        channelInfo,
         setUserInteracting,
       }}
     >
