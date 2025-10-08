@@ -11,6 +11,7 @@ import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
 import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 import { Badge } from "@/components/ui/badge";
 import { MessageCircle } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const BookerDashboard = () => {
   const { user, signOut } = useAuth();
@@ -25,6 +26,17 @@ const BookerDashboard = () => {
       navigate('/login');
       return;
     }
+    
+    // Cleanup expired bookings on dashboard load
+    const cleanupExpired = async () => {
+      try {
+        const { error } = await supabase.functions.invoke('cleanup-expired-bookings');
+        if (error) console.error('Cleanup error:', error);
+      } catch (err) {
+        console.error('Failed to cleanup expired bookings:', err);
+      }
+    };
+    cleanupExpired();
   }, [user, navigate]);
 
   const handleSignOut = async () => {

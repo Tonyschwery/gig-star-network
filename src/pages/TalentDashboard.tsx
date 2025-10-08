@@ -8,12 +8,13 @@ import { LogOut, Edit3, Crown, Eye } from "lucide-react";
 import { Header } from "@/components/Header";
 import { NotificationCenter } from "@/components/NotificationCenter";
 import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
-import { TalentDashboardTabs } from "@/components/TalentDashboardTabs"; // <-- IMPORT our new component
+import { TalentDashboardTabs } from "@/components/TalentDashboardTabs";
 import { SubscriptionButton } from "@/components/SubscriptionButton";
 import { Badge } from "@/components/ui/badge";
 import { ModeSwitch } from "@/components/ModeSwitch";
 import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 import { MessageCircle } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const TalentDashboard = () => {
   const { user, profile, signOut } = useAuth();
@@ -25,7 +26,19 @@ const TalentDashboard = () => {
   useEffect(() => {
     if (!user) {
       navigate('/login');
+      return;
     }
+    
+    // Cleanup expired bookings on dashboard load
+    const cleanupExpired = async () => {
+      try {
+        const { error } = await supabase.functions.invoke('cleanup-expired-bookings');
+        if (error) console.error('Cleanup error:', error);
+      } catch (err) {
+        console.error('Failed to cleanup expired bookings:', err);
+      }
+    };
+    cleanupExpired();
   }, [user, navigate]);
 
   const handleSignOut = async () => {

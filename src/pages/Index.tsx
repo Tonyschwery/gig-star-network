@@ -1,12 +1,20 @@
+import { useEffect } from "react";
 import { Header } from "@/components/Header";
 import { HeroSection } from "@/components/HeroSection";
 import { TalentGrid } from "@/components/TalentGrid";
 import { Footer } from "@/components/Footer";
-//9pm
-// THE FIX: All of the complex redirect logic has been completely removed.
-// This is now a simple, "dumb" page that just displays its content.
-// This allows logged-in users to visit the homepage without being trapped.
+import { useLocationDetection } from "@/hooks/useLocationDetection";
+
 const Index = () => {
+  const { detectLocation, userLocation } = useLocationDetection();
+  
+  // Auto-detect location on mount if not already set
+  useEffect(() => {
+    if (!userLocation) {
+      detectLocation();
+    }
+  }, []);
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
