@@ -7,14 +7,13 @@ import { useAuth } from "@/hooks/useAuth";
 const AuthCallback = () => {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
-  const [searchParams] = useSearchParams(); // FIX: Use searchParams hook
+  const [searchParams] = useSearchParams();
 
   useEffect(() => {
     if (loading) {
       return;
     }
 
-    // FIX: Read the original state from the 'state' query parameter
     let state = {};
     try {
       const stateParam = searchParams.get("state");
@@ -26,7 +25,7 @@ const AuthCallback = () => {
     }
 
     if (user) {
-      // YOUR ORIGINAL, UNCHANGED REDIRECT LOGIC
+      // THIS IS YOUR ORIGINAL, UNCHANGED REDIRECT LOGIC
       const intent = state?.intent;
       const talentId = state?.talentId;
       const from = state?.from?.pathname || null;
