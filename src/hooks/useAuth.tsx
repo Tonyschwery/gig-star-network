@@ -37,11 +37,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [onboardingComplete, setOnboardingComplete] = useState<boolean>(false);
   const [onboardingDraft, setOnboardingDraft] = useState<any | null>(null);
 
-  const getUserRole = (user: User | null): UserRole | null => {
+  const getUserRole = async (user: User | null): Promise<UserRole | null> => {
     if (!user) return null;
-    if (user.email === "admin@qtalent.live") {
-      return "admin";
+    
+    // Check if user is admin from database
+    try {
+      const { data: isAdmin } = await supabase.rpc('is_admin', { user_id_param: user.id });
+      if (isAdmin) {
+        return "admin";
+      }
+    } catch (error) {
+      console.error('[Auth] Error checking admin status:', error);
     }
+    
     const userType = user.user_metadata?.user_type;
     if (userType === "talent") return "talent";
     if (userType === "booker") return "booker";
@@ -157,7 +165,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return;
         }
         setLoading(true);
-        const userRole = getUserRole(currentUser);
+        const userRole = await getUserRole(currentUser);
         setRole(userRole);
         if (userRole === "talent") {
           setMode("artist");
