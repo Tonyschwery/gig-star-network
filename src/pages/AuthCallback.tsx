@@ -14,7 +14,8 @@ const AuthCallback = () => {
       return;
     }
 
-    let state = {};
+    // ✅ FIX: Changed type from {} to any to prevent TypeScript errors
+    let state: any = {};
     try {
       const stateParam = searchParams.get("state");
       if (stateParam) {
@@ -25,7 +26,6 @@ const AuthCallback = () => {
     }
 
     if (user) {
-      // THIS IS YOUR ORIGINAL, UNCHANGED REDIRECT LOGIC
       const intent = state?.intent;
       const talentId = state?.talentId;
       const from = state?.from?.pathname || null;
@@ -47,7 +47,6 @@ const AuthCallback = () => {
         }
       }
     } else {
-      // If auth fails, send to the home page.
       navigate("/", { replace: true });
     }
   }, [user, loading, navigate, searchParams]);
