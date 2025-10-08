@@ -22,7 +22,7 @@ const Auth = () => {
   const { user, loading: authLoading } = useAuth();
 
   const { state } = useLocation();
-  const mode = state?.mode || "booker"; // Default to booker mode
+  const mode = state?.mode || "booker";
 
   const title = mode === "booker" ? "Booker Access" : "Talent Access";
   const description = "Sign in or create an account with a magic link.";
