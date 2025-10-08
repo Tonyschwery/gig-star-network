@@ -1,8 +1,21 @@
+// FILE: src/contexts/ChatContext.tsx
+
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { RealtimeChannel } from "@supabase/supabase-js";
+
+// ✅ FIX: Exported the Message interface so other components can use it.
+export interface Message {
+  id: number;
+  created_at: string;
+  sender_id: string;
+  content: string;
+  conversation_id: number;
+  booking_id?: number;
+  event_request_id?: number;
+}
 
 interface Conversation {
   id: number;
@@ -19,14 +32,7 @@ interface Conversation {
   };
 }
 
-interface Message {
-  id: number;
-  created_at: string;
-  sender_id: string;
-  content: string;
-  conversation_id: number; // Added for clarity
-}
-
+// ✅ FIX: Restored all missing properties to the context type
 interface ChatContextType {
   conversations: Conversation[];
   messages: Message[];
@@ -35,7 +41,11 @@ interface ChatContextType {
   sendMessage: (content: string, bookingId?: number, eventRequestId?: number) => Promise<void>;
   loading: boolean;
   error: string | null;
-  setUserInteracting: (isInteracting: boolean) => void; // ✅ FIX: Add setUserInteracting to the context type
+  isOpen: boolean;
+  openChat: (conversation: Conversation) => void;
+  closeChat: () => void;
+  loadingMessages: boolean;
+  setUserInteracting: (isInteracting: boolean) => void;
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -47,9 +57,23 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [activeConversation, setActiveConversation] = useState<Conversation | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadingMessages, setLoadingMessages] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [messageChannel, setMessageChannel] = useState<RealtimeChannel | null>(null);
-  const [userInteracting, setUserInteracting] = useState(false); // ✅ FIX: Add state for user interaction
+
+  // ✅ FIX: Restored all missing state and functions
+  const [isOpen, setIsOpen] = useState(false);
+  const [userInteracting, setUserInteracting] = useState(false);
+
+  const openChat = (conversation: Conversation) => {
+    setActiveConversation(conversation);
+    setIsOpen(true);
+  };
+
+  const closeChat = () => {
+    setIsOpen(false);
+    setActiveConversation(null);
+  };
 
   useEffect(() => {
     const fetchConversations = async () => {
@@ -58,9 +82,10 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
       try {
+        setLoading(true);
         const { data, error } = await supabase.rpc("get_user_conversations", { p_user_id: user.id });
         if (error) throw error;
-        setConversations(data || []);
+        setConversations((data as Conversation[]) || []);
       } catch (e: any) {
         setError(e.message);
         console.error("Error fetching conversations:", e);
@@ -78,13 +103,12 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
 
     if (user) {
       const channel = supabase
-        .channel(`chat_messages`)
-        .on("postgres_changes", { event: "INSERT", schema: "public", table: "chat_messages" }, async (payload) => {
+        .channel(`chat_messages_user_${user.id}`)
+        .on("postgres_changes", { event: "INSERT", schema: "public", table: "chat_messages" }, (payload) => {
           const newMessage = payload.new as Message;
           if (activeConversation && newMessage.conversation_id === activeConversation.id) {
             setMessages((prev) => [...prev, newMessage]);
           }
-
           setConversations((prev) =>
             prev.map((convo) => {
               if (convo.id === newMessage.conversation_id) {
@@ -111,6 +135,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
     const fetchMessages = async () => {
       if (activeConversation) {
         try {
+          setLoadingMessages(true);
           const { data, error } = await supabase
             .from("chat_messages")
             .select("*")
@@ -121,6 +146,8 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
         } catch (e: any) {
           setError(e.message);
           console.error("Error fetching messages:", e);
+        } finally {
+          setLoadingMessages(false);
         }
       } else {
         setMessages([]);
@@ -187,7 +214,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
         });
       }
     },
-    [user, activeConversation, supabase, toast],
+    [user, activeConversation, toast],
   );
 
   return (
@@ -200,7 +227,11 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
         sendMessage,
         loading,
         error,
-        setUserInteracting, // ✅ FIX: Provide setUserInteracting in the context value
+        isOpen,
+        openChat,
+        closeChat,
+        loadingMessages,
+        setUserInteracting,
       }}
     >
       {children}
