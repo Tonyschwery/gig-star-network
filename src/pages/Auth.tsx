@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { ArrowLeft, Mail } from "lucide-react";
@@ -21,24 +22,31 @@ const Auth = () => {
   const { user, loading: authLoading } = useAuth();
 
   const { state } = useLocation();
-  const mode = state?.mode || "talent";
+  const mode = state?.mode || "booker"; // Default to booker mode
 
-  const title = mode === "booker" ? "Welcome to Qtalent" : "Join as a Talent";
-  const description = mode === "booker" ? "Sign in or sign up with a magic link." : "Create your profile to get booked";
+  const title = mode === "booker" ? "Booker Access" : "Talent Access";
+  const description = "Sign in or create an account with a magic link.";
 
   useEffect(() => {
     if (!authLoading && user) {
-      navigate("/"); // Redirect logged-in users away
+      navigate("/");
     }
   }, [user, authLoading, navigate]);
 
-  const handleAuth = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleAuthAction = async (isSignUp: boolean) => {
     setLoading(true);
-
     const userType = mode === "booker" ? "booker" : "talent";
 
-    // FIX: Pass the state in query parameters (?) instead of the hash (#)
+    if (isSignUp && !name) {
+      toast({
+        title: "Name is required",
+        description: "Please enter your full name to sign up.",
+        variant: "destructive",
+      });
+      setLoading(false);
+      return;
+    }
+
     const redirectTo = new URL(`${window.location.origin}/auth/callback`);
     redirectTo.searchParams.set("state", JSON.stringify(state || {}));
 
@@ -46,9 +54,7 @@ const Auth = () => {
       email,
       options: {
         emailRedirectTo: redirectTo.toString(),
-        data: {
-          ...(name && { name: name, user_type: userType }),
-        },
+        data: isSignUp ? { name: name, user_type: userType } : {},
       },
     });
 
@@ -58,7 +64,6 @@ const Auth = () => {
       toast({ title: "Check your email!", description: "We've sent a magic link to your inbox." });
       setEmailSent(true);
     }
-
     setLoading(false);
   };
 
@@ -76,7 +81,7 @@ const Auth = () => {
         <div className="w-full max-w-md text-center">
           <Mail className="mx-auto h-12 w-12 text-primary" />
           <h1 className="mt-4 text-2xl font-bold">Check Your Email</h1>
-          <p className="mt-2 text-muted-foreground">A sign-in link has been sent to</p>
+          <p className="mt-2 text-muted-foreground">A link has been sent to</p>
           <p className="font-semibold">{email}</p>
           <Button variant="ghost" onClick={() => navigate("/")} className="mt-6">
             <ArrowLeft className="h-4 w-4 mr-2" /> Back to Home
@@ -89,45 +94,79 @@ const Auth = () => {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <Button variant="ghost" onClick={() => navigate("/")} className="mb-4">
-          <ArrowLeft className="h-4 w-4 mr-2" /> Back to Home
+        <Button variant="ghost" onClick={() => navigate(-1)} className="mb-4">
+          <ArrowLeft className="h-4 w-4 mr-2" /> Go Back
         </Button>
-
         <Card>
           <CardHeader className="text-center">
             <CardTitle className="text-2xl">{title}</CardTitle>
             <CardDescription>{description}</CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleAuth} className="space-y-4 pt-4">
-              {/* Only show Full Name for the talent sign-up flow */}
-              {mode === "talent" && (
-                <div className="space-y-2">
-                  <Label htmlFor="signup-name">Full Name</Label>
-                  <Input
-                    id="signup-name"
-                    placeholder="Your Name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    required
-                  />
-                </div>
-              )}
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="you@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </div>
-              <Button type="submit" disabled={loading} className="w-full">
-                {loading ? "Sending Link..." : "Send Magic Link"}
-              </Button>
-            </form>
+            <Tabs defaultValue="login" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="login">Sign In</TabsTrigger>
+                <TabsTrigger value="signup">Sign Up</TabsTrigger>
+              </TabsList>
+              <TabsContent value="login">
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    handleAuthAction(false);
+                  }}
+                  className="space-y-4 pt-4"
+                >
+                  <div className="space-y-2">
+                    <Label htmlFor="login-email">Email</Label>
+                    <Input
+                      id="login-email"
+                      type="email"
+                      placeholder="you@example.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <Button type="submit" disabled={loading} className="w-full">
+                    {loading ? "Sending Link..." : "Sign In with Magic Link"}
+                  </Button>
+                </form>
+              </TabsContent>
+              <TabsContent value="signup">
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    handleAuthAction(true);
+                  }}
+                  className="space-y-4 pt-4"
+                >
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-name">Full Name</Label>
+                    <Input
+                      id="signup-name"
+                      placeholder="Your Name"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-email">Email</Label>
+                    <Input
+                      id="signup-email"
+                      type="email"
+                      placeholder="you@example.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <Button type="submit" disabled={loading} className="w-full">
+                    {loading ? "Sending Link..." : "Sign Up with Magic Link"}
+                  </Button>
+                </form>
+              </TabsContent>
+            </Tabs>
           </CardContent>
         </Card>
       </div>
