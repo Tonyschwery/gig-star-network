@@ -89,7 +89,7 @@ export const UniversalChat = () => {
         }
       }
       
-      sendMessage(newMessage, user.id);
+      sendMessage(newMessage);
       setNewMessage('');
       setShowFilteredMessage(null);
     }
