@@ -100,9 +100,9 @@ export const UniversalChat = () => {
   }
 
   return (
-    <div className="fixed bottom-4 right-4 sm:bottom-8 sm:right-8 w-[calc(100%-2rem)] max-w-sm h-[60vh] sm:h-[70vh] z-50">
+    <div className="fixed bottom-4 right-4 sm:bottom-8 sm:right-8 w-[calc(100%-2rem)] max-w-sm h-[min(600px,80vh)] z-50">
       <Card 
-        className="w-full h-full flex flex-col shadow-2xl"
+        className="w-full h-full flex flex-col shadow-2xl overflow-hidden"
         onMouseEnter={() => setIsHovering(true)}
         onMouseLeave={() => setIsHovering(false)}
       >
@@ -118,8 +118,8 @@ export const UniversalChat = () => {
             <X className="h-4 w-4" />
           </Button>
         </CardHeader>
-        <CardContent className="p-0 flex-1 flex flex-col">
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        <CardContent className="p-0 flex-1 flex flex-col min-h-0">
+          <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0">
             {loadingMessages ? (
               <div className="flex items-center justify-center h-full">
                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
@@ -160,38 +160,39 @@ export const UniversalChat = () => {
             )}
             <div ref={messagesEndRef} />
           </div>
-          <div className="p-4 border-t bg-background">
+          <div className="p-3 border-t bg-background flex-shrink-0">
             {/* Pro upgrade prompt for non-pro talents */}
             {isTalent && !isProUser && (
-              <div className="mb-2 p-2 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 rounded-md border border-amber-200/50 dark:border-amber-800/50">
-                <p className="text-[11px] text-amber-700 dark:text-amber-300 font-medium mb-1.5 leading-tight">
-                  💎 <strong>Upgrade to Pro:</strong> Share contact info & keep 100% earnings
+              <div className="mb-2 p-2 bg-primary/5 dark:bg-primary/10 rounded border border-primary/20">
+                <p className="text-[10px] text-muted-foreground mb-1 leading-tight flex items-center gap-1">
+                  <Crown className="h-3 w-3 text-primary" />
+                  <span><strong>Pro:</strong> Share contact info directly</span>
                 </p>
                 <Button 
                   size="sm" 
                   onClick={() => window.open('/pricing', '_blank')}
-                  className="h-7 text-xs bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white"
+                  className="h-6 text-[10px] w-full"
+                  variant="default"
                 >
-                  <Crown className="h-3 w-3 mr-1" />
-                  Go Pro
+                  Upgrade
                 </Button>
               </div>
             )}
             
             {/* Alert when bookers message non-pro talents */}
             {!isTalent && isRecipientNonProTalent && (
-              <div className="mb-3 p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                <p className="text-xs text-blue-700 dark:text-blue-300 font-medium mb-2 flex items-center">
-                  <AlertTriangle className="h-3 w-3 mr-1" />
-                  This talent is on our Free plan - they can't receive contact details yet. Encourage them to upgrade to Pro!
+              <div className="mb-2 p-2 bg-primary/5 dark:bg-primary/10 rounded border border-primary/20">
+                <p className="text-[10px] text-muted-foreground font-medium flex items-center gap-1">
+                  <AlertTriangle className="h-3 w-3 text-primary flex-shrink-0" />
+                  <span>This talent can't receive contact details (Free plan)</span>
                 </p>
               </div>
             )}
             
             {/* Filtered message notification */}
             {showFilteredMessage && (
-              <div className="mb-3 p-3 bg-red-50 dark:bg-red-950/20 rounded-lg border border-red-200 dark:border-red-800">
-                <p className="text-xs text-red-700 dark:text-red-300 font-medium">
+              <div className="mb-2 p-2 bg-destructive/10 rounded border border-destructive/20">
+                <p className="text-[10px] text-destructive font-medium">
                   {showFilteredMessage}
                 </p>
               </div>
@@ -234,7 +235,7 @@ export const UniversalChat = () => {
                     ? "This talent can't receive contact details (Free plan)..."
                     : "Type your message..."
                 }
-                className="resize-none min-h-[44px] text-base leading-tight py-3"
+                className="resize-none min-h-[40px] max-h-[80px] text-sm leading-tight py-2"
                 rows={1}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && !e.shiftKey) {
@@ -243,7 +244,7 @@ export const UniversalChat = () => {
                   }
                 }}
               />
-              <Button type="submit" size="icon" className="h-[44px] w-[44px] flex-shrink-0" disabled={!newMessage.trim()}>
+              <Button type="submit" size="icon" className="h-[40px] w-[40px] flex-shrink-0" disabled={!newMessage.trim()}>
                 <Send className="h-4 w-4" />
               </Button>
             </form>
