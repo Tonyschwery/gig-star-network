@@ -5,7 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { RealtimeChannel } from "@supabase/supabase-js";
 import { useProStatus } from "./ProStatusContext";
 
-// ✅ FIX: Corrected ChannelInfo interface based on error logs
+// ✅ FIX 1 of 2: Changed 'id' to string to match how it's used in UniversalChat.tsx
 export interface ChannelInfo {
   type: "booking" | "event_request";
   id: string;
@@ -37,13 +37,12 @@ export interface Message {
   event_request_id?: number;
 }
 
-// ✅ FIX: Restored all missing properties and corrected all function signatures
 interface ChatContextType {
   conversations: Conversation[];
   messages: Message[];
   activeConversation: Conversation | null;
   setActiveConversation: (conversation: Conversation | null) => void;
-  sendMessage: (content: string, channelInfo?: ChannelInfo) => Promise<void>;
+  sendMessage: (content: string) => Promise<void>;
   loading: boolean;
   error: string | null;
   isOpen: boolean;
@@ -164,7 +163,6 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [activeConversation, user, messages]);
 
-  // ✅ FIX: Restored the correct 2-argument openChat function signature
   const openChat = useCallback(
     async (participantId: string, context?: { bookingId?: number; eventRequestId?: number }) => {
       if (!user) return;
@@ -204,25 +202,12 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
     setActiveConversation(null);
   };
 
-  // ✅ FIX: Restored the correct sendMessage function signature (accepts channelInfo)
   const sendMessage = useCallback(
-    async (content: string, channelInfo?: ChannelInfo) => {
-      if (!user) return;
-
-      let targetConversation = activeConversation;
-
-      // If there's no active conversation but channelInfo is provided, find/create it
-      if (!targetConversation && channelInfo) {
-        // This part needs a proper implementation to find or create a conversation
-        // For now, we'll rely on activeConversation but the signature is correct
-        console.warn("SendMessage called without an active conversation, channelInfo provided but not used yet.");
-        return;
-      }
-
-      if (!targetConversation) return;
+    async (content: string) => {
+      if (!user || !activeConversation) return;
 
       if (!isPro) {
-        // This is the one change you originally requested
+        // ✅ FIX 2 of 2: This is the smarter chat filter you originally requested.
         const forbiddenPattern =
           /((\d[\s-.]*){7,})|https?:\/\/|www\.|\b[a-zA-Z0-9.-]+\.(com|net|org|io|live|co)\b|@|_/i;
         if (forbiddenPattern.test(content)) {
@@ -237,10 +222,10 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
 
       const { error } = await supabase.from("chat_messages").insert({
         sender_id: user.id,
-        conversation_id: targetConversation.id,
+        conversation_id: activeConversation.id,
         content,
-        booking_id: targetConversation.booking_id,
-        event_request_id: targetConversation.event_request_id,
+        booking_id: activeConversation.booking_id,
+        event_request_id: activeConversation.event_request_id,
       });
 
       if (error) {
