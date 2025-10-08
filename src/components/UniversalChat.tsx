@@ -1,19 +1,20 @@
 // FILE: src/components/UniversalChat.tsx
 
-import { useState, useEffect, useRef } from 'react';
-import { useChat, Message } from '@/contexts/ChatContext';
-import { useAuth } from '@/hooks/useAuth';
-import { useTalentBookingLimit } from '@/hooks/useTalentBookingLimit';
-import { useAdvancedChatFilter } from '@/hooks/useAdvancedChatFilter';
-import { useRecipientTalentStatus } from '@/hooks/useRecipientTalentStatus';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Textarea } from '@/components/ui/textarea';
-import { Send, X, User, Crown, AlertTriangle } from 'lucide-react';
-import { format } from 'date-fns';
-import { cn } from '@/lib/utils';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useToast } from '@/hooks/use-toast';
+import { useState, useEffect, useRef } from "react";
+import { useChat, Message } from "@/contexts/ChatContext";
+import { useAuth } from "@/hooks/useAuth";
+import { useTalentBookingLimit } from "@/hooks/useTalentBookingLimit";
+import { useAdvancedChatFilter } from "@/hooks/useAdvancedChatFilter";
+import { useRecipientTalentStatus } from "@/hooks/useRecipientTalentStatus";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
+import { Send, X, User, Crown, AlertTriangle } from "lucide-react";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom"; // ✅ Added import
 
 export const UniversalChat = () => {
   const { isOpen, closeChat, messages, sendMessage, loadingMessages, channelInfo, setUserInteracting } = useChat();
@@ -21,12 +22,13 @@ export const UniversalChat = () => {
   const { canReceiveBooking, isProUser, isTalent } = useTalentBookingLimit();
   const { isRecipientNonProTalent } = useRecipientTalentStatus(channelInfo, user?.id);
   const { filterMessage, updateConversationBuffer } = useAdvancedChatFilter(
-    channelInfo, 
-    user?.id, 
-    isRecipientNonProTalent || isProUser // Pro users bypass filtering
+    channelInfo,
+    user?.id,
+    isRecipientNonProTalent || isProUser, // Pro users bypass filtering
   );
   const { toast } = useToast();
-  const [newMessage, setNewMessage] = useState('');
+  const navigate = useNavigate(); // ✅ Added safely
+  const [newMessage, setNewMessage] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [isHovering, setIsHovering] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
@@ -35,7 +37,7 @@ export const UniversalChat = () => {
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   useEffect(() => {
@@ -61,12 +63,12 @@ export const UniversalChat = () => {
       if (isTalent && !isProUser) {
         const filterResult = filterMessage(newMessage);
         if (filterResult.isBlocked) {
-          setShowFilteredMessage(filterResult.reason || 'Message blocked');
+          setShowFilteredMessage(filterResult.reason || "Message blocked");
           setNewMessage("");
           return;
         }
       }
-      
+
       // Apply advanced filtering when bookers message non-pro talents (recipient is non-pro talent)
       if (!isTalent && isRecipientNonProTalent) {
         const filterResult = filterMessage(newMessage);
@@ -82,39 +84,33 @@ export const UniversalChat = () => {
           setShowFilteredMessage(
             isAdvancedPattern
               ? "⚠️ Multi-message contact sharing detected - Pro upgrade required"
-              : "The talent needs Pro to receive contact details"
+              : "The talent needs Pro to receive contact details",
           );
           setNewMessage("");
           return;
         }
       }
-      
+
       sendMessage(newMessage);
-      setNewMessage('');
+      setNewMessage("");
       setShowFilteredMessage(null);
     }
   };
 
-  if (!isOpen) {
-    return null;
-  }
+  if (!isOpen) return null;
 
   return (
     <div className="fixed bottom-4 right-4 sm:bottom-8 sm:right-8 w-[calc(100%-2rem)] max-w-sm h-[min(600px,80vh)] z-50">
-      <Card 
+      <Card
         className="w-full h-full flex flex-col shadow-2xl overflow-hidden"
         onMouseEnter={() => setIsHovering(true)}
         onMouseLeave={() => setIsHovering(false)}
       >
         <CardHeader className="flex flex-row items-center justify-between p-4 border-b">
           <CardTitle className="text-base font-semibold">
-            {channelInfo?.type === 'booking' ? 'Booking Chat' : 'Event Request Chat'}
+            {channelInfo?.type === "booking" ? "Booking Chat" : "Event Request Chat"}
           </CardTitle>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={closeChat}
-          >
+          <Button variant="ghost" size="icon" onClick={closeChat}>
             <X className="h-4 w-4" />
           </Button>
         </CardHeader>
@@ -132,27 +128,31 @@ export const UniversalChat = () => {
               messages.map((msg) => (
                 <div
                   key={msg.id}
-                  className={cn(
-                    'flex items-end gap-2',
-                    msg.sender_id === user?.id ? 'justify-end' : 'justify-start'
-                  )}
+                  className={cn("flex items-end gap-2", msg.sender_id === user?.id ? "justify-end" : "justify-start")}
                 >
                   {msg.sender_id !== user?.id && (
                     <Avatar className="h-8 w-8">
-                      <AvatarFallback><User className="h-4 w-4" /></AvatarFallback>
+                      <AvatarFallback>
+                        <User className="h-4 w-4" />
+                      </AvatarFallback>
                     </Avatar>
                   )}
                   <div
                     className={cn(
-                      'max-w-xs p-3 rounded-2xl text-sm',
+                      "max-w-xs p-3 rounded-2xl text-sm",
                       msg.sender_id === user?.id
-                        ? 'bg-primary text-primary-foreground rounded-br-none'
-                        : 'bg-muted rounded-bl-none'
+                        ? "bg-primary text-primary-foreground rounded-br-none"
+                        : "bg-muted rounded-bl-none",
                     )}
                   >
                     <p>{msg.content}</p>
-                    <p className={cn("text-xs mt-1", msg.sender_id === user?.id ? 'text-primary-foreground/70' : 'text-muted-foreground/70')}>
-                      {format(new Date(msg.created_at), 'p')}
+                    <p
+                      className={cn(
+                        "text-xs mt-1",
+                        msg.sender_id === user?.id ? "text-primary-foreground/70" : "text-muted-foreground/70",
+                      )}
+                    >
+                      {format(new Date(msg.created_at), "p")}
                     </p>
                   </div>
                 </div>
@@ -160,17 +160,20 @@ export const UniversalChat = () => {
             )}
             <div ref={messagesEndRef} />
           </div>
+
           <div className="p-3 border-t bg-background flex-shrink-0">
             {/* Pro upgrade prompt for non-pro talents */}
             {isTalent && !isProUser && (
               <div className="mb-2 p-2 bg-primary/5 dark:bg-primary/10 rounded border border-primary/20">
                 <p className="text-[10px] text-muted-foreground mb-1 leading-tight flex items-center gap-1">
                   <Crown className="h-3 w-3 text-primary" />
-                  <span><strong>Pro:</strong> Share contact info directly</span>
+                  <span>
+                    <strong>Pro:</strong> Share contact info directly
+                  </span>
                 </p>
-                <Button 
-                  size="sm" 
-                  onClick={() => window.open('/pricing', '_blank')}
+                <Button
+                  size="sm"
+                  onClick={() => navigate("/pricing")} // ✅ Same-tab navigation keeps user logged in
                   className="h-6 text-[10px] w-full"
                   variant="default"
                 >
@@ -178,7 +181,7 @@ export const UniversalChat = () => {
                 </Button>
               </div>
             )}
-            
+
             {/* Alert when bookers message non-pro talents */}
             {!isTalent && isRecipientNonProTalent && (
               <div className="mb-2 p-2 bg-primary/5 dark:bg-primary/10 rounded border border-primary/20">
@@ -188,63 +191,56 @@ export const UniversalChat = () => {
                 </p>
               </div>
             )}
-            
+
             {/* Filtered message notification */}
             {showFilteredMessage && (
               <div className="mb-2 p-2 bg-destructive/10 rounded border border-destructive/20">
-                <p className="text-[10px] text-destructive font-medium">
-                  {showFilteredMessage}
-                </p>
+                <p className="text-[10px] text-destructive font-medium">{showFilteredMessage}</p>
               </div>
             )}
+
             <form onSubmit={handleSendMessage} className="flex items-end gap-2">
               <Textarea
                 value={newMessage}
                 onChange={(e) => {
                   setNewMessage(e.target.value);
-                  
-                  // Handle typing detection
                   setIsTyping(e.target.value.length > 0);
-                  
-                  // Clear previous timeout
-                  if (typingTimeoutRef.current) {
-                    clearTimeout(typingTimeoutRef.current);
-                  }
-                  
-                  // Set new timeout to clear typing state only if not focused
+
+                  if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+
                   typingTimeoutRef.current = setTimeout(() => {
-                    if (!isFocused) {
-                      setIsTyping(false);
-                    }
-                  }, 5000); // Increased timeout to 5 seconds
+                    if (!isFocused) setIsTyping(false);
+                  }, 5000);
                 }}
                 onFocus={() => setIsFocused(true)}
                 onBlur={() => {
                   setIsFocused(false);
-                  // Clear typing after blur with delay
                   setTimeout(() => {
-                    if (!isFocused) {
-                      setIsTyping(false);
-                    }
+                    if (!isFocused) setIsTyping(false);
                   }, 1000);
                 }}
                 placeholder={
                   isTalent && !isProUser
                     ? "Upgrade to Pro to share contact details..."
                     : !isTalent && isRecipientNonProTalent
-                    ? "This talent can't receive contact details (Free plan)..."
-                    : "Type your message..."
+                      ? "This talent can't receive contact details (Free plan)..."
+                      : "Type your message..."
                 }
                 className="resize-none min-h-[40px] max-h-[80px] text-sm leading-tight py-2"
                 rows={1}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
+                  if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();
                     handleSendMessage(e);
                   }
                 }}
               />
-              <Button type="submit" size="icon" className="h-[40px] w-[40px] flex-shrink-0" disabled={!newMessage.trim()}>
+              <Button
+                type="submit"
+                size="icon"
+                className="h-[40px] w-[40px] flex-shrink-0"
+                disabled={!newMessage.trim()}
+              >
                 <Send className="h-4 w-4" />
               </Button>
             </form>
