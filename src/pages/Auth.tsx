@@ -24,7 +24,7 @@ const Auth = () => {
   const { state } = useLocation();
   const mode = state?.mode || "booker";
 
-  const title = mode === "booker" ? "Booker Access" : "Talent Access";
+  const title = mode === "booker" ? "Welcome to Qtalent" : "Talent Access";
   const description = "Sign in or create an account with a magic link.";
 
   useEffect(() => {

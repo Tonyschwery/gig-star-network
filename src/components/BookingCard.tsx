@@ -127,25 +127,18 @@ export const BookingCard = ({ booking, mode, onUpdate, onRemove, shouldBlurConta
         )}
         
         {mode === 'talent' && shouldBlurContact && !isProUser && (booking.booker_email || booking.booker_phone) && (
-          <div className="mt-2 p-3 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 rounded-lg border border-amber-200 dark:border-amber-800">
-            <div className="flex items-start gap-2 mb-2">
-              <Crown className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
-              <div>
-                <p className="text-xs text-amber-700 dark:text-amber-300 font-bold mb-1">
-                  💰 Unlock Contact Details & Earn More!
-                </p>
-                <p className="text-xs text-amber-600 dark:text-amber-400">
-                  Unlock contact details, get featured on our homepage, receive priority matching for indirect bookings, and showcase your professional status with a golden Pro badge!
-                </p>
-              </div>
-            </div>
+          <div className="mt-2 p-2 bg-primary/5 dark:bg-primary/10 rounded border border-primary/20">
+            <p className="text-[10px] text-muted-foreground mb-1 leading-tight flex items-center gap-1">
+              <Crown className="h-3 w-3 text-primary" />
+              <span><strong>Pro:</strong> Unlock contact details & start earning</span>
+            </p>
             <Button 
               size="sm" 
               onClick={() => window.open('/pricing', '_blank')}
-              className="w-full bg-gradient-to-br from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-white text-xs font-bold shadow-lg"
+              className="h-6 text-[10px] w-full"
+              variant="default"
             >
-              <Crown className="h-3 w-3 mr-1" />
-              Upgrade to Pro - Start Earning More!
+              Upgrade
             </Button>
           </div>
         )}

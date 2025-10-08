@@ -172,25 +172,19 @@ export const EventRequestCard = ({ request, isActionable = false, mode, onRemove
 
         {/* Pro Feature Upgrade Section for blurred content */}
         {isBlurred && (
-          <div className="border border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50 p-4 rounded-lg mb-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="bg-gradient-to-br from-amber-400 to-orange-500 p-2 rounded-full">
-                  <Crown className="h-4 w-4 text-white" />
-                </div>
-                <div>
-                  <h4 className="font-semibold text-sm text-amber-900">Upgrade to Pro</h4>
-                  <p className="text-xs text-amber-700">Get full access to booker details and unlimited messaging</p>
-                </div>
-              </div>
-              <Button
-                size="sm"
-                className="bg-gradient-to-br from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-white shadow-lg"
-                onClick={() => navigate('/pricing')}
-              >
-                Upgrade
-              </Button>
-            </div>
+          <div className="mb-2 p-2 bg-primary/5 dark:bg-primary/10 rounded border border-primary/20">
+            <p className="text-[10px] text-muted-foreground mb-1 leading-tight flex items-center gap-1">
+              <Crown className="h-3 w-3 text-primary" />
+              <span><strong>Pro:</strong> Unlock contact details & unlimited messaging</span>
+            </p>
+            <Button 
+              size="sm" 
+              onClick={() => navigate('/pricing')}
+              className="h-6 text-[10px] w-full"
+              variant="default"
+            >
+              Upgrade
+            </Button>
           </div>
         )}
 
