@@ -24,6 +24,7 @@ interface Message {
   created_at: string;
   sender_id: string;
   content: string;
+  conversation_id: number; // Added for clarity
 }
 
 interface ChatContextType {
@@ -34,6 +35,7 @@ interface ChatContextType {
   sendMessage: (content: string, bookingId?: number, eventRequestId?: number) => Promise<void>;
   loading: boolean;
   error: string | null;
+  setUserInteracting: (isInteracting: boolean) => void; // ✅ FIX: Add setUserInteracting to the context type
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -47,6 +49,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [messageChannel, setMessageChannel] = useState<RealtimeChannel | null>(null);
+  const [userInteracting, setUserInteracting] = useState(false); // ✅ FIX: Add state for user interaction
 
   useEffect(() => {
     const fetchConversations = async () => {
@@ -145,7 +148,6 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
     async (content: string, bookingId?: number, eventRequestId?: number) => {
       if (!user || !activeConversation) return;
 
-      // Check for pro status
       const { data: profile } = await supabase
         .from("talent_profiles")
         .select("is_pro_subscriber")
@@ -155,7 +157,6 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
       const isPro = profile?.is_pro_subscriber || false;
 
       if (!isPro) {
-        // ✅ This is the new, smarter pattern
         const forbiddenPattern =
           /((\d[\s-.]*){7,})|https?:\/\/|www\.|\b[a-zA-Z0-9.-]+\.(com|net|org|io|live|co)\b|@|_/i;
 
@@ -165,11 +166,10 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
             description: "Sharing contact information, links, or social media is a Pro feature.",
             variant: "destructive",
           });
-          return; // Block the message
+          return;
         }
       }
 
-      // If the message is allowed, it continues to the database
       const { error } = await supabase.from("chat_messages").insert({
         sender_id: user.id,
         conversation_id: activeConversation.id,
@@ -200,6 +200,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
         sendMessage,
         loading,
         error,
+        setUserInteracting, // ✅ FIX: Provide setUserInteracting in the context value
       }}
     >
       {children}
