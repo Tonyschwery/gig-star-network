@@ -52,7 +52,6 @@ export function EventRequestForm() {
   const currentLocation = selectedLocation || userLocation || detectedLocation || 'Worldwide';
   
   const handleLocationChange = (location: string) => {
-    console.log('EventRequestForm: Location changed to:', location);
     setSelectedLocation(location);
   };
   
@@ -69,7 +68,6 @@ export function EventRequestForm() {
     }
     setIsSubmitting(true);
     try {
-      console.log('EventRequestForm: Submitting with location:', currentLocation);
       const { error } = await supabase.from('event_requests').insert({
         user_id: user.id,
         booker_email: user.email,

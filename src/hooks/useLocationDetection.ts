@@ -28,36 +28,25 @@ export const useLocationDetection = () => {
     error: null
   });
 
-  // Get location from IP (fallback method)
+  // Get location from IP (fallback method) - silently fails, manual selection always available
   const getLocationFromIP = async (): Promise<string | null> => {
     try {
-      // Add timeout and abort controller to prevent hanging requests
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 second timeout
 
       const response = await fetch('https://ipapi.co/json/', {
         signal: controller.signal,
-        headers: {
-          'Accept': 'application/json',
-        }
+        headers: { 'Accept': 'application/json' }
       });
       
       clearTimeout(timeoutId);
       
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+      if (!response.ok) return null;
       
       const data = await response.json();
-      if (data.country_name) {
-        return data.country_name;
-      }
-      return null;
+      return data.country_name || null;
     } catch (error) {
-      // Silently fail to avoid console spam and performance issues
-      if (error.name !== 'AbortError') {
-        console.warn('Location detection from IP failed, using fallback');
-      }
+      // Silently fail - manual selection is always available
       return null;
     }
   };
@@ -195,14 +184,10 @@ export const useLocationDetection = () => {
     }
   };
 
-  // Detect location automatically
+  // Detect location automatically - never blocks manual selection
   const detectLocation = useCallback(async () => {
-    if (state.isDetecting) {
-      console.log('Location detection already in progress');
-      return;
-    }
+    if (state.isDetecting) return;
 
-    console.log('Starting location detection...');
     setState(prev => ({ ...prev, isDetecting: true, error: null }));
 
     try {
@@ -211,14 +196,10 @@ export const useLocationDetection = () => {
       
       // Fallback to IP-based detection if browser geolocation fails
       if (!location) {
-        console.log('Browser geolocation failed, trying IP-based detection...');
         location = await getLocationFromIP();
       }
 
       if (location) {
-        console.log('Location detected:', location);
-        
-        // Update both detected and user location
         setState(prev => ({ 
           ...prev, 
           detectedLocation: location,
@@ -226,32 +207,27 @@ export const useLocationDetection = () => {
           error: null
         }));
         
-        // Save to localStorage immediately
         localStorage.setItem('userLocation', location);
         localStorage.setItem('locationOverride', 'true');
         
-        // Save detected location to database if user is logged in
         if (user) {
-          try {
-            await supabase
-              .from('user_preferences')
-              .upsert({
-                user_id: user.id,
-                detected_location: location,
-                preferred_location: location,
-                location_override: true
-              }, { onConflict: 'user_id' });
-          } catch (dbError) {
-            console.error('Failed to save location to database:', dbError);
-          }
+          await supabase
+            .from('user_preferences')
+            .upsert({
+              user_id: user.id,
+              detected_location: location,
+              preferred_location: location,
+              location_override: true
+            }, { onConflict: 'user_id' })
+            .then(() => {}, () => {}); // Ignore errors
         }
       } else {
-        console.warn('Could not detect location from any source');
-        setState(prev => ({ ...prev, error: 'Could not detect location. Please select manually.' }));
+        // Don't set error - just let user select manually
+        setState(prev => ({ ...prev, error: null }));
       }
     } catch (error) {
-      console.error('Location detection failed:', error);
-      setState(prev => ({ ...prev, error: 'Location detection failed. Please select manually.' }));
+      // Don't set error - manual selection is always available
+      setState(prev => ({ ...prev, error: null }));
     } finally {
       setState(prev => ({ ...prev, isDetecting: false }));
     }

@@ -41,17 +41,23 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
   const [bookerPhone, setBookerPhone] = useState<string | undefined>();
   const [eventDate, setEventDate] = useState<Date>();
   const [eventDuration, setEventDuration] = useState("");
-  const [eventAddress, setEventAddress] = useState(""); // Separate field for venue address
+  const [eventAddress, setEventAddress] = useState("");
   const [eventType, setEventType] = useState("");
   const [description, setDescription] = useState("");
+  
+  // Local state for manually selected location - overrides detection
+  const [selectedLocation, setSelectedLocation] = useState<string>("");
 
-  // calendar state to auto-close popover
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
   const eventTypes = ["wedding", "birthday", "corporate", "opening", "club", "school", "festival", "private party", "other"];
 
-  // Get current location for form validation and submission
-  const currentLocation = userLocation || detectedLocation || 'Worldwide';
+  // Prioritize manually selected location over auto-detected
+  const currentLocation = selectedLocation || userLocation || detectedLocation || 'Worldwide';
+  
+  const handleLocationChange = (location: string) => {
+    setSelectedLocation(location);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -181,7 +187,7 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
             </div>
             <div className="space-y-2">
               <Label htmlFor="event-location">Event Location *</Label>
-              <LocationSelector />
+              <LocationSelector onLocationChange={handleLocationChange} />
               <p className="text-xs text-muted-foreground">
                 Selected location: {currentLocation === 'Worldwide' ? 'Please select a country' : currentLocation}
               </p>

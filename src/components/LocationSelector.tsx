@@ -33,24 +33,19 @@ export const LocationSelector = ({ onLocationChange }: LocationSelectorProps) =>
   // Notify parent when location changes
   useEffect(() => {
     const currentLocation = userLocation || detectedLocation;
-    if (currentLocation) {
-      console.log('LocationSelector: Notifying parent of location change:', currentLocation);
+    if (currentLocation && currentLocation !== 'Worldwide') {
       onLocationChange?.(currentLocation);
     }
   }, [userLocation, detectedLocation, onLocationChange]);
 
   const handleLocationSelect = (location: string) => {
-    console.log('LocationSelector: Location selected:', location);
     saveLocation(location, true);
-    setIsOpen(false);
-    // Notify parent immediately
     onLocationChange?.(location);
+    setIsOpen(false);
   };
 
   const handleDetectLocation = async () => {
-    console.log('LocationSelector: Manual detect triggered');
     await detectLocation();
-    // Don't close dropdown immediately to show detection status
   };
 
   const currentLocation = userLocation || detectedLocation || 'Worldwide';
@@ -75,7 +70,7 @@ export const LocationSelector = ({ onLocationChange }: LocationSelectorProps) =>
           )}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-64 max-h-80 overflow-y-auto">
+      <DropdownMenuContent align="end" className="w-64 max-h-80 overflow-y-auto bg-background/95 backdrop-blur-sm border border-border/50">
         <div className="p-2">
           <p className="text-xs text-muted-foreground mb-2">
             {isDetected ? '📍 Auto-detected' : '📍 Manual selection'}
@@ -83,19 +78,14 @@ export const LocationSelector = ({ onLocationChange }: LocationSelectorProps) =>
           {isMobile && !userLocation && (
             <p className="text-xs text-accent mb-2 flex items-center gap-1">
               <Smartphone className="h-3 w-3" />
-              Tap to detect location
-            </p>
-          )}
-          {error && hasPermission === false && (
-            <p className="text-xs text-destructive mb-2">
-              {isMobile ? 'Enable location in browser settings' : error}
+              Tap to detect or select manually
             </p>
           )}
         </div>
         
         <DropdownMenuItem onClick={handleDetectLocation} disabled={isDetecting}>
           <MapPin className="h-4 w-4 mr-2" />
-          {isDetecting ? 'Detecting...' : isMobile ? 'Tap to Detect Location' : 'Detect My Location'}
+          {isDetecting ? 'Detecting...' : isMobile ? 'Tap to Detect' : 'Detect My Location'}
         </DropdownMenuItem>
         
         <DropdownMenuItem onClick={() => handleLocationSelect('Worldwide')}>
