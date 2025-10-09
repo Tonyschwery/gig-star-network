@@ -29,6 +29,7 @@ import { AdminRoute } from "./components/AdminRoute";
 import YourEvent from "./pages/YourEvent";
 import Pricing from "./pages/Pricing";
 import AuthCallback from "./pages/AuthCallback";
+import UpdatePassword from "./pages/UpdatePassword";
 
 // ✅ Diagnostic listener added here
 supabase.auth.onAuthStateChange((event, session) => {
@@ -44,6 +45,7 @@ const AppContent = () => {
       <PWAInstallPrompt />
       <Routes>
         <Route path="/auth/callback" element={<AuthCallback />} />
+        <Route path="/auth/update-password" element={<UpdatePassword />} />
         <Route path="/" element={<Index />} />
         <Route path="/auth" element={<Auth />} />
         <Route path="/login" element={<Auth />} />

@@ -19,6 +19,8 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
   const [authMethod, setAuthMethod] = useState<"password" | "magiclink">("password");
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [resetEmailSent, setResetEmailSent] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, loading: authLoading } = useAuth();
@@ -207,6 +209,42 @@ const Auth = () => {
     }
   };
 
+  const handleForgotPassword = async () => {
+    if (!email) {
+      toast({
+        title: "Email required",
+        description: "Please enter your email address to reset your password.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email.toLowerCase().trim(), {
+        redirectTo: `${window.location.origin}/auth/callback?type=recovery`,
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Password reset email sent! 📧",
+        description: "Check your email for a link to reset your password.",
+        duration: 8000,
+      });
+      setResetEmailSent(true);
+    } catch (error: any) {
+      console.error("Password reset error:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to send password reset email. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (authLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -215,14 +253,18 @@ const Auth = () => {
     );
   }
 
-  if (emailSent) {
+  if (emailSent || resetEmailSent) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <div className="w-full max-w-md text-center space-y-4">
           <Mail className="mx-auto h-12 w-12 text-primary" />
-          <h1 className="mt-4 text-2xl font-bold">📧 Check Your Email</h1>
+          <h1 className="mt-4 text-2xl font-bold">
+            {resetEmailSent ? "🔑 Password Reset Email Sent" : "📧 Check Your Email"}
+          </h1>
           <div className="space-y-2">
-            <p className="text-muted-foreground">A magic link has been sent to</p>
+            <p className="text-muted-foreground">
+              {resetEmailSent ? "A password reset link has been sent to" : "A magic link has been sent to"}
+            </p>
             <p className="font-semibold text-lg">{email}</p>
           </div>
           <div className="bg-primary/10 p-4 rounded-lg border border-primary/20 text-left">
@@ -230,13 +272,76 @@ const Auth = () => {
             <ul className="text-xs text-muted-foreground space-y-1 ml-4 list-disc">
               <li>Check your inbox and spam folder</li>
               <li>The email may take 1-2 minutes to arrive</li>
-              <li>Click the link to complete sign in</li>
-              <li>If you already have an account, you'll be signed in automatically</li>
+              {resetEmailSent ? (
+                <>
+                  <li>Click the link to set your new password</li>
+                  <li>After setting your password, return to sign in</li>
+                </>
+              ) : (
+                <>
+                  <li>Click the link to complete sign in</li>
+                  <li>If you already have an account, you'll be signed in automatically</li>
+                </>
+              )}
             </ul>
           </div>
           <Button variant="ghost" onClick={() => navigate("/")} className="mt-6">
             <ArrowLeft className="h-4 w-4 mr-2" /> Back to Home
           </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Forgot Password View
+  if (showForgotPassword) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="w-full max-w-md">
+          <Button variant="ghost" onClick={() => setShowForgotPassword(false)} className="mb-4">
+            <ArrowLeft className="h-4 w-4 mr-2" /> Back to Sign In
+          </Button>
+          <Card>
+            <CardHeader className="text-center">
+              <CardTitle className="text-2xl">Reset Your Password</CardTitle>
+              <CardDescription>
+                Enter your email address and we'll send you a link to reset your password.
+                This works for all accounts, including those created with magic links.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleForgotPassword();
+                }}
+                className="space-y-4"
+              >
+                <div className="space-y-2">
+                  <Label htmlFor="reset-email">Email</Label>
+                  <Input
+                    id="reset-email"
+                    type="email"
+                    placeholder="you@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                  />
+                </div>
+
+                <div className="bg-blue-50 dark:bg-blue-950/30 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
+                  <p className="text-xs text-blue-900 dark:text-blue-100">
+                    💡 <strong>Note:</strong> This works for all accounts, whether you signed up with a password or magic link.
+                    After clicking the link in your email, you'll be able to set a new password.
+                  </p>
+                </div>
+
+                <Button type="submit" disabled={loading} className="w-full">
+                  {loading ? "Sending..." : "Send Reset Link"}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
         </div>
       </div>
     );
@@ -336,7 +441,16 @@ const Auth = () => {
 
                   {authMethod === "password" && (
                     <div className="space-y-2">
-                      <Label htmlFor="login-password">Password</Label>
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="login-password">Password</Label>
+                        <button
+                          type="button"
+                          onClick={() => setShowForgotPassword(true)}
+                          className="text-xs text-primary hover:underline"
+                        >
+                          Forgot password?
+                        </button>
+                      </div>
                       <Input
                         id="login-password"
                         type="password"
@@ -419,6 +533,16 @@ const Auth = () => {
                   <Button type="submit" disabled={loading} className="w-full">
                     {loading ? "Creating Account..." : "Create Account"}
                   </Button>
+
+                  <div className="text-center pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowForgotPassword(true)}
+                      className="text-xs text-muted-foreground hover:text-primary hover:underline"
+                    >
+                      Need to set a password for an existing account?
+                    </button>
+                  </div>
                 </form>
               </TabsContent>
             </Tabs>

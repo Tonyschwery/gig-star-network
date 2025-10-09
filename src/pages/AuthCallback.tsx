@@ -10,6 +10,15 @@ const AuthCallback = () => {
   const [searchParams] = useSearchParams();
 
   useEffect(() => {
+    // Check if this is a password recovery callback
+    const type = searchParams.get("type");
+    
+    if (type === "recovery") {
+      // For password recovery, redirect to a password update page
+      navigate("/auth/update-password", { replace: true });
+      return;
+    }
+
     // This function will handle the redirect logic.
     const performRedirect = async (session: Session | null) => {
       if (!session?.user) {
