@@ -431,9 +431,10 @@ export default function TalentOnboarding() {
   }
 
   return (
-    <div className="min-h-screen bg-background p-2 sm:p-4">
-      <Card className="w-full max-w-2xl form-card border-0 mx-auto my-2 sm:my-4">
-        <CardHeader className="text-center px-4 sm:px-6 py-4">
+    <div className="min-h-screen w-full bg-background overflow-y-auto pb-safe">
+      <div className="w-full max-w-2xl mx-auto p-3 sm:p-6">
+        <Card className="w-full border-0 shadow-lg">
+          <CardHeader className="text-center px-3 sm:px-6 py-3 sm:py-4">
           <div className="flex items-center justify-between">
             <div className="flex-1">
               <CardTitle className="text-xl sm:text-2xl font-bold flex items-center justify-center gap-2">
@@ -442,9 +443,9 @@ export default function TalentOnboarding() {
               <p className="text-muted-foreground mt-2 text-sm">Tell us about yourself to get started as a talent</p>
             </div>
           </div>
-        </CardHeader>
-        <CardContent className="px-4 sm:px-6 pb-6">
-          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+          </CardHeader>
+          <CardContent className="px-3 sm:px-6 pb-4 sm:pb-6">
+            <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-6">
             {!user && (
               <div className="space-y-3 sm:space-y-4 pb-4 sm:pb-6 border-b border-border">
                 <h3 className="text-base sm:text-lg font-semibold">Account Information</h3>
@@ -711,6 +712,7 @@ export default function TalentOnboarding() {
           </form>
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }
