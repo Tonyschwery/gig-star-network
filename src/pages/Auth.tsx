@@ -26,6 +26,14 @@ const Auth = () => {
 
   const title = mode === "booker" ? "Welcome to Qtalent" : "Talent Access";
   const description = "Sign in or create an account with a magic link.";
+  
+  // Get intent from state to show appropriate messaging
+  const intent = state?.intent;
+  const intentMessage = intent === "booking-form" 
+    ? "Sign in to complete your booking request" 
+    : intent === "event-form"
+    ? "Sign in to get personalized recommendations"
+    : null;
 
   useEffect(() => {
     if (!authLoading && user) {
@@ -120,6 +128,11 @@ const Auth = () => {
           <CardHeader className="text-center">
             <CardTitle className="text-2xl">{title}</CardTitle>
             <CardDescription>{description}</CardDescription>
+            {intentMessage && (
+              <div className="mt-3 p-3 bg-primary/10 rounded-lg border border-primary/20">
+                <p className="text-sm font-medium text-primary">{intentMessage}</p>
+              </div>
+            )}
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="login" className="w-full">
@@ -145,6 +158,9 @@ const Auth = () => {
                       onChange={(e) => setEmail(e.target.value)}
                       required
                     />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      💡 Already have an account? Use this tab. New here? Switch to "Sign Up"
+                    </p>
                   </div>
                   <Button type="submit" disabled={loading} className="w-full">
                     {loading ? "Sending Link..." : "Sign In with Magic Link"}
@@ -179,6 +195,9 @@ const Auth = () => {
                       onChange={(e) => setEmail(e.target.value)}
                       required
                     />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      💡 First time here? Perfect! Already registered? Use "Sign In" tab
+                    </p>
                   </div>
                   <Button type="submit" disabled={loading} className="w-full">
                     {loading ? "Sending Link..." : "Sign Up with Magic Link"}

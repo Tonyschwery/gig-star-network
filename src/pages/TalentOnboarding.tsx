@@ -134,6 +134,29 @@ export default function TalentOnboarding() {
     }
   }, [authLoading, user, onboardingComplete, navigate]);
 
+  // Upload image immediately to preserve it across auth redirects
+  const uploadImageImmediately = async (file: File): Promise<string | null> => {
+    try {
+      const fileExt = file.name.split(".").pop();
+      const tempFileName = `temp/${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from("talent-pictures")
+        .upload(tempFileName, file, { upsert: true });
+      
+      if (uploadError) {
+        console.error("Image upload error:", uploadError);
+        return null;
+      }
+      
+      const { data } = supabase.storage.from("talent-pictures").getPublicUrl(tempFileName);
+      return data.publicUrl;
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      return null;
+    }
+  };
+
   const uploadPicture = async (userId: string): Promise<string | null> => {
     if (!pictureFile) return profileImageUrl;
     const fileExt = pictureFile.name.split(".").pop();
@@ -253,14 +276,39 @@ export default function TalentOnboarding() {
     }));
   };
 
-  const handleAvatarFileChange = (file: File | null) => {
+  const handleAvatarFileChange = async (file: File | null) => {
     setPictureFile(file);
     if (file) {
+      // Show preview immediately
       const reader = new FileReader();
       reader.readAsDataURL(file);
       reader.onloadend = () => {
         setProfileImageUrl(reader.result as string);
       };
+      
+      // Upload to Supabase immediately to preserve across auth redirects
+      const uploadedUrl = await uploadImageImmediately(file);
+      if (uploadedUrl) {
+        setProfileImageUrl(uploadedUrl);
+        
+        // Save to localStorage for new users
+        if (!user) {
+          const draft = {
+            ...formData,
+            profileImageUrl: uploadedUrl,
+            email,
+            fullName,
+            phoneNumber
+          };
+          localStorage.setItem("talent_onboarding_draft", JSON.stringify(draft));
+        }
+        
+        toast({ 
+          title: "Image uploaded", 
+          description: "Your profile picture has been saved!",
+          duration: 2000 
+        });
+      }
     } else {
       setProfileImageUrl(null);
     }

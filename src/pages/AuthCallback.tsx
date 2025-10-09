@@ -11,13 +11,25 @@ const AuthCallback = () => {
 
   useEffect(() => {
     // This function will handle the redirect logic.
-    const performRedirect = (session: Session | null) => {
+    const performRedirect = async (session: Session | null) => {
       if (!session?.user) {
         navigate("/", { replace: true });
         return;
       }
 
       const user = session.user;
+      
+      // Ensure profile is created/updated with correct role
+      const userType = user.user_metadata?.user_type || 'booker';
+      try {
+        await supabase.rpc('ensure_profile', {
+          p_user_id: user.id,
+          p_email: user.email!,
+          p_role: userType
+        });
+      } catch (error) {
+        console.error('Error ensuring profile:', error);
+      }
       let state: any = {};
       try {
         const stateParam = searchParams.get("state");

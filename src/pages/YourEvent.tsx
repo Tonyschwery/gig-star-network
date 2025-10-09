@@ -1,16 +1,21 @@
 // FILE: src/pages/YourEvent.tsx
 
 import React, { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { EventRequestForm } from '@/components/EventRequestForm';
 import { useAuth } from '@/hooks/useAuth';
 
 const YourEvent = () => {
   const { user, loading } = useAuth();
+  const navigate = useNavigate();
   
+  // Redirect to auth if not authenticated
   useEffect(() => {
-    console.log('YourEvent page loaded, user:', user ? 'authenticated' : 'not authenticated', 'loading:', loading);
-  }, [user, loading]);
+    if (!loading && !user) {
+      navigate('/auth', { state: { intent: 'event-form', mode: 'booker' } });
+    }
+  }, [user, loading, navigate]);
 
   if (loading) {
     return (
