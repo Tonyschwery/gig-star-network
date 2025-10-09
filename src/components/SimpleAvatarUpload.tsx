@@ -1,12 +1,11 @@
 import { useState, useRef } from 'react';
-import { Upload, X, User, Loader2 } from 'lucide-react';
+import { Upload, X, User, ZoomIn, ZoomOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import ReactCrop, { Crop, PixelCrop } from 'react-image-crop';
-import 'react-image-crop/dist/ReactCrop.css';
+import AvatarEditor from 'react-avatar-editor';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Slider } from '@/components/ui/slider';
 
 interface SimpleAvatarUploadProps {
   currentImage?: string;
@@ -25,16 +24,10 @@ export function SimpleAvatarUpload({
   const [dragOver, setDragOver] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(currentImage || null);
   const [cropDialogOpen, setCropDialogOpen] = useState(false);
-  const [imageToCrop, setImageToCrop] = useState<string>('');
-  const [crop, setCrop] = useState<Crop>({
-    unit: '%',
-    width: 90,
-    height: 90,
-    x: 5,
-    y: 5,
-  });
-  const [completedCrop, setCompletedCrop] = useState<PixelCrop>();
-  const imgRef = useRef<HTMLImageElement>(null);
+  const [imageToCrop, setImageToCrop] = useState<File | null>(null);
+  const [scale, setScale] = useState(1);
+  const [rotation, setRotation] = useState(0);
+  const editorRef = useRef<AvatarEditor>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -58,90 +51,52 @@ export function SimpleAvatarUpload({
     }
 
     // Open the crop dialog
-    const imageSrc = URL.createObjectURL(file);
-    setImageToCrop(imageSrc);
+    setImageToCrop(file);
+    setScale(1);
+    setRotation(0);
     setCropDialogOpen(true);
   };
 
-  const getCroppedImg = (image: HTMLImageElement, crop: PixelCrop): Promise<Blob> => {
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-
-    if (!ctx) {
-      throw new Error('No 2d context');
-    }
-
-    const scaleX = image.naturalWidth / image.width;
-    const scaleY = image.naturalHeight / image.height;
-
-    // Set canvas size to 400x400 for consistent avatar size
-    canvas.width = 400;
-    canvas.height = 400;
-
-    ctx.imageSmoothingQuality = 'high';
-
-    // Calculate the source coordinates
-    const sourceX = crop.x * scaleX;
-    const sourceY = crop.y * scaleY;
-    const sourceWidth = crop.width * scaleX;
-    const sourceHeight = crop.height * scaleY;
-
-    // Draw the cropped image, scaling it to fill the 400x400 canvas
-    ctx.drawImage(
-      image,
-      sourceX,
-      sourceY,
-      sourceWidth,
-      sourceHeight,
-      0,
-      0,
-      400,
-      400
-    );
-
-    return new Promise((resolve, reject) => {
-      canvas.toBlob(
-        (blob) => {
-          if (!blob) {
-            reject(new Error('Canvas is empty'));
-            return;
-          }
-          resolve(blob);
-        },
-        'image/jpeg',
-        0.9
-      );
-    });
-  };
-
   const handleCropComplete = async () => {
-    if (!imgRef.current || !completedCrop || !imageToCrop) return;
+    if (!editorRef.current || !imageToCrop) return;
 
     try {
-      const croppedBlob = await getCroppedImg(imgRef.current, completedCrop);
+      // Get the canvas with the cropped image
+      const canvas = editorRef.current.getImageScaledToCanvas();
       
-      // Convert blob to file
-      const croppedFile = new File([croppedBlob], `avatar-${Date.now()}.jpg`, {
-        type: 'image/jpeg',
-        lastModified: Date.now(),
-      });
+      // Convert canvas to blob
+      canvas.toBlob(async (blob) => {
+        if (!blob) {
+          toast({
+            title: "Error",
+            description: "Failed to crop image. Please try again.",
+            variant: "destructive",
+          });
+          return;
+        }
 
-      // Create preview URL
-      const preview = URL.createObjectURL(croppedFile);
-      setPreviewUrl(preview);
-      
-      // Update parent component
-      onFileChange(croppedFile);
-      
-      // Clean up
-      URL.revokeObjectURL(imageToCrop);
-      setCropDialogOpen(false);
-      setImageToCrop('');
+        // Convert blob to file
+        const croppedFile = new File([blob], `avatar-${Date.now()}.jpg`, {
+          type: 'image/jpeg',
+          lastModified: Date.now(),
+        });
 
-      toast({
-        title: "Image Ready",
-        description: "Profile picture cropped and ready for upload",
-      });
+        // Create preview URL
+        const preview = URL.createObjectURL(croppedFile);
+        setPreviewUrl(preview);
+        
+        // Update parent component
+        onFileChange(croppedFile);
+        
+        // Clean up
+        setCropDialogOpen(false);
+        setImageToCrop(null);
+
+        toast({
+          title: "Image Ready",
+          description: "Profile picture cropped and ready for upload",
+        });
+      }, 'image/jpeg', 0.9);
     } catch (error) {
       console.error('Error cropping image:', error);
       toast({
@@ -153,16 +108,14 @@ export function SimpleAvatarUpload({
   };
 
   const handleCropCancel = () => {
-    if (imageToCrop) {
-      URL.revokeObjectURL(imageToCrop);
-    }
     setCropDialogOpen(false);
-    setImageToCrop('');
+    setImageToCrop(null);
+    setScale(1);
+    setRotation(0);
   };
 
   const handleEditPosition = () => {
-    if (previewUrl && previewUrl !== currentImage) {
-      setImageToCrop(previewUrl);
+    if (imageToCrop) {
       setCropDialogOpen(true);
     }
   };
@@ -227,7 +180,7 @@ export function SimpleAvatarUpload({
           </div>
           
           {/* Edit position button */}
-          {!disabled && previewUrl !== currentImage && (
+          {!disabled && imageToCrop && (
             <Button
               variant="outline"
               size="sm"
@@ -287,35 +240,56 @@ export function SimpleAvatarUpload({
       <Dialog open={cropDialogOpen} onOpenChange={handleCropCancel}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Crop Your Profile Picture</DialogTitle>
+            <DialogTitle>Adjust Your Profile Picture</DialogTitle>
           </DialogHeader>
           
-          <div className="space-y-4">
+          <div className="space-y-6">
             <div className="bg-primary/10 p-3 rounded-lg border border-primary/20">
-              <p className="text-sm font-medium mb-1">How to crop:</p>
+              <p className="text-sm font-medium mb-1">💡 How to adjust:</p>
               <ul className="text-xs text-muted-foreground space-y-1 ml-4 list-disc">
-                <li>Drag the corners to resize the crop area</li>
-                <li>Click and drag inside to move the crop position</li>
-                <li>Your photo will be cropped to a perfect square</li>
+                <li><strong>Drag</strong> the image to reposition it inside the circle</li>
+                <li><strong>Pinch</strong> on mobile or use the zoom slider below</li>
+                <li>Your photo will be perfectly circular</li>
               </ul>
             </div>
             
             {imageToCrop && (
-              <div className="flex justify-center">
-                <ReactCrop
-                  crop={crop}
-                  onChange={(c) => setCrop(c)}
-                  onComplete={(c) => setCompletedCrop(c)}
-                  aspect={1}
-                  circularCrop
-                >
-                  <img
-                    ref={imgRef}
-                    src={imageToCrop}
-                    alt="Crop preview"
-                    style={{ maxHeight: '400px', maxWidth: '100%' }}
+              <div className="flex flex-col items-center space-y-4">
+                <div className="border-4 border-primary/20 rounded-full overflow-hidden">
+                  <AvatarEditor
+                    ref={editorRef}
+                    image={imageToCrop}
+                    width={300}
+                    height={300}
+                    border={0}
+                    borderRadius={150}
+                    color={[255, 255, 255, 0.6]}
+                    scale={scale}
+                    rotate={rotation}
+                    className="cursor-move touch-pan-x touch-pan-y"
                   />
-                </ReactCrop>
+                </div>
+
+                {/* Zoom Controls */}
+                <div className="w-full max-w-md space-y-2">
+                  <div className="flex items-center justify-between text-sm text-muted-foreground">
+                    <span className="flex items-center gap-1">
+                      <ZoomOut className="h-4 w-4" />
+                      Zoom
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <ZoomIn className="h-4 w-4" />
+                    </span>
+                  </div>
+                  <Slider
+                    value={[scale]}
+                    onValueChange={(values) => setScale(values[0])}
+                    min={1}
+                    max={3}
+                    step={0.01}
+                    className="w-full"
+                  />
+                </div>
               </div>
             )}
 

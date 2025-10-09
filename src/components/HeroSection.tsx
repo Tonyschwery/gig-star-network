@@ -239,7 +239,7 @@ export function HeroSection() {
                   Autoplay({
                     delay: 3000,
                     stopOnInteraction: true,
-                  }),
+                  }) as any,
                 ]}
                 className="w-full"
               >
