@@ -144,17 +144,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let mounted = true;
     let isProcessing = false;
+    let sessionTimeout: NodeJS.Timeout;
+    
     console.log("[Auth] Initializing auth listener");
+    
     const processSession = async (session: Session | null) => {
-      if (!mounted || isProcessing) return;
+      if (!mounted || isProcessing) {
+        console.log("[Auth] Skipping session processing - already in progress");
+        return;
+      }
+      
       isProcessing = true;
+      
       try {
-        if (session) {
-          await supabase.auth.refreshSession();
-        }
         const currentUser = session?.user ?? null;
         setSession(session);
         setUser(currentUser);
+        
         if (!currentUser) {
           setStatus("LOGGED_OUT");
           setRole(null);
@@ -164,37 +170,61 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setLoading(false);
           return;
         }
+        
         setLoading(true);
-        const userRole = await getUserRole(currentUser);
+        
+        // Wrap async operations with timeout to prevent hanging
+        const rolePromise = getUserRole(currentUser);
+        const userRole = await Promise.race([
+          rolePromise,
+          new Promise<UserRole>((_, reject) => 
+            setTimeout(() => reject(new Error('Role check timeout')), 5000)
+          )
+        ]).catch(() => "booker" as UserRole);
+        
         setRole(userRole);
+        
         if (userRole === "talent") {
           setMode("artist");
         } else {
           setMode("booking");
         }
-        await loadProfile(currentUser, userRole!);
-        const profStatus = await checkProfileStatus(currentUser, userRole!);
+        
+        await loadProfile(currentUser, userRole);
+        const profStatus = await checkProfileStatus(currentUser, userRole);
         setProfileStatus(profStatus);
         setStatus("AUTHENTICATED");
       } catch (error) {
         console.error("[Auth] Error processing session:", error);
+        setStatus("LOGGED_OUT");
       } finally {
         setLoading(false);
         isProcessing = false;
       }
     };
+    
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!mounted) return;
-      await processSession(session);
+      
+      // Clear any pending session processing
+      if (sessionTimeout) clearTimeout(sessionTimeout);
+      
+      // Debounce rapid auth state changes
+      sessionTimeout = setTimeout(() => {
+        processSession(session);
+      }, 100);
     });
+    
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!mounted) return;
       processSession(session);
     });
+    
     return () => {
       mounted = false;
+      if (sessionTimeout) clearTimeout(sessionTimeout);
       subscription.unsubscribe();
     };
   }, []);

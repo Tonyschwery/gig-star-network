@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_audit_log: {
+        Row: {
+          action: string
+          admin_user_id: string
+          created_at: string
+          details: Json | null
+          id: string
+          ip_address: string | null
+          record_id: string | null
+          table_name: string
+        }
+        Insert: {
+          action: string
+          admin_user_id: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          ip_address?: string | null
+          record_id?: string | null
+          table_name: string
+        }
+        Update: {
+          action?: string
+          admin_user_id?: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          ip_address?: string | null
+          record_id?: string | null
+          table_name?: string
+        }
+        Relationships: []
+      }
       admin_notifications: {
         Row: {
           admin_user_id: string
@@ -257,6 +290,13 @@ export type Database = {
             columns: ["talent_id"]
             isOneToOne: false
             referencedRelation: "talent_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_talent_id_fkey"
+            columns: ["talent_id"]
+            isOneToOne: false
+            referencedRelation: "talent_profiles_marketing"
             referencedColumns: ["id"]
           },
           {
@@ -686,6 +726,39 @@ export type Database = {
       }
     }
     Views: {
+      talent_profiles_marketing: {
+        Row: {
+          act: Database["public"]["Enums"]["talent_act"] | null
+          artist_name: string | null
+          country: string | null
+          created_at: string | null
+          custom_genre: string | null
+          id: string | null
+          is_pro_subscriber: boolean | null
+          music_genres: string[] | null
+        }
+        Insert: {
+          act?: Database["public"]["Enums"]["talent_act"] | null
+          artist_name?: string | null
+          country?: never
+          created_at?: string | null
+          custom_genre?: string | null
+          id?: string | null
+          is_pro_subscriber?: boolean | null
+          music_genres?: string[] | null
+        }
+        Update: {
+          act?: Database["public"]["Enums"]["talent_act"] | null
+          artist_name?: string | null
+          country?: never
+          created_at?: string | null
+          custom_genre?: string | null
+          id?: string | null
+          is_pro_subscriber?: boolean | null
+          music_genres?: string[] | null
+        }
+        Relationships: []
+      }
       talent_profiles_public: {
         Row: {
           act: Database["public"]["Enums"]["talent_act"] | null

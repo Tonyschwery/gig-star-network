@@ -29,7 +29,7 @@ interface BookingFormProps {
 }
 
 export function BookingForm({ talentId, talentName, onClose, onSuccess }: BookingFormProps) {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const { sendBookingEmails } = useEmailNotifications();
   
@@ -104,6 +104,18 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
           <Button variant="ghost" size="icon" onClick={onClose}><X className="h-5 w-5" /></Button>
         </div>
         <div className="flex-1 overflow-y-auto p-6">
+          {authLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+          ) : !user ? (
+            <div className="mb-6 p-4 bg-primary/10 rounded-lg border border-primary/20">
+              <p className="text-sm font-medium mb-2">New to QTalent?</p>
+              <p className="text-xs text-muted-foreground mb-3">
+                You'll receive a magic link via email to complete your booking. If you already have an account, the link will sign you in automatically.
+              </p>
+            </div>
+          ) : null}
           <p className="text-sm text-muted-foreground mb-6">
             Booking request for: <span className="font-medium text-primary">{talentName}</span>
           </p>

@@ -59,9 +59,17 @@ const Auth = () => {
     });
 
     if (error) {
-      toast({ title: "Authentication failed", description: error.message, variant: "destructive" });
+      toast({ 
+        title: "Authentication failed", 
+        description: error.message, 
+        variant: "destructive" 
+      });
     } else {
-      toast({ title: "Check your email!", description: "We've sent a magic link to your inbox." });
+      toast({ 
+        title: "Check your email! 📧", 
+        description: "Magic link sent! Check your inbox and spam folder. Click the link to sign in (it may take 1-2 minutes to arrive).",
+        duration: 8000,
+      });
       setEmailSent(true);
     }
     setLoading(false);
@@ -78,11 +86,22 @@ const Auth = () => {
   if (emailSent) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <div className="w-full max-w-md text-center">
+        <div className="w-full max-w-md text-center space-y-4">
           <Mail className="mx-auto h-12 w-12 text-primary" />
-          <h1 className="mt-4 text-2xl font-bold">Check Your Email</h1>
-          <p className="mt-2 text-muted-foreground">A link has been sent to</p>
-          <p className="font-semibold">{email}</p>
+          <h1 className="mt-4 text-2xl font-bold">📧 Check Your Email</h1>
+          <div className="space-y-2">
+            <p className="text-muted-foreground">A magic link has been sent to</p>
+            <p className="font-semibold text-lg">{email}</p>
+          </div>
+          <div className="bg-primary/10 p-4 rounded-lg border border-primary/20 text-left">
+            <p className="text-sm font-medium mb-2">💡 What to do next:</p>
+            <ul className="text-xs text-muted-foreground space-y-1 ml-4 list-disc">
+              <li>Check your inbox and spam folder</li>
+              <li>The email may take 1-2 minutes to arrive</li>
+              <li>Click the link to complete sign in</li>
+              <li>If you already have an account, you'll be signed in automatically</li>
+            </ul>
+          </div>
           <Button variant="ghost" onClick={() => navigate("/")} className="mt-6">
             <ArrowLeft className="h-4 w-4 mr-2" /> Back to Home
           </Button>

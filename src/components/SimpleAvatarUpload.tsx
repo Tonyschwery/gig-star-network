@@ -270,10 +270,13 @@ export function SimpleAvatarUpload({
             <div>
               <p className="font-medium text-lg">Upload Profile Picture</p>
               <p className="text-sm text-muted-foreground">
-                Drag & drop or click to browse
+                Drag & drop or click to select
               </p>
               <p className="text-xs text-muted-foreground mt-2">
-                Crop your image perfectly • JPG, PNG • Max 10MB
+                📸 You'll be able to crop and adjust your photo perfectly before saving
+              </p>
+              <p className="text-xs text-muted-foreground">
+                JPG, PNG • Max 10MB
               </p>
             </div>
           </div>
@@ -288,9 +291,14 @@ export function SimpleAvatarUpload({
           </DialogHeader>
           
           <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Drag the corners to adjust the crop area. The image will be cropped to a square.
-            </p>
+            <div className="bg-primary/10 p-3 rounded-lg border border-primary/20">
+              <p className="text-sm font-medium mb-1">How to crop:</p>
+              <ul className="text-xs text-muted-foreground space-y-1 ml-4 list-disc">
+                <li>Drag the corners to resize the crop area</li>
+                <li>Click and drag inside to move the crop position</li>
+                <li>Your photo will be cropped to a perfect square</li>
+              </ul>
+            </div>
             
             {imageToCrop && (
               <div className="flex justify-center">

@@ -15,6 +15,27 @@ import { SimpleAvatarUpload } from "@/components/SimpleAvatarUpload";
 import { useLocationDetection } from "@/hooks/useLocationDetection";
 import { LocationSelector } from "@/components/LocationSelector";
 import { useAuth } from "@/hooks/useAuth";
+import PhoneInput from 'react-phone-number-input';
+import 'react-phone-number-input/style.css';
+
+// Map country names to ISO country codes for PhoneInput
+const getCountryCode = (countryName: string): string => {
+  const countryMap: Record<string, string> = {
+    'United States': 'US', 'United Kingdom': 'GB', 'Canada': 'CA', 'Australia': 'AU',
+    'Germany': 'DE', 'France': 'FR', 'Spain': 'ES', 'Italy': 'IT', 'Netherlands': 'NL',
+    'Belgium': 'BE', 'Switzerland': 'CH', 'Austria': 'AT', 'Sweden': 'SE', 'Norway': 'NO',
+    'Denmark': 'DK', 'Finland': 'FI', 'Poland': 'PL', 'Czech Republic': 'CZ', 'Ireland': 'IE',
+    'Portugal': 'PT', 'Greece': 'GR', 'United Arab Emirates': 'AE', 'Saudi Arabia': 'SA',
+    'Qatar': 'QA', 'Kuwait': 'KW', 'Bahrain': 'BH', 'Oman': 'OM', 'Egypt': 'EG',
+    'South Africa': 'ZA', 'India': 'IN', 'China': 'CN', 'Japan': 'JP', 'South Korea': 'KR',
+    'Singapore': 'SG', 'Malaysia': 'MY', 'Thailand': 'TH', 'Indonesia': 'ID', 'Philippines': 'PH',
+    'Vietnam': 'VN', 'Brazil': 'BR', 'Argentina': 'AR', 'Mexico': 'MX', 'Chile': 'CL',
+    'Colombia': 'CO', 'Peru': 'PE', 'Turkey': 'TR', 'Israel': 'IL', 'Lebanon': 'LB',
+    'Jordan': 'JO', 'Morocco': 'MA', 'Tunisia': 'TN', 'Algeria': 'DZ', 'Nigeria': 'NG',
+    'Kenya': 'KE', 'Ghana': 'GH', 'New Zealand': 'NZ', 'Russia': 'RU', 'Ukraine': 'UA',
+  };
+  return countryMap[countryName] || 'US';
+};
 
 const MUSIC_GENRES = [
   "afro-house",
@@ -330,13 +351,14 @@ export default function TalentOnboarding() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="phoneNumber">Phone Number (Optional)</Label>
-                  <Input
+                  <PhoneInput
                     id="phoneNumber"
-                    type="tel"
+                    placeholder="Enter phone number"
                     value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(e.target.value)}
-                    placeholder="+1234567890"
-                    autoComplete="tel"
+                    onChange={(value) => setPhoneNumber(value || "")}
+                    defaultCountry={getCountryCode(detectedLocation || userLocation || "") as any}
+                    international
+                    className="phone-input"
                   />
                 </div>
               </div>
