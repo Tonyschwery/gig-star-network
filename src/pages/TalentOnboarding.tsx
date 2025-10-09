@@ -250,6 +250,7 @@ export default function TalentOnboarding() {
         rate_per_hour: formData.ratePerHour ? parseFloat(formData.ratePerHour) : null,
         currency: formData.currency,
         location: formData.location || userLocation || detectedLocation || "",
+        picture_url: profileImageUrl, // Include profile picture URL
       };
 
       // Check if user already exists via edge function
@@ -302,13 +303,36 @@ export default function TalentOnboarding() {
         throw signUpError;
       }
 
+      // Check if email confirmation is required
+      const needsConfirmation = signUpData?.user?.identities?.length === 0;
+
       localStorage.removeItem("talent_onboarding_draft");
 
-      toast({ 
-        title: "Account Created!", 
-        description: "Your talent profile has been created. Welcome to QTalent!",
-        duration: 3000
-      });
+      if (needsConfirmation) {
+        // User needs to verify email - show message and redirect to auth
+        toast({ 
+          title: "Check Your Email!", 
+          description: `We've sent a verification link to ${email}. Please check your email to complete registration.`,
+          duration: 8000
+        });
+        
+        // Redirect to auth page with verification message
+        setTimeout(() => {
+          navigate('/auth', { 
+            state: { 
+              message: `Please check your email (${email}) and click the verification link to complete your registration.`,
+              mode: 'talent'
+            } 
+          });
+        }, 2000);
+      } else {
+        // Email confirmation not required (auto-confirmed)
+        toast({ 
+          title: "Account Created!", 
+          description: "Your talent profile has been created. Welcome to QTalent!",
+          duration: 3000
+        });
+      }
     } catch (error: any) {
       console.error("[TalentOnboarding] Error:", error);
       toast({ title: "Error", description: error.message || "An unexpected error occurred.", variant: "destructive" });
