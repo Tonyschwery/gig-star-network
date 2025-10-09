@@ -134,73 +134,88 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     let mounted = true;
-    let isProcessing = false;
+    let processingTimeout: NodeJS.Timeout | null = null;
     
-    console.log("[Auth] Initializing auth listener");
-    
-    const processSession = async (session: Session | null) => {
-      if (!mounted || isProcessing) {
-        console.log("[Auth] Skipping session processing - already in progress");
-        return;
+    const processSession = async (session: Session | null, skipDelay = false) => {
+      if (!mounted) return;
+      
+      // Debounce rapid session changes
+      if (processingTimeout) {
+        clearTimeout(processingTimeout);
       }
       
-      isProcessing = true;
-      
-      try {
-        const currentUser = session?.user ?? null;
-        setSession(session);
-        setUser(currentUser);
+      const doProcess = async () => {
+        if (!mounted) return;
         
-        if (!currentUser) {
+        try {
+          const currentUser = session?.user ?? null;
+          
+          // Update session and user immediately for cross-tab sync
+          setSession(session);
+          setUser(currentUser);
+          
+          if (!currentUser) {
+            setStatus("LOGGED_OUT");
+            setRole(null);
+            setProfile(null);
+            setProfileStatus("none");
+            setLoading(false);
+            return;
+          }
+          
+          setLoading(true);
+          setStatus("LOADING");
+          
+          // Get user role with timeout protection
+          const userRole = await Promise.race([
+            getUserRole(currentUser),
+            new Promise<UserRole>((_, reject) => 
+              setTimeout(() => reject(new Error('Timeout')), 3000)
+            )
+          ]).catch(() => "booker" as UserRole);
+          
+          if (!mounted) return;
+          
+          setRole(userRole);
+          setMode(userRole === "talent" ? "artist" : "booking");
+          
+          // Load profile data without blocking
+          Promise.all([
+            loadProfile(currentUser, userRole),
+            checkProfileStatus(currentUser, userRole)
+          ]).then(([_, profStatus]) => {
+            if (!mounted) return;
+            setProfileStatus(profStatus);
+            setStatus("AUTHENTICATED");
+            setLoading(false);
+          }).catch(() => {
+            if (!mounted) return;
+            setStatus("AUTHENTICATED");
+            setLoading(false);
+          });
+          
+        } catch (error) {
+          if (!mounted) return;
+          console.error("[Auth] Session processing error:", error);
           setStatus("LOGGED_OUT");
-          setRole(null);
-          setProfile(null);
           setLoading(false);
-          return;
         }
-        
-        setLoading(true);
-        
-        // Wrap async operations with timeout to prevent hanging
-        const rolePromise = getUserRole(currentUser);
-        const userRole = await Promise.race([
-          rolePromise,
-          new Promise<UserRole>((_, reject) => 
-            setTimeout(() => reject(new Error('Role check timeout')), 5000)
-          )
-        ]).catch(() => "booker" as UserRole);
-        
-        setRole(userRole);
-        
-        if (userRole === "talent") {
-          setMode("artist");
-        } else {
-          setMode("booking");
-        }
-        
-        await loadProfile(currentUser, userRole);
-        const profStatus = await checkProfileStatus(currentUser, userRole);
-        setProfileStatus(profStatus);
-        setStatus("AUTHENTICATED");
-      } catch (error) {
-        console.error("[Auth] Error processing session:", error);
-        setStatus("LOGGED_OUT");
-      } finally {
-        setLoading(false);
-        isProcessing = false;
+      };
+      
+      if (skipDelay) {
+        doProcess();
+      } else {
+        processingTimeout = setTimeout(doProcess, 100);
       }
     };
     
-    // Set up auth state listener - handles all session changes including cross-tab
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
+    // Set up auth state listener with proper event handling
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (!mounted) return;
       
-      console.log("[Auth] Auth state change:", event);
-      
-      // Handle sign out across all tabs
+      // Handle different auth events
       if (event === 'SIGNED_OUT') {
+        // Immediate state clear for sign out
         setUser(null);
         setSession(null);
         setProfile(null);
@@ -208,49 +223,76 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setProfileStatus("none");
         setStatus("LOGGED_OUT");
         setLoading(false);
-        return;
+      } else if (event === 'TOKEN_REFRESHED') {
+        // Just update session, don't reload everything
+        setSession(session);
+      } else if (event === 'SIGNED_IN' || event === 'USER_UPDATED' || event === 'INITIAL_SESSION') {
+        // Process full session for these events
+        processSession(session, event === 'SIGNED_IN');
       }
-      
-      // Process the session for all other events
-      await processSession(session);
     });
     
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!mounted) return;
-      processSession(session);
+      if (mounted) {
+        processSession(session, true);
+      }
     });
+    
+    // Listen for storage events for cross-tab sync
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'supabase.auth.token' && e.newValue === null) {
+        // Auth was cleared in another tab
+        if (mounted) {
+          setUser(null);
+          setSession(null);
+          setProfile(null);
+          setRole(null);
+          setProfileStatus("none");
+          setStatus("LOGGED_OUT");
+          setLoading(false);
+        }
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
     
     return () => {
       mounted = false;
+      if (processingTimeout) clearTimeout(processingTimeout);
       subscription.unsubscribe();
+      window.removeEventListener('storage', handleStorageChange);
     };
   }, []);
 
   const signOut = async () => {
     try {
-      setLoading(true);
-      
-      // Clear all auth state first
+      // Clear local state immediately
       setUser(null);
       setSession(null);
       setProfile(null);
       setRole(null);
       setProfileStatus("none");
       setStatus("LOGGED_OUT");
+      setLoading(true);
       
-      // Sign out from Supabase (this clears auth storage)
+      // Sign out from Supabase with global scope (affects all tabs)
       await supabase.auth.signOut({ scope: 'global' });
       
-      // Clear any remaining storage
-      localStorage.clear();
-      sessionStorage.clear();
+      // Only clear auth-related storage, preserve other app data
+      const authKeys = Object.keys(localStorage).filter(key => 
+        key.includes('supabase') || key.includes('auth') || key === 'userLocation'
+      );
+      authKeys.forEach(key => localStorage.removeItem(key));
       
-      // Force redirect to ensure clean state
+      // Small delay to ensure storage events propagate
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Navigate to home
       window.location.href = "/";
     } catch (error) {
-      console.error("[Auth] Error during signout:", error);
-      // Force redirect even on error to ensure user is logged out
+      console.error("[Auth] Signout error:", error);
+      // Force navigation even on error
       window.location.href = "/";
     }
   };
