@@ -5,7 +5,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
 
 export function ProtectedTalentRoute({ children }: { children: React.ReactNode }) {
-    const { status, loading, role, onboardingComplete } = useAuth();
+    const { status, loading, role } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
 
@@ -19,7 +19,6 @@ export function ProtectedTalentRoute({ children }: { children: React.ReactNode }
         console.log('[ProtectedTalentRoute] Auth loaded:', { 
             status, 
             role, 
-            onboardingComplete, 
             pathname: location.pathname 
         });
 
@@ -41,17 +40,7 @@ export function ProtectedTalentRoute({ children }: { children: React.ReactNode }
             navigate('/', { replace: true });
             return;
         }
-
-        // Only check onboarding for talent users when not already on the onboarding page
-        if (role === 'talent' && location.pathname !== '/talent-onboarding') {
-            if (!onboardingComplete) {
-                console.log('[ProtectedTalentRoute] Onboarding incomplete, redirecting to onboarding');
-                navigate('/talent-onboarding', { replace: true });
-            } else {
-                console.log('[ProtectedTalentRoute] Onboarding complete, allowing access');
-            }
-        }
-    }, [status, loading, role, onboardingComplete, navigate, location.pathname]);
+    }, [status, loading, role, navigate, location.pathname]);
 
     // Show content if authorized (talent or admin)
     const isAuthorized = status === 'AUTHENTICATED' && (role === 'talent' || role === 'admin');

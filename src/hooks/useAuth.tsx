@@ -19,8 +19,6 @@ interface AuthContextType {
   mode: UserMode;
   setMode: (mode: UserMode) => void;
   refreshProfile: () => Promise<void>;
-  onboardingComplete: boolean;
-  onboardingDraft: any | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -34,8 +32,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [role, setRole] = useState<UserRole | null>(null);
   const [profileStatus, setProfileStatus] = useState<ProfileStatus>("none");
   const [mode, setMode] = useState<UserMode>("booking");
-  const [onboardingComplete, setOnboardingComplete] = useState<boolean>(false);
-  const [onboardingDraft, setOnboardingDraft] = useState<any | null>(null);
 
   const getUserRole = async (user: User | null): Promise<UserRole | null> => {
     if (!user) return null;
@@ -94,7 +90,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       if (userRole === "admin") {
         setProfile({ full_name: "Admin" });
-        setOnboardingComplete(true);
         return;
       }
       const { error: ensureError } = await supabase.rpc("ensure_profile", {
@@ -107,15 +102,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       const { data: baseProfile } = await supabase
         .from("profiles")
-        .select("onboarding_complete, onboarding_draft, role")
+        .select("role")
         .eq("id", user.id)
         .maybeSingle();
-      if (baseProfile) {
-        setOnboardingComplete(baseProfile.onboarding_complete || false);
-        setOnboardingDraft(baseProfile.onboarding_draft || null);
-        if (baseProfile.role) {
-          setRole(baseProfile.role as UserRole);
-        }
+      if (baseProfile?.role) {
+        setRole(baseProfile.role as UserRole);
       }
       if (userRole === "talent") {
         const { data: talentProfile } = await supabase
@@ -144,7 +135,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let mounted = true;
     let isProcessing = false;
-    let sessionTimeout: NodeJS.Timeout;
     
     console.log("[Auth] Initializing auth listener");
     
@@ -165,8 +155,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setStatus("LOGGED_OUT");
           setRole(null);
           setProfile(null);
-          setOnboardingComplete(false);
-          setOnboardingDraft(null);
           setLoading(false);
           return;
         }
@@ -203,20 +191,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     };
     
+    // Set up auth state listener - handles all session changes including cross-tab
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!mounted) return;
       
-      // Clear any pending session processing
-      if (sessionTimeout) clearTimeout(sessionTimeout);
+      console.log("[Auth] Auth state change:", event);
       
-      // Debounce rapid auth state changes
-      sessionTimeout = setTimeout(() => {
-        processSession(session);
-      }, 100);
+      // Handle sign out across all tabs
+      if (event === 'SIGNED_OUT') {
+        setUser(null);
+        setSession(null);
+        setProfile(null);
+        setRole(null);
+        setProfileStatus("none");
+        setStatus("LOGGED_OUT");
+        setLoading(false);
+        return;
+      }
+      
+      // Process the session for all other events
+      await processSession(session);
     });
     
+    // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!mounted) return;
       processSession(session);
@@ -224,7 +223,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     
     return () => {
       mounted = false;
-      if (sessionTimeout) clearTimeout(sessionTimeout);
       subscription.unsubscribe();
     };
   }, []);
@@ -232,19 +230,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = async () => {
     try {
       setLoading(true);
-      await supabase.auth.signOut();
+      
+      // Clear all auth state first
       setUser(null);
       setSession(null);
       setProfile(null);
       setRole(null);
       setProfileStatus("none");
       setStatus("LOGGED_OUT");
+      
+      // Sign out from Supabase (this clears auth storage)
+      await supabase.auth.signOut({ scope: 'global' });
+      
+      // Clear any remaining storage
       localStorage.clear();
       sessionStorage.clear();
+      
+      // Force redirect to ensure clean state
       window.location.href = "/";
     } catch (error) {
       console.error("[Auth] Error during signout:", error);
-      setLoading(false);
+      // Force redirect even on error to ensure user is logged out
+      window.location.href = "/";
     }
   };
 
@@ -260,8 +267,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     mode,
     setMode,
     refreshProfile,
-    onboardingComplete,
-    onboardingDraft,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -214,18 +214,9 @@ export function Header() {
                       </Badge>
                     )}
                   </div>
-                  
-                   {user && !talentName && user.user_metadata?.user_type === 'talent' && !profilePictureUrl && (
-                     <Button 
-                       className="hero-button text-sm px-4"
-                       size="sm"
-                       onClick={handleTalentSignup}
-                     >
-                       Complete Profile
-                     </Button>
-                   )}
-                  
-                  {/* Only show subscription button in artist dashboard mode if not already shown in nav */}
+                   {/* No complete profile button needed - profiles are completed during signup */}
+                   
+                   {/* Only show subscription button in artist dashboard mode if not already shown in nav */}
                   {talentName && !showArtistDashboardNav && (
                     <SubscriptionButton
                       isProSubscriber={isProTalent}
@@ -396,17 +387,9 @@ export function Header() {
                         </Badge>
                       )}
                     </div>
-                      
-                       {user && !talentName && user.user_metadata?.user_type === 'talent' && !profilePictureUrl && (
-                         <Button 
-                           className="w-full hero-button mt-2"
-                           onClick={handleTalentSignup}
-                         >
-                           Complete Profile
-                         </Button>
-                       )}
-                      
-                      {talentName && !showArtistDashboardNav && (
+                       {/* No complete profile button needed - profiles are completed during signup */}
+                       
+                       {talentName && !showArtistDashboardNav && (
                         <SubscriptionButton
                           isProSubscriber={isProTalent}
                           onSubscriptionChange={fetchTalentProfile}

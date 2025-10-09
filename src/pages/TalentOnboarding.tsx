@@ -76,7 +76,7 @@ const CURRENCIES = [
 export default function TalentOnboarding() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user, loading: authLoading, onboardingComplete, onboardingDraft } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { userLocation, detectedLocation, detectLocation } = useLocationDetection();
   const [loading, setLoading] = useState(false);
   const [draftLoaded, setDraftLoaded] = useState(false);
@@ -106,12 +106,25 @@ export default function TalentOnboarding() {
   });
 
   useEffect(() => {
-    if (user && onboardingDraft && !draftLoaded) {
-      console.log("[TalentOnboarding] Loading draft from Supabase:", onboardingDraft);
-      setFormData((prev) => ({ ...prev, ...onboardingDraft }));
-      if (onboardingDraft.profileImageUrl) setProfileImageUrl(onboardingDraft.profileImageUrl);
-      setDraftLoaded(true);
-    } else if (!user && !draftLoaded) {
+    // If user is already authenticated and has a talent profile, redirect to dashboard
+    if (!authLoading && user) {
+      const checkProfile = async () => {
+        const { data: talentProfile } = await supabase
+          .from("talent_profiles")
+          .select("id")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        
+        if (talentProfile) {
+          console.log("[TalentOnboarding] User already has profile, redirecting to dashboard");
+          navigate("/talent-dashboard", { replace: true });
+        }
+      };
+      checkProfile();
+    }
+    
+    // Load draft from localStorage for new signups
+    if (!user && !draftLoaded) {
       const localDraft = localStorage.getItem("talent_onboarding_draft");
       if (localDraft) {
         try {
@@ -127,13 +140,7 @@ export default function TalentOnboarding() {
       }
       setDraftLoaded(true);
     }
-  }, [user, onboardingDraft, draftLoaded]);
-
-  useEffect(() => {
-    if (!authLoading && user && onboardingComplete) {
-      navigate("/talent-dashboard", { replace: true });
-    }
-  }, [authLoading, user, onboardingComplete, navigate]);
+  }, [user, authLoading, draftLoaded, navigate]);
 
   // Auto-sync detected location to form data
   useEffect(() => {
@@ -211,11 +218,6 @@ export default function TalentOnboarding() {
         };
         const { error: upsertError } = await supabase.from("talent_profiles").upsert(profileData);
         if (upsertError) throw upsertError;
-        const { error: profileUpdateError } = await supabase
-          .from("profiles")
-          .update({ onboarding_complete: true, onboarding_draft: null, role: "talent" })
-          .eq("id", user.id);
-        if (profileUpdateError) throw profileUpdateError;
         toast({ title: "Success! 🎉", description: "Your talent profile is now live!" });
         localStorage.removeItem("talent_onboarding_draft");
         setTimeout(() => (window.location.href = "/talent-dashboard"), 1500);
