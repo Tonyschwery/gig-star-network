@@ -153,7 +153,7 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
                 <Label htmlFor="event-type">Event Type *</Label>
                 <Select onValueChange={setEventType} required>
                   <SelectTrigger><SelectValue placeholder="Select an event type" /></SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="z-[100] bg-background">
                     {eventTypes.map(type => <SelectItem key={type} value={type} className="capitalize">{type}</SelectItem>)}
                   </SelectContent>
                 </Select>
@@ -171,7 +171,7 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
                       {eventDate ? format(eventDate, "PPP") : <span>Pick a date</span>}
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
+                  <PopoverContent className="w-auto p-0 z-[100] bg-background">
                     <Calendar
                       mode="single"
                       selected={eventDate}
@@ -180,6 +180,7 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
                         setIsCalendarOpen(false); // auto-close after picking
                       }}
                       initialFocus
+                      className="pointer-events-auto"
                     />
                   </PopoverContent>
                 </Popover>

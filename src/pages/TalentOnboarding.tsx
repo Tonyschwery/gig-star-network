@@ -431,19 +431,19 @@ export default function TalentOnboarding() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <Card className="w-full max-w-2xl form-card border-0">
-        <CardHeader className="text-center">
+    <div className="min-h-screen bg-background flex items-center justify-center p-2 sm:p-4 py-4 overflow-y-auto">
+      <Card className="w-full max-w-2xl form-card border-0 my-4">
+        <CardHeader className="text-center px-4 sm:px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex-1">
-              <CardTitle className="text-2xl font-bold flex items-center justify-center gap-2">
-                <Music className="h-6 w-6" /> Complete Your Talent Profile
+              <CardTitle className="text-xl sm:text-2xl font-bold flex items-center justify-center gap-2">
+                <Music className="h-5 w-5 sm:h-6 sm:w-6" /> Complete Your Talent Profile
               </CardTitle>
-              <p className="text-muted-foreground mt-2">Tell us about yourself to get started as a talent</p>
+              <p className="text-muted-foreground mt-2 text-sm">Tell us about yourself to get started as a talent</p>
             </div>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-4 sm:px-6">
           <form onSubmit={handleSubmit} className="space-y-6">
             {!user && (
               <div className="space-y-4 pb-6 border-b border-border">
@@ -521,7 +521,7 @@ export default function TalentOnboarding() {
                   <SelectTrigger>
                     <SelectValue placeholder="Select your act" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="z-[100] bg-background">
                     {ACTS.map((act) => (
                       <SelectItem key={act.value} value={act.value}>
                         {act.label}
@@ -539,7 +539,7 @@ export default function TalentOnboarding() {
                   <SelectTrigger>
                     <SelectValue placeholder="Select your gender" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="z-[100] bg-background">
                     <SelectItem value="male">Male</SelectItem>
                     <SelectItem value="female">Female</SelectItem>
                   </SelectContent>
@@ -603,7 +603,7 @@ export default function TalentOnboarding() {
                     <SelectTrigger>
                       <SelectValue placeholder="Select your age range" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="z-[100] bg-background">
                       <SelectItem value="20-30">20-30</SelectItem>
                       <SelectItem value="30-40">30-40</SelectItem>
                       <SelectItem value="40-50">40-50</SelectItem>
@@ -620,7 +620,7 @@ export default function TalentOnboarding() {
                     <SelectTrigger>
                       <SelectValue placeholder="Select your nationality" />
                     </SelectTrigger>
-                    <SelectContent className="max-h-60">
+                    <SelectContent className="max-h-60 z-[100] bg-background">
                       {countries.map((c) => (
                         <SelectItem key={c.code} value={c.name}>
                           {c.name}
@@ -653,7 +653,7 @@ export default function TalentOnboarding() {
                     <SelectTrigger>
                       <SelectValue placeholder="Select currency" />
                     </SelectTrigger>
-                    <SelectContent className="max-h-[200px]">
+                    <SelectContent className="max-h-[200px] z-[100] bg-background">
                       {CURRENCIES.map((c) => (
                         <SelectItem key={c.value} value={c.value}>
                           {c.label}

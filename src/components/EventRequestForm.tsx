@@ -93,7 +93,7 @@ export function EventRequestForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 p-8 border rounded-lg bg-card text-card-foreground shadow-md">
+    <form onSubmit={handleSubmit} className="space-y-6 p-4 sm:p-6 md:p-8 border rounded-lg bg-card text-card-foreground shadow-md max-h-[85vh] overflow-y-auto">
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="booker-name">Your Name *</Label>
@@ -114,7 +114,7 @@ export function EventRequestForm() {
             <Label htmlFor="event-type">Event Type *</Label>
             <Select onValueChange={setEventType} required>
                 <SelectTrigger><SelectValue placeholder="Select an event type" /></SelectTrigger>
-                <SelectContent>{eventTypes.map(type => <SelectItem key={type} value={type} className="capitalize">{type}</SelectItem>)}</SelectContent>
+                <SelectContent className="z-[100] bg-background">{eventTypes.map(type => <SelectItem key={type} value={type} className="capitalize">{type}</SelectItem>)}</SelectContent>
             </Select>
         </div>
         <div className="space-y-2">
@@ -130,7 +130,7 @@ export function EventRequestForm() {
                   {eventDate ? format(eventDate, "PPP") : <span>Pick a date</span>}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
+              <PopoverContent className="w-auto p-0 z-[100] bg-background">
                 <Calendar
                   mode="single"
                   selected={eventDate}
@@ -139,6 +139,7 @@ export function EventRequestForm() {
                     setIsCalendarOpen(false); // auto-close on pick
                   }}
                   initialFocus
+                  className="pointer-events-auto"
                 />
               </PopoverContent>
             </Popover>
@@ -169,7 +170,7 @@ export function EventRequestForm() {
               <Label htmlFor="talent-needed">Talent Type Needed</Label>
               <Select onValueChange={setTalentTypeNeeded}>
                   <SelectTrigger><SelectValue placeholder="What kind of talent?" /></SelectTrigger>
-                  <SelectContent>{talentTypes.map(type => <SelectItem key={type} value={type}>{type}</SelectItem>)}</SelectContent>
+                  <SelectContent className="z-[100] bg-background">{talentTypes.map(type => <SelectItem key={type} value={type}>{type}</SelectItem>)}</SelectContent>
               </Select>
           </div>
       </div>
