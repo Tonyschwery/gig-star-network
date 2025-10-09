@@ -48,13 +48,22 @@ if (import.meta.env.DEV) allowlist = [/^\/$/];
 // Denylist for paths that should not be cached
 const denylist = [/^\/auth\/callback/];
 
-// Fallback to the root for single-page app navigation
-const handler = createHandlerBoundToURL("/");
-const navigationRoute = new NavigationRoute(handler, {
-  denylist,
-  allowlist,
-});
-registerRoute(navigationRoute);
+// Cache HTML pages with NetworkFirst strategy (tries network, falls back to cache when offline)
+registerRoute(
+  ({ request }) => request.mode === 'navigate',
+  new NetworkFirst({
+    cacheName: `${STATIC_CACHE}-html`,
+    plugins: [
+      new CacheableResponsePlugin({
+        statuses: [0, 200],
+      }),
+      new ExpirationPlugin({
+        maxEntries: 50,
+        maxAgeSeconds: 7 * 24 * 60 * 60, // 7 Days
+      }),
+    ],
+  })
+);
 
 // Cache static assets (images, fonts, CSS, JS) with CacheFirst strategy
 registerRoute(
