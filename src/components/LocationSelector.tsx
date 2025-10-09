@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { MapPin, ChevronDown, Loader2, Smartphone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -30,16 +30,27 @@ export const LocationSelector = ({ onLocationChange }: LocationSelectorProps) =>
   const isMobile = useIsMobile();
   const [isOpen, setIsOpen] = useState(false);
 
+  // Notify parent when location changes
+  useEffect(() => {
+    const currentLocation = userLocation || detectedLocation;
+    if (currentLocation) {
+      console.log('LocationSelector: Notifying parent of location change:', currentLocation);
+      onLocationChange?.(currentLocation);
+    }
+  }, [userLocation, detectedLocation, onLocationChange]);
+
   const handleLocationSelect = (location: string) => {
     console.log('LocationSelector: Location selected:', location);
     saveLocation(location, true);
-    onLocationChange?.(location);
     setIsOpen(false);
+    // Notify parent immediately
+    onLocationChange?.(location);
   };
 
-  const handleDetectLocation = () => {
-    detectLocation();
-    setIsOpen(false);
+  const handleDetectLocation = async () => {
+    console.log('LocationSelector: Manual detect triggered');
+    await detectLocation();
+    // Don't close dropdown immediately to show detection status
   };
 
   const currentLocation = userLocation || detectedLocation || 'Worldwide';

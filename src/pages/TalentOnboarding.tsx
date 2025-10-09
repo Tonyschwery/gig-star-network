@@ -77,7 +77,7 @@ export default function TalentOnboarding() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, loading: authLoading, onboardingComplete, onboardingDraft } = useAuth();
-  const { userLocation, detectedLocation } = useLocationDetection();
+  const { userLocation, detectedLocation, detectLocation } = useLocationDetection();
   const [loading, setLoading] = useState(false);
   const [draftLoaded, setDraftLoaded] = useState(false);
   const [pictureFile, setPictureFile] = useState<File | null>(null);
@@ -133,6 +133,15 @@ export default function TalentOnboarding() {
       navigate("/talent-dashboard", { replace: true });
     }
   }, [authLoading, user, onboardingComplete, navigate]);
+
+  // Auto-sync detected location to form data
+  useEffect(() => {
+    const currentLocation = userLocation || detectedLocation;
+    if (currentLocation && !formData.location) {
+      console.log('[TalentOnboarding] Auto-syncing location to form:', currentLocation);
+      setFormData(prev => ({ ...prev, location: currentLocation }));
+    }
+  }, [userLocation, detectedLocation, formData.location]);
 
   // Upload image immediately to preserve it across auth redirects
   const uploadImageImmediately = async (file: File): Promise<string | null> => {
@@ -576,9 +585,24 @@ export default function TalentOnboarding() {
               <div className="space-y-2">
                 <Label>Talent Location *</Label>
                 <div className="flex justify-start">
-                  <LocationSelector />
+                  <LocationSelector 
+                    onLocationChange={(location) => {
+                      console.log('[TalentOnboarding] Location changed:', location);
+                      setFormData(prev => ({ ...prev, location }));
+                    }} 
+                  />
                 </div>
-                <p className="text-xs text-muted-foreground">Selected location: {selectedLocation || "Not selected"}</p>
+                <div className="mt-2">
+                  {selectedLocation ? (
+                    <p className="text-xs text-muted-foreground">
+                      📍 Selected location: <strong>{selectedLocation}</strong>
+                    </p>
+                  ) : (
+                    <p className="text-xs text-destructive">
+                      ⚠️ Please select or detect your location to continue
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
             {getValidationErrors().length > 0 && (

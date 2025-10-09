@@ -197,48 +197,65 @@ export const useLocationDetection = () => {
 
   // Detect location automatically
   const detectLocation = useCallback(async () => {
-    if (state.isDetecting) return;
+    if (state.isDetecting) {
+      console.log('Location detection already in progress');
+      return;
+    }
 
+    console.log('Starting location detection...');
     setState(prev => ({ ...prev, isDetecting: true, error: null }));
 
     try {
-      // Try browser geolocation first
+      // Try browser geolocation first (more accurate)
       let location = await getLocationFromBrowser();
       
-      // Fallback to IP-based detection
+      // Fallback to IP-based detection if browser geolocation fails
       if (!location) {
+        console.log('Browser geolocation failed, trying IP-based detection...');
         location = await getLocationFromIP();
       }
 
       if (location) {
-        setState(prev => ({ ...prev, detectedLocation: location }));
+        console.log('Location detected:', location);
+        
+        // Update both detected and user location
+        setState(prev => ({ 
+          ...prev, 
+          detectedLocation: location,
+          userLocation: location,
+          error: null
+        }));
+        
+        // Save to localStorage immediately
+        localStorage.setItem('userLocation', location);
+        localStorage.setItem('locationOverride', 'true');
         
         // Save detected location to database if user is logged in
         if (user) {
-          await supabase
-            .from('user_preferences')
-            .upsert({
-              user_id: user.id,
-              detected_location: location,
-              preferred_location: state.userLocation
-            }, { onConflict: 'user_id' });
-        }
-
-        // Use detected location if no user preference exists
-        if (!state.userLocation) {
-          setState(prevState => ({ ...prevState, userLocation: location }));
-          localStorage.setItem('userLocation', location);
+          try {
+            await supabase
+              .from('user_preferences')
+              .upsert({
+                user_id: user.id,
+                detected_location: location,
+                preferred_location: location,
+                location_override: true
+              }, { onConflict: 'user_id' });
+          } catch (dbError) {
+            console.error('Failed to save location to database:', dbError);
+          }
         }
       } else {
-        setState(prev => ({ ...prev, error: 'Could not detect location' }));
+        console.warn('Could not detect location from any source');
+        setState(prev => ({ ...prev, error: 'Could not detect location. Please select manually.' }));
       }
     } catch (error) {
       console.error('Location detection failed:', error);
-      setState(prevState => ({ ...prevState, error: 'Location detection failed' }));
+      setState(prev => ({ ...prev, error: 'Location detection failed. Please select manually.' }));
     } finally {
-      setState(prevState => ({ ...prevState, isDetecting: false }));
+      setState(prev => ({ ...prev, isDetecting: false }));
     }
-  }, [user, state.isDetecting, state.userLocation]);
+  }, [user, state.isDetecting]);
 
   // Initialize on mount - Always auto-detect unless manually overridden
   useEffect(() => {
