@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from './useAuth';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -9,8 +9,19 @@ export const useWebPushNotifications = () => {
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isSupported, setIsSupported] = useState(false);
   const [subscription, setSubscription] = useState<PushSubscription | null>(null);
+  const [isPWA, setIsPWA] = useState(false);
 
   useEffect(() => {
+    // Check if running as PWA
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+    const isIOSStandalone = (window.navigator as any).standalone === true;
+    const isPWAMode = isStandalone || isIOSStandalone;
+    setIsPWA(isPWAMode);
+    
+    if (isPWAMode) {
+      localStorage.setItem('is-pwa-installed', 'true');
+    }
+    
     setIsSupported('serviceWorker' in navigator && 'PushManager' in window);
   }, []);
 
@@ -32,7 +43,7 @@ export const useWebPushNotifications = () => {
       });
   }, [isSupported, user]);
 
-  const requestPermission = async () => {
+  const requestPermission = useCallback(async () => {
     if (!isSupported || !user) {
       console.log('Push notifications not supported or user not logged in');
       return false;
@@ -103,7 +114,25 @@ export const useWebPushNotifications = () => {
       console.error('Error requesting permission:', error);
       return false;
     }
-  };
+  }, [isSupported, user]);
+
+  // Auto-prompt for push notifications in PWA mode
+  useEffect(() => {
+    if (isPWA && user && isSupported && !isSubscribed) {
+      const hasAutoPrompted = localStorage.getItem('pwa-push-auto-prompted');
+      
+      if (!hasAutoPrompted) {
+        // Wait 3 seconds after PWA launch to prompt
+        const timer = setTimeout(() => {
+          console.log('Auto-prompting for push notifications in PWA mode');
+          requestPermission();
+          localStorage.setItem('pwa-push-auto-prompted', 'true');
+        }, 3000);
+
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [isPWA, user, isSupported, isSubscribed, requestPermission]);
 
   const unsubscribe = async () => {
     if (!subscription || !user) return false;
@@ -171,6 +200,7 @@ export const useWebPushNotifications = () => {
   return {
     isSupported,
     isSubscribed,
+    isPWA,
     requestPermission,
     unsubscribe,
     showNotification

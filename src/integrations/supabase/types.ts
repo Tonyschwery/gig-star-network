@@ -520,6 +520,45 @@ export type Database = {
         }
         Relationships: []
       }
+      notification_history: {
+        Row: {
+          body: string
+          booking_id: string | null
+          created_at: string | null
+          id: string
+          is_read: boolean | null
+          notification_type: string | null
+          read_at: string | null
+          title: string
+          url: string | null
+          user_id: string
+        }
+        Insert: {
+          body: string
+          booking_id?: string | null
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          notification_type?: string | null
+          read_at?: string | null
+          title: string
+          url?: string | null
+          user_id: string
+        }
+        Update: {
+          body?: string
+          booking_id?: string | null
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          notification_type?: string | null
+          read_at?: string | null
+          title?: string
+          url?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           booking_id: string | null

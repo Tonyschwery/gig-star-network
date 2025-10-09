@@ -7,13 +7,22 @@ import { useAuth } from "@/hooks/useAuth";
 
 export const NotificationPermissionPrompt = () => {
   const { user } = useAuth();
-  const { isSupported, isSubscribed, requestPermission } = useWebPushNotifications();
+  const { isSupported, isSubscribed, isPWA, requestPermission } = useWebPushNotifications();
   const [isDismissed, setIsDismissed] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
     // Check if user has already been asked
     const hasAsked = localStorage.getItem('notification-permission-asked');
+    const hasAutoPrompted = localStorage.getItem('pwa-push-auto-prompted');
+    
+    // Don't show prompt if:
+    // - Running in PWA mode (auto-prompt handles this)
+    // - User is already subscribed
+    // - We've already asked
+    if (isPWA || isSubscribed || hasAsked || hasAutoPrompted) {
+      return;
+    }
     
     // Show prompt if:
     // - User is logged in
@@ -21,7 +30,8 @@ export const NotificationPermissionPrompt = () => {
     // - User is not subscribed
     // - User hasn't dismissed it
     // - We haven't asked before
-    if (user && isSupported && !isSubscribed && !isDismissed && !hasAsked) {
+    // - NOT in PWA mode (browser mode only)
+    if (user && isSupported && !isSubscribed && !isDismissed && !hasAsked && !isPWA) {
       // Wait 5 seconds before showing to not overwhelm user
       const timer = setTimeout(() => {
         setIsVisible(true);
@@ -29,7 +39,7 @@ export const NotificationPermissionPrompt = () => {
       
       return () => clearTimeout(timer);
     }
-  }, [user, isSupported, isSubscribed, isDismissed]);
+  }, [user, isSupported, isSubscribed, isDismissed, isPWA]);
 
   if (!isVisible) return null;
 
@@ -48,7 +58,7 @@ export const NotificationPermissionPrompt = () => {
   };
 
   return (
-    <Card className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-96 z-50 shadow-lg border-primary/20 animate-in slide-in-from-bottom-4">
+    <Card className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-96 z-50 shadow-2xl border-primary/30 bg-card/95 backdrop-blur-sm animate-in slide-in-from-bottom-4">
       <CardContent className="p-4">
         <div className="flex items-start gap-3">
           <div className="p-2 rounded-full bg-primary/10">
@@ -57,7 +67,7 @@ export const NotificationPermissionPrompt = () => {
           <div className="flex-1">
             <h3 className="font-semibold text-sm mb-1">Enable Notifications</h3>
             <p className="text-xs text-muted-foreground mb-3">
-              Stay updated with instant notifications about your bookings, messages, and important updates
+              Get instant notifications about bookings, messages, and important updates
             </p>
             <div className="flex gap-2">
               <Button size="sm" onClick={handleEnable} className="flex-1">

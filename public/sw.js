@@ -4,9 +4,53 @@ import { NetworkFirst, CacheFirst, StaleWhileRevalidate } from "workbox-strategi
 import { ExpirationPlugin } from "workbox-expiration";
 import { CacheableResponsePlugin } from "workbox-cacheable-response";
 
-const CACHE_VERSION = 'v1';
+const CACHE_VERSION = 'v2-pwa';
 const STATIC_CACHE = `qtalent-static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `qtalent-runtime-${CACHE_VERSION}`;
+const OFFLINE_CACHE = `qtalent-offline-${CACHE_VERSION}`;
+
+// Pages to cache for offline use
+const OFFLINE_PAGES = [
+  '/',
+  '/auth',
+  '/booker-dashboard',
+  '/talent-dashboard',
+];
+
+// Install event - cache critical pages immediately
+self.addEventListener('install', (event) => {
+  console.log('Service Worker installing...');
+  event.waitUntil(
+    caches.open(OFFLINE_CACHE).then((cache) => {
+      console.log('Caching offline pages');
+      return cache.addAll(OFFLINE_PAGES);
+    }).then(() => {
+      // Skip waiting to activate immediately
+      return self.skipWaiting();
+    })
+  );
+});
+
+// Activate event - clean up old caches
+self.addEventListener('activate', (event) => {
+  console.log('Service Worker activating...');
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((cacheName) => {
+          if (cacheName.includes('qtalent') && cacheName !== STATIC_CACHE && 
+              cacheName !== RUNTIME_CACHE && cacheName !== OFFLINE_CACHE) {
+            console.log('Deleting old cache:', cacheName);
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    }).then(() => {
+      // Claim all clients immediately
+      return self.clients.claim();
+    })
+  );
+});
 
 self.addEventListener("message", (event) => {
   if (event.data && event.data.type === "SKIP_WAITING") {

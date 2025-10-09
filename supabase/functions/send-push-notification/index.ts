@@ -72,6 +72,28 @@ serve(async (req) => {
       vapidPrivateKey
     );
 
+    // Store notification in history for the user
+    try {
+      const { error: historyError } = await supabase
+        .from('notification_history')
+        .insert({
+          user_id: userId,
+          title: title,
+          body: body,
+          url: url || '/',
+          booking_id: bookingId,
+          notification_type: 'push',
+        });
+
+      if (historyError) {
+        console.error('Error storing notification history:', historyError);
+      } else {
+        console.log('Notification stored in history');
+      }
+    } catch (err) {
+      console.error('Failed to store notification history:', err);
+    }
+
     const payload = JSON.stringify({
       title,
       body,

@@ -9,14 +9,23 @@ export const usePWAInstall = () => {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isInstallable, setIsInstallable] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
+  const [isPWA, setIsPWA] = useState(false);
 
   useEffect(() => {
-    // Check if already installed
+    // Check if already installed or running as PWA
     const checkIfInstalled = () => {
       // Check if running as standalone PWA
       const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
       const isIOSStandalone = (window.navigator as any).standalone === true;
-      setIsInstalled(isStandalone || isIOSStandalone);
+      const isPWAMode = isStandalone || isIOSStandalone;
+      
+      setIsInstalled(isPWAMode);
+      setIsPWA(isPWAMode);
+      
+      // Store PWA status in localStorage for other components
+      if (isPWAMode) {
+        localStorage.setItem('is-pwa-installed', 'true');
+      }
     };
 
     checkIfInstalled();
@@ -36,8 +45,10 @@ export const usePWAInstall = () => {
     const handleAppInstalled = () => {
       console.log('PWA was installed');
       setIsInstalled(true);
+      setIsPWA(true);
       setIsInstallable(false);
       setDeferredPrompt(null);
+      localStorage.setItem('is-pwa-installed', 'true');
     };
 
     window.addEventListener('appinstalled', handleAppInstalled);
@@ -76,6 +87,7 @@ export const usePWAInstall = () => {
   return {
     isInstallable,
     isInstalled,
+    isPWA,
     promptInstall
   };
 };

@@ -5,10 +5,11 @@ import { usePWAInstall } from "@/hooks/usePWAInstall";
 import { useState } from "react";
 
 export const PWAInstallPrompt = () => {
-  const { isInstallable, promptInstall } = usePWAInstall();
+  const { isInstallable, isPWA, promptInstall } = usePWAInstall();
   const [isDismissed, setIsDismissed] = useState(false);
 
-  if (!isInstallable || isDismissed) return null;
+  // Don't show if already installed as PWA
+  if (!isInstallable || isDismissed || isPWA) return null;
 
   const handleInstall = async () => {
     const installed = await promptInstall();
@@ -18,7 +19,7 @@ export const PWAInstallPrompt = () => {
   };
 
   return (
-    <Card className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-96 z-50 shadow-lg border-primary/20">
+    <Card className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-96 z-50 shadow-2xl border-primary/30 bg-card/95 backdrop-blur-sm">
       <CardContent className="p-4">
         <div className="flex items-start gap-3">
           <div className="p-2 rounded-full bg-primary/10">
@@ -27,7 +28,7 @@ export const PWAInstallPrompt = () => {
           <div className="flex-1">
             <h3 className="font-semibold text-sm mb-1">Install Qtalent App</h3>
             <p className="text-xs text-muted-foreground mb-3">
-              Install our app for a better experience with offline access and notifications
+              Get the full app experience with offline access, push notifications, and instant loading
             </p>
             <div className="flex gap-2">
               <Button size="sm" onClick={handleInstall} className="flex-1">

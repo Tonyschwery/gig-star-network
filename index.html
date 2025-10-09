@@ -75,13 +75,19 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
-    <!-- Service Worker Registration with Cache Management -->
+    <!-- Service Worker Registration for PWA -->
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', function() {
-          navigator.serviceWorker.register('/sw.js')
+          // Register service worker with immediate activation
+          navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' })
             .then(function(registration) {
-              console.log('SW registered: ', registration);
+              console.log('SW registered for PWA: ', registration);
+              
+              // Check for updates periodically
+              setInterval(() => {
+                registration.update();
+              }, 60000); // Check every minute
 
               // Listen for service worker messages
               navigator.serviceWorker.addEventListener('message', function(event) {
