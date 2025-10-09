@@ -100,55 +100,55 @@ export const UniversalChat = () => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed bottom-4 right-4 sm:bottom-8 sm:right-8 w-[calc(100%-2rem)] max-w-sm h-[min(600px,80vh)] z-50">
+    <div className="fixed bottom-2 right-2 sm:bottom-8 sm:right-8 w-[calc(100%-1rem)] sm:w-[calc(100%-2rem)] max-w-sm h-[85vh] sm:h-[min(600px,80vh)] z-50">
       <Card
         className="w-full h-full flex flex-col shadow-2xl overflow-hidden"
         onMouseEnter={() => setIsHovering(true)}
         onMouseLeave={() => setIsHovering(false)}
       >
-        <CardHeader className="flex flex-row items-center justify-between p-4 border-b">
-          <CardTitle className="text-base font-semibold">
+        <CardHeader className="flex flex-row items-center justify-between p-3 sm:p-4 border-b">
+          <CardTitle className="text-sm sm:text-base font-semibold">
             {channelInfo?.type === "booking" ? "Booking Chat" : "Event Request Chat"}
           </CardTitle>
-          <Button variant="ghost" size="icon" onClick={closeChat}>
+          <Button variant="ghost" size="icon" onClick={closeChat} className="h-8 w-8 sm:h-10 sm:w-10">
             <X className="h-4 w-4" />
           </Button>
         </CardHeader>
         <CardContent className="p-0 flex-1 flex flex-col min-h-0">
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0">
+          <div className="flex-1 overflow-y-auto p-2 sm:p-4 space-y-3 sm:space-y-4 min-h-0">
             {loadingMessages ? (
               <div className="flex items-center justify-center h-full">
                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
               </div>
             ) : messages.length === 0 ? (
               <div className="flex items-center justify-center h-full">
-                <p className="text-sm text-muted-foreground">Start the conversation!</p>
+                <p className="text-xs sm:text-sm text-muted-foreground">Start the conversation!</p>
               </div>
             ) : (
               messages.map((msg) => (
                 <div
                   key={msg.id}
-                  className={cn("flex items-end gap-2", msg.sender_id === user?.id ? "justify-end" : "justify-start")}
+                  className={cn("flex items-end gap-1.5 sm:gap-2", msg.sender_id === user?.id ? "justify-end" : "justify-start")}
                 >
                   {msg.sender_id !== user?.id && (
-                    <Avatar className="h-8 w-8">
+                    <Avatar className="h-6 w-6 sm:h-8 sm:w-8 flex-shrink-0">
                       <AvatarFallback>
-                        <User className="h-4 w-4" />
+                        <User className="h-3 w-3 sm:h-4 sm:w-4" />
                       </AvatarFallback>
                     </Avatar>
                   )}
                   <div
                     className={cn(
-                      "max-w-xs p-3 rounded-2xl text-sm",
+                      "max-w-[75%] sm:max-w-xs p-2 sm:p-3 rounded-2xl text-xs sm:text-sm break-words",
                       msg.sender_id === user?.id
                         ? "bg-primary text-primary-foreground rounded-br-none"
                         : "bg-muted rounded-bl-none",
                     )}
                   >
-                    <p>{msg.content}</p>
+                    <p className="whitespace-pre-wrap">{msg.content}</p>
                     <p
                       className={cn(
-                        "text-xs mt-1",
+                        "text-[10px] sm:text-xs mt-1",
                         msg.sender_id === user?.id ? "text-primary-foreground/70" : "text-muted-foreground/70",
                       )}
                     >
@@ -161,20 +161,20 @@ export const UniversalChat = () => {
             <div ref={messagesEndRef} />
           </div>
 
-          <div className="p-3 border-t bg-background flex-shrink-0">
+          <div className="p-2 sm:p-3 border-t bg-background flex-shrink-0">
             {/* Pro upgrade prompt for non-pro talents */}
             {isTalent && !isProUser && (
-              <div className="mb-2 p-2 bg-primary/5 dark:bg-primary/10 rounded border border-primary/20">
-                <p className="text-[10px] text-muted-foreground mb-1 leading-tight flex items-center gap-1">
-                  <Crown className="h-3 w-3 text-primary" />
+              <div className="mb-1.5 p-1.5 sm:p-2 bg-primary/5 dark:bg-primary/10 rounded border border-primary/20">
+                <p className="text-[9px] sm:text-[10px] text-muted-foreground mb-1 leading-tight flex items-center gap-1">
+                  <Crown className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-primary flex-shrink-0" />
                   <span>
                     <strong>Pro:</strong> Share contact info directly
                   </span>
                 </p>
                 <Button
                   size="sm"
-                  onClick={() => navigate("/pricing")} // ✅ Same-tab navigation keeps user logged in
-                  className="h-6 text-[10px] w-full"
+                  onClick={() => navigate("/pricing")}
+                  className="h-5 sm:h-6 text-[9px] sm:text-[10px] w-full"
                   variant="default"
                 >
                   Upgrade
@@ -184,9 +184,9 @@ export const UniversalChat = () => {
 
             {/* Alert when bookers message non-pro talents */}
             {!isTalent && isRecipientNonProTalent && (
-              <div className="mb-2 p-2 bg-primary/5 dark:bg-primary/10 rounded border border-primary/20">
-                <p className="text-[10px] text-muted-foreground font-medium flex items-center gap-1">
-                  <AlertTriangle className="h-3 w-3 text-primary flex-shrink-0" />
+              <div className="mb-1.5 p-1.5 sm:p-2 bg-primary/5 dark:bg-primary/10 rounded border border-primary/20">
+                <p className="text-[9px] sm:text-[10px] text-muted-foreground font-medium flex items-center gap-1 leading-tight">
+                  <AlertTriangle className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-primary flex-shrink-0" />
                   <span>This talent can't receive contact details (Free plan)</span>
                 </p>
               </div>
@@ -194,12 +194,12 @@ export const UniversalChat = () => {
 
             {/* Filtered message notification */}
             {showFilteredMessage && (
-              <div className="mb-2 p-2 bg-destructive/10 rounded border border-destructive/20">
-                <p className="text-[10px] text-destructive font-medium">{showFilteredMessage}</p>
+              <div className="mb-1.5 p-1.5 sm:p-2 bg-destructive/10 rounded border border-destructive/20">
+                <p className="text-[9px] sm:text-[10px] text-destructive font-medium leading-tight">{showFilteredMessage}</p>
               </div>
             )}
 
-            <form onSubmit={handleSendMessage} className="flex items-end gap-2">
+            <form onSubmit={handleSendMessage} className="flex items-end gap-1.5 sm:gap-2">
               <Textarea
                 value={newMessage}
                 onChange={(e) => {
@@ -226,7 +226,7 @@ export const UniversalChat = () => {
                       ? "This talent can't receive contact details (Free plan)..."
                       : "Type your message..."
                 }
-                className="resize-none min-h-[40px] max-h-[80px] text-sm leading-tight py-2"
+                className="resize-none min-h-[44px] max-h-[88px] sm:min-h-[40px] sm:max-h-[80px] text-xs sm:text-sm leading-tight py-2 px-2.5 sm:px-3 placeholder:text-[10px] sm:placeholder:text-xs placeholder:text-muted-foreground/70"
                 rows={1}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey) {
@@ -238,7 +238,7 @@ export const UniversalChat = () => {
               <Button
                 type="submit"
                 size="icon"
-                className="h-[40px] w-[40px] flex-shrink-0"
+                className="h-[44px] w-[44px] sm:h-[40px] sm:w-[40px] flex-shrink-0"
                 disabled={!newMessage.trim()}
               >
                 <Send className="h-4 w-4" />
