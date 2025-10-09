@@ -431,8 +431,8 @@ export default function TalentOnboarding() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-2 sm:p-4 py-4 overflow-y-auto">
-      <Card className="w-full max-w-2xl form-card border-0 my-4">
+    <div className="min-h-screen bg-background p-2 sm:p-4 py-4 overflow-y-auto">
+      <Card className="w-full max-w-2xl form-card border-0 my-4 mx-auto">
         <CardHeader className="text-center px-4 sm:px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex-1">
@@ -443,11 +443,11 @@ export default function TalentOnboarding() {
             </div>
           </div>
         </CardHeader>
-        <CardContent className="px-4 sm:px-6">
-          <form onSubmit={handleSubmit} className="space-y-6">
+        <CardContent className="px-4 sm:px-6 pb-6">
+          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
             {!user && (
-              <div className="space-y-4 pb-6 border-b border-border">
-                <h3 className="text-lg font-semibold">Account Information</h3>
+              <div className="space-y-3 sm:space-y-4 pb-4 sm:pb-6 border-b border-border">
+                <h3 className="text-base sm:text-lg font-semibold">Account Information</h3>
                 <div className="space-y-2">
                   <Label htmlFor="email">Email *</Label>
                   <Input
@@ -501,8 +501,8 @@ export default function TalentOnboarding() {
                 </div>
               </div>
             )}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Profile Information</h3>
+            <div className="space-y-3 sm:space-y-4">
+              <h3 className="text-base sm:text-lg font-semibold">Profile Information</h3>
               <div className="space-y-2">
                 <Label htmlFor="artistName">Artist Name *</Label>
                 <Input
@@ -545,9 +545,9 @@ export default function TalentOnboarding() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-4">
-                <Label className="text-base font-semibold">Music Genres * (Select all that apply)</Label>
-                <div className="flex flex-wrap gap-3">
+              <div className="space-y-3">
+                <Label className="text-sm sm:text-base font-semibold">Music Genres * (Select all that apply)</Label>
+                <div className="flex flex-wrap gap-2 sm:gap-3">
                   {MUSIC_GENRES.map((genre) => (
                     <button
                       key={genre}
@@ -593,7 +593,7 @@ export default function TalentOnboarding() {
                   rows={4}
                 />
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                 <div className="space-y-2">
                   <Label>Age Range *</Label>
                   <Select
@@ -630,7 +630,7 @@ export default function TalentOnboarding() {
                   </Select>
                 </div>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="rate">Rate per Hour *</Label>
                   <Input
@@ -687,7 +687,7 @@ export default function TalentOnboarding() {
               </div>
             </div>
             {getValidationErrors().length > 0 && (
-              <Alert variant="destructive" className="mt-4">
+              <Alert variant="destructive" className="mt-3 sm:mt-4">
                 <AlertCircle className="h-4 w-4" />
                 <AlertTitle>Please complete the following required fields:</AlertTitle>
                 <AlertDescription>
@@ -699,7 +699,7 @@ export default function TalentOnboarding() {
                 </AlertDescription>
               </Alert>
             )}
-            <Button type="submit" className="w-full mt-4" disabled={loading || getValidationErrors().length > 0}>
+            <Button type="submit" className="w-full mt-3 sm:mt-4 h-11 sm:h-10 text-sm sm:text-base" disabled={loading || getValidationErrors().length > 0}>
               {loading
                 ? user
                   ? "Saving Profile..."
