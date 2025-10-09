@@ -434,7 +434,7 @@ export function Header() {
                      
                      <Button 
                        className="w-full hero-button"
-                       onClick={() => navigate("/auth")}
+                       onClick={() => navigate("/talent-onboarding")}
                      >
                        Join as a Talent
                      </Button>
