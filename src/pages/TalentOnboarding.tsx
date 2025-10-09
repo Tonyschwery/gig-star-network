@@ -431,8 +431,8 @@ export default function TalentOnboarding() {
   }
 
   return (
-    <div className="min-h-screen bg-background p-2 sm:p-4 py-4 overflow-y-auto">
-      <Card className="w-full max-w-2xl form-card border-0 my-4 mx-auto">
+    <div className="min-h-screen bg-background p-2 sm:p-4 py-4 flex items-start justify-center">
+      <Card className="w-full max-w-2xl form-card border-0 my-4 max-h-[95vh] overflow-y-auto">
         <CardHeader className="text-center px-4 sm:px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex-1">
