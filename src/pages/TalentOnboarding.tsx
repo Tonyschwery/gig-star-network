@@ -85,6 +85,7 @@ export default function TalentOnboarding() {
   const [signupMessageVisible, setSignupMessageVisible] = useState(false);
 
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
 
@@ -251,14 +252,16 @@ export default function TalentOnboarding() {
         location: formData.location || userLocation || detectedLocation || "",
       };
 
-      // Check if user already exists
-      const { data: existingUser } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('email', email.toLowerCase().trim())
-        .maybeSingle();
+      // Check if user already exists via edge function
+      const { data: emailCheck, error: checkError } = await supabase.functions.invoke('check-email-exists', {
+        body: { email: email.toLowerCase().trim() }
+      });
 
-      if (existingUser) {
+      if (checkError) {
+        console.error('[TalentOnboarding] Error checking email:', checkError);
+      }
+
+      if (emailCheck?.exists) {
         toast({
           title: "Account already exists!",
           description: "This email is already registered. Please sign in instead.",
@@ -269,8 +272,21 @@ export default function TalentOnboarding() {
         return;
       }
 
-      const { error: otpError } = await supabase.auth.signInWithOtp({
+      // Validate password
+      if (!password || password.length < 6) {
+        toast({
+          title: "Password Required",
+          description: "Please enter a password with at least 6 characters.",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
+      // Sign up with PASSWORD
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email: email.toLowerCase().trim(),
+        password: password,
         options: {
           emailRedirectTo: `${window.location.origin}/talent-dashboard`,
           data: {
@@ -282,25 +298,17 @@ export default function TalentOnboarding() {
         },
       });
 
-      if (otpError) {
-        // Handle duplicate email error
-        if (otpError.message.includes("already registered") || otpError.message.includes("duplicate")) {
-          toast({
-            title: "Account already exists!",
-            description: "This email is already registered. Please sign in instead.",
-            variant: "destructive",
-            duration: 5000,
-          });
-          setLoading(false);
-          return;
-        }
-        throw otpError;
+      if (signUpError) {
+        throw signUpError;
       }
 
       localStorage.removeItem("talent_onboarding_draft");
 
-      setSignupMessageVisible(true);
-      toast({ title: "Check your email!", description: "We've sent a magic link to complete your sign-up." });
+      toast({ 
+        title: "Account Created!", 
+        description: "Your talent profile has been created. Welcome to QTalent!",
+        duration: 3000
+      });
     } catch (error: any) {
       console.error("[TalentOnboarding] Error:", error);
       toast({ title: "Error", description: error.message || "An unexpected error occurred.", variant: "destructive" });
@@ -448,6 +456,22 @@ export default function TalentOnboarding() {
                     international
                     className="phone-input"
                   />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password *</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Min 6 characters"
+                    required={!user}
+                    minLength={6}
+                    autoComplete="new-password"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Create a password to secure your account (minimum 6 characters)
+                  </p>
                 </div>
               </div>
             )}

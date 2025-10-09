@@ -57,21 +57,22 @@ const Auth = () => {
       return;
     }
 
-    // Password validation for password method
-    if (authMethod === "password" && !password) {
+    // Signup ALWAYS requires password
+    if (isSignUp && (!password || password.length < 6)) {
       toast({
         title: "Password required",
-        description: "Please enter a password (minimum 6 characters).",
+        description: "Password must be at least 6 characters for signup.",
         variant: "destructive",
       });
       setLoading(false);
       return;
     }
 
-    if (authMethod === "password" && password.length < 6) {
+    // Signin with password method requires password
+    if (!isSignUp && authMethod === "password" && (!password || password.length < 6)) {
       toast({
-        title: "Password too short",
-        description: "Password must be at least 6 characters long.",
+        title: "Password required",
+        description: "Please enter your password (minimum 6 characters).",
         variant: "destructive",
       });
       setLoading(false);
@@ -79,15 +80,13 @@ const Auth = () => {
     }
 
     try {
-      // Check if user already exists
-      const { data: existingProfile } = await supabase
-        .from('profiles')
-        .select('id, email')
-        .eq('email', email.toLowerCase().trim())
-        .maybeSingle();
+      // Check email via edge function
+      const { data: emailCheck } = await supabase.functions.invoke('check-email-exists', {
+        body: { email: email.toLowerCase().trim() }
+      });
 
       // For sign up - check if user exists
-      if (isSignUp && existingProfile) {
+      if (isSignUp && emailCheck?.exists) {
         toast({
           title: "Account already exists! 🔑",
           description: "This email is already registered. Please switch to 'Sign In' tab to access your account.",
@@ -99,7 +98,7 @@ const Auth = () => {
       }
 
       // For sign in - check if user doesn't exist
-      if (!isSignUp && !existingProfile) {
+      if (!isSignUp && !emailCheck?.exists) {
         toast({
           title: "Account not found 🔍",
           description: "No account found with this email. Please switch to 'Sign Up' tab to create an account.",
@@ -112,56 +111,63 @@ const Auth = () => {
 
       let error: any = null;
 
-      if (authMethod === "password") {
-        // Password authentication
-        if (isSignUp) {
-          const { error: signUpError } = await supabase.auth.signUp({
-            email: email.toLowerCase().trim(),
-            password: password,
-            options: {
-              data: { name: name, user_type: userType }
-            }
-          });
-          error = signUpError;
-        } else {
-          const { error: signInError } = await supabase.auth.signInWithPassword({
-            email: email.toLowerCase().trim(),
-            password: password,
-          });
-          error = signInError;
-        }
+      if (isSignUp) {
+        // Signup ALWAYS uses password (no magic link option)
+        const { error: signUpError } = await supabase.auth.signUp({
+          email: email.toLowerCase().trim(),
+          password: password,
+          options: {
+            data: { name: name, user_type: userType }
+          }
+        });
+        error = signUpError;
 
         if (!error) {
           toast({
-            title: isSignUp ? "Account created! ✅" : "Welcome back! 👋",
-            description: isSignUp 
-              ? "Your account has been created successfully. Redirecting..." 
-              : "You're now signed in. Redirecting...",
+            title: "Account created! ✅",
+            description: "Your account has been created successfully. Redirecting...",
             duration: 3000,
           });
           setTimeout(() => navigate(state?.from?.pathname || "/"), 1000);
         }
       } else {
-        // Magic link authentication
-        const redirectTo = new URL(`${window.location.origin}/auth/callback`);
-        redirectTo.searchParams.set("state", JSON.stringify(state || {}));
-
-        const { error: otpError } = await supabase.auth.signInWithOtp({
-          email: email.toLowerCase().trim(),
-          options: {
-            emailRedirectTo: redirectTo.toString(),
-            data: isSignUp ? { name: name, user_type: userType } : {},
-          },
-        });
-        error = otpError;
-
-        if (!error) {
-          toast({
-            title: "Check your email! 📧",
-            description: "Magic link sent! Check your inbox and spam folder (may take 1-2 minutes).",
-            duration: 8000,
+        // Signin can use password OR magic link
+        if (authMethod === "password") {
+          const { error: signInError } = await supabase.auth.signInWithPassword({
+            email: email.toLowerCase().trim(),
+            password: password,
           });
-          setEmailSent(true);
+          error = signInError;
+
+          if (!error) {
+            toast({
+              title: "Welcome back! 👋",
+              description: "You're now signed in. Redirecting...",
+              duration: 3000,
+            });
+            setTimeout(() => navigate(state?.from?.pathname || "/"), 1000);
+          }
+        } else {
+          // Magic link for signin only
+          const redirectTo = new URL(`${window.location.origin}/auth/callback`);
+          redirectTo.searchParams.set("state", JSON.stringify(state || {}));
+
+          const { error: otpError } = await supabase.auth.signInWithOtp({
+            email: email.toLowerCase().trim(),
+            options: {
+              emailRedirectTo: redirectTo.toString(),
+            },
+          });
+          error = otpError;
+
+          if (!error) {
+            toast({
+              title: "Check your email! 📧",
+              description: "Magic link sent! Check your inbox and spam folder (may take 1-2 minutes).",
+              duration: 8000,
+            });
+            setEmailSent(true);
+          }
         }
       }
 
@@ -345,32 +351,6 @@ const Auth = () => {
                   }}
                   className="space-y-4 pt-4"
                 >
-                  <div className="space-y-4 p-4 bg-muted/30 rounded-lg border">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-sm font-medium">Sign Up Method</Label>
-                      <div className="flex gap-2">
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant={authMethod === "password" ? "default" : "outline"}
-                          onClick={() => setAuthMethod("password")}
-                          className="text-xs"
-                        >
-                          🔑 Password
-                        </Button>
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant={authMethod === "magiclink" ? "default" : "outline"}
-                          onClick={() => setAuthMethod("magiclink")}
-                          className="text-xs"
-                        >
-                          ✉️ Magic Link
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-
                   <div className="space-y-2">
                     <Label htmlFor="signup-name">Full Name</Label>
                     <Input
@@ -394,37 +374,28 @@ const Auth = () => {
                     />
                   </div>
 
-                  {authMethod === "password" && (
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-password">Password</Label>
-                      <Input
-                        id="signup-password"
-                        type="password"
-                        placeholder="At least 6 characters"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                        minLength={6}
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Minimum 6 characters
-                      </p>
-                    </div>
-                  )}
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-password">Password</Label>
+                    <Input
+                      id="signup-password"
+                      type="password"
+                      placeholder="At least 6 characters"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      minLength={6}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Minimum 6 characters required
+                    </p>
+                  </div>
 
                   <p className="text-xs text-muted-foreground">
-                    💡 {authMethod === "password" 
-                      ? "Create a secure password to access your account" 
-                      : "We'll send a magic link to verify your email"}.
-                    {" "}Already registered? Use "Sign In" tab
+                    💡 Create a secure password to access your account. Already registered? Use "Sign In" tab
                   </p>
                   
                   <Button type="submit" disabled={loading} className="w-full">
-                    {loading 
-                      ? "Creating Account..." 
-                      : authMethod === "password" 
-                        ? "Create Account" 
-                        : "Send Magic Link"}
+                    {loading ? "Creating Account..." : "Create Account"}
                   </Button>
                 </form>
               </TabsContent>

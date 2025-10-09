@@ -110,10 +110,17 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
             </div>
           ) : !user ? (
             <div className="mb-6 p-4 bg-primary/10 rounded-lg border border-primary/20">
-              <p className="text-sm font-medium mb-2">New to QTalent?</p>
+              <p className="text-sm font-medium mb-2">Authentication Required</p>
               <p className="text-xs text-muted-foreground mb-3">
-                You'll receive a magic link via email to complete your booking. If you already have an account, the link will sign you in automatically.
+                Please sign in or create an account to book this talent.
               </p>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => window.location.href = '/auth?mode=booker&intent=booking'}
+              >
+                Sign In / Sign Up
+              </Button>
             </div>
           ) : null}
           <p className="text-sm text-muted-foreground mb-6">
