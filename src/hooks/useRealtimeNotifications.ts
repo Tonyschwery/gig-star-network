@@ -2,10 +2,12 @@ import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useToast } from './use-toast';
+import { useWebPushNotifications } from './useWebPushNotifications';
 
 export const useRealtimeNotifications = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { showNotification, isSupported } = useWebPushNotifications();
 
   useEffect(() => {
     if (!user) return;
@@ -23,7 +25,7 @@ export const useRealtimeNotifications = () => {
           table: 'notifications',
           filter: `user_id=eq.${user.id}`
         },
-        (payload) => {
+        async (payload) => {
           console.log('New notification received:', payload);
           const notification = payload.new as any;
           
@@ -33,6 +35,19 @@ export const useRealtimeNotifications = () => {
             description: notification?.message || 'You have a new notification',
             duration: 5000,
           });
+
+          // Show push notification if supported
+          if (isSupported) {
+            const url = notification?.booking_id 
+              ? `/booker-dashboard?booking=${notification.booking_id}`
+              : '/';
+            
+            await showNotification(
+              notification?.title || 'New Notification',
+              notification?.message || 'You have a new notification',
+              url
+            );
+          }
         }
       )
       .on(
@@ -105,5 +120,5 @@ export const useRealtimeNotifications = () => {
       supabase.removeChannel(notificationChannel);
       supabase.removeChannel(talentBookingChannel);
     };
-  }, [user, toast]);
+  }, [user, toast, showNotification, isSupported]);
 };
