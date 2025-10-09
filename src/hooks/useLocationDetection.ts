@@ -257,65 +257,67 @@ export const useLocationDetection = () => {
     }
   }, [user, state.isDetecting]);
 
-  // Initialize on mount - Always auto-detect unless manually overridden
+  // Initialize on mount - Simplified and more reliable
   useEffect(() => {
-    // Load from localStorage first
-    const savedLocation = localStorage.getItem('userLocation');
-    const isOverride = localStorage.getItem('locationOverride') === 'true';
+    let mounted = true;
     
-    if (savedLocation && isOverride) {
-      // User manually set location, respect their choice
-      setState(prev => ({ ...prev, userLocation: savedLocation }));
-    }
-
-    // Load database preferences if logged in
-    if (user) {
-      loadUserPreferences();
-    }
-
-    // Always try IP-based detection for proximity sorting (non-intrusive)
-    // But prevent multiple simultaneous calls and use cache
-    if (!state.detectedLocation && !state.isDetecting) {
-      const cachedLocation = sessionStorage.getItem('detectedLocation');
-      const cacheTime = sessionStorage.getItem('detectedLocationTime');
-      const now = Date.now();
+    const initLocation = async () => {
+      // Load from localStorage first
+      const savedLocation = localStorage.getItem('userLocation');
+      const isOverride = localStorage.getItem('locationOverride') === 'true';
       
-      // Use cached location if it's less than 1 hour old
-      if (cachedLocation && cacheTime && (now - parseInt(cacheTime)) < 3600000) {
-        setState(prev => ({ ...prev, detectedLocation: cachedLocation }));
-        // Auto-apply if no manual override
-        if (!isOverride) {
-          setState(prev => ({ ...prev, userLocation: cachedLocation }));
-          localStorage.setItem('userLocation', cachedLocation);
+      if (savedLocation) {
+        if (mounted) {
+          setState(prev => ({ ...prev, userLocation: savedLocation }));
         }
-      } else {
-        // Only fetch if not already detecting
-        setState(prev => ({ ...prev, isDetecting: true }));
-        getLocationFromIP().then(ipLocation => {
-          if (ipLocation) {
-            setState(prev => ({ ...prev, detectedLocation: ipLocation, isDetecting: false }));
-            // Cache the result
-            sessionStorage.setItem('detectedLocation', ipLocation);
-            sessionStorage.setItem('detectedLocationTime', now.toString());
-            // Auto-apply if no manual override
-            if (!isOverride) {
-              setState(prev => ({ ...prev, userLocation: ipLocation }));
-              localStorage.setItem('userLocation', ipLocation);
-            }
-          } else {
-            setState(prev => ({ ...prev, isDetecting: false }));
-          }
-        }).catch(() => {
-          setState(prev => ({ ...prev, isDetecting: false }));
-        });
+        return; // Exit early if we have a saved location
       }
-    }
 
-    // Auto-detect on desktop unless manually overridden
-    if (!isMobile && !isOverride && !state.detectedLocation) {
-      detectLocation();
-    }
-  }, [user, loadUserPreferences, isMobile]);
+      // Load database preferences if logged in
+      if (user) {
+        try {
+          const { data } = await supabase
+            .from('user_preferences')
+            .select('preferred_location, location_override')
+            .eq('user_id', user.id)
+            .maybeSingle();
+
+          if (data?.preferred_location && mounted) {
+            setState(prev => ({ ...prev, userLocation: data.preferred_location }));
+            localStorage.setItem('userLocation', data.preferred_location);
+            localStorage.setItem('locationOverride', data.location_override?.toString() || 'false');
+            return; // Exit early if DB has location
+          }
+        } catch (error) {
+          console.error('Failed to load location preferences:', error);
+        }
+      }
+
+      // Only auto-detect if no saved location exists
+      if (!savedLocation && mounted) {
+        try {
+          const location = await getLocationFromIP();
+          if (location && mounted) {
+            setState(prev => ({ 
+              ...prev, 
+              userLocation: location,
+              detectedLocation: location 
+            }));
+            localStorage.setItem('userLocation', location);
+            localStorage.setItem('locationOverride', 'false');
+          }
+        } catch (error) {
+          console.error('Failed to auto-detect location:', error);
+        }
+      }
+    };
+
+    initLocation();
+
+    return () => {
+      mounted = false;
+    };
+  }, [user]);
 
   return {
     userLocation: state.userLocation,
