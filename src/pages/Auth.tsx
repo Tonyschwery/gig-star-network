@@ -25,6 +25,7 @@ const Auth = () => {
 
   const { state } = useLocation();
   const mode = state?.mode || "booker";
+  const verificationMessage = state?.message; // Email verification message from redirect
 
   const title = mode === "booker" ? "Welcome to Qtalent" : "Talent Access";
   const description = "Sign in or create an account with a magic link.";
@@ -251,7 +252,28 @@ const Auth = () => {
           <CardHeader className="text-center">
             <CardTitle className="text-2xl">{title}</CardTitle>
             <CardDescription>{description}</CardDescription>
-            {intentMessage && (
+            
+            {/* Email Verification Message */}
+            {verificationMessage && (
+              <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg border-2 border-blue-200 dark:border-blue-800">
+                <div className="flex items-start gap-3">
+                  <Mail className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                  <div className="text-left">
+                    <p className="text-sm font-semibold text-blue-900 dark:text-blue-100 mb-1">
+                      📧 Email Verification Required
+                    </p>
+                    <p className="text-sm text-blue-800 dark:text-blue-200">
+                      {verificationMessage}
+                    </p>
+                    <p className="text-xs text-blue-700 dark:text-blue-300 mt-2">
+                      After verifying your email, return here to sign in.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {intentMessage && !verificationMessage && (
               <div className="mt-3 p-3 bg-primary/10 rounded-lg border border-primary/20">
                 <p className="text-sm font-medium text-primary mb-2">{intentMessage}</p>
                 <p className="text-xs text-muted-foreground">
