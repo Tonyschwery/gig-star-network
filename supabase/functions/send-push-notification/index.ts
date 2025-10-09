@@ -50,7 +50,7 @@ serve(async (req) => {
 
     console.log(`Found ${subscriptions.length} subscription(s) for user`);
 
-    // Send push notification to all subscriptions
+    // Get VAPID keys
     const vapidPublicKey = Deno.env.get('VAPID_PUBLIC_KEY');
     const vapidPrivateKey = Deno.env.get('VAPID_PRIVATE_KEY');
 
@@ -62,6 +62,25 @@ serve(async (req) => {
       );
     }
 
+    // Import web-push dynamically
+    const webpush = await import('npm:web-push@3.6.7');
+    
+    // Set VAPID details
+    webpush.default.setVapidDetails(
+      'mailto:qtalents@proton.me',
+      vapidPublicKey,
+      vapidPrivateKey
+    );
+
+    const payload = JSON.stringify({
+      title,
+      body,
+      url: url || '/',
+      bookingId,
+      tag: bookingId ? `booking-${bookingId}` : 'qtalent-notification',
+    });
+
+    // Send notifications to all subscriptions
     const results = await Promise.allSettled(
       subscriptions.map(async (sub) => {
         try {
@@ -73,45 +92,22 @@ serve(async (req) => {
             },
           };
 
-          const payload = JSON.stringify({
-            title,
-            body,
-            url: url || '/',
-            bookingId,
-            tag: bookingId ? `booking-${bookingId}` : 'qtalent-notification',
-          });
-
-          // Using web-push library pattern
-          const headers = new Headers();
-          headers.set('Content-Type', 'application/json');
-          headers.set('TTL', '86400'); // 24 hours
-
-          // For production, you would use the web-push library to generate proper VAPID headers
-          // This is a simplified version for demonstration
-          const response = await fetch(sub.endpoint, {
-            method: 'POST',
-            headers,
-            body: payload,
-          });
-
-          if (!response.ok) {
-            console.error(`Failed to send notification to endpoint: ${sub.endpoint}`);
-            
-            // If subscription is invalid, remove it
-            if (response.status === 410 || response.status === 404) {
-              await supabase
-                .from('push_subscriptions')
-                .delete()
-                .eq('id', sub.id);
-              console.log('Removed invalid subscription');
-            }
-            
-            return { success: false, endpoint: sub.endpoint, status: response.status };
-          }
-
+          await webpush.default.sendNotification(pushSubscription, payload);
+          
+          console.log('Successfully sent notification to:', sub.endpoint);
           return { success: true, endpoint: sub.endpoint };
-        } catch (error) {
+        } catch (error: any) {
           console.error('Error sending to subscription:', error);
+          
+          // If subscription is invalid (410 Gone or 404 Not Found), remove it
+          if (error.statusCode === 410 || error.statusCode === 404) {
+            console.log('Removing invalid subscription:', sub.endpoint);
+            await supabase
+              .from('push_subscriptions')
+              .delete()
+              .eq('id', sub.id);
+          }
+          
           return { success: false, endpoint: sub.endpoint, error: error.message };
         }
       })
@@ -129,7 +125,7 @@ serve(async (req) => {
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     );
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error in send-push-notification:', error);
     return new Response(
       JSON.stringify({ success: false, error: error.message }),

@@ -29,11 +29,22 @@
     <!-- PWA Meta Tags -->
     <link rel="manifest" href="/manifest.json" />
     <meta name="theme-color" content="#9b87f5" />
+    
+    <!-- iOS PWA Support -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Qtalent" />
     <link rel="apple-touch-icon" href="/pwa-icon.svg" />
+    <link rel="apple-touch-icon" sizes="192x192" href="/pwa-icon.svg" />
+    <link rel="apple-touch-icon" sizes="512x512" href="/pwa-icon.svg" />
+    
+    <!-- Android PWA Support -->
     <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="application-name" content="Qtalent" />
+    
+    <!-- Notification Support -->
+    <meta name="notification-permissions-policy" content="self" />
+    <meta name="push-messaging-permissions-policy" content="self" />
     <style>
       /* Styles for the react-phone-number-input component */
       .phone-input .PhoneInputInput {

@@ -45,7 +45,8 @@ export const useRealtimeNotifications = () => {
             await showNotification(
               notification?.title || 'New Notification',
               notification?.message || 'You have a new notification',
-              url
+              url,
+              notification?.booking_id
             );
           }
         }

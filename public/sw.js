@@ -111,18 +111,31 @@ self.addEventListener('notificationclick', (event) => {
   
   event.notification.close();
   
+  // Handle action clicks
+  if (event.action === 'close') {
+    return;
+  }
+  
   // Get the URL from notification data or use default
-  const urlToOpen = event.notification.data?.url || '/';
+  const urlToOpen = new URL(event.notification.data?.url || '/', self.location.origin).href;
   
   event.waitUntil(
     clients.matchAll({
       type: 'window',
       includeUncontrolled: true
     }).then((clientList) => {
-      // Check if there's already a window open with this URL
+      // Check if there's already a window open
       for (const client of clientList) {
-        if (client.url === urlToOpen && 'focus' in client) {
-          return client.focus();
+        const clientUrl = new URL(client.url).origin;
+        const targetUrl = new URL(urlToOpen).origin;
+        
+        if (clientUrl === targetUrl && 'focus' in client) {
+          // Focus the existing window and navigate to the URL
+          return client.focus().then(() => {
+            if ('navigate' in client) {
+              return client.navigate(urlToOpen);
+            }
+          });
         }
       }
       // If no window is open, open a new one
@@ -137,34 +150,44 @@ self.addEventListener('notificationclick', (event) => {
 self.addEventListener('push', (event) => {
   console.log('Push notification received:', event);
   
-  let data = { title: 'Qtalent', body: 'You have a new notification' };
+  let data = { 
+    title: 'Qtalent', 
+    body: 'You have a new notification',
+    url: '/',
+    tag: 'qtalent-notification'
+  };
   
   if (event.data) {
     try {
-      data = event.data.json();
+      const parsed = event.data.json();
+      data = { ...data, ...parsed };
     } catch (e) {
-      data.body = event.data.text();
+      console.error('Error parsing push data:', e);
+      data.body = event.data.text() || data.body;
     }
   }
   
   const options = {
-    body: data.body,
+    body: data.body || 'You have a new notification',
     icon: '/pwa-icon.svg',
     badge: '/favicon.ico',
+    vibrate: [200, 100, 200],
     data: {
       url: data.url || '/',
+      bookingId: data.bookingId,
       dateOfArrival: Date.now(),
     },
     actions: [
-      { action: 'open', title: 'Open', icon: '/favicon.ico' },
-      { action: 'close', title: 'Close', icon: '/favicon.ico' }
+      { action: 'open', title: 'Open' },
+      { action: 'close', title: 'Dismiss' }
     ],
-    tag: data.tag || 'default-notification',
+    tag: data.tag || data.bookingId ? `booking-${data.bookingId}` : 'qtalent-notification',
     requireInteraction: false,
+    silent: false,
   };
   
   event.waitUntil(
-    self.registration.showNotification(data.title, options)
+    self.registration.showNotification(data.title || 'Qtalent', options)
   );
 });
 

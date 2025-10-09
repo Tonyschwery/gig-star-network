@@ -33,29 +33,48 @@ export const useWebPushNotifications = () => {
   }, [isSupported, user]);
 
   const requestPermission = async () => {
-    if (!isSupported || !user) return false;
+    if (!isSupported || !user) {
+      console.log('Push notifications not supported or user not logged in');
+      return false;
+    }
 
     try {
-      const permission = await Notification.requestPermission();
-      if (permission !== 'granted') {
-        console.log('Notification permission denied');
+      // Check if already granted
+      if (Notification.permission === 'granted') {
+        console.log('Notification permission already granted');
+      } else if (Notification.permission === 'denied') {
+        console.log('Notification permission was denied');
         return false;
+      } else {
+        // Request permission
+        const permission = await Notification.requestPermission();
+        if (permission !== 'granted') {
+          console.log('Notification permission denied');
+          return false;
+        }
       }
 
-      // Subscribe to push notifications
+      // Wait for service worker to be ready
       const registration = await navigator.serviceWorker.ready;
+      console.log('Service worker ready for push subscription');
+      
+      // Check for existing subscription
       const existingSub = await registration.pushManager.getSubscription();
       
       if (existingSub) {
         console.log('Already subscribed to push notifications');
+        setSubscription(existingSub);
+        setIsSubscribed(true);
         return true;
       }
 
       // Create new subscription
       const newSub = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY) as unknown as BufferSource
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY) as BufferSource
       });
+
+      console.log('Push subscription created:', newSub.endpoint);
 
       // Store subscription in Supabase
       const subscriptionData = newSub.toJSON();
@@ -72,6 +91,7 @@ export const useWebPushNotifications = () => {
 
       if (error) {
         console.error('Error storing subscription:', error);
+        await newSub.unsubscribe();
         return false;
       }
 
@@ -108,30 +128,44 @@ export const useWebPushNotifications = () => {
     }
   };
 
-  const showNotification = async (title: string, body: string, url?: string) => {
-    if (!isSupported) return;
+  const showNotification = async (title: string, body: string, url?: string, bookingId?: string) => {
+    if (!isSupported) {
+      console.log('Notifications not supported');
+      return;
+    }
 
-    const hasPermission = await requestPermission();
-    if (!hasPermission) return;
+    try {
+      // Ensure permission is granted
+      if (Notification.permission !== 'granted') {
+        const granted = await requestPermission();
+        if (!granted) return;
+      }
 
-    // Get service worker registration to show notification
-    const registration = await navigator.serviceWorker.ready;
-    
-    await registration.showNotification(title, {
-      body,
-      icon: '/pwa-icon.svg',
-      badge: '/favicon.ico',
-      data: {
-        url: url || '/',
-        dateOfArrival: Date.now(),
-      },
-      actions: [
-        { action: 'open', title: 'Open' },
-        { action: 'close', title: 'Close' }
-      ],
-      tag: 'qtalent-notification',
-      requireInteraction: false,
-    } as NotificationOptions);
+      // Get service worker registration to show notification
+      const registration = await navigator.serviceWorker.ready;
+      
+      await registration.showNotification(title, {
+        body,
+        icon: '/pwa-icon.svg',
+        badge: '/favicon.ico',
+        data: {
+          url: url || '/',
+          bookingId,
+          dateOfArrival: Date.now(),
+        },
+        actions: [
+          { action: 'open', title: 'Open' },
+          { action: 'close', title: 'Dismiss' }
+        ],
+        tag: bookingId ? `booking-${bookingId}` : 'qtalent-notification',
+        requireInteraction: false,
+        silent: false,
+      } as NotificationOptions & { vibrate?: number[] });
+      
+      console.log('Notification shown:', title);
+    } catch (error) {
+      console.error('Error showing notification:', error);
+    }
   };
 
   return {
