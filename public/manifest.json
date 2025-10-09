@@ -1,0 +1,42 @@
+{
+  "name": "Qtalent - Book Live Talent for Any Event",
+  "short_name": "Qtalent",
+  "description": "Connect with exceptional live talent for your events. Book verified performers, musicians, artists, and creators with ease.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0A0118",
+  "theme_color": "#9b87f5",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "/pwa-icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["entertainment", "business", "productivity"],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Find Talent",
+      "short_name": "Find",
+      "description": "Browse and book talent",
+      "url": "/",
+      "icons": [{ "src": "/favicon.ico", "sizes": "96x96" }]
+    },
+    {
+      "name": "My Dashboard",
+      "short_name": "Dashboard",
+      "description": "Access your dashboard",
+      "url": "/booker-dashboard",
+      "icons": [{ "src": "/favicon.ico", "sizes": "96x96" }]
+    }
+  ]
+}

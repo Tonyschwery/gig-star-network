@@ -25,6 +25,15 @@
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@qtalentlive" />
     <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+    
+    <!-- PWA Meta Tags -->
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#9b87f5" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Qtalent" />
+    <link rel="apple-touch-icon" href="/pwa-icon.svg" />
+    <meta name="mobile-web-app-capable" content="yes" />
     <style>
       /* Styles for the react-phone-number-input component */
       .phone-input .PhoneInputInput {
@@ -57,11 +66,11 @@
     <script type="module" src="/src/main.tsx"></script>
     <!-- Service Worker Registration with Cache Management -->
     <script>
-      //if ('serviceWorker' in navigator) {
-        //window.addEventListener('load', function() {
-          //navigator.serviceWorker.register('/sw.js')
-            //.then(function(registration) {
-              //console.log('SW registered: ', registration);
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+          navigator.serviceWorker.register('/sw.js')
+            .then(function(registration) {
+              console.log('SW registered: ', registration);
 
               // Listen for service worker messages
               navigator.serviceWorker.addEventListener('message', function(event) {

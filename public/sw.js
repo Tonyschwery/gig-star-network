@@ -1,8 +1,34 @@
 import { cleanupOutdatedCaches, createHandlerBoundToURL, precacheAndRoute } from "workbox-precaching";
 import { NavigationRoute, registerRoute } from "workbox-routing";
+import { NetworkFirst, CacheFirst, StaleWhileRevalidate } from "workbox-strategies";
+import { ExpirationPlugin } from "workbox-expiration";
+import { CacheableResponsePlugin } from "workbox-cacheable-response";
+
+const CACHE_VERSION = 'v1';
+const STATIC_CACHE = `qtalent-static-${CACHE_VERSION}`;
+const RUNTIME_CACHE = `qtalent-runtime-${CACHE_VERSION}`;
 
 self.addEventListener("message", (event) => {
-  if (event.data && event.data.type === "SKIP_WAITING") self.skipWaiting();
+  if (event.data && event.data.type === "SKIP_WAITING") {
+    self.skipWaiting();
+  }
+  
+  // Handle cache clearing messages
+  if (event.data && event.data.type === "CLEAR_ALL_CACHE") {
+    event.waitUntil(
+      caches.keys().then((cacheNames) => {
+        return Promise.all(
+          cacheNames.map((cacheName) => caches.delete(cacheName))
+        );
+      })
+    );
+  }
+  
+  if (event.data && event.data.type === "CLEAR_DYNAMIC_CACHE") {
+    event.waitUntil(
+      caches.delete(RUNTIME_CACHE)
+    );
+  }
 });
 
 const manifest = self.__WB_MANIFEST;
@@ -19,10 +45,7 @@ let allowlist;
 // In dev mode, only allowlist the root for PWA testing
 if (import.meta.env.DEV) allowlist = [/^\/$/];
 
-// ✅ THIS IS THE FIX ✅
-// We are creating a 'denylist' to tell the service worker to
-// completely ignore the auth callback path. This prevents it from
-// stripping the login token from the URL.
+// Denylist for paths that should not be cached
 const denylist = [/^\/auth\/callback/];
 
 // Fallback to the root for single-page app navigation
@@ -33,17 +56,118 @@ const navigationRoute = new NavigationRoute(handler, {
 });
 registerRoute(navigationRoute);
 
-// Custom logic for clearing caches on logout etc.
+// Cache static assets (images, fonts, CSS, JS) with CacheFirst strategy
+registerRoute(
+  ({ request }) => 
+    request.destination === 'image' ||
+    request.destination === 'font' ||
+    request.destination === 'style' ||
+    request.destination === 'script',
+  new CacheFirst({
+    cacheName: STATIC_CACHE,
+    plugins: [
+      new CacheableResponsePlugin({
+        statuses: [0, 200],
+      }),
+      new ExpirationPlugin({
+        maxEntries: 60,
+        maxAgeSeconds: 30 * 24 * 60 * 60, // 30 Days
+      }),
+    ],
+  })
+);
+
+// Never cache API requests - always fetch from network
+registerRoute(
+  ({ url }) => 
+    url.origin === 'https://myxizupccweukrxfdqmc.supabase.co' ||
+    url.pathname.startsWith('/functions/') ||
+    url.pathname.includes('/rest/') ||
+    url.pathname.includes('/auth/') ||
+    url.pathname.includes('/storage/'),
+  new NetworkFirst({
+    cacheName: RUNTIME_CACHE,
+    networkTimeoutSeconds: 10,
+    plugins: [
+      new CacheableResponsePlugin({
+        statuses: [0, 200],
+      }),
+    ],
+  })
+);
+
+// Handle push notification clicks
+self.addEventListener('notificationclick', (event) => {
+  console.log('Notification clicked:', event.notification);
+  
+  event.notification.close();
+  
+  // Get the URL from notification data or use default
+  const urlToOpen = event.notification.data?.url || '/';
+  
+  event.waitUntil(
+    clients.matchAll({
+      type: 'window',
+      includeUncontrolled: true
+    }).then((clientList) => {
+      // Check if there's already a window open with this URL
+      for (const client of clientList) {
+        if (client.url === urlToOpen && 'focus' in client) {
+          return client.focus();
+        }
+      }
+      // If no window is open, open a new one
+      if (clients.openWindow) {
+        return clients.openWindow(urlToOpen);
+      }
+    })
+  );
+});
+
+// Handle push notifications
+self.addEventListener('push', (event) => {
+  console.log('Push notification received:', event);
+  
+  let data = { title: 'Qtalent', body: 'You have a new notification' };
+  
+  if (event.data) {
+    try {
+      data = event.data.json();
+    } catch (e) {
+      data.body = event.data.text();
+    }
+  }
+  
+  const options = {
+    body: data.body,
+    icon: '/pwa-icon.svg',
+    badge: '/favicon.ico',
+    data: {
+      url: data.url || '/',
+      dateOfArrival: Date.now(),
+    },
+    actions: [
+      { action: 'open', title: 'Open', icon: '/favicon.ico' },
+      { action: 'close', title: 'Close', icon: '/favicon.ico' }
+    ],
+    tag: data.tag || 'default-notification',
+    requireInteraction: false,
+  };
+  
+  event.waitUntil(
+    self.registration.showNotification(data.title, options)
+  );
+});
+
+// Custom logic for clearing caches
 self.addEventListener("fetch", (event) => {
   if (event.request.mode === "navigate" && event.request.url.includes("?clearCache=true")) {
-    // Logic to clear caches
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          // Add logic to selectively clear caches if needed
-          return caches.delete(cacheName);
-        }),
-      );
-    });
+    event.waitUntil(
+      caches.keys().then((cacheNames) => {
+        return Promise.all(
+          cacheNames.map((cacheName) => caches.delete(cacheName))
+        );
+      })
+    );
   }
 });

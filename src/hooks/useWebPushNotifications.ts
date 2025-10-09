@@ -34,19 +34,30 @@ export const useWebPushNotifications = () => {
     return permission === 'granted';
   };
 
-  const showNotification = async (title: string, body: string) => {
+  const showNotification = async (title: string, body: string, url?: string) => {
     if (!isSupported) return;
 
     const hasPermission = await requestPermission();
     if (!hasPermission) return;
 
-    // For now, show browser notification directly
-    // In a real app, you'd set up push subscription and server-side push
-    new Notification(title, {
+    // Get service worker registration to show notification
+    const registration = await navigator.serviceWorker.ready;
+    
+    await registration.showNotification(title, {
       body,
-      icon: '/favicon.ico',
-      tag: 'chat-message'
-    });
+      icon: '/pwa-icon.svg',
+      badge: '/favicon.ico',
+      data: {
+        url: url || '/',
+        dateOfArrival: Date.now(),
+      },
+      actions: [
+        { action: 'open', title: 'Open' },
+        { action: 'close', title: 'Close' }
+      ],
+      tag: 'qtalent-notification',
+      requireInteraction: false,
+    } as NotificationOptions);
   };
 
   return {

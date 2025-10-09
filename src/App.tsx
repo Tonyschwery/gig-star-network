@@ -10,6 +10,7 @@ import { UserModeProvider } from "./contexts/UserModeContext";
 import { ChatProvider } from "./contexts/ChatContext";
 import { ProStatusProvider } from "./contexts/ProStatusContext";
 import { UniversalChat } from "./components/UniversalChat";
+import { PWAInstallPrompt } from "./components/PWAInstallPrompt";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import BookerDashboard from "./pages/BookerDashboard";
@@ -40,6 +41,7 @@ const AppContent = () => {
       <Toaster />
       <Sonner />
       <UniversalChat />
+      <PWAInstallPrompt />
       <Routes>
         <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/" element={<Index />} />
