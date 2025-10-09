@@ -251,8 +251,26 @@ export default function TalentOnboarding() {
         location: formData.location || userLocation || detectedLocation || "",
       };
 
+      // Check if user already exists
+      const { data: existingUser } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('email', email.toLowerCase().trim())
+        .maybeSingle();
+
+      if (existingUser) {
+        toast({
+          title: "Account already exists!",
+          description: "This email is already registered. Please sign in instead.",
+          variant: "destructive",
+          duration: 5000,
+        });
+        setLoading(false);
+        return;
+      }
+
       const { error: otpError } = await supabase.auth.signInWithOtp({
-        email,
+        email: email.toLowerCase().trim(),
         options: {
           emailRedirectTo: `${window.location.origin}/talent-dashboard`,
           data: {
@@ -264,7 +282,20 @@ export default function TalentOnboarding() {
         },
       });
 
-      if (otpError) throw otpError;
+      if (otpError) {
+        // Handle duplicate email error
+        if (otpError.message.includes("already registered") || otpError.message.includes("duplicate")) {
+          toast({
+            title: "Account already exists!",
+            description: "This email is already registered. Please sign in instead.",
+            variant: "destructive",
+            duration: 5000,
+          });
+          setLoading(false);
+          return;
+        }
+        throw otpError;
+      }
 
       localStorage.removeItem("talent_onboarding_draft");
 

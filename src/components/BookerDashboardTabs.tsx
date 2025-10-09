@@ -6,6 +6,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { BookingCard, Booking } from "./BookingCard";
 import { EventRequestCard, EventRequest } from "./EventRequestCard";
+import { useRealtimeBookings } from "@/hooks/useRealtimeBookings";
+import { useRealtimeEventRequests } from "@/hooks/useRealtimeEventRequests";
 
 const PAGE_SIZE = 10; // We will load 10 items at a time
 
@@ -90,6 +92,10 @@ export const BookerDashboardTabs = ({ userId }: { userId: string }) => {
     useEffect(() => {
         fetchInitialData();
     }, [fetchInitialData]);
+
+    // Enable realtime updates for bookings and event requests
+    useRealtimeBookings(fetchInitialData);
+    useRealtimeEventRequests(fetchInitialData);
 
     const loadMoreBookings = async () => {
         if (!userId || loadingMoreBookings) return;

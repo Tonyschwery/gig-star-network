@@ -55,11 +55,31 @@ const Auth = () => {
       return;
     }
 
+    // Check if user already exists (for signup only)
+    if (isSignUp) {
+      const { data: existingUser } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('email', email.toLowerCase().trim())
+        .maybeSingle();
+
+      if (existingUser) {
+        toast({
+          title: "Account already exists!",
+          description: "This email is already registered. Please use the 'Sign In' tab instead.",
+          variant: "destructive",
+          duration: 5000,
+        });
+        setLoading(false);
+        return;
+      }
+    }
+
     const redirectTo = new URL(`${window.location.origin}/auth/callback`);
     redirectTo.searchParams.set("state", JSON.stringify(state || {}));
 
     const { error } = await supabase.auth.signInWithOtp({
-      email,
+      email: email.toLowerCase().trim(),
       options: {
         emailRedirectTo: redirectTo.toString(),
         data: isSignUp ? { name: name, user_type: userType } : {},
@@ -67,10 +87,23 @@ const Auth = () => {
     });
 
     if (error) {
+      // Handle specific error cases
+      let errorMessage = error.message;
+      let errorTitle = "Authentication failed";
+
+      if (error.message.includes("already registered") || error.message.includes("duplicate")) {
+        errorTitle = "Account already exists!";
+        errorMessage = "This email is already registered. Please use 'Sign In' instead.";
+      } else if (error.message.includes("not found") && !isSignUp) {
+        errorTitle = "Account not found";
+        errorMessage = "No account found with this email. Please 'Sign Up' first.";
+      }
+
       toast({ 
-        title: "Authentication failed", 
-        description: error.message, 
-        variant: "destructive" 
+        title: errorTitle, 
+        description: errorMessage, 
+        variant: "destructive",
+        duration: 5000,
       });
     } else {
       toast({ 
@@ -130,7 +163,10 @@ const Auth = () => {
             <CardDescription>{description}</CardDescription>
             {intentMessage && (
               <div className="mt-3 p-3 bg-primary/10 rounded-lg border border-primary/20">
-                <p className="text-sm font-medium text-primary">{intentMessage}</p>
+                <p className="text-sm font-medium text-primary mb-2">{intentMessage}</p>
+                <p className="text-xs text-muted-foreground">
+                  ✨ <strong>New here?</strong> Switch to the "Sign Up" tab to create your account first!
+                </p>
               </div>
             )}
           </CardHeader>

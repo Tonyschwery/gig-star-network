@@ -6,6 +6,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BookingCard, Booking } from "./BookingCard"; // THE FIX: Import the strict Booking interface
 import { EventRequestCard, EventRequest } from "./EventRequestCard"; // THE FIX: Import the strict EventRequest interface
 import { useTalentBookingLimit } from '@/hooks/useTalentBookingLimit';
+import { useRealtimeBookings } from '@/hooks/useRealtimeBookings';
+import { useRealtimeEventRequests } from '@/hooks/useRealtimeEventRequests';
 
 interface TalentProfile {
     id: string;
@@ -96,6 +98,10 @@ export const TalentDashboardTabs = ({ profile }: TalentDashboardTabsProps) => {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  // Enable realtime updates for bookings and event requests
+  useRealtimeBookings(fetchData);
+  useRealtimeEventRequests(fetchData);
 
     if (loading) {
         return (

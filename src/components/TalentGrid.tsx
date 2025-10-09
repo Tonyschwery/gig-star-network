@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useLocationDetection } from "@/hooks/useLocationDetection";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useRealtimeTalentProfiles } from "@/hooks/useRealtimeTalentProfiles";
 
 interface TalentProfile {
   id: string;
