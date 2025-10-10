@@ -5,6 +5,8 @@ import { useNavigate } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { EventRequestForm } from '@/components/EventRequestForm';
 import { useAuth } from '@/hooks/useAuth';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft } from 'lucide-react';
 
 const YourEvent = () => {
   const { user, loading } = useAuth();
@@ -30,6 +32,15 @@ const YourEvent = () => {
       <Header />
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-2xl mx-auto">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate(-1)}
+            className="mb-4 flex items-center gap-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back
+          </Button>
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold gradient-text">Tell Us About Your Event</h1>
             <p className="text-muted-foreground mt-2">

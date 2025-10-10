@@ -301,6 +301,11 @@ export function Header() {
                         } else {
                           navigate('/#talents');
                         }
+                        // Close mobile menu
+                        const mobileMenuClose = document.querySelector('[data-mobile-menu-close]') as HTMLElement;
+                        if (mobileMenuClose) {
+                          mobileMenuClose.click();
+                        }
                       }}
                       className="text-left text-foreground hover:text-accent transition-colors font-medium py-2"
                     >

@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Music, AlertCircle } from "lucide-react";
+import { Music, AlertCircle, ArrowLeft } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { countries } from "@/lib/countries";
 import { SimpleAvatarUpload } from "@/components/SimpleAvatarUpload";
@@ -436,12 +436,22 @@ export default function TalentOnboarding() {
         <Card className="w-full border-0 shadow-lg">
           <CardHeader className="text-center px-3 sm:px-6 py-3 sm:py-4">
           <div className="flex items-center justify-between">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate('/')}
+              className="flex items-center gap-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              <span className="hidden sm:inline">Back</span>
+            </Button>
             <div className="flex-1">
               <CardTitle className="text-xl sm:text-2xl font-bold flex items-center justify-center gap-2">
                 <Music className="h-5 w-5 sm:h-6 sm:w-6" /> Complete Your Talent Profile
               </CardTitle>
               <p className="text-muted-foreground mt-2 text-sm">Tell us about yourself to get started as a talent</p>
             </div>
+            <div className="w-[60px]"></div>
           </div>
           </CardHeader>
           <CardContent className="px-3 sm:px-6 pb-4 sm:pb-6">
