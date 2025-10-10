@@ -138,26 +138,21 @@ serve(async (req) => {
       if (!verifyResponse.ok) {
         const errorText = await verifyResponse.text();
         console.error('Webhook verification API call failed:', errorText);
-        // For live mode testing, be more lenient
-        if (isLiveMode) {
-          console.log('Live mode - proceeding without signature verification for initial testing');
-        } else {
-          return new Response(JSON.stringify({ error: 'Webhook verification failed' }), {
-            status: 401,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          });
-        }
-      } else {
-        const verificationResult: PayPalWebhookVerificationResponse = await verifyResponse.json();
-        console.log('Webhook verification result:', verificationResult);
+        return new Response(JSON.stringify({ error: 'Webhook verification failed' }), {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
 
-        if (verificationResult.verification_status !== 'SUCCESS' && !isLiveMode) {
-          console.error('Webhook signature invalid:', verificationResult);
-          return new Response(JSON.stringify({ error: 'Invalid webhook signature' }), {
-            status: 401,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          });
-        }
+      const verificationResult: PayPalWebhookVerificationResponse = await verifyResponse.json();
+      console.log('Webhook verification result:', verificationResult);
+
+      if (verificationResult.verification_status !== 'SUCCESS') {
+        console.error('Webhook signature invalid:', verificationResult);
+        return new Response(JSON.stringify({ error: 'Invalid webhook signature' }), {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
       }
     } else {
       console.log('Skipping webhook verification (no webhook ID provided)');
@@ -320,6 +315,174 @@ serve(async (req) => {
         user_id: customId,
         subscription_id: subscription.id,
         event_type: webhookEvent.event_type
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Handle subscription cancellation
+    if (webhookEvent.event_type === 'BILLING.SUBSCRIPTION.CANCELLED') {
+      const subscription = webhookEvent.resource;
+      console.log('=== PROCESSING SUBSCRIPTION CANCELLATION ===');
+      console.log('Subscription ID:', subscription.id);
+
+      // Find user by paypal_subscription_id
+      const { data: profile, error: findError } = await supabase
+        .from('talent_profiles')
+        .select('user_id, artist_name')
+        .eq('paypal_subscription_id', subscription.id)
+        .single();
+
+      if (findError || !profile) {
+        console.error('User profile not found for subscription:', subscription.id);
+        return new Response(JSON.stringify({ 
+          error: 'User profile not found',
+          subscription_id: subscription.id 
+        }), {
+          status: 404,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // Update subscription to cancelled
+      const { error: updateError } = await supabase
+        .from('talent_profiles')
+        .update({
+          subscription_status: 'cancelled',
+          is_pro_subscriber: false,
+          cancelled_at: new Date().toISOString(),
+        })
+        .eq('paypal_subscription_id', subscription.id);
+
+      if (updateError) {
+        console.error('Failed to update subscription:', updateError);
+        return new Response(JSON.stringify({ 
+          error: 'Failed to cancel subscription',
+          supabase_error: updateError.message 
+        }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // Create notification
+      await supabase
+        .from('notifications')
+        .insert({
+          user_id: profile.user_id,
+          type: 'subscription_cancelled',
+          title: 'Subscription Cancelled',
+          message: 'Your Pro subscription has been cancelled. You will retain Pro features until the end of your billing period.'
+        });
+
+      return new Response(JSON.stringify({ 
+        success: true, 
+        message: 'Subscription cancelled successfully',
+        subscription_id: subscription.id
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Handle subscription updates
+    if (webhookEvent.event_type === 'BILLING.SUBSCRIPTION.UPDATED') {
+      const subscription = webhookEvent.resource;
+      console.log('=== PROCESSING SUBSCRIPTION UPDATE ===');
+      console.log('Subscription ID:', subscription.id);
+      console.log('New Status:', subscription.status);
+
+      // Find user by paypal_subscription_id
+      const { data: profile, error: findError } = await supabase
+        .from('talent_profiles')
+        .select('user_id')
+        .eq('paypal_subscription_id', subscription.id)
+        .single();
+
+      if (findError || !profile) {
+        console.error('User profile not found for subscription:', subscription.id);
+        return new Response(JSON.stringify({ 
+          error: 'User profile not found',
+          subscription_id: subscription.id 
+        }), {
+          status: 404,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // Determine new period end if billing info available
+      let periodEndDate = null;
+      if (subscription.billing_info?.next_billing_time) {
+        periodEndDate = subscription.billing_info.next_billing_time;
+      }
+
+      // Update subscription details
+      const updateData: any = {
+        subscription_status: subscription.status === 'ACTIVE' ? 'active' : subscription.status.toLowerCase(),
+      };
+
+      if (periodEndDate) {
+        updateData.current_period_end = periodEndDate;
+      }
+
+      const { error: updateError } = await supabase
+        .from('talent_profiles')
+        .update(updateData)
+        .eq('paypal_subscription_id', subscription.id);
+
+      if (updateError) {
+        console.error('Failed to update subscription:', updateError);
+        return new Response(JSON.stringify({ 
+          error: 'Failed to update subscription',
+          supabase_error: updateError.message 
+        }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      return new Response(JSON.stringify({ 
+        success: true, 
+        message: 'Subscription updated successfully',
+        subscription_id: subscription.id,
+        new_status: subscription.status
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Handle payment denied
+    if (webhookEvent.event_type === 'PAYMENT.SALE.DENIED') {
+      console.log('=== PROCESSING PAYMENT DENIED ===');
+      const resource = webhookEvent.resource as any;
+      const subscriptionId = resource.billing_agreement_id;
+
+      if (subscriptionId) {
+        // Find user by paypal_subscription_id
+        const { data: profile, error: findError } = await supabase
+          .from('talent_profiles')
+          .select('user_id, artist_name')
+          .eq('paypal_subscription_id', subscriptionId)
+          .single();
+
+        if (profile && !findError) {
+          // Create notification for payment failure
+          await supabase
+            .from('notifications')
+            .insert({
+              user_id: profile.user_id,
+              type: 'payment_failed',
+              title: 'Payment Failed',
+              message: 'Your subscription payment was declined. Please update your payment method to continue your Pro subscription.'
+            });
+
+          console.log('Payment denied notification sent to user:', profile.user_id);
+        }
+      }
+
+      return new Response(JSON.stringify({ 
+        success: true, 
+        message: 'Payment denial processed',
+        subscription_id: subscriptionId
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
