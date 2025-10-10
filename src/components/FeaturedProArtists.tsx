@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Crown, MapPin, Music } from "lucide-react";
 import { ProBadge } from "./ProBadge";
 import { supabase } from "@/integrations/supabase/client";
@@ -126,7 +127,9 @@ export function FeaturedProArtists() {
                   </div>
                   <div className="flex items-center space-x-1 text-sm text-muted-foreground mb-2">
                     <Music className="h-3 w-3" />
-                    <span>{talent.act.charAt(0).toUpperCase() + talent.act.slice(1)}</span>
+                    <Badge variant="outline" className="text-xs font-bold bg-primary/10 border-primary/30 text-primary">
+                      {talent.act.toLowerCase() === 'dj' ? 'DJ' : talent.act.charAt(0).toUpperCase() + talent.act.slice(1)}
+                    </Badge>
                   </div>
                   <div className="flex items-center space-x-1 text-sm text-muted-foreground">
                     <MapPin className="h-3 w-3" />

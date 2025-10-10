@@ -288,6 +288,7 @@ function TalentCard({ talent }: TalentCardProps) {
     }
   };
 
+  // Format talent act display
   const formatAct = (act: string) => {
     if (act.toLowerCase() === 'dj') return 'DJ';
     return act.charAt(0).toUpperCase() + act.slice(1);
@@ -319,7 +320,9 @@ function TalentCard({ talent }: TalentCardProps) {
         
         <div className="absolute top-4 left-4 flex items-center space-x-2 bg-black/70 backdrop-blur-sm rounded-full px-3 py-1.5 text-white">
           {getActIcon(talent.act)}
-          <span className="text-sm font-medium">{formatAct(talent.act)}</span>
+          <Badge variant="outline" className="text-xs font-bold bg-primary/10 border-primary/30 text-primary">
+            {formatAct(talent.act)}
+          </Badge>
         </div>
         
         {talent.is_pro_subscriber && (

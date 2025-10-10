@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { Star, MapPin, Search, Music, Crown, HelpCircle, Calendar } from "lucide-react";
@@ -401,9 +402,11 @@ function FeaturedTalentCard({ id, name, location, category, image, isPro, rate, 
           {name}
         </h3>
         <div className="space-y-1">
-          <p className="text-muted-foreground text-sm font-medium">
-            {category}
-          </p>
+          <div className="flex justify-center">
+            <Badge variant="outline" className="text-xs font-bold bg-primary/10 border-primary/30 text-primary">
+              {category}
+            </Badge>
+          </div>
           <div className="flex items-center justify-center space-x-1">
             <MapPin className="h-3 w-3 text-muted-foreground flex-shrink-0" />
             <span className="text-xs text-muted-foreground truncate">{location}</span>

@@ -5,6 +5,7 @@ import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { ProBadge } from "@/components/ProBadge";
 import { BookingForm } from "@/components/BookingForm";
 import { Calendar, MapPin, Clock, Star, Music, User, Globe } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -45,6 +46,12 @@ export default function TalentProfile() {
   const [loading, setLoading] = useState(true);
   const [showBookingForm, setShowBookingForm] = useState(false);
   const isOwnProfile = user && profile?.id === id;
+
+  // Format talent act with proper capitalization and styling
+  const formatTalentAct = (act: string) => {
+    if (act.toLowerCase() === 'dj') return 'DJ';
+    return act.charAt(0).toUpperCase() + act.slice(1);
+  };
 
   useEffect(() => {
     const fetchTalent = async () => {
@@ -162,17 +169,16 @@ export default function TalentProfile() {
                   <div className="flex items-center gap-3 mb-4">
                     <h1 className="text-3xl font-bold">{talent.artist_name}</h1>
                     {talent.is_pro_subscriber && (
-                      <Badge variant="secondary" className="bg-gradient-to-r from-purple-500 to-pink-500 text-white">
-                        <Star className="w-3 h-3 mr-1" />
-                        Pro
-                      </Badge>
+                      <ProBadge size="default" />
                     )}
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <Music className="w-4 h-4" />
-                      <span className="capitalize">{talent.act}</span>
+                      <Badge variant="outline" className="text-sm font-bold bg-primary/10 border-primary/30 text-primary">
+                        {formatTalentAct(talent.act)}
+                      </Badge>
                     </div>
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <MapPin className="w-4 h-4" />
