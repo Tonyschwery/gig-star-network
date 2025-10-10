@@ -123,8 +123,7 @@ export function Header() {
 
 
   const handleManageSubscription = () => {
-    // This will be handled by the SubscriptionButton/ProfileMenu components
-    // No direct PayPal redirect needed here anymore
+    setShowSubscriptionModal(true);
   };
 
 
@@ -185,17 +184,11 @@ export function Header() {
                     How it works
                   </button>
                   <button 
-                    onClick={() => {
-                      const upgradeSection = document.getElementById('upgrade-to-pro');
-                      if (upgradeSection) {
-                        upgradeSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                      } else {
-                        navigate("/#upgrade-to-pro");
-                      }
-                    }}
-                    className="text-foreground hover:text-accent transition-colors font-medium"
+                    onClick={() => setShowSubscriptionModal(true)}
+                    className="text-foreground hover:text-accent transition-colors font-medium flex items-center gap-2"
                   >
-                    
+                    <Crown className="h-4 w-4" />
+                    Upgrade to Pro
                   </button>
                 </>
               )}
