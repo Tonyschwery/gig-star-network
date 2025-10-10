@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -41,6 +42,8 @@ export default function TalentProfile() {
   const location = useLocation();
   const { user, profile } = useAuth();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
+  const bookButtonRef = useRef<HTMLButtonElement>(null);
   
   const [talent, setTalent] = useState<TalentProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -92,6 +95,28 @@ export default function TalentProfile() {
     fetchTalent();
   }, [id, toast]);
 
+  // Auto-scroll to Book button on page load
+  useEffect(() => {
+    if (!loading && talent && bookButtonRef.current && !isOwnProfile) {
+      const scrollToButton = () => {
+        const button = bookButtonRef.current;
+        if (!button) return;
+
+        const rect = button.getBoundingClientRect();
+        const isInViewport = rect.top >= 0 && rect.bottom <= window.innerHeight;
+
+        // On mobile: always scroll. On desktop: only scroll if not visible
+        if (isMobile || !isInViewport) {
+          button.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      };
+
+      // Small delay to ensure page is fully rendered
+      const timer = setTimeout(scrollToButton, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [loading, talent, isOwnProfile, isMobile]);
+
   // Auto-open booking form if redirected from auth with intent
   useEffect(() => {
     if (location.state?.openBookingForm && user && talent) {
@@ -103,6 +128,11 @@ export default function TalentProfile() {
 
   const handleBookNow = () => {
     if (!user) {
+      // Store booking intent in localStorage for post-auth redirect
+      localStorage.setItem('bookingIntent', JSON.stringify({ 
+        talentId: id, 
+        talentName: talent?.artist_name 
+      }));
       navigate('/auth', { state: { intent: 'booking-form', talentId: id, mode: 'booker' } });
     } else {
       setShowBookingForm(true);
@@ -204,7 +234,12 @@ export default function TalentProfile() {
 
                   {/* Book Now Button */}
                   {!isOwnProfile && (
-                    <Button onClick={handleBookNow} size="lg" className="w-full md:w-auto">
+                    <Button 
+                      ref={bookButtonRef}
+                      onClick={handleBookNow} 
+                      size="lg" 
+                      className="w-full md:w-auto"
+                    >
                       <Calendar className="h-4 w-4 mr-2" />
                       {user ? 'Book Now' : 'Sign In to Book'}
                     </Button>

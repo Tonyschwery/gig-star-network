@@ -4,10 +4,12 @@ import { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Session } from "@supabase/supabase-js";
+import { useToast } from "@/hooks/use-toast";
 
 const AuthCallback = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { toast } = useToast();
 
   useEffect(() => {
     // Check if this is a password recovery callback
@@ -53,8 +55,28 @@ const AuthCallback = () => {
       const talentId = state?.talentId;
       const from = state?.from?.pathname || null;
 
+      // Check for stored booking intent in localStorage
+      const storedIntent = localStorage.getItem('bookingIntent');
+      let bookingData = null;
+      if (storedIntent) {
+        try {
+          bookingData = JSON.parse(storedIntent);
+          localStorage.removeItem('bookingIntent'); // Clean up immediately
+        } catch (e) {
+          console.error('Error parsing booking intent:', e);
+        }
+      }
+
       if (user.email === "admin@qtalent.live") {
         navigate("/admin", { replace: true });
+      } else if (bookingData?.talentId) {
+        // Redirect to talent profile with booking form open
+        toast({
+          title: "Welcome! 🎉",
+          description: `You can now book ${bookingData.talentName || 'your talent'}.`,
+          duration: 4000,
+        });
+        navigate(`/talent/${bookingData.talentId}`, { state: { openBookingForm: true }, replace: true });
       } else if (intent === "event-form") {
         navigate("/your-event", { replace: true });
       } else if (intent === "booking-form" && talentId) {
