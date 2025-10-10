@@ -15,6 +15,7 @@ import { LocationSelector } from "@/components/LocationSelector";
 
 import { ProfileMenu } from "@/components/ProfileMenu";
 import { SubscriptionButton } from "@/components/SubscriptionButton";
+import { SubscriptionModal } from "@/components/SubscriptionModal";
 import { ModeSwitch } from "@/components/ModeSwitch";
 import { useUserMode } from "@/contexts/UserModeContext";
 import { useUnreadNotifications } from "@/hooks/useUnreadNotifications";
@@ -31,6 +32,7 @@ export function Header() {
   const [isProTalent, setIsProTalent] = useState<boolean>(false);
   const [profilePictureUrl, setProfilePictureUrl] = useState<string | null>(null);
   const [showHowItWorksModal, setShowHowItWorksModal] = useState(false);
+  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   
   const isMobile = useIsMobile();
   
@@ -335,21 +337,17 @@ export function Header() {
                     
                     <button 
                       onClick={() => {
-                        const upgradeSection = document.getElementById('upgrade-to-pro');
-                        if (upgradeSection) {
-                          upgradeSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                        } else {
-                          navigate("/#upgrade-to-pro");
-                        }
+                        setShowSubscriptionModal(true);
                         // Close mobile menu
                         const mobileMenuClose = document.querySelector('[data-mobile-menu-close]') as HTMLElement;
                         if (mobileMenuClose) {
                           mobileMenuClose.click();
                         }
                       }}
-                      className="text-left text-foreground hover:text-accent transition-colors font-medium py-2"
+                      className="text-left text-foreground hover:text-accent transition-colors font-medium py-2 flex items-center gap-2"
                     >
-                      
+                      <Crown className="h-4 w-4" />
+                      Upgrade to Pro
                     </button>
                   </>
                 )}
@@ -454,6 +452,11 @@ export function Header() {
       <HowItWorksModal 
         open={showHowItWorksModal}
         onOpenChange={setShowHowItWorksModal}
+      />
+
+      <SubscriptionModal 
+        open={showSubscriptionModal}
+        onOpenChange={setShowSubscriptionModal}
       />
     </>
   );
