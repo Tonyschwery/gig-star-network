@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { useEmailNotifications } from "@/hooks/useEmailNotifications";
 import { ArrowLeft, Mail } from "lucide-react";
 
 const Auth = () => {
@@ -24,6 +25,7 @@ const Auth = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, loading: authLoading } = useAuth();
+  const { sendUserSignupEmails } = useEmailNotifications();
 
   const { state } = useLocation();
   const mode = state?.mode || "booker";
@@ -131,6 +133,14 @@ const Auth = () => {
             description: "Your account has been created successfully. Redirecting...",
             duration: 3000,
           });
+          
+          // Get the newly created user to send welcome emails
+          const { data: { user: newUser } } = await supabase.auth.getUser();
+          if (newUser) {
+            // Send welcome emails (to user and admin notification)
+            await sendUserSignupEmails(newUser.id, name, email.toLowerCase().trim());
+          }
+          
           setTimeout(() => navigate(state?.from?.pathname || "/"), 1000);
         }
       } else {

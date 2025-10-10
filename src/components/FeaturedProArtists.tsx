@@ -104,20 +104,25 @@ export function FeaturedProArtists() {
           {featuredTalents.map((talent) => (
             <Card 
               key={talent.id} 
-              className="overflow-hidden glass-card hover:shadow-elevated transition-all duration-300 hover:scale-105 group cursor-pointer relative"
+              className="overflow-hidden glass-card hover:shadow-elevated transition-all duration-500 hover:scale-105 hover:-translate-y-2 group cursor-pointer relative border-2 border-amber-500/20 hover:border-amber-500/50 animate-fade-in"
               onClick={() => navigate(`/talent/${talent.id}`)}
             >
               {/* Pro Badge */}
-              <div className="absolute top-3 right-3 z-10">
+              <div className="absolute top-3 right-3 z-10 animate-scale-in">
                 <ProBadge size="sm" />
               </div>
 
-              <div className="aspect-square overflow-hidden">
+              {/* Shine effect on hover */}
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 pointer-events-none z-10" />
+
+              <div className="aspect-square overflow-hidden relative">
                 <img 
                   src={talent.picture_url || "/placeholder.svg"} 
                   alt={talent.artist_name}
                   className="w-full h-full object-cover object-center group-hover:scale-110 transition-transform duration-500"
                 />
+                {/* Gradient overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               </div>
               
               <CardContent className="p-4 space-y-3">
@@ -153,30 +158,24 @@ export function FeaturedProArtists() {
                   )}
                 </div>
 
-                <div className="flex items-center justify-between">
-                  <div className="text-right">
-                    {talent.rate_per_hour ? (
-                      <>
-                        <div className="text-lg font-bold text-brand-primary">
-                          {getCurrencySymbol(talent.currency)}{talent.rate_per_hour}
-                        </div>
-                        <div className="text-xs text-muted-foreground">per hour</div>
-                      </>
-                    ) : (
-                      <div className="text-sm text-muted-foreground">
-                        Contact for rates
+                <div className="text-right">
+                  {talent.rate_per_hour ? (
+                    <>
+                      <div className="text-lg font-bold text-brand-primary">
+                        {getCurrencySymbol(talent.currency)}{talent.rate_per_hour}
                       </div>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-1 text-xs text-amber-500">
-                    <Crown className="h-3 w-3" />
-                    <span>Pro Member</span>
-                  </div>
+                      <div className="text-xs text-muted-foreground">per hour</div>
+                    </>
+                  ) : (
+                    <div className="text-sm text-muted-foreground">
+                      Contact for rates
+                    </div>
+                  )}
                 </div>
 
                 <Button 
                   variant="outline" 
-                  className="w-full"
+                  className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
                   onClick={(e) => {
                     e.stopPropagation();
                     navigate(`/talent/${talent.id}`);

@@ -523,16 +523,22 @@ const TalentProfileEdit = () => {
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
                     <Label className="text-sm font-medium">SoundCloud Link</Label>
+                    <p className="text-xs text-muted-foreground mb-2">
+                      Add a link to your DJ mix set or music track (not your profile page). Example: soundcloud.com/artist/track-name
+                    </p>
                     <Input
-                      placeholder="https://soundcloud.com/..."
+                      placeholder="https://soundcloud.com/artist/your-mix-set"
                       value={profile.soundcloud_link || ""}
                       onChange={(e) => handleFieldChange("soundcloud_link", e.target.value)}
                     />
                   </div>
                   <div>
-                    <Label className="text-sm font-medium">YouTube Link</Label>
+                    <Label className="text-sm font-medium">YouTube Video Link</Label>
+                    <p className="text-xs text-muted-foreground mb-2">
+                      Add a link to a specific video performance (not your channel page). Example: youtube.com/watch?v=VIDEO_ID
+                    </p>
                     <Input
-                      placeholder="https://youtube.com/..."
+                      placeholder="https://youtube.com/watch?v=VIDEO_ID"
                       value={profile.youtube_link || ""}
                       onChange={(e) => handleFieldChange("youtube_link", e.target.value)}
                     />
