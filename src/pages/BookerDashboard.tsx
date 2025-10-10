@@ -83,16 +83,16 @@ const BookerDashboard = () => {
               <Button 
                 variant="outline" 
                 onClick={() => navigate('/')}
-                className="flex-shrink-0"
-                size="sm"
+                className="flex-shrink-0 border-2 border-blue-500 hover:bg-blue-500/10 hover:border-blue-600 transition-all"
+                size="default"
               >
                 Browse Talents
               </Button>
               <Button 
                 variant="outline" 
                 onClick={() => navigate('/your-event')}
-                className="flex-shrink-0"
-                size="sm"
+                className="flex-shrink-0 border-2 border-green-500 hover:bg-green-500/10 hover:border-green-600 transition-all"
+                size="default"
               >
                 Tell us about your event
               </Button>
