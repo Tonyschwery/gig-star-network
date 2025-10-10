@@ -36,7 +36,7 @@ const AdminUsers = () => {
       
       const { data: talentsData, error: talentsError } = await supabase
         .from('talent_profiles')
-        .select('id, user_id, artist_name, is_pro_subscriber, subscription_status');
+        .select('id, user_id, artist_name, is_pro_subscriber, subscription_status, provider, manual_grant_expires_at');
       if (talentsError) throw talentsError;
       
       setUsers(usersData || []);
@@ -149,9 +149,12 @@ const AdminUsers = () => {
                           {user.user_type}
                         </Badge>
                         {talent?.is_pro_subscriber && (
-                          <Badge variant="secondary" className="text-xs">
+                          <Badge 
+                            variant="secondary" 
+                            className={`text-xs ${talent.provider === 'manual' ? 'bg-blue-500/10 text-blue-600 border-blue-500/20' : ''}`}
+                          >
                             <Crown className="h-3 w-3 mr-1" />
-                            Pro
+                            Pro {talent.provider === 'manual' && '(Admin)'}
                           </Badge>
                         )}
                       </div>

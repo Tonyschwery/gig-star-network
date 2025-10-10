@@ -22,7 +22,10 @@ interface SubscriptionData {
   planId?: string;
   currentPeriodEnd?: string;
   subscriptionStartedAt?: string;
-  paypal_subscription_id?: string; // We need this ID for the cancellation link
+  paypal_subscription_id?: string;
+  provider?: string; // 'paypal' or 'manual'
+  manualGrantExpiresAt?: string;
+  grantedByAdminId?: string;
 }
 
 export function SubscriptionButton({ 
@@ -48,10 +51,10 @@ export function SubscriptionButton({
     if (!user) return;
 
     try {
-      // Fetch the paypal_subscription_id along with other data
+      // Fetch subscription data including provider info
       const { data, error } = await supabase
         .from('talent_profiles')
-        .select('is_pro_subscriber, subscription_status, plan_id, current_period_end, subscription_started_at, paypal_subscription_id')
+        .select('is_pro_subscriber, subscription_status, plan_id, current_period_end, subscription_started_at, paypal_subscription_id, provider, manual_grant_expires_at, granted_by_admin_id')
         .eq('user_id', user.id)
         .maybeSingle();
 
@@ -68,6 +71,9 @@ export function SubscriptionButton({
           currentPeriodEnd: data.current_period_end || undefined,
           subscriptionStartedAt: data.subscription_started_at || undefined,
           paypal_subscription_id: data.paypal_subscription_id || undefined,
+          provider: data.provider || 'paypal',
+          manualGrantExpiresAt: data.manual_grant_expires_at || undefined,
+          grantedByAdminId: data.granted_by_admin_id || undefined,
         });
       }
     } catch (error) {

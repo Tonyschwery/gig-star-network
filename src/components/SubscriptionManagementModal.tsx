@@ -28,6 +28,9 @@ interface SubscriptionManagementModalProps {
     currentPeriodEnd?: string;
     subscriptionStartedAt?: string;
     paypal_subscription_id?: string;
+    provider?: string;
+    manualGrantExpiresAt?: string;
+    grantedByAdminId?: string;
   };
 }
 
@@ -74,8 +77,20 @@ export function SubscriptionManagementModal({
   const progress = calculateProgress(subscriptionData?.subscriptionStartedAt, subscriptionData?.currentPeriodEnd);
   const isExpiringSoon = daysRemaining <= 7 && daysRemaining > 0;
   
+  const isManualGrant = subscriptionData?.provider === 'manual';
+
   const handleCancelSubscription = () => {
-    // Instead of redirecting, open our own confirmation dialog
+    // Check if this is a manual grant
+    if (isManualGrant) {
+      toast({
+        title: "Cannot Cancel",
+        description: "Your Pro subscription was granted by an administrator. Please contact support to make changes.",
+        variant: "default",
+      });
+      return;
+    }
+    
+    // For PayPal subscriptions, open confirmation dialog
     setIsConfirmingCancel(true);
   };
 
@@ -195,26 +210,48 @@ export function SubscriptionManagementModal({
                     <Calendar className="h-4 w-4" /> Manage Subscription
                   </h4>
                   <div className="space-y-4">
-                    <div className="flex items-start gap-3 p-4 bg-secondary/30 rounded-lg">
-                      <AlertTriangle className="h-5 w-5 text-brand-warning mt-0.5" />
-                      <div className="flex-1">
-                        <p className="text-sm font-medium mb-1">Cancellation Policy</p>
-                        <p className="text-xs text-muted-foreground">
-                          If you cancel, you'll keep Pro access until {formatDate(subscriptionData.currentPeriodEnd)}. 
-                          After that, your account will revert to the free plan.
-                        </p>
+                    {isManualGrant ? (
+                      <div className="flex items-start gap-3 p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                        <Crown className="h-5 w-5 text-blue-500 mt-0.5" />
+                        <div className="flex-1">
+                          <p className="text-sm font-medium mb-1">Admin-Granted Subscription</p>
+                          <p className="text-xs text-muted-foreground mb-2">
+                            Your Pro subscription was granted by an administrator. This is not a PayPal subscription.
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {subscriptionData.manualGrantExpiresAt && 
+                              `Access until: ${formatDate(subscriptionData.manualGrantExpiresAt)}`
+                            }
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-2">
+                            To make changes to your subscription, please contact support.
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                    <Button 
-                      variant="destructive" 
-                      onClick={handleCancelSubscription}
-                      className="w-full"
-                    >
-                      Cancel Subscription
-                    </Button>
-                    <p className="text-xs text-muted-foreground text-center">
-                      Your subscription will be cancelled via PayPal.
-                    </p>
+                    ) : (
+                      <>
+                        <div className="flex items-start gap-3 p-4 bg-secondary/30 rounded-lg">
+                          <AlertTriangle className="h-5 w-5 text-brand-warning mt-0.5" />
+                          <div className="flex-1">
+                            <p className="text-sm font-medium mb-1">Cancellation Policy</p>
+                            <p className="text-xs text-muted-foreground">
+                              If you cancel, you'll keep Pro access until {formatDate(subscriptionData.currentPeriodEnd)}. 
+                              After that, your account will revert to the free plan.
+                            </p>
+                          </div>
+                        </div>
+                        <Button 
+                          variant="destructive" 
+                          onClick={handleCancelSubscription}
+                          className="w-full"
+                        >
+                          Cancel Subscription
+                        </Button>
+                        <p className="text-xs text-muted-foreground text-center">
+                          Your subscription will be cancelled via PayPal.
+                        </p>
+                      </>
+                    )}
                   </div>
                 </Card>
               </>

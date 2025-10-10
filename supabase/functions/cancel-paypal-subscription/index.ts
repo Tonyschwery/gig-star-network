@@ -38,7 +38,31 @@ Deno.serve(async (req) => {
       throw new Error('No subscription ID provided');
     }
 
-    console.log('Cancelling PayPal subscription:', subscriptionId, 'for user:', user.id);
+    console.log('Cancelling subscription:', subscriptionId, 'for user:', user.id);
+
+    // Check if this is a manual grant (not a PayPal subscription)
+    const { data: profile, error: profileError } = await supabase
+      .from('talent_profiles')
+      .select('provider, is_pro_subscriber')
+      .eq('user_id', user.id)
+      .eq('paypal_subscription_id', subscriptionId)
+      .maybeSingle();
+
+    if (profileError) {
+      console.error('Error fetching profile:', profileError);
+      throw new Error('Failed to verify subscription');
+    }
+
+    if (!profile) {
+      throw new Error('Subscription not found for this user');
+    }
+
+    // Prevent cancellation of manual grants via this endpoint
+    if (profile.provider === 'manual') {
+      throw new Error('Cannot cancel admin-granted subscriptions via this method. Please contact an administrator.');
+    }
+
+    console.log('Verified PayPal subscription, proceeding with cancellation');
 
     // Get PayPal credentials (use live credentials)
     const clientId = Deno.env.get('PAYPAL_LIVE_CLIENT_ID');

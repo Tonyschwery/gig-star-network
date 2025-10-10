@@ -691,14 +691,17 @@ export type Database = {
           custom_genre: string | null
           gallery_images: string[] | null
           gender: Database["public"]["Enums"]["talent_gender"]
+          granted_by_admin_id: string | null
           id: string
           is_pro_subscriber: boolean
           location: string | null
+          manual_grant_expires_at: string | null
           music_genres: string[]
           nationality: string
           paypal_subscription_id: string | null
           picture_url: string | null
           plan_id: string | null
+          provider: string | null
           rate_per_hour: number | null
           soundcloud_link: string | null
           subscription_started_at: string | null
@@ -718,14 +721,17 @@ export type Database = {
           custom_genre?: string | null
           gallery_images?: string[] | null
           gender: Database["public"]["Enums"]["talent_gender"]
+          granted_by_admin_id?: string | null
           id?: string
           is_pro_subscriber?: boolean
           location?: string | null
+          manual_grant_expires_at?: string | null
           music_genres?: string[]
           nationality: string
           paypal_subscription_id?: string | null
           picture_url?: string | null
           plan_id?: string | null
+          provider?: string | null
           rate_per_hour?: number | null
           soundcloud_link?: string | null
           subscription_started_at?: string | null
@@ -745,14 +751,17 @@ export type Database = {
           custom_genre?: string | null
           gallery_images?: string[] | null
           gender?: Database["public"]["Enums"]["talent_gender"]
+          granted_by_admin_id?: string | null
           id?: string
           is_pro_subscriber?: boolean
           location?: string | null
+          manual_grant_expires_at?: string | null
           music_genres?: string[]
           nationality?: string
           paypal_subscription_id?: string | null
           picture_url?: string | null
           plan_id?: string | null
+          provider?: string | null
           rate_per_hour?: number | null
           soundcloud_link?: string | null
           subscription_started_at?: string | null
@@ -909,6 +918,10 @@ export type Database = {
           user_metadata: Json
           user_type: string
         }[]
+      }
+      admin_revoke_manual_subscription: {
+        Args: { talent_id_param: string }
+        Returns: Json
       }
       admin_send_direct_message: {
         Args: { message_content: string; target_user_id: string }
