@@ -33,21 +33,23 @@ export default function TrustSafety() {
     {
       title: "For Event Organizers",
       items: [
-        "Always communicate through our platform messaging system",
-        "Verify talent credentials and reviews before booking",
-        "Provide clear event details and requirements upfront",
-        "Report any suspicious behavior immediately",
-        "Keep all agreements and negotiations on platform"
+        "Book through our official platform for protection",
+        "Verify talent profiles and credentials before booking",
+        "Communicate event details clearly in advance",
+        "Keep all communication within platform messaging",
+        "Report suspicious behavior immediately",
+        "Never share sensitive personal or financial information outside platform"
       ]
     },
     {
       title: "For Talent",
       items: [
-        "Maintain accurate and honest profile information",
-        "Respond professionally to all client inquiries",
-        "Honor all confirmed bookings and agreements",
-        "Report inappropriate client behavior",
-        "Keep your verification documents up to date"
+        "Keep profile accurate and up to date",
+        "Review event details carefully before accepting",
+        "Trust your instincts - decline if uncomfortable",
+        "Maintain professional communication",
+        "Never share personal banking information",
+        "Report inappropriate requests or harassment"
       ]
     }
   ];

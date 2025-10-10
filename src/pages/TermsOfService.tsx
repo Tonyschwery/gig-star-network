@@ -39,8 +39,11 @@ export default function TermsOfService() {
 
               <section>
                 <h2 className="text-2xl font-bold mb-4">Platform Overview</h2>
+                <p className="text-muted-foreground mb-3">
+                  Qtalent.live is a marketplace platform connecting talented performers with event organizers. We facilitate bookings but are not party to the actual agreements between talents and organizers.
+                </p>
                 <p className="text-muted-foreground">
-                  Qtalent.live is a platform that connects event organizers with talented performers, musicians, and creators. We facilitate bookings and provide tools for communication. Payment arrangements are made directly between talent and bookers.
+                  By using our platform, you agree to these Terms of Service and our Privacy Policy. If you do not agree with these terms, please do not use our services.
                 </p>
               </section>
 
@@ -50,15 +53,15 @@ export default function TermsOfService() {
                   <div>
                     <h3 className="text-lg font-semibold mb-2">Account Creation</h3>
                     <p className="text-muted-foreground">
-                      You must provide accurate and complete information when creating an account. You are responsible for maintaining the security of your account credentials.
+                      You must be at least 18 years old to create an account. You must provide accurate, complete, and current information. You are responsible for maintaining the confidentiality of your account credentials and for all activities under your account.
                     </p>
                   </div>
                   
                   <div>
                     <h3 className="text-lg font-semibold mb-2">Account Types</h3>
                     <ul className="space-y-2 text-muted-foreground">
-                      <li>• <strong>Talent Accounts:</strong> For performers offering services</li>
-                      <li>• <strong>Client Accounts:</strong> For event organizers booking talent</li>
+                      <li>• <strong>Talent:</strong> Create profiles, showcase skills, accept bookings</li>
+                      <li>• <strong>Event Organizer (Booker):</strong> Search talent, make booking requests, manage events</li>
                     </ul>
                   </div>
                 </div>

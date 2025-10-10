@@ -183,7 +183,7 @@ export function Header() {
                   >
                     How it works
                   </button>
-                  {user && talentName && (
+                  {user && talentName && mode === 'artist' && (
                     <button 
                       onClick={() => setShowSubscriptionModal(true)}
                       className="text-foreground hover:text-accent transition-colors font-medium flex items-center gap-2"
@@ -214,7 +214,7 @@ export function Header() {
                    {/* No complete profile button needed - profiles are completed during signup */}
                    
                    {/* Only show subscription button in artist dashboard mode if not already shown in nav */}
-                  {talentName && !showArtistDashboardNav && (
+                  {talentName && !showArtistDashboardNav && mode === 'artist' && (
                     <SubscriptionButton
                       isProSubscriber={isProTalent}
                       onSubscriptionChange={fetchTalentProfile}
@@ -330,7 +330,7 @@ export function Header() {
                       How it works
                     </button>
                     
-                    {user && talentName && (
+                    {user && talentName && mode === 'artist' && (
                       <button 
                         onClick={() => {
                           setShowSubscriptionModal(true);
@@ -384,7 +384,7 @@ export function Header() {
                     </div>
                        {/* No complete profile button needed - profiles are completed during signup */}
                        
-                       {talentName && !showArtistDashboardNav && (
+                       {talentName && !showArtistDashboardNav && mode === 'artist' && (
                         <SubscriptionButton
                           isProSubscriber={isProTalent}
                           onSubscriptionChange={fetchTalentProfile}
@@ -394,7 +394,7 @@ export function Header() {
                         />
                       )}
                       
-                      {talentName && showArtistDashboardNav && (
+                      {talentName && showArtistDashboardNav && mode === 'artist' && (
                         <SubscriptionButton
                           isProSubscriber={isProTalent}
                           onSubscriptionChange={fetchTalentProfile}
