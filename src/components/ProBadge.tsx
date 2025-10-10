@@ -24,14 +24,33 @@ export function ProBadge({ size = "default", className, showIcon = true }: ProBa
   return (
     <Badge 
       className={cn(
-        "bg-gradient-to-r from-amber-500 to-yellow-600 text-white border-2 border-amber-400 shadow-lg hover:shadow-xl transition-all duration-300 relative overflow-hidden",
-        "hover:from-amber-600 hover:to-yellow-700",
+        // Premium gold gradient with beveled edge effect
+        "bg-gradient-to-br from-yellow-400 via-amber-500 to-yellow-600",
+        "text-white border-2 border-yellow-300/50",
+        // 3D beveled effect with multiple shadows
+        "shadow-[0_2px_0_rgb(180,83,9),0_4px_8px_rgba(234,179,8,0.4),inset_0_1px_0_rgba(255,255,255,0.3),inset_0_-2px_0_rgba(180,83,9,0.3)]",
+        "hover:shadow-[0_3px_0_rgb(180,83,9),0_6px_12px_rgba(234,179,8,0.5),inset_0_1px_0_rgba(255,255,255,0.4),inset_0_-2px_0_rgba(180,83,9,0.4)]",
+        // Subtle animation and transform
+        "transition-all duration-300 relative overflow-hidden",
+        "hover:translate-y-[-1px] active:translate-y-[1px]",
+        // Shine effect overlay
+        "before:absolute before:inset-0 before:bg-gradient-to-r before:from-transparent before:via-white/20 before:to-transparent",
+        "before:-translate-x-full hover:before:translate-x-full before:transition-transform before:duration-700",
         sizeClasses[size],
         className
       )}
     >
-      {showIcon && <Crown className={cn("mr-1.5 drop-shadow-sm", iconSizes[size])} />}
-      <span className="relative z-10 drop-shadow-sm tracking-wide">PRO</span>
+      {showIcon && (
+        <Crown 
+          className={cn(
+            "mr-1.5 drop-shadow-[0_1px_2px_rgba(180,83,9,0.8)]", 
+            iconSizes[size]
+          )} 
+        />
+      )}
+      <span className="relative z-10 drop-shadow-[0_1px_2px_rgba(180,83,9,0.8)] tracking-wide font-black">
+        PRO
+      </span>
     </Badge>
   );
 }

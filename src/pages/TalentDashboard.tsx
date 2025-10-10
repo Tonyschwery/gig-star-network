@@ -10,6 +10,7 @@ import { NotificationCenter } from "@/components/NotificationCenter";
 import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
 import { TalentDashboardTabs } from "@/components/TalentDashboardTabs";
 import { SubscriptionButton } from "@/components/SubscriptionButton";
+import { ProBadge } from "@/components/ProBadge";
 import { Badge } from "@/components/ui/badge";
 import { ModeSwitch } from "@/components/ModeSwitch";
 import { useUnreadMessages } from "@/hooks/useUnreadMessages";
@@ -65,7 +66,7 @@ const TalentDashboard = () => {
                  <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold gradient-text">
                    Welcome, {profile.artist_name || 'Talent'}!
                  </h1>
-                 {profile.is_pro_subscriber && <Badge><Crown className="h-3 w-3 mr-1" />PRO</Badge>}
+                 {profile.is_pro_subscriber && <ProBadge size="sm" />}
                </div>
               <p className="text-muted-foreground text-sm sm:text-base">Manage your bookings and event opportunities</p>
             </div>

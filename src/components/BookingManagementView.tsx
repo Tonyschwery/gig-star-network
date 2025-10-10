@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 
 import { SubscriptionButton } from "@/components/SubscriptionButton";
+import { ProBadge } from "@/components/ProBadge";
 // THE FIX: The 'BookingRequests' component was deleted, so we remove the import.
 // import { BookingRequests } from "@/components/BookingRequests"; 
 import { NotificationCenter } from "@/components/NotificationCenter";
@@ -80,7 +81,7 @@ export const BookingManagementView = ({
                   {title.replace('{name}', profile.artist_name)}
                 </h1>
                 {profile.is_pro_subscriber && (
-                  <Badge className="pro-badge"><Crown className="h-3 w-3 mr-1" />PRO</Badge>
+                  <ProBadge size="sm" />
                 )}
               </div>
               <p className="text-muted-foreground text-sm sm:text-base">{subtitle}</p>

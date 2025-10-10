@@ -8,6 +8,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { Crown, Trash2, Shield, ShieldOff } from 'lucide-react';
+import { ProBadge } from '@/components/ProBadge';
 
 // Define a type for your user data
 interface AppUser {
@@ -149,12 +150,15 @@ const AdminUsers = () => {
                           {user.user_type}
                         </Badge>
                         {talent?.is_pro_subscriber && (
-                          <Badge 
-                            variant="secondary" 
-                            className={`text-xs ${talent.provider === 'manual' ? 'bg-blue-500/10 text-blue-600 border-blue-500/20' : ''}`}
-                          >
-                            <Crown className="h-3 w-3 mr-1" />
-                            Pro {talent.provider === 'manual' && '(Admin)'}
+                          <ProBadge 
+                            size="sm" 
+                            className={talent.provider === 'manual' ? 'bg-gradient-to-br from-blue-400 via-blue-500 to-blue-600 border-blue-300/50' : ''}
+                            showIcon={true}
+                          />
+                        )}
+                        {talent?.provider === 'manual' && talent?.is_pro_subscriber && (
+                          <Badge variant="outline" className="text-xs bg-blue-500/10 text-blue-600 border-blue-500/20">
+                            Admin Grant
                           </Badge>
                         )}
                       </div>
