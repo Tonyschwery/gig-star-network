@@ -99,9 +99,11 @@ export const BookingCard = ({ booking, mode, onUpdate, onRemove, shouldBlurConta
             {booking.event_duration} hours
           </div>
         </div>
-        <Badge variant={getStatusBadgeVariant(booking.status)} className="capitalize">
-          {booking.status}
-        </Badge>
+        {booking.status !== "pending" && (
+          <Badge variant={getStatusBadgeVariant(booking.status)} className="capitalize">
+            {booking.status}
+          </Badge>
+        )}
       </div>
 
       <div className="border-t pt-3 space-y-2">
