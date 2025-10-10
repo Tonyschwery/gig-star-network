@@ -49,7 +49,7 @@ export const UniversalChat = () => {
     if (messages.length > 0) {
       updateConversationBuffer(messages);
     }
-  }, [messages, updateConversationBuffer]);
+  }, [messages]);
 
   // Communicate interaction state to context
   useEffect(() => {
