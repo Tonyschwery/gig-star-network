@@ -183,13 +183,15 @@ export function Header() {
                   >
                     How it works
                   </button>
-                  <button 
-                    onClick={() => setShowSubscriptionModal(true)}
-                    className="text-foreground hover:text-accent transition-colors font-medium flex items-center gap-2"
-                  >
-                    <Crown className="h-4 w-4" />
-                    Upgrade to Pro
-                  </button>
+                  {user && talentName && (
+                    <button 
+                      onClick={() => setShowSubscriptionModal(true)}
+                      className="text-foreground hover:text-accent transition-colors font-medium flex items-center gap-2"
+                    >
+                      <Crown className="h-4 w-4" />
+                      Upgrade to Pro
+                    </button>
+                  )}
                 </>
               )}
             </div>
@@ -328,20 +330,22 @@ export function Header() {
                       How it works
                     </button>
                     
-                    <button 
-                      onClick={() => {
-                        setShowSubscriptionModal(true);
-                        // Close mobile menu
-                        const mobileMenuClose = document.querySelector('[data-mobile-menu-close]') as HTMLElement;
-                        if (mobileMenuClose) {
-                          mobileMenuClose.click();
-                        }
-                      }}
-                      className="text-left text-foreground hover:text-accent transition-colors font-medium py-2 flex items-center gap-2"
-                    >
-                      <Crown className="h-4 w-4" />
-                      Upgrade to Pro
-                    </button>
+                    {user && talentName && (
+                      <button 
+                        onClick={() => {
+                          setShowSubscriptionModal(true);
+                          // Close mobile menu
+                          const mobileMenuClose = document.querySelector('[data-mobile-menu-close]') as HTMLElement;
+                          if (mobileMenuClose) {
+                            mobileMenuClose.click();
+                          }
+                        }}
+                        className="text-left text-foreground hover:text-accent transition-colors font-medium py-2 flex items-center gap-2"
+                      >
+                        <Crown className="h-4 w-4" />
+                        Upgrade to Pro
+                      </button>
+                    )}
                   </>
                 )}
 
