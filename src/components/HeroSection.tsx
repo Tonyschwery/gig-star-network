@@ -250,7 +250,7 @@ export function HeroSection() {
                         id={talent.id}
                         name={talent.artist_name}
                         location={talent.location || 'Location not specified'}
-                        category={talent.act.charAt(0).toUpperCase() + talent.act.slice(1)}
+                        category={talent.act.toLowerCase() === 'dj' ? 'DJ' : talent.act.charAt(0).toUpperCase() + talent.act.slice(1)}
                         image={talent.picture_url || "/placeholder.svg"}
                         isPro={talent.is_pro_subscriber}
                         rate={talent.rate_per_hour}

@@ -106,9 +106,7 @@ export function TalentGrid() {
       const locationQuery = activeFilters.location.toLowerCase();
       filtered = filtered.filter(talent => {
         const talentLocation = talent.location?.toLowerCase() || '';
-        const talentNationality = talent.nationality?.toLowerCase() || '';
-        return talentLocation.includes(locationQuery) || 
-               talentNationality.includes(locationQuery);
+        return talentLocation.includes(locationQuery);
       });
     }
 
@@ -291,6 +289,7 @@ function TalentCard({ talent }: TalentCardProps) {
   };
 
   const formatAct = (act: string) => {
+    if (act.toLowerCase() === 'dj') return 'DJ';
     return act.charAt(0).toUpperCase() + act.slice(1);
   };
 
