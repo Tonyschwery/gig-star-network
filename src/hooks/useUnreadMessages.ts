@@ -1,10 +1,11 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { useChat } from '@/contexts/ChatContext';
 
 export const useUnreadMessages = () => {
   const { user } = useAuth();
+  const { viewedChats } = useChat();
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
@@ -53,6 +54,11 @@ export const useUnreadMessages = () => {
         let totalUnread = 0;
         
         for (const bookingId of allBookingIds) {
+          // Skip if this chat has been viewed
+          if (viewedChats.has(`booking_${bookingId}`)) {
+            continue;
+          }
+
           const { data: lastMessage } = await supabase
             .from('chat_messages')
             .select('sender_id, created_at')
@@ -100,7 +106,7 @@ export const useUnreadMessages = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user]);
+  }, [user, viewedChats]);
 
   return { unreadCount, loading };
 };

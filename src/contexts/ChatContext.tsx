@@ -30,6 +30,7 @@ interface ChatContextType {
   closeChat: () => void;
   channelInfo: ChannelInfo | null;
   setUserInteracting: (isInteracting: boolean) => void;
+  viewedChats: Set<string>;
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -46,6 +47,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [channelInfo, setChannelInfo] = useState<ChannelInfo | null>(null);
   const [userInteracting, setUserInteracting] = useState(false);
+  const [viewedChats, setViewedChats] = useState<Set<string>>(new Set());
 
   // Load messages when channel changes
   useEffect(() => {
@@ -116,6 +118,8 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
       if (!user) return;
       setChannelInfo({ type, id });
       setIsOpen(true);
+      // Mark this chat as viewed
+      setViewedChats(prev => new Set(prev).add(`${type}_${id}`));
     },
     [user]
   );
@@ -181,6 +185,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
         closeChat,
         channelInfo,
         setUserInteracting,
+        viewedChats,
       }}
     >
       {children}
