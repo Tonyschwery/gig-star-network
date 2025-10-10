@@ -35,6 +35,7 @@ serve(async (req: Request): Promise<Response> => {
       broadcastData,
       notificationType,
       eventRequestId,
+      adminEmail,
       skipPreferenceCheck = false 
     } = requestBody;
 
@@ -46,14 +47,44 @@ serve(async (req: Request): Promise<Response> => {
 
     logStep('Request parsed', requestBody);
 
-    // Validate userIds is an array
-    if (!Array.isArray(userIds)) {
+    // Validate userIds is an array (unless it's admin_support_message which sends directly to admin)
+    if (emailType !== 'admin_support_message' && !Array.isArray(userIds)) {
       throw new Error(`userIds must be an array, received: ${typeof userIds}`);
     }
 
-    // Use hardcoded admin email
-    const adminEmail = 'qtalentslive@gmail.com';
-    logStep('Using admin email', { adminEmail });
+    // Use hardcoded admin email unless provided in request
+    const adminEmailAddress = adminEmail || 'qtalentslive@gmail.com';
+    logStep('Using admin email', { adminEmailAddress });
+
+    // Handle admin_support_message separately (sent directly to admin email)
+    if (emailType === 'admin_support_message') {
+      const adminEmailPromise = supabaseAdmin.functions.invoke('send-email', {
+        body: {
+          type: emailType,
+          recipientEmail: adminEmailAddress,
+          data: emailData,
+        },
+      });
+
+      const results = await Promise.allSettled([adminEmailPromise]);
+      const successful = results.filter(r => r.status === 'fulfilled').length;
+      const failed = results.filter(r => r.status === 'rejected').length;
+
+      logStep('Admin support email sent', { successful, failed });
+
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          emailsSent: successful,
+          emailsFailed: failed,
+          totalEmails: 1 
+        }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
 
     // Process emails for each user
     const emailPromises = [];
@@ -291,7 +322,7 @@ serve(async (req: Request): Promise<Response> => {
     }
 
     // Send admin notification for admin email types
-    if (emailType.startsWith('admin_') && adminEmail) {
+    if (emailType.startsWith('admin_') && emailType !== 'admin_support_message' && adminEmailAddress) {
       let adminEmailData: any = { ...emailData };
 
       // If emailData already contains the necessary data (from frontend), use it directly
@@ -399,7 +430,7 @@ serve(async (req: Request): Promise<Response> => {
       const adminEmailPromise = supabaseAdmin.functions.invoke('send-email', {
         body: {
           type: emailType,
-          recipientEmail: adminEmail,
+          recipientEmail: adminEmailAddress,
           data: {
             ...adminEmailData,
             recipient_name: 'Admin'
@@ -408,7 +439,7 @@ serve(async (req: Request): Promise<Response> => {
       });
 
       emailPromises.push(adminEmailPromise);
-      logStep('Admin email queued', { adminEmail });
+      logStep('Admin email queued', { adminEmailAddress });
     }
 
     // Wait for all emails to be sent

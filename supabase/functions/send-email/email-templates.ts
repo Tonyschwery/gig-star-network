@@ -368,3 +368,52 @@ export function generateEventRequestConfirmationEmailHtml(data: {
 </body>
 </html>`;
 }
+
+export function generateAdminSupportMessageEmailHtml(data: {
+  senderName: string;
+  senderEmail: string;
+  messagePreview: string;
+  appUrl: string;
+}): string {
+  return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen-Sans,Ubuntu,Cantarell,'Helvetica Neue',sans-serif; background-color: #ffffff;">
+  <div style="margin: 0 auto; padding: 20px 0 48px; max-width: 560px;">
+    <h1 style="color: #333; font-size: 24px; font-weight: bold; margin: 40px 0; padding: 0;">🆘 New Support Message</h1>
+    <p style="color: #333; font-size: 16px; line-height: 26px; margin: 16px 0;">Hi Admin,</p>
+    <p style="color: #333; font-size: 16px; line-height: 26px; margin: 16px 0;">
+      A user has sent a new support message and is waiting for your response.
+    </p>
+    
+    <div style="margin: 24px 0; padding: 20px; background-color: #fff3cd; border-radius: 8px; border: 2px solid #ffc107;">
+      <p style="color: #333; font-size: 16px; font-weight: bold; margin: 0 0 12px 0;">User Information:</p>
+      <div style="color: #666; font-size: 14px; line-height: 22px; margin: 0;">
+        <p><strong>Name:</strong> ${data.senderName}</p>
+        <p><strong>Email:</strong> ${data.senderEmail}</p>
+      </div>
+    </div>
+
+    <div style="margin: 24px 0; padding: 20px; background-color: #f8f9fa; border-radius: 8px; border: 1px solid #e9ecef;">
+      <p style="color: #333; font-size: 16px; font-weight: bold; margin: 0 0 12px 0;">Message Preview:</p>
+      <p style="color: #666; font-size: 14px; line-height: 22px; margin: 0; font-style: italic;">
+        "${data.messagePreview}"
+      </p>
+    </div>
+
+    <div style="text-align: center; margin: 32px 0;">
+      <a href="${data.appUrl}/admin/direct-messages" style="background-color: #dc3545; border-radius: 8px; color: #fff; font-size: 16px; font-weight: bold; text-decoration: none; text-align: center; display: inline-block; padding: 12px 24px;">
+        Reply to User
+      </a>
+    </div>
+
+    <p style="color: #898989; font-size: 12px; line-height: 22px; margin-top: 32px;">
+      This is an automated notification from QTalents Support System
+    </p>
+  </div>
+</body>
+</html>`;
+}

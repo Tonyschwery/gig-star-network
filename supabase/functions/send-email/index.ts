@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.52.0';
 import { Resend } from 'https://esm.sh/resend@2.0.0';
-import { generateBookingEmailHtml, generateMessageEmailHtml, generatePaymentEmailHtml, generateBroadcastEmailHtml, generateAdminEmailHtml, generateEventRequestConfirmationEmailHtml } from './email-templates.ts';
+import { generateBookingEmailHtml, generateMessageEmailHtml, generatePaymentEmailHtml, generateBroadcastEmailHtml, generateAdminEmailHtml, generateEventRequestConfirmationEmailHtml, generateAdminSupportMessageEmailHtml } from './email-templates.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -473,6 +473,16 @@ serve(async (req: Request): Promise<Response> => {
           <p>We're excited to help make your event amazing!<br>The Qtalent Team</p>
         `;
         subject = 'Great News! Your Booking Request Has Been Accepted';
+        break;
+
+      case 'admin_support_message':
+        emailHtml = generateAdminSupportMessageEmailHtml({
+          senderName: data.sender_name || 'User',
+          senderEmail: data.sender_email || 'N/A',
+          messagePreview: data.message_preview || '',
+          appUrl,
+        });
+        subject = '🆘 New Support Message from ' + (data.sender_name || 'User');
         break;
 
       default:
