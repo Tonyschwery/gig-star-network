@@ -15,7 +15,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
-import { Calendar, Check, X, Clock3, MessageCircle, Crown, Trash2 } from "lucide-react";
+import { Calendar, Check, X, Clock3, MessageCircle, Crown, Trash2, Headset, HelpCircle } from "lucide-react";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { useChat } from "@/contexts/ChatContext";
@@ -85,6 +85,64 @@ export const BookingCard = ({ booking, mode, onUpdate, onRemove, shouldBlurConta
     }
   };
 
+  // Check if this is an admin support chat
+  const isAdminSupport = booking.event_type === "admin_support";
+
+  // Render special card for admin support
+  if (isAdminSupport) {
+    return (
+      <div className="border-2 border-primary/30 rounded-lg p-5 bg-gradient-to-br from-primary/5 via-primary/3 to-background space-y-3 transition-all hover:shadow-lg hover:border-primary/50">
+        <div className="flex items-start gap-3">
+          <div className="flex-shrink-0 w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+            <Headset className="h-6 w-6 text-primary" />
+          </div>
+          <div className="flex-1 space-y-2">
+            <div className="flex items-center gap-2">
+              <h3 className="font-bold text-lg text-foreground">QTalents Support Chat</h3>
+              <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30">
+                Live Support
+              </Badge>
+            </div>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              Need help or have questions? Our support team is here to assist you. Chat with us directly and we'll respond as soon as possible.
+            </p>
+          </div>
+        </div>
+
+        <div className="border-t border-primary/10 pt-3 space-y-2">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <HelpCircle className="h-4 w-4 text-primary" />
+            <span>Typical response time: Within 24 hours</span>
+          </div>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <MessageCircle className="h-4 w-4 text-primary" />
+            <span>Available for questions, technical support, or booking assistance</span>
+          </div>
+        </div>
+
+        <div className="pt-2 border-t border-primary/10">
+          <Button 
+            onClick={() => openChat(booking.id, "booking")} 
+            className="w-full" 
+            size="lg"
+          >
+            <MessageCircle className="h-4 w-4 mr-2" />
+            Start Support Chat
+            {unreadCount > 0 && (
+              <Badge
+                variant="destructive"
+                className="ml-2 h-5 w-5 p-0 flex items-center justify-center text-xs animate-pulse"
+              >
+                {unreadCount > 9 ? "9+" : unreadCount}
+              </Badge>
+            )}
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Regular booking card
   return (
     <div className="border rounded-lg p-4 bg-card text-card-foreground space-y-3 transition-all hover:shadow-md">
       <div className="flex justify-between items-start">
