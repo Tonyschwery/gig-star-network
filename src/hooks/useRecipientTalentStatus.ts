@@ -36,11 +36,21 @@ export const useRecipientTalentStatus = (
               // Current user is booker, check if talent is non-pro
               const { data: talent } = await supabase
                 .from('talent_profiles')
-                .select('is_pro_subscriber')
+                .select('is_pro_subscriber, subscription_status, manual_grant_expires_at')
                 .eq('id', booking.talent_id)
                 .single();
 
-              setIsRecipientNonProTalent(talent && !talent.is_pro_subscriber);
+              if (talent) {
+                // Check if talent has Pro status via subscription, admin grant, or flag
+                const hasActiveSub = talent.subscription_status === 'active';
+                const hasAdminGrant = talent.manual_grant_expires_at && new Date(talent.manual_grant_expires_at) > new Date();
+                const isProViaFlag = talent.is_pro_subscriber;
+                
+                const isProTalent = hasActiveSub || hasAdminGrant || isProViaFlag;
+                setIsRecipientNonProTalent(!isProTalent);
+              } else {
+                setIsRecipientNonProTalent(false);
+              }
             } else {
               // Current user is talent or other, no filtering needed
               setIsRecipientNonProTalent(false);
