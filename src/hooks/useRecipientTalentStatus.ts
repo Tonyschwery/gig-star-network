@@ -50,7 +50,7 @@ export const useRecipientTalentStatus = (
                 const isProTalent = hasActiveSub || hasAdminGrant || isProViaFlag;
                 setIsRecipientNonProTalent(!isProTalent);
               } else {
-                setIsRecipientNonProTalent(true);
+                setIsRecipientNonProTalent(false);
               }
             } else {
               // Current user is talent or other, no filtering needed
