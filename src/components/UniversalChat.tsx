@@ -73,19 +73,12 @@ export const UniversalChat = () => {
       if (!isTalent && isRecipientNonProTalent) {
         const filterResult = filterMessage(newMessage);
         if (filterResult.isBlocked) {
-          const isAdvancedPattern = filterResult.riskScore && filterResult.riskScore >= 60;
           toast({
-            title: "Contact Information Blocked",
-            description: isAdvancedPattern
-              ? "Advanced pattern detected - splitting contact info across messages is not allowed. The talent needs Pro to receive contact details."
-              : "The talent you're messaging needs to upgrade to Pro to receive contact details. This helps our platform support talented artists!",
-            variant: "default",
+            title: "Message Blocked",
+            description: "Can't send contact details - talent is not Pro",
+            variant: "destructive",
           });
-          setShowFilteredMessage(
-            isAdvancedPattern
-              ? "⚠️ Multi-message contact sharing detected - Pro upgrade required"
-              : "The talent needs Pro to receive contact details",
-          );
+          setShowFilteredMessage("Can't send contact details - talent is not Pro");
           setNewMessage("");
           return;
         }

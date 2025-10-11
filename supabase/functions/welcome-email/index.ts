@@ -148,6 +148,49 @@ serve(async (req) => {
 
     console.log(`Welcome email sent successfully to ${email}`);
 
+    // Send admin notification email
+    const adminEmail = "qtalentslive@gmail.com";
+    const adminSubject = type === 'user_signup' 
+      ? "New User Signup - Qtalent.live"
+      : "New Talent Profile Created - Qtalent.live";
+    
+    const adminEmailHtml = `
+      <html>
+        <body style="font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen-Sans,Ubuntu,Cantarell,'Helvetica Neue',sans-serif; background-color: #ffffff;">
+          <div style="margin: 0 auto; padding: 20px 0 48px; max-width: 560px;">
+            <h1 style="color: #333; font-size: 24px; font-weight: bold; margin: 40px 0; padding: 0;">${adminSubject}</h1>
+            <p style="color: #333; font-size: 16px; line-height: 26px; margin: 16px 0;">
+              ${type === 'user_signup' ? 'A new user has signed up:' : 'A new talent profile has been created:'}
+            </p>
+            <ul style="color: #333; font-size: 16px; line-height: 26px; margin: 16px 0; padding-left: 20px;">
+              <li><strong>Email:</strong> ${email}</li>
+              <li><strong>User ID:</strong> ${userId}</li>
+              ${userData?.artistName ? `<li><strong>Artist Name:</strong> ${userData.artistName}</li>` : ''}
+              ${userData?.firstName ? `<li><strong>Name:</strong> ${userData.firstName} ${userData?.lastName || ''}</li>` : ''}
+              <li><strong>Time:</strong> ${new Date().toLocaleString()}</li>
+            </ul>
+            <div style="text-align: center; margin: 32px 0;">
+              <a href="${appUrl}/admin/users" style="background-color: #007bff; border-radius: 8px; color: #fff; font-size: 16px; font-weight: bold; text-decoration: none; text-align: center; display: inline-block; padding: 12px 24px;">
+                View in Admin Panel
+              </a>
+            </div>
+            <p style="color: #898989; font-size: 12px; line-height: 22px; margin-top: 32px;">
+              This is an automated notification from Qtalent.live
+            </p>
+          </div>
+        </body>
+      </html>
+    `;
+
+    await resend.emails.send({
+      from: "Qtalent <noreply@qtalent.live>",
+      to: [adminEmail],
+      subject: adminSubject,
+      html: adminEmailHtml,
+    });
+
+    console.log(`Admin notification sent to ${adminEmail}`);
+
     return new Response(
       JSON.stringify({ 
         success: true, 
