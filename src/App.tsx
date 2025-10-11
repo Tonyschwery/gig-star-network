@@ -32,6 +32,9 @@ import YourEvent from "./pages/YourEvent";
 import Pricing from "./pages/Pricing";
 import AuthCallback from "./pages/AuthCallback";
 import UpdatePassword from "./pages/UpdatePassword";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsOfService from "./pages/TermsOfService";
+import TrustSafety from "./pages/TrustSafety";
 
 // ✅ Diagnostic listener added here
 supabase.auth.onAuthStateChange((event, session) => {
@@ -85,6 +88,9 @@ const AppContent = () => {
           }
         />
         <Route path="/pricing" element={<Pricing />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+        <Route path="/terms-of-service" element={<TermsOfService />} />
+        <Route path="/trust-safety" element={<TrustSafety />} />
 
         <Route path="/talent-onboarding" element={<TalentOnboarding />} />
         <Route
