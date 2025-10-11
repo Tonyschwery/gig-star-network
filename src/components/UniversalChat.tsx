@@ -24,7 +24,7 @@ export const UniversalChat = () => {
   const { filterMessage, updateConversationBuffer } = useAdvancedChatFilter(
     channelInfo,
     user?.id,
-    !isRecipientNonProTalent || isProUser, // Pro users bypass filtering
+    isRecipientNonProTalent || isProUser, // Pro users bypass filtering
   );
   const { toast } = useToast();
   const navigate = useNavigate(); // ✅ Added safely
