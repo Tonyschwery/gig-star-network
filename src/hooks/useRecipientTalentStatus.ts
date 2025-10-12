@@ -16,7 +16,12 @@ export const useRecipientTalentStatus = (
   useEffect(() => {
     const checkRecipientTalentStatus = async () => {
       // DEBUGGING: Log initial inputs to the hook
-      console.log("[RECIPIENT STATUS DEBUG] Hook started. Channel Info:", channelInfo, "Current User ID:", currentUserId);
+      console.log(
+        "[RECIPIENT STATUS DEBUG] Hook started. Channel Info:",
+        channelInfo,
+        "Current User ID:",
+        currentUserId,
+      );
 
       if (!channelInfo || !currentUserId) {
         setIsRecipientNonProTalent(false);
@@ -50,11 +55,16 @@ export const useRecipientTalentStatus = (
               const { data: talent, error: talentError } = await supabase
                 .from("talent_profiles")
                 .select("is_pro_subscriber, subscription_status, manual_grant_expires_at")
-                .eq("id", booking.talent_id)
+                .eq("user_id", booking.talent_id)
                 .single();
 
               // DEBUGGING: This is the most critical log.
-              console.log("[RECIPIENT STATUS DEBUG] Talent Profile Data:", talent, "Talent Profile Error:", talentError);
+              console.log(
+                "[RECIPIENT STATUS DEBUG] Talent Profile Data:",
+                talent,
+                "Talent Profile Error:",
+                talentError,
+              );
 
               if (talent) {
                 const hasActiveSub = talent.subscription_status === "active";
