@@ -24,7 +24,7 @@ export const UniversalChat = () => {
   const { filterMessage, updateConversationBuffer } = useAdvancedChatFilter(
     channelInfo,
     user?.id,
-    isRecipientNonProTalent || isProUser, // Pro users bypass filtering
+    isProUser || (!isTalent && !isRecipientNonProTalent),
   );
   const { toast } = useToast();
   const navigate = useNavigate(); // ✅ Added safely
@@ -121,7 +121,10 @@ export const UniversalChat = () => {
               messages.map((msg) => (
                 <div
                   key={msg.id}
-                  className={cn("flex items-end gap-1.5 sm:gap-2", msg.sender_id === user?.id ? "justify-end" : "justify-start")}
+                  className={cn(
+                    "flex items-end gap-1.5 sm:gap-2",
+                    msg.sender_id === user?.id ? "justify-end" : "justify-start",
+                  )}
                 >
                   {msg.sender_id !== user?.id && (
                     <Avatar className="h-6 w-6 sm:h-8 sm:w-8 flex-shrink-0">
@@ -188,7 +191,9 @@ export const UniversalChat = () => {
             {/* Filtered message notification */}
             {showFilteredMessage && (
               <div className="mb-1.5 p-1.5 sm:p-2 bg-destructive/10 rounded border border-destructive/20">
-                <p className="text-[9px] sm:text-[10px] text-destructive font-medium leading-tight">{showFilteredMessage}</p>
+                <p className="text-[9px] sm:text-[10px] text-destructive font-medium leading-tight">
+                  {showFilteredMessage}
+                </p>
               </div>
             )}
 
