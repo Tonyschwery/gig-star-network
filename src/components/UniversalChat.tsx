@@ -21,6 +21,11 @@ export const UniversalChat = () => {
   const { user } = useAuth();
   const { canReceiveBooking, isProUser, isTalent } = useTalentBookingLimit();
   const { isRecipientNonProTalent } = useRecipientTalentStatus(channelInfo, user?.id);
+  
+  // Log filter parameters for debugging
+  console.log("[CHAT FILTER DEBUG] isTalent:", isTalent, "isProUser:", isProUser, "isRecipientNonProTalent:", isRecipientNonProTalent);
+  console.log("[CHAT FILTER DEBUG] Filter bypass calculation: isProUser ||(!isTalent && !isRecipientNonProTalent) =", isProUser || (!isTalent && !isRecipientNonProTalent));
+  
   const { filterMessage, updateConversationBuffer } = useAdvancedChatFilter(
     channelInfo,
     user?.id,
@@ -59,8 +64,11 @@ export const UniversalChat = () => {
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
     if (newMessage.trim() && user?.id) {
+      console.log("[CHAT SEND DEBUG] Attempting to send. isTalent:", isTalent, "isProUser:", isProUser, "isRecipientNonProTalent:", isRecipientNonProTalent);
+      
       // Apply advanced filtering for non-pro talents (sender is talent)
       if (isTalent && !isProUser) {
+        console.log("[CHAT SEND DEBUG] Filtering as NON-PRO TALENT sender");
         const filterResult = filterMessage(newMessage);
         if (filterResult.isBlocked) {
           setShowFilteredMessage(filterResult.reason || "Message blocked");
@@ -71,6 +79,7 @@ export const UniversalChat = () => {
 
       // Apply advanced filtering when bookers message non-pro talents (recipient is non-pro talent)
       if (!isTalent && isRecipientNonProTalent) {
+        console.log("[CHAT SEND DEBUG] Filtering as BOOKER messaging NON-PRO TALENT");
         const filterResult = filterMessage(newMessage);
         if (filterResult.isBlocked) {
           toast({
@@ -84,6 +93,7 @@ export const UniversalChat = () => {
         }
       }
 
+      console.log("[CHAT SEND DEBUG] Message passed all filters, sending...");
       sendMessage(newMessage);
       setNewMessage("");
       setShowFilteredMessage(null);
