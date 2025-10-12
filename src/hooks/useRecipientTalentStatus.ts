@@ -73,8 +73,12 @@ export const useRecipientTalentStatus = (
                 setIsRecipientNonProTalent(!isTalentPro);
                 console.log("[DEBUG] Final State Set (isRecipientNonProTalent):", !isTalentPro);
               } else {
-                console.log("[DEBUG] Talent profile was not found. Defaulting to NON-PRO.");
-                setIsRecipientNonProTalent(true);
+                // This block runs if the profile isn't found (e.g., due to RLS).
+                // We default to FALSE to prevent blocking the user.
+                console.warn(
+                  `[DATA WARNING] Talent profile not found for user: ${booking.talent_id}. Defaulting to PRO status to allow chat.`,
+                );
+                setIsRecipientNonProTalent(false); // ✅ THIS IS THE ONLY CHANGE
               }
             } else {
               setIsRecipientNonProTalent(false);
