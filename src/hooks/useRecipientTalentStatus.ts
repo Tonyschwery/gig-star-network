@@ -15,6 +15,9 @@ export const useRecipientTalentStatus = (
 
   useEffect(() => {
     const checkRecipientTalentStatus = async () => {
+      // DEBUGGING: Log initial inputs to the hook
+      console.log("[DEBUG] Hook started. Channel Info:", channelInfo, "Current User ID:", currentUserId);
+
       if (!channelInfo || !currentUserId) {
         setIsRecipientNonProTalent(false);
         return;
@@ -23,27 +26,37 @@ export const useRecipientTalentStatus = (
       setIsLoading(true);
       try {
         if (channelInfo.type === "booking") {
-          // Get booking details
-          const { data: booking } = await supabase
+          // DEBUGGING: About to fetch booking
+          console.log("[DEBUG] Fetching booking with ID:", channelInfo.id);
+
+          const { data: booking, error: bookingError } = await supabase
             .from("bookings")
             .select("user_id, talent_id")
             .eq("id", channelInfo.id)
             .single();
 
+          // DEBUGGING: Log booking result
+          console.log("[DEBUG] Booking data:", booking, "Booking error:", bookingError);
+
           if (booking && booking.talent_id) {
-            // Check if current user is the booker (not the talent)
-            if (booking.user_id === currentUserId) {
-              // Current user is booker, so we check the talent's pro status.
-              const { data: talent } = await supabase
+            const isCurrentUserBooker = booking.user_id === currentUserId;
+            // DEBUGGING: Check if the current user is the booker
+            console.log("[DEBUG] Is current user the booker?", isCurrentUserBooker);
+
+            if (isCurrentUserBooker) {
+              // DEBUGGING: About to fetch talent profile
+              console.log("[DEBUG] Fetching talent profile with user_id:", booking.talent_id);
+
+              const { data: talent, error: talentError } = await supabase
                 .from("talent_profiles")
-                // 👇 We must select all three fields to check for Pro status
                 .select("is_pro_subscriber, subscription_status, manual_grant_expires_at")
-                // 👇 This is your correct fix!
                 .eq("user_id", booking.talent_id)
                 .single();
 
+              // DEBUGGING: This is the most critical log.
+              console.log("[DEBUG] Talent Profile Data:", talent, "Talent Profile Error:", talentError);
+
               if (talent) {
-                // 👇 Restore the full check for all three Pro conditions
                 const hasActiveSub = talent.subscription_status === "active";
                 const hasAdminGrant =
                   talent.manual_grant_expires_at && new Date(talent.manual_grant_expires_at) > new Date();
@@ -51,27 +64,34 @@ export const useRecipientTalentStatus = (
 
                 const isTalentPro = hasActiveSub || hasAdminGrant || isProViaFlag;
 
-                // Set state to TRUE only if the talent is NOT pro
+                // DEBUGGING: Log the final pro check results
+                console.log(
+                  `[DEBUG] Pro Checks: hasActiveSub=${hasActiveSub}, hasAdminGrant=${hasAdminGrant}, isProViaFlag=${isProViaFlag}`,
+                );
+                console.log("[DEBUG] Is Talent Pro?", isTalentPro);
+
                 setIsRecipientNonProTalent(!isTalentPro);
+                console.log("[DEBUG] Final State Set (isRecipientNonProTalent):", !isTalentPro);
               } else {
-                // If no talent profile found, assume non-pro to be safe
+                console.log("[DEBUG] Talent profile was not found. Defaulting to NON-PRO.");
                 setIsRecipientNonProTalent(true);
               }
             } else {
-              // Current user is talent or other, no filtering needed
               setIsRecipientNonProTalent(false);
             }
+          } else {
+            console.log("[DEBUG] Booking not found or has no talent_id. Defaulting to no filter.");
+            setIsRecipientNonProTalent(false);
           }
-        } else if (channelInfo.type === "event_request") {
-          // For event requests, bookers chat with admins, no talent filtering needed
+        } else {
           setIsRecipientNonProTalent(false);
         }
       } catch (error) {
-        console.error("Error checking recipient talent status:", error);
-        // Default to a safe state in case of an unexpected error
+        console.error("[DEBUG] A critical error occurred in the hook:", error);
         setIsRecipientNonProTalent(true);
       } finally {
         setIsLoading(false);
+        console.log("[DEBUG] Hook finished.");
       }
     };
 
