@@ -16,7 +16,7 @@ export const useRecipientTalentStatus = (
   useEffect(() => {
     const checkRecipientTalentStatus = async () => {
       // DEBUGGING: Log initial inputs to the hook
-      console.log("[DEBUG] Hook started. Channel Info:", channelInfo, "Current User ID:", currentUserId);
+      console.log("[RECIPIENT STATUS DEBUG] Hook started. Channel Info:", channelInfo, "Current User ID:", currentUserId);
 
       if (!channelInfo || !currentUserId) {
         setIsRecipientNonProTalent(false);
@@ -27,7 +27,7 @@ export const useRecipientTalentStatus = (
       try {
         if (channelInfo.type === "booking") {
           // DEBUGGING: About to fetch booking
-          console.log("[DEBUG] Fetching booking with ID:", channelInfo.id);
+          console.log("[RECIPIENT STATUS DEBUG] Fetching booking with ID:", channelInfo.id);
 
           const { data: booking, error: bookingError } = await supabase
             .from("bookings")
@@ -36,16 +36,16 @@ export const useRecipientTalentStatus = (
             .single();
 
           // DEBUGGING: Log booking result
-          console.log("[DEBUG] Booking data:", booking, "Booking error:", bookingError);
+          console.log("[RECIPIENT STATUS DEBUG] Booking data:", booking, "Booking error:", bookingError);
 
           if (booking && booking.talent_id) {
             const isCurrentUserBooker = booking.user_id === currentUserId;
             // DEBUGGING: Check if the current user is the booker
-            console.log("[DEBUG] Is current user the booker?", isCurrentUserBooker);
+            console.log("[RECIPIENT STATUS DEBUG] Is current user the booker?", isCurrentUserBooker);
 
             if (isCurrentUserBooker) {
               // DEBUGGING: About to fetch talent profile
-              console.log("[DEBUG] Fetching talent profile with user_id:", booking.talent_id);
+              console.log("[RECIPIENT STATUS DEBUG] Fetching talent profile with ID:", booking.talent_id);
 
               const { data: talent, error: talentError } = await supabase
                 .from("talent_profiles")
@@ -54,7 +54,7 @@ export const useRecipientTalentStatus = (
                 .single();
 
               // DEBUGGING: This is the most critical log.
-              console.log("[DEBUG] Talent Profile Data:", talent, "Talent Profile Error:", talentError);
+              console.log("[RECIPIENT STATUS DEBUG] Talent Profile Data:", talent, "Talent Profile Error:", talentError);
 
               if (talent) {
                 const hasActiveSub = talent.subscription_status === "active";
@@ -66,36 +66,38 @@ export const useRecipientTalentStatus = (
 
                 // DEBUGGING: Log the final pro check results
                 console.log(
-                  `[DEBUG] Pro Checks: hasActiveSub=${hasActiveSub}, hasAdminGrant=${hasAdminGrant}, isProViaFlag=${isProViaFlag}`,
+                  `[RECIPIENT STATUS DEBUG] Pro Checks: hasActiveSub=${hasActiveSub}, hasAdminGrant=${hasAdminGrant}, isProViaFlag=${isProViaFlag}`,
                 );
-                console.log("[DEBUG] Is Talent Pro?", isTalentPro);
+                console.log("[RECIPIENT STATUS DEBUG] Is Talent Pro?", isTalentPro);
 
                 setIsRecipientNonProTalent(!isTalentPro);
-                console.log("[DEBUG] Final State Set (isRecipientNonProTalent):", !isTalentPro);
+                console.log("[RECIPIENT STATUS DEBUG] Final State Set (isRecipientNonProTalent):", !isTalentPro);
               } else {
                 // This block runs if the profile isn't found (e.g., due to RLS).
                 // We default to FALSE to prevent blocking the user.
                 console.warn(
-                  `[DATA WARNING] Talent profile not found for user: ${booking.talent_id}. Defaulting to PRO status to allow chat.`,
+                  `[RECIPIENT STATUS DEBUG] Talent profile not found for ID: ${booking.talent_id}. Defaulting to PRO status to allow chat.`,
                 );
-                setIsRecipientNonProTalent(false); // ✅ THIS IS THE ONLY CHANGE
+                setIsRecipientNonProTalent(false);
               }
             } else {
               setIsRecipientNonProTalent(false);
             }
           } else {
-            console.log("[DEBUG] Booking not found or has no talent_id. Defaulting to no filter.");
+            console.log("[RECIPIENT STATUS DEBUG] Booking not found or has no talent_id. Defaulting to no filter.");
             setIsRecipientNonProTalent(false);
           }
         } else {
           setIsRecipientNonProTalent(false);
         }
       } catch (error) {
-        console.error("[DEBUG] A critical error occurred in the hook:", error);
-        setIsRecipientNonProTalent(true);
+        console.error("[RECIPIENT STATUS DEBUG] ❌ CRITICAL ERROR occurred:", error);
+        // ✅ FIX: Default to FALSE (assume Pro/allow chat) on errors to prevent false positives
+        setIsRecipientNonProTalent(false);
+        console.log("[RECIPIENT STATUS DEBUG] Error occurred, defaulting to FALSE (allow chat)");
       } finally {
         setIsLoading(false);
-        console.log("[DEBUG] Hook finished.");
+        console.log("[RECIPIENT STATUS DEBUG] Hook finished.");
       }
     };
 
