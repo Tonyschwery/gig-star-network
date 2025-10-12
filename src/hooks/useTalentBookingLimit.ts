@@ -11,25 +11,46 @@ export const useTalentBookingLimit = () => {
   const [talentId, setTalentId] = useState<string | null>(null);
 
   const checkTalentBookingLimit = async () => {
-    if (!user?.id) return;
+    if (!user?.id) {
+      // No user logged in - reset to booker defaults
+      setCanReceiveBooking(true);
+      setReceivedBookingsThisMonth(0);
+      setIsProUser(false);
+      setTalentId(null);
+      setLoading(false);
+      return;
+    }
 
     try {
       // Check if user is a talent and get their profile
-      const { data: profile } = await supabase
+      const { data: profile, error: queryError } = await supabase
         .from('talent_profiles')
         .select('id, is_pro_subscriber')
         .eq('user_id', user.id)
         .maybeSingle();
 
-      if (!profile) {
-        // User is not a talent, no limits apply
+      if (queryError) {
+        console.error('Error querying talent profile:', queryError);
+        // On error, assume booker (fail safe)
         setCanReceiveBooking(true);
+        setReceivedBookingsThisMonth(0);
         setIsProUser(false);
         setTalentId(null);
         setLoading(false);
         return;
       }
 
+      if (!profile || !profile.id) {
+        // User is NOT a talent (they are a booker), no limits apply
+        setCanReceiveBooking(true);
+        setReceivedBookingsThisMonth(0);
+        setIsProUser(false);
+        setTalentId(null);
+        setLoading(false);
+        return;
+      }
+
+      // User IS a talent - set their talent ID
       setTalentId(profile.id);
       const isPro = profile.is_pro_subscriber || false;
       setIsProUser(isPro);
@@ -58,6 +79,11 @@ export const useTalentBookingLimit = () => {
       
     } catch (error) {
       console.error('Error checking talent booking limit:', error);
+      // On error, reset to booker defaults (fail safe)
+      setCanReceiveBooking(true);
+      setReceivedBookingsThisMonth(0);
+      setIsProUser(false);
+      setTalentId(null);
     } finally {
       setLoading(false);
     }
