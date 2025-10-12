@@ -3,7 +3,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { RealtimeChannel } from "@supabase/supabase-js";
-import { useProStatus } from "./ProStatusContext";
 
 export interface ChannelInfo {
   type: "booking" | "event_request";
@@ -37,7 +36,6 @@ const ChatContext = createContext<ChatContextType | undefined>(undefined);
 
 export const ChatProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();
-  const { isProUser } = useProStatus();
   const { toast } = useToast();
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
@@ -126,18 +124,9 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
     async (content: string) => {
       if (!user || !channelInfo) return;
 
-      if (!isProUser) {
-        const forbiddenPattern =
-          /((\d[\s-.]*){7,})|https?:\/\/|www\.|\b[a-zA-Z0-9.-]+\.(com|net|org|io|live|co)\b|@|_/i;
-        if (forbiddenPattern.test(content)) {
-          toast({
-            title: "Upgrade to Pro",
-            description: "Sharing contact information, links, or social media is a Pro feature.",
-            variant: "destructive",
-          });
-          return;
-        }
-      }
+      // ✅ REMOVED the redundant filter that was causing the conflict.
+      // All filtering is now correctly handled by the UI component.
+
       const messageData: any = {
         sender_id: user.id,
         content,
@@ -160,7 +149,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
         });
       }
     },
-    [user, channelInfo, isProUser, toast],
+    [user, channelInfo, toast], // Removed isProUser from dependency array
   );
 
   return (
