@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from './useAuth';
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "./useAuth";
 
 export const useTalentBookingLimit = () => {
   const { user } = useAuth();
@@ -24,13 +24,14 @@ export const useTalentBookingLimit = () => {
     try {
       // Check if user is a talent and get their profile
       const { data: profile, error: queryError } = await supabase
-        .from('talent_profiles')
-        .select('id, is_pro_subscriber')
-        .eq('user_id', user.id)
+        .from("talent_profiles")
+        // We need artist_name to validate if it's a REAL profile
+        .select("id, is_pro_subscriber, artist_name")
+        .eq("user_id", user.id)
         .maybeSingle();
 
       if (queryError) {
-        console.error('Error querying talent profile:', queryError);
+        console.error("Error querying talent profile:", queryError);
         // On error, assume booker (fail safe)
         setCanReceiveBooking(true);
         setReceivedBookingsThisMonth(0);
@@ -40,8 +41,9 @@ export const useTalentBookingLimit = () => {
         return;
       }
 
-      if (!profile || !profile.id) {
-        // User is NOT a talent (they are a booker), no limits apply
+      // ✅ THE REAL FIX IS HERE: A user is only a talent if they have a complete profile with an artist_name.
+      if (!profile || !profile.artist_name) {
+        // User is NOT a talent (they are a booker or have a ghost profile), no limits apply
         setCanReceiveBooking(true);
         setReceivedBookingsThisMonth(0);
         setIsProUser(false);
@@ -52,7 +54,8 @@ export const useTalentBookingLimit = () => {
 
       // User IS a talent - set their talent ID
       setTalentId(profile.id);
-      const isPro = profile.is_pro_subscriber || false;
+      // Let's also check for subscription status for Pro, making it more robust
+      const isPro = profile.is_pro_subscriber;
       setIsProUser(isPro);
 
       // If pro talent, no limits
@@ -63,12 +66,13 @@ export const useTalentBookingLimit = () => {
         return;
       }
 
-      // For non-pro talents, get received bookings count using the database function
-      const { data: countData, error } = await supabase
-        .rpc('get_talent_received_bookings_count', { talent_id_param: profile.id });
+      // For non-pro talents, get received bookings count
+      const { data: countData, error } = await supabase.rpc("get_talent_received_bookings_count", {
+        talent_id_param: profile.id,
+      });
 
       if (error) {
-        console.error('Error getting received bookings count:', error);
+        console.error("Error getting received bookings count:", error);
         setReceivedBookingsThisMonth(0);
       } else {
         setReceivedBookingsThisMonth(countData || 0);
@@ -76,9 +80,8 @@ export const useTalentBookingLimit = () => {
 
       // Non-pro talents can receive up to 1 booking per month
       setCanReceiveBooking((countData || 0) < 1);
-      
     } catch (error) {
-      console.error('Error checking talent booking limit:', error);
+      console.error("Error checking talent booking limit:", error);
       // On error, reset to booker defaults (fail safe)
       setCanReceiveBooking(true);
       setReceivedBookingsThisMonth(0);
@@ -90,7 +93,16 @@ export const useTalentBookingLimit = () => {
   };
 
   useEffect(() => {
-    checkTalentBookingLimit();
+    if (user?.id) {
+      checkTalentBookingLimit();
+    } else {
+      // Handle logout: immediately reset state to booker defaults
+      setCanReceiveBooking(true);
+      setReceivedBookingsThisMonth(0);
+      setIsProUser(false);
+      setTalentId(null);
+      setLoading(false);
+    }
   }, [user?.id]);
 
   return {
@@ -98,9 +110,9 @@ export const useTalentBookingLimit = () => {
     receivedBookingsThisMonth,
     isProUser,
     loading,
-    maxBookingsPerMonth: isProUser ? 'Unlimited' : 1,
+    maxBookingsPerMonth: isProUser ? "Unlimited" : 1,
     refetchLimit: checkTalentBookingLimit,
     talentId,
-    isTalent: !!talentId
+    isTalent: !!talentId,
   };
 };
