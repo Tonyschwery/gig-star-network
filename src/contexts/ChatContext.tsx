@@ -56,13 +56,10 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
         setMessages([]);
         return;
       }
-      
+
       setLoadingMessages(true);
       try {
-        const query = supabase
-          .from("chat_messages")
-          .select("*")
-          .order("created_at", { ascending: true });
+        const query = supabase.from("chat_messages").select("*").order("created_at", { ascending: true });
 
         if (channelInfo.type === "booking") {
           query.eq("booking_id", channelInfo.id);
@@ -90,20 +87,16 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
     if (user && channelInfo) {
       const channel = supabase
         .channel(`chat_${channelInfo.type}_${channelInfo.id}`)
-        .on(
-          "postgres_changes",
-          { event: "INSERT", schema: "public", table: "chat_messages" },
-          (payload) => {
-            const newMessage = payload.new as Message;
-            const isRelevant =
-              (channelInfo.type === "booking" && newMessage.booking_id === channelInfo.id) ||
-              (channelInfo.type === "event_request" && newMessage.event_request_id === channelInfo.id);
+        .on("postgres_changes", { event: "INSERT", schema: "public", table: "chat_messages" }, (payload) => {
+          const newMessage = payload.new as Message;
+          const isRelevant =
+            (channelInfo.type === "booking" && newMessage.booking_id === channelInfo.id) ||
+            (channelInfo.type === "event_request" && newMessage.event_request_id === channelInfo.id);
 
-            if (isRelevant) {
-              setMessages((prev) => [...prev, newMessage]);
-            }
+          if (isRelevant) {
+            setMessages((prev) => [...prev, newMessage]);
           }
-        )
+        })
         .subscribe();
       setMessageChannel(channel);
     }
@@ -112,16 +105,15 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
     };
   }, [user, channelInfo]);
 
-
   const openChat = useCallback(
     async (id: string, type: "booking" | "event_request") => {
       if (!user) return;
       setChannelInfo({ type, id });
       setIsOpen(true);
       // Mark this chat as viewed
-      setViewedChats(prev => new Set(prev).add(`${type}_${id}`));
+      setViewedChats((prev) => new Set(prev).add(`${type}_${id}`));
     },
-    [user]
+    [user],
   );
 
   const closeChat = () => {
@@ -146,5 +138,56 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
           return;
         }
       }
+      const messageData: any = {
+        sender_id: user.id,
+        content,
+      };
 
-      
+      if (channelInfo.type === "booking") {
+        messageData.booking_id = channelInfo.id;
+      } else {
+        messageData.event_request_id = channelInfo.id;
+      }
+
+      const { error } = await supabase.from("chat_messages").insert(messageData);
+
+      if (error) {
+        console.error("Error sending message:", error);
+        toast({
+          title: "Error",
+          description: "Could not send message.",
+          variant: "destructive",
+        });
+      }
+    },
+    [user, channelInfo, isProUser, toast],
+  );
+
+  return (
+    <ChatContext.Provider
+      value={{
+        messages,
+        sendMessage,
+        loading,
+        loadingMessages,
+        error,
+        isOpen,
+        openChat,
+        closeChat,
+        channelInfo,
+        setUserInteracting,
+        viewedChats,
+      }}
+    >
+      {children}
+    </ChatContext.Provider>
+  );
+};
+
+export const useChat = () => {
+  const context = useContext(ChatContext);
+  if (context === undefined) {
+    throw new Error("useChat must be used within a ChatProvider");
+  }
+  return context;
+};
