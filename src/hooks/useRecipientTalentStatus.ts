@@ -55,7 +55,7 @@ export const useRecipientTalentStatus = (
               const { data: talent, error: talentError } = await supabase
                 .from("talent_profiles")
                 .select("is_pro_subscriber, subscription_status, manual_grant_expires_at")
-                .eq("user_id", booking.talent_id)
+                .eq("id", booking.talent_id)
                 .single();
 
               // DEBUGGING: This is the most critical log.
