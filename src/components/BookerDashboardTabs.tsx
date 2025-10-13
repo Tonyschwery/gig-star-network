@@ -34,7 +34,6 @@ export const BookerDashboardTabs = ({ userId }: { userId: string }) => {
             .from('bookings')
             .select(`*, talent_profiles(artist_name)`)
             .eq('user_id', userId)
-            .not('status', 'in', '(declined,cancelled)')
             .order('event_date', { ascending: true })
             .range(0, PAGE_SIZE - 1);
 
@@ -42,7 +41,6 @@ export const BookerDashboardTabs = ({ userId }: { userId: string }) => {
             .from('event_requests')
             .select('*')
             .eq('user_id', userId)
-            .not('status', 'in', '(declined,cancelled)')
             .order('created_at', { ascending: false })
             .range(0, PAGE_SIZE - 1);
 
@@ -107,7 +105,6 @@ export const BookerDashboardTabs = ({ userId }: { userId: string }) => {
             .from('bookings')
             .select(`*, talent_profiles(artist_name)`)
             .eq('user_id', userId)
-            .not('status', 'in', '(declined,cancelled)')
             .order('event_date', { ascending: true })
             .range(from, to);
         
@@ -130,7 +127,6 @@ export const BookerDashboardTabs = ({ userId }: { userId: string }) => {
             .from('event_requests')
             .select('*')
             .eq('user_id', userId)
-            .not('status', 'in', '(declined,cancelled)')
             .order('created_at', { ascending: false })
             .range(from, to);
 

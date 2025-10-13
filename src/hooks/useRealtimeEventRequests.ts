@@ -11,7 +11,7 @@ export const useRealtimeEventRequests = (refreshEventRequests: () => void) => {
 
     console.log('Setting up real-time event requests subscription for user:', user.id);
 
-    // Subscribe to event request changes for this user
+    // Subscribe to ALL event request changes (RLS will filter appropriately)
     const eventRequestChannel = supabase
       .channel(`event-requests-realtime-${user.id}`)
       .on(
@@ -20,7 +20,6 @@ export const useRealtimeEventRequests = (refreshEventRequests: () => void) => {
           event: '*',
           schema: 'public',
           table: 'event_requests',
-          filter: `user_id=eq.${user.id}`,
         },
         (payload) => {
           console.log('Event request change detected:', payload);

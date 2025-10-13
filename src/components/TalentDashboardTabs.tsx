@@ -46,7 +46,6 @@ export const TalentDashboardTabs = ({ profile }: TalentDashboardTabsProps) => {
       .from('bookings')
       .select(`*, talent_profiles(artist_name)`)
       .eq('talent_id', profile.id)
-      .not('status', 'in', '(declined,cancelled)')
       .order('event_date', { ascending: false });
 
     if (bookingsError) {
@@ -62,7 +61,6 @@ export const TalentDashboardTabs = ({ profile }: TalentDashboardTabsProps) => {
         .from('event_requests')
         .select('*')
         .eq('event_location', profile.location)
-        .not('status', 'in', '(declined,cancelled)')
         .order('created_at', { ascending: false });
 
       if (requestsError) {
