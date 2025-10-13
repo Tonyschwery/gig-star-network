@@ -219,9 +219,7 @@ export type Database = {
           budget: number | null
           budget_currency: string | null
           created_at: string
-          custom_equipment: string | null
           description: string | null
-          equipment_types: string[] | null
           event_address: string
           event_date: string
           event_duration: number
@@ -230,7 +228,6 @@ export type Database = {
           id: string
           is_gig_opportunity: boolean | null
           is_public_request: boolean | null
-          needs_equipment: boolean | null
           status: string
           talent_id: string | null
           updated_at: string
@@ -243,9 +240,7 @@ export type Database = {
           budget?: number | null
           budget_currency?: string | null
           created_at?: string
-          custom_equipment?: string | null
           description?: string | null
-          equipment_types?: string[] | null
           event_address: string
           event_date: string
           event_duration: number
@@ -254,7 +249,6 @@ export type Database = {
           id?: string
           is_gig_opportunity?: boolean | null
           is_public_request?: boolean | null
-          needs_equipment?: boolean | null
           status?: string
           talent_id?: string | null
           updated_at?: string
@@ -267,9 +261,7 @@ export type Database = {
           budget?: number | null
           budget_currency?: string | null
           created_at?: string
-          custom_equipment?: string | null
           description?: string | null
-          equipment_types?: string[] | null
           event_address?: string
           event_date?: string
           event_duration?: number
@@ -278,7 +270,6 @@ export type Database = {
           id?: string
           is_gig_opportunity?: boolean | null
           is_public_request?: boolean | null
-          needs_equipment?: boolean | null
           status?: string
           talent_id?: string | null
           updated_at?: string
@@ -475,6 +466,7 @@ export type Database = {
           event_duration: number
           event_location: string
           event_type: string
+          hidden_by_talents: string[] | null
           id: string
           replied_at: string | null
           status: string
@@ -493,6 +485,7 @@ export type Database = {
           event_duration: number
           event_location: string
           event_type: string
+          hidden_by_talents?: string[] | null
           id?: string
           replied_at?: string | null
           status?: string
@@ -511,6 +504,7 @@ export type Database = {
           event_duration?: number
           event_location?: string
           event_type?: string
+          hidden_by_talents?: string[] | null
           id?: string
           replied_at?: string | null
           status?: string

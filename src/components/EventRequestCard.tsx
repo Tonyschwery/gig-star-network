@@ -15,7 +15,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Calendar, Clock, MapPin, MessageCircle, X, Mail, Phone, Trash2, Crown } from "lucide-react";
+import { Calendar, Clock, MapPin, MessageCircle, X, Mail, Phone, Trash2, Crown, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { useChat } from "@/contexts/ChatContext";
@@ -56,16 +56,55 @@ export const EventRequestCard = ({ request, isActionable = false, mode, onRemove
 
   const handleRemove = async () => {
     try {
-      const { error } = await supabase.from("event_requests").delete().eq("id", request.id);
+      if (mode === "talent") {
+        // TALENT ACTION: Hide (archive) the request by adding their user_id to hidden_by_talents
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          toast.error("Authentication required");
+          return;
+        }
 
-      if (error) throw error;
+        // Fetch current hidden_by_talents array
+        const { data: currentRequest, error: fetchError } = await supabase
+          .from("event_requests")
+          .select("hidden_by_talents")
+          .eq("id", request.id)
+          .maybeSingle();
 
-      toast.success("Request removed successfully");
-      setShowRemoveDialog(false);
-      if (onRemove) onRemove(request.id);
+        if (fetchError) throw fetchError;
+
+        // Add current user to the array if not already present
+        const currentHidden = currentRequest?.hidden_by_talents || [];
+        if (!currentHidden.includes(user.id)) {
+          const { error: updateError } = await supabase
+            .from("event_requests")
+            .update({
+              hidden_by_talents: [...currentHidden, user.id]
+            })
+            .eq("id", request.id);
+
+          if (updateError) throw updateError;
+        }
+
+        toast.success("Request hidden from your view");
+        setShowRemoveDialog(false);
+        if (onRemove) onRemove(request.id);
+      } else if (mode === "booker" || mode === "admin") {
+        // BOOKER/ADMIN ACTION: Permanent delete from database
+        const { error } = await supabase
+          .from("event_requests")
+          .delete()
+          .eq("id", request.id);
+
+        if (error) throw error;
+
+        toast.success("Request permanently deleted");
+        setShowRemoveDialog(false);
+        if (onRemove) onRemove(request.id);
+      }
     } catch (error) {
       console.error("Error removing request:", error);
-      toast.error("Failed to remove request");
+      toast.error(`Failed to ${mode === "talent" ? "hide" : "delete"} request`);
     }
   };
 
@@ -77,19 +116,23 @@ export const EventRequestCard = ({ request, isActionable = false, mode, onRemove
       {(mode === "booker" || mode === "talent") && (
         <AlertDialog open={showRemoveDialog} onOpenChange={setShowRemoveDialog}>
           <AlertDialogTrigger asChild>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="absolute top-2 right-2 h-8 w-8 p-0 hover:bg-destructive hover:text-destructive-foreground z-10"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="absolute top-2 right-2 h-8 w-8 p-0 hover:bg-destructive hover:text-destructive-foreground z-10"
+          >
+            {mode === "talent" ? <EyeOff className="h-4 w-4" /> : <Trash2 className="h-4 w-4" />}
+          </Button>
           </AlertDialogTrigger>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Remove Request</AlertDialogTitle>
+              <AlertDialogTitle>
+                {mode === "talent" ? "Hide Request" : "Delete Request"}
+              </AlertDialogTitle>
               <AlertDialogDescription>
-                Are you sure you want to remove this event request? This action cannot be undone.
+                {mode === "talent" 
+                  ? "This will hide this event request from your dashboard. The request will remain visible to the booker and admin."
+                  : "Are you sure you want to permanently delete this event request? This action cannot be undone."}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
@@ -98,7 +141,7 @@ export const EventRequestCard = ({ request, isActionable = false, mode, onRemove
                 onClick={handleRemove}
                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               >
-                Remove
+                {mode === "talent" ? "Hide" : "Delete"}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
@@ -216,12 +259,12 @@ export const EventRequestCard = ({ request, isActionable = false, mode, onRemove
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={handleRemove}
-                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                    >
-                      Delete
-                    </AlertDialogAction>
+            <AlertDialogAction
+              onClick={handleRemove}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
