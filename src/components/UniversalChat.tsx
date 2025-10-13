@@ -101,10 +101,10 @@ export const UniversalChat = () => {
         if (filterResult.isBlocked) {
           toast({
             title: "Message Blocked",
-            description: filterResult.reason || "This message is not allowed.", // ✅ Uses advanced filter's reason,
+            description: filterResult.reason || "This message is not allowed.",
             variant: "destructive",
           });
-          setShowFilteredMessage(filterResult.reason || "This message is not allowed."); // ✅ Uses advanced filter's reason
+          setShowFilteredMessage(filterResult.reason || "This message is not allowed.");
           setNewMessage("");
           return;
         }
