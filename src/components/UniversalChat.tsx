@@ -21,11 +21,21 @@ export const UniversalChat = () => {
   const { user } = useAuth();
   const { canReceiveBooking, isProUser, isTalent } = useTalentBookingLimit();
   const { isRecipientNonProTalent } = useRecipientTalentStatus(channelInfo, user?.id);
-  
+
   // Log filter parameters for debugging
-  console.log("[CHAT FILTER DEBUG] isTalent:", isTalent, "isProUser:", isProUser, "isRecipientNonProTalent:", isRecipientNonProTalent);
-  console.log("[CHAT FILTER DEBUG] Filter bypass calculation: isProUser ||(!isTalent && !isRecipientNonProTalent) =", isProUser || (!isTalent && !isRecipientNonProTalent));
-  
+  console.log(
+    "[CHAT FILTER DEBUG] isTalent:",
+    isTalent,
+    "isProUser:",
+    isProUser,
+    "isRecipientNonProTalent:",
+    isRecipientNonProTalent,
+  );
+  console.log(
+    "[CHAT FILTER DEBUG] Filter bypass calculation: isProUser ||(!isTalent && !isRecipientNonProTalent) =",
+    isProUser || (!isTalent && !isRecipientNonProTalent),
+  );
+
   const { filterMessage, updateConversationBuffer } = useAdvancedChatFilter(
     channelInfo,
     user?.id,
@@ -64,8 +74,15 @@ export const UniversalChat = () => {
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
     if (newMessage.trim() && user?.id) {
-      console.log("[CHAT SEND DEBUG] Attempting to send. isTalent:", isTalent, "isProUser:", isProUser, "isRecipientNonProTalent:", isRecipientNonProTalent);
-      
+      console.log(
+        "[CHAT SEND DEBUG] Attempting to send. isTalent:",
+        isTalent,
+        "isProUser:",
+        isProUser,
+        "isRecipientNonProTalent:",
+        isRecipientNonProTalent,
+      );
+
       // Apply advanced filtering for non-pro talents (sender is talent)
       if (isTalent && !isProUser) {
         console.log("[CHAT SEND DEBUG] Filtering as NON-PRO TALENT sender");
@@ -84,10 +101,10 @@ export const UniversalChat = () => {
         if (filterResult.isBlocked) {
           toast({
             title: "Message Blocked",
-            description: "Can't send contact details - talent is not Pro",
+            description: filterResult.reason || "This message is not allowed.", // ✅ Uses advanced filter's reason,
             variant: "destructive",
           });
-          setShowFilteredMessage("Can't send contact details - talent is not Pro");
+          setShowFilteredMessage(filterResult.reason || "This message is not allowed."); // ✅ Uses advanced filter's reason
           setNewMessage("");
           return;
         }
