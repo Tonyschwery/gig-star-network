@@ -40,6 +40,7 @@ export const UniversalChat = () => {
     channelInfo,
     user?.id,
     isProUser || (!isTalent && !isRecipientNonProTalent),
+    isTalent, // <--- Add this
   );
   const { toast } = useToast();
   const navigate = useNavigate(); // ✅ Added safely
