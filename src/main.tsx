@@ -1,6 +1,6 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { BrowserRouter } from "react-router-dom";
+import { HashRouter } from "react-router-dom"; // <-- THIS IS THE ONLY CHANGE
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { initChromeOptimizations } from "./utils/chromeOptimizer";
 import App from "./App.tsx";
@@ -14,9 +14,12 @@ const queryClient = new QueryClient();
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
+      <HashRouter>
+        {" "}
+        {/* <-- FROM BrowserRouter TO HashRouter */}
         <App />
-      </BrowserRouter>
+      </HashRouter>{" "}
+      {/* <-- FROM BrowserRouter TO HashRouter */}
     </QueryClientProvider>
   </StrictMode>,
 );
