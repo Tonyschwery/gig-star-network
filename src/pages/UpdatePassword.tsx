@@ -1,3 +1,4 @@
+console.log("--- UpdatePassword.tsx component file is being loaded ---");
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
