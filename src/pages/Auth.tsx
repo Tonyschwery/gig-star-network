@@ -1,571 +1,317 @@
-// FILE: src/pages/Auth.tsx
-
-import { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import React, { useState, useEffect, createContext, useContext } from "react";
+import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/useAuth";
-import { useEmailNotifications } from "@/hooks/useEmailNotifications";
-import { ArrowLeft, Mail } from "lucide-react";
 
-const Auth = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [name, setName] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [emailSent, setEmailSent] = useState(false);
-  const [authMethod, setAuthMethod] = useState<"password" | "magiclink">("password");
-  const [showForgotPassword, setShowForgotPassword] = useState(false);
-  const [resetEmailSent, setResetEmailSent] = useState(false);
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  const { user, loading: authLoading } = useAuth();
-  const { sendUserSignupEmails } = useEmailNotifications();
+type UserStatus = "LOADING" | "LOGGED_OUT" | "AUTHENTICATED";
+type UserRole = "booker" | "talent" | "admin";
+type ProfileStatus = "incomplete" | "complete" | "none";
+type UserMode = "booking" | "artist";
 
-  const { state } = useLocation();
-  const mode = state?.mode || "booker";
-  const verificationMessage = state?.message; // Email verification message from redirect
+interface AuthContextType {
+  user: User | null;
+  session: Session | null;
+  loading: boolean;
+  status: UserStatus;
+  role: UserRole | null;
+  profileStatus: ProfileStatus;
+  profile: any | null;
+  signOut: () => Promise<void>;
+  mode: UserMode;
+  setMode: (mode: UserMode) => void;
+  refreshProfile: () => Promise<void>;
+}
 
-  const title = mode === "booker" ? "Welcome to Qtalent" : "Talent Access";
-  const description = "Sign in or create an account with a magic link.";
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-  // Get intent from state to show appropriate messaging
-  const intent = state?.intent;
-  const intentMessage =
-    intent === "booking-form"
-      ? "Sign in to complete your booking request"
-      : intent === "event-form"
-        ? "Sign in to get personalized recommendations"
-        : null;
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [loading, setLoading] = useState(true);
+  const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<any | null>(null);
+  const [status, setStatus] = useState<UserStatus>("LOADING");
+  const [role, setRole] = useState<UserRole | null>(null);
+  const [profileStatus, setProfileStatus] = useState<ProfileStatus>("none");
+  const [mode, setMode] = useState<UserMode>("booking");
+
+  const getUserRole = async (user: User | null): Promise<UserRole | null> => {
+    if (!user) return null;
+
+    // Check if user is admin from database
+    try {
+      const { data: isAdmin } = await supabase.rpc("is_admin", { user_id_param: user.id });
+      if (isAdmin) {
+        return "admin";
+      }
+    } catch (error) {
+      console.error("[Auth] Error checking admin status:", error);
+    }
+
+    const userType = user.user_metadata?.user_type;
+    if (userType === "talent") return "talent";
+    if (userType === "booker") return "booker";
+    return "booker";
+  };
+
+  const checkProfileStatus = async (user: User, userRole: UserRole): Promise<ProfileStatus> => {
+    try {
+      if (userRole === "talent") {
+        const { data: talentProfile, error } = await supabase
+          .from("talent_profiles")
+          .select("*")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        if (error) {
+          console.error("Error checking talent profile:", error);
+          return "none";
+        }
+        if (!talentProfile) return "incomplete";
+        if (talentProfile.artist_name) return "complete";
+        return "incomplete";
+      } else if (userRole === "booker") {
+        const { data: bookerProfile, error } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", user.id)
+          .maybeSingle();
+        if (error) {
+          console.error("Error checking booker profile:", error);
+          return "none";
+        }
+        return bookerProfile ? "complete" : "incomplete";
+      }
+      return "none";
+    } catch (error) {
+      console.error("Error in checkProfileStatus:", error);
+      return "none";
+    }
+  };
+
+  const loadProfile = async (user: User, userRole: UserRole) => {
+    try {
+      if (userRole === "admin") {
+        setProfile({ full_name: "Admin" });
+        return;
+      }
+      const { error: ensureError } = await supabase.rpc("ensure_profile", {
+        p_user_id: user.id,
+        p_email: user.email!,
+        p_role: userRole,
+      });
+      if (ensureError) {
+        console.error("[Auth] Error ensuring profile:", ensureError);
+      }
+      const { data: baseProfile } = await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle();
+      if (baseProfile?.role) {
+        setRole(baseProfile.role as UserRole);
+      }
+      if (userRole === "talent") {
+        const { data: talentProfile } = await supabase
+          .from("talent_profiles")
+          .select("*")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        setProfile(talentProfile);
+      } else if (userRole === "booker") {
+        const { data: bookerProfile } = await supabase.from("profiles").select("*").eq("id", user.id).maybeSingle();
+        setProfile(bookerProfile);
+      }
+    } catch (error) {
+      console.error("Error loading profile:", error);
+    }
+  };
+
+  const refreshProfile = async () => {
+    if (!user || !role) return;
+    console.log("[Auth] Refreshing profile data");
+    const newProfileStatus = await checkProfileStatus(user, role);
+    setProfileStatus(newProfileStatus);
+    await loadProfile(user, role);
+  };
 
   useEffect(() => {
-    if (!authLoading && user) {
-      navigate("/");
-    }
-  }, [user, authLoading, navigate]);
+    let mounted = true;
+    let processingTimeout: NodeJS.Timeout | null = null;
 
-  const handleAuthAction = async (isSignUp: boolean) => {
-    setLoading(true);
-    const userType = mode === "booker" ? "booker" : "talent";
+    const processSession = async (session: Session | null, skipDelay = false) => {
+      if (!mounted) return;
 
-    if (isSignUp && !name) {
-      toast({
-        title: "Name is required",
-        description: "Please enter your full name to sign up.",
-        variant: "destructive",
-      });
-      setLoading(false);
-      return;
-    }
-
-    // Signup ALWAYS requires password
-    if (isSignUp && (!password || password.length < 6)) {
-      toast({
-        title: "Password required",
-        description: "Password must be at least 6 characters for signup.",
-        variant: "destructive",
-      });
-      setLoading(false);
-      return;
-    }
-
-    // Signin with password method requires password
-    if (!isSignUp && authMethod === "password" && (!password || password.length < 6)) {
-      toast({
-        title: "Password required",
-        description: "Please enter your password (minimum 6 characters).",
-        variant: "destructive",
-      });
-      setLoading(false);
-      return;
-    }
-
-    try {
-      // Check email via edge function
-      const { data: emailCheck } = await supabase.functions.invoke("check-email-exists", {
-        body: { email: email.toLowerCase().trim() },
-      });
-
-      // For sign up - check if user exists
-      if (isSignUp && emailCheck?.exists) {
-        toast({
-          title: "Account already exists! 🔑",
-          description: "This email is already registered. Please switch to 'Sign In' tab to access your account.",
-          variant: "destructive",
-          duration: 6000,
-        });
-        setLoading(false);
-        return;
+      // Debounce rapid session changes
+      if (processingTimeout) {
+        clearTimeout(processingTimeout);
       }
 
-      // For sign in - check if user doesn't exist
-      if (!isSignUp && !emailCheck?.exists) {
-        toast({
-          title: "Account not found 🔍",
-          description: "No account found with this email. Please switch to 'Sign Up' tab to create an account.",
-          variant: "destructive",
-          duration: 6000,
-        });
-        setLoading(false);
-        return;
-      }
+      const doProcess = async () => {
+        if (!mounted) return;
 
-      let error: any = null;
+        try {
+          const currentUser = session?.user ?? null;
 
-      if (isSignUp) {
-        // Signup ALWAYS uses password (no magic link option)
-        const { error: signUpError } = await supabase.auth.signUp({
-          email: email.toLowerCase().trim(),
-          password: password,
-          options: {
-            data: { name: name, user_type: userType },
-          },
-        });
-        error = signUpError;
+          // Update session and user immediately for cross-tab sync
+          setSession(session);
+          setUser(currentUser);
 
-        if (!error) {
-          toast({
-            title: "Account created! ✅",
-            description: "Your account has been created successfully. Redirecting...",
-            duration: 3000,
-          });
-
-          // Get the newly created user to send welcome emails
-          const {
-            data: { user: newUser },
-          } = await supabase.auth.getUser();
-          if (newUser) {
-            // Send welcome emails (to user and admin notification)
-            await sendUserSignupEmails(newUser.id, name, email.toLowerCase().trim());
+          if (!currentUser) {
+            setStatus("LOGGED_OUT");
+            setRole(null);
+            setProfile(null);
+            setProfileStatus("none");
+            setLoading(false);
+            return;
           }
 
-          setTimeout(() => navigate(state?.from?.pathname || "/"), 1000);
+          setLoading(true);
+          setStatus("LOADING");
+
+          // Get user role with timeout protection
+          const userRole = await Promise.race([
+            getUserRole(currentUser),
+            new Promise<UserRole>((_, reject) => setTimeout(() => reject(new Error("Timeout")), 3000)),
+          ]).catch(() => "booker" as UserRole);
+
+          if (!mounted) return;
+
+          setRole(userRole);
+          setMode(userRole === "talent" ? "artist" : "booking");
+
+          // Load profile data without blocking
+          Promise.all([loadProfile(currentUser, userRole), checkProfileStatus(currentUser, userRole)])
+            .then(([_, profStatus]) => {
+              if (!mounted) return;
+              setProfileStatus(profStatus);
+              setStatus("AUTHENTICATED");
+              setLoading(false);
+            })
+            .catch(() => {
+              if (!mounted) return;
+              setStatus("AUTHENTICATED");
+              setLoading(false);
+            });
+        } catch (error) {
+          if (!mounted) return;
+          console.error("[Auth] Session processing error:", error);
+          setStatus("LOGGED_OUT");
+          setLoading(false);
         }
+      };
+
+      if (skipDelay) {
+        doProcess();
       } else {
-        // Signin can use password OR magic link
-        if (authMethod === "password") {
-          const { error: signInError } = await supabase.auth.signInWithPassword({
-            email: email.toLowerCase().trim(),
-            password: password,
-          });
-          error = signInError;
+        processingTimeout = setTimeout(doProcess, 100);
+      }
+    };
 
-          if (!error) {
-            toast({
-              title: "Welcome back! 👋",
-              description: "You're now signed in. Redirecting...",
-              duration: 3000,
-            });
-            setTimeout(() => navigate(state?.from?.pathname || "/"), 1000);
-          }
-        } else {
-          // Magic link for signin only
-          const redirectTo = new URL(`${window.location.origin}/auth/callback`);
-          redirectTo.searchParams.set("state", JSON.stringify(state || {}));
+    // Set up auth state listener with proper event handling
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!mounted) return;
 
-          const { error: otpError } = await supabase.auth.signInWithOtp({
-            email: email.toLowerCase().trim(),
-            options: {
-              emailRedirectTo: redirectTo.toString(),
-            },
-          });
-          error = otpError;
+      // Handle different auth events
+      if (event === "SIGNED_OUT") {
+        // Immediate state clear for sign out
+        setUser(null);
+        setSession(null);
+        setProfile(null);
+        setRole(null);
+        setProfileStatus("none");
+        setStatus("LOGGED_OUT");
+        setLoading(false);
+      } else if (event === "TOKEN_REFRESHED") {
+        // Just update session, don't reload everything
+        setSession(session);
+      } else if (event === "SIGNED_IN" || event === "USER_UPDATED" || event === "INITIAL_SESSION") {
+        // Process full session for these events
+        processSession(session, event === "SIGNED_IN");
+      }
+    });
 
-          if (!error) {
-            toast({
-              title: "Check your email! 📧",
-              description: "Magic link sent! Check your inbox and spam folder (may take 1-2 minutes).",
-              duration: 8000,
-            });
-            setEmailSent(true);
-          }
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (mounted) {
+        processSession(session, true);
+      }
+    });
+
+    // Listen for storage events for cross-tab sync
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "supabase.auth.token" && e.newValue === null) {
+        // Auth was cleared in another tab
+        if (mounted) {
+          setUser(null);
+          setSession(null);
+          setProfile(null);
+          setRole(null);
+          setProfileStatus("none");
+          setStatus("LOGGED_OUT");
+          setLoading(false);
         }
       }
+    };
 
-      if (error) {
-        console.error("Auth error:", error);
-        let errorMessage = error.message;
-        let errorTitle = "Authentication failed";
+    window.addEventListener("storage", handleStorageChange);
 
-        if (error.message.includes("Invalid login credentials")) {
-          errorTitle = "Incorrect password 🔒";
-          errorMessage = "The password you entered is incorrect. Please try again.";
-        } else if (error.message.includes("Email not confirmed")) {
-          errorTitle = "Email not verified 📧";
-          errorMessage = "Please check your email and click the verification link first.";
-        } else if (error.message.includes("already registered")) {
-          errorTitle = "Account exists! 🔑";
-          errorMessage = "This email is already registered. Use 'Sign In' tab instead.";
-        }
+    return () => {
+      mounted = false;
+      if (processingTimeout) clearTimeout(processingTimeout);
+      subscription.unsubscribe();
+      window.removeEventListener("storage", handleStorageChange);
+    };
+  }, []);
 
-        toast({
-          title: errorTitle,
-          description: errorMessage,
-          variant: "destructive",
-          duration: 6000,
-        });
-      }
-    } catch (error: any) {
-      console.error("Unexpected auth error:", error);
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleForgotPassword = async () => {
-    if (!email) {
-      toast({
-        title: "Email required",
-        description: "Please enter your email address to reset your password.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setLoading(true);
+  const signOut = async () => {
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email.toLowerCase().trim(), {
-        // --- THIS IS THE FIX ---
-        // Point to your actual update password page, not /auth/callback
-        redirectTo: `${window.location.origin}/auth/update-password`,
-      });
+      // Clear local state immediately
+      setUser(null);
+      setSession(null);
+      setProfile(null);
+      setRole(null);
+      setProfileStatus("none");
+      setStatus("LOGGED_OUT");
+      setLoading(true);
 
-      if (error) throw error;
+      // Sign out from Supabase with global scope (affects all tabs)
+      await supabase.auth.signOut({ scope: "global" });
 
-      toast({
-        title: "Password reset email sent! 📧",
-        description: "Check your email for a link to reset your password.",
-        duration: 8000,
-      });
-      setResetEmailSent(true);
-    } catch (error: any) {
-      console.error("Password reset error:", error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to send password reset email. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
+      // Only clear auth-related storage, preserve other app data
+      const authKeys = Object.keys(localStorage).filter(
+        (key) => key.includes("supabase") || key.includes("auth") || key === "userLocation",
+      );
+      authKeys.forEach((key) => localStorage.removeItem(key));
+
+      // Small delay to ensure storage events propagate
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      // Navigate to home
+      window.location.href = "/";
+    } catch (error) {
+      console.error("[Auth] Signout error:", error);
+      // Force navigation even on error
+      window.location.href = "/";
     }
   };
-  if (authLoading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
+
+  const value = {
+    user,
+    session,
+    loading,
+    status,
+    role,
+    profileStatus,
+    profile,
+    signOut,
+    mode,
+    setMode,
+    refreshProfile,
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error("useAuth must be used within an AuthProvider");
   }
-
-  if (emailSent || resetEmailSent) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <div className="w-full max-w-md text-center space-y-4">
-          <Mail className="mx-auto h-12 w-12 text-primary" />
-          <h1 className="mt-4 text-2xl font-bold">
-            {resetEmailSent ? "🔑 Password Reset Email Sent" : "📧 Check Your Email"}
-          </h1>
-          <div className="space-y-2">
-            <p className="text-muted-foreground">
-              {resetEmailSent ? "A password reset link has been sent to" : "A magic link has been sent to"}
-            </p>
-            <p className="font-semibold text-lg">{email}</p>
-          </div>
-          <div className="bg-primary/10 p-4 rounded-lg border border-primary/20 text-left">
-            <p className="text-sm font-medium mb-2">💡 What to do next:</p>
-            <ul className="text-xs text-muted-foreground space-y-1 ml-4 list-disc">
-              <li>Check your inbox and spam folder</li>
-              <li>The email may take 1-2 minutes to arrive</li>
-              {resetEmailSent ? (
-                <>
-                  <li>Click the link to set your new password</li>
-                  <li>After setting your password, return to sign in</li>
-                </>
-              ) : (
-                <>
-                  <li>Click the link to complete sign in</li>
-                  <li>If you already have an account, you'll be signed in automatically</li>
-                </>
-              )}
-            </ul>
-          </div>
-          <Button variant="ghost" onClick={() => navigate("/")} className="mt-6">
-            <ArrowLeft className="h-4 w-4 mr-2" /> Back to Home
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  // Forgot Password View
-  if (showForgotPassword) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <div className="w-full max-w-md">
-          <Button variant="ghost" onClick={() => setShowForgotPassword(false)} className="mb-4">
-            <ArrowLeft className="h-4 w-4 mr-2" /> Back to Sign In
-          </Button>
-          <Card>
-            <CardHeader className="text-center">
-              <CardTitle className="text-2xl">Reset Your Password</CardTitle>
-              <CardDescription>
-                Enter your email address and we'll send you a link to reset your password. This works for all accounts,
-                including those created with magic links.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  handleForgotPassword();
-                }}
-                className="space-y-4"
-              >
-                <div className="space-y-2">
-                  <Label htmlFor="reset-email">Email</Label>
-                  <Input
-                    id="reset-email"
-                    type="email"
-                    placeholder="you@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
-                </div>
-
-                <div className="bg-blue-50 dark:bg-blue-950/30 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
-                  <p className="text-xs text-blue-900 dark:text-blue-100">
-                    💡 <strong>Note:</strong> This works for all accounts, whether you signed up with a password or
-                    magic link. After clicking the link in your email, you'll be able to set a new password.
-                  </p>
-                </div>
-
-                <Button type="submit" disabled={loading} className="w-full">
-                  {loading ? "Sending..." : "Send Reset Link"}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <Button
-          type="button"
-          variant="ghost"
-          onClick={(e) => {
-            e.preventDefault();
-            navigate("/");
-          }}
-          className="mb-4"
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" /> Go Back
-        </Button>
-        <Card>
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl">{title}</CardTitle>
-            <CardDescription>{description}</CardDescription>
-
-            {/* Email Verification Message */}
-            {verificationMessage && (
-              <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg border-2 border-blue-200 dark:border-blue-800">
-                <div className="flex items-start gap-3">
-                  <Mail className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
-                  <div className="text-left">
-                    <p className="text-sm font-semibold text-blue-900 dark:text-blue-100 mb-1">
-                      📧 Email Verification Required
-                    </p>
-                    <p className="text-sm text-blue-800 dark:text-blue-200">{verificationMessage}</p>
-                    <p className="text-xs text-blue-700 dark:text-blue-300 mt-2">
-                      After verifying your email, return here to sign in.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {intentMessage && !verificationMessage && (
-              <div className="mt-3 p-3 bg-primary/10 rounded-lg border border-primary/20">
-                <p className="text-sm font-medium text-primary mb-2">{intentMessage}</p>
-                <p className="text-xs text-muted-foreground">
-                  ✨ <strong>New here?</strong> Switch to the "Sign Up" tab to create your account first!
-                </p>
-              </div>
-            )}
-          </CardHeader>
-          <CardContent>
-            <Tabs defaultValue="login" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="login">Sign In</TabsTrigger>
-                <TabsTrigger value="signup">Sign Up</TabsTrigger>
-              </TabsList>
-              <TabsContent value="login">
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    handleAuthAction(false);
-                  }}
-                  className="space-y-4 pt-4"
-                >
-                  <div className="space-y-4 p-4 bg-muted/30 rounded-lg border">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-sm font-medium">Sign In Method</Label>
-                      <div className="flex gap-2">
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant={authMethod === "password" ? "default" : "outline"}
-                          onClick={() => setAuthMethod("password")}
-                          className="text-xs"
-                        >
-                          🔑 Password
-                        </Button>
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant={authMethod === "magiclink" ? "default" : "outline"}
-                          onClick={() => setAuthMethod("magiclink")}
-                          className="text-xs"
-                        >
-                          ✉️ Magic Link
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="login-email">Email</Label>
-                    <Input
-                      id="login-email"
-                      type="email"
-                      placeholder="you@example.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                    />
-                  </div>
-
-                  {authMethod === "password" && (
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <Label htmlFor="login-password">Password</Label>
-                        <button
-                          type="button"
-                          onClick={() => setShowForgotPassword(true)}
-                          className="text-xs text-primary hover:underline"
-                        >
-                          Forgot password?
-                        </button>
-                      </div>
-                      <Input
-                        id="login-password"
-                        type="password"
-                        placeholder="••••••••"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                        minLength={6}
-                      />
-                    </div>
-                  )}
-
-                  <p className="text-xs text-muted-foreground">
-                    💡{" "}
-                    {authMethod === "password"
-                      ? "Enter your password to sign in"
-                      : "We'll send a magic link to your email"}
-                    . New here? Switch to "Sign Up" tab
-                  </p>
-
-                  <Button type="submit" disabled={loading} className="w-full">
-                    {loading ? "Signing In..." : authMethod === "password" ? "Sign In" : "Send Magic Link"}
-                  </Button>
-                </form>
-              </TabsContent>
-              <TabsContent value="signup">
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    handleAuthAction(true);
-                  }}
-                  className="space-y-4 pt-4"
-                >
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-name">Full Name</Label>
-                    <Input
-                      id="signup-name"
-                      placeholder="Your Name"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-email">Email</Label>
-                    <Input
-                      id="signup-email"
-                      type="email"
-                      placeholder="you@example.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-password">Password</Label>
-                    <Input
-                      id="signup-password"
-                      type="password"
-                      placeholder="At least 6 characters"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                      minLength={6}
-                    />
-                    <p className="text-xs text-muted-foreground">Minimum 6 characters required</p>
-                  </div>
-
-                  <p className="text-xs text-muted-foreground">
-                    💡 Create a secure password to access your account. Already registered? Use "Sign In" tab
-                  </p>
-
-                  <Button type="submit" disabled={loading} className="w-full">
-                    {loading ? "Creating Account..." : "Create Account"}
-                  </Button>
-
-                  <div className="text-center pt-2">
-                    <button
-                      type="button"
-                      onClick={() => setShowForgotPassword(true)}
-                      className="text-xs text-muted-foreground hover:text-primary hover:underline"
-                    >
-                      Need to set a password for an existing account?
-                    </button>
-                  </div>
-                </form>
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  );
-};
-
-export default Auth;
+  return context;
+}
