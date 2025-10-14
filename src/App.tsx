@@ -43,7 +43,7 @@ supabase.auth.onAuthStateChange((event, session) => {
 
 const AppContent = () => {
   useRealtimeNotifications();
-
+  
   return (
     <>
       <Toaster />
