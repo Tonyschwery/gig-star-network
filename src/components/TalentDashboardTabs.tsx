@@ -56,11 +56,12 @@ export const TalentDashboardTabs = ({ profile }: TalentDashboardTabsProps) => {
       setDirectBookings(bookingsData as Booking[] || []);
     }
 
-    if (profile.location) {
+    if (profile.location && profile.user_id) {
       const { data: requestsData, error: requestsError } = await supabase
         .from('event_requests')
         .select('*')
         .eq('event_location', profile.location)
+        .not('hidden_by_talents', 'cs', `{${profile.user_id}}`)
         .order('created_at', { ascending: false });
 
       if (requestsError) {

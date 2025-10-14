@@ -23,7 +23,6 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 
 export interface EventRequest {
   id: string;
@@ -49,8 +48,7 @@ interface EventRequestCardProps {
 export const EventRequestCard = ({ request, isActionable = false, mode, onRemove }: EventRequestCardProps) => {
   const { openChat } = useChat();
   const [showRemoveDialog, setShowRemoveDialog] = useState(false);
-  const { unreadCount } = useUnreadMessages();
-  const navigate = useNavigate(); // ✅ Only one instance of useNavigate()
+  const navigate = useNavigate();
 
   if (!request) return null;
 
@@ -151,11 +149,8 @@ export const EventRequestCard = ({ request, isActionable = false, mode, onRemove
       <CardHeader>
         <div className="flex items-start justify-between">
           <div className="flex-1">
-            <CardTitle className="flex items-center gap-3 mb-2 text-base font-semibold">
+            <CardTitle className="mb-2 text-base font-semibold">
               <span className="capitalize">Event Type: {request.event_type}</span>
-              <Badge variant={request.status === "pending" ? "secondary" : "default"} className="capitalize">
-                {request.status}
-              </Badge>
             </CardTitle>
             <p className="text-sm text-muted-foreground flex items-center">
               <Calendar className="inline h-4 w-4 mr-1.5" />
@@ -277,18 +272,9 @@ export const EventRequestCard = ({ request, isActionable = false, mode, onRemove
                 onClick={() => openChat(request.id, "event_request")}
                 size="sm"
                 variant="outline"
-                className="relative"
               >
                 <MessageCircle className="h-4 w-4 mr-2" />
                 Chat with QTalent Team
-                {unreadCount > 0 && (
-                  <Badge
-                    variant="destructive"
-                    className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs animate-pulse"
-                  >
-                    {unreadCount > 9 ? "9+" : unreadCount}
-                  </Badge>
-                )}
               </Button>
             ) : (
               <TooltipProvider>
@@ -299,18 +285,10 @@ export const EventRequestCard = ({ request, isActionable = false, mode, onRemove
                         onClick={() => openChat(request.id, "event_request")}
                         size="sm"
                         disabled={!isActionable}
-                        className={cn("relative", isBlurred && "opacity-50")}
+                        className={cn(isBlurred && "opacity-50")}
                       >
                         <MessageCircle className="h-4 w-4 mr-2" />
                         Chat with Booker
-                        {unreadCount > 0 && (
-                          <Badge
-                            variant="destructive"
-                            className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs animate-pulse"
-                          >
-                            {unreadCount > 9 ? "9+" : unreadCount}
-                          </Badge>
-                        )}
                       </Button>
                     </span>
                   </TooltipTrigger>

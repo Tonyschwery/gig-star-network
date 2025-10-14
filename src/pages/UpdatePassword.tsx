@@ -17,16 +17,27 @@ const UpdatePassword = () => {
 
   useEffect(() => {
     // Verify that the user came from a password reset link
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      // Allow access if user has an active session (recovery or normal)
+      // Give Supabase a moment to establish the recovery session from URL
       if (!session) {
-        toast({
-          title: "Invalid or expired link",
-          description: "Please request a new password reset link.",
-          variant: "destructive",
-        });
-        navigate("/auth");
+        setTimeout(async () => {
+          const { data: { session: retrySession } } = await supabase.auth.getSession();
+          if (!retrySession) {
+            toast({
+              title: "Invalid or expired link",
+              description: "Please request a new password reset link.",
+              variant: "destructive",
+            });
+            navigate("/auth");
+          }
+        }, 1000);
       }
-    });
+    };
+    
+    checkSession();
   }, [navigate, toast]);
 
   const handleUpdatePassword = async (e: React.FormEvent) => {
@@ -94,7 +105,7 @@ const UpdatePassword = () => {
             </div>
             <CardTitle className="text-2xl">Set Your New Password</CardTitle>
             <CardDescription>
-              Choose a strong password for your account. This will work whether you originally signed up with a password or magic link.
+              Choose a strong password for your account. This works for all account types - whether you signed up with a password, magic link, or are setting a password for the first time.
             </CardDescription>
           </CardHeader>
           <CardContent>
