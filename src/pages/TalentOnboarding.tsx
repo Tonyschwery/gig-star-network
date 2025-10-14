@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -437,17 +437,15 @@ export default function TalentOnboarding() {
           <CardHeader className="text-center px-3 sm:px-6 py-3 sm:py-4">
           <div className="flex items-center justify-between">
             <Button
-              type="button"
               variant="ghost"
               size="sm"
-              onClick={(e) => {
-                e.preventDefault();
-                navigate('/');
-              }}
+              asChild
               className="flex items-center gap-2"
             >
-              <ArrowLeft className="h-4 w-4" />
-              <span className="hidden sm:inline">Back</span>
+              <Link to="/">
+                <ArrowLeft className="h-4 w-4" />
+                <span className="hidden sm:inline">Back</span>
+              </Link>
             </Button>
             <div className="flex-1">
               <CardTitle className="text-xl sm:text-2xl font-bold flex items-center justify-center gap-2">
