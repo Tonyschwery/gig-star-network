@@ -83,6 +83,8 @@ export default function TalentOnboarding() {
   const [pictureFile, setPictureFile] = useState<File | null>(null);
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
   const [signupMessageVisible, setSignupMessageVisible] = useState(false);
+  const [emailConfirmationPending, setEmailConfirmationPending] = useState(false);
+  const [userEmailForConfirmation, setUserEmailForConfirmation] = useState("");
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -104,6 +106,29 @@ export default function TalentOnboarding() {
     currency: "USD",
     location: "",
   });
+
+  // Listen for email confirmation and auto-redirect
+  useEffect(() => {
+    if (!emailConfirmationPending) return;
+
+    const checkEmailConfirmation = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session?.user?.email_confirmed_at) {
+        console.log("[TalentOnboarding] Email confirmed, redirecting to dashboard");
+        toast({ 
+          title: "Email Confirmed! 🎉", 
+          description: "Your account is now active. Redirecting to your dashboard...",
+          duration: 3000
+        });
+        setTimeout(() => {
+          navigate("/talent-dashboard", { replace: true });
+        }, 1500);
+      }
+    });
+
+    return () => {
+      checkEmailConfirmation.data.subscription.unsubscribe();
+    };
+  }, [emailConfirmationPending, navigate, toast]);
 
   useEffect(() => {
     // If user is already authenticated and has a talent profile, redirect to dashboard
@@ -311,22 +336,15 @@ export default function TalentOnboarding() {
       localStorage.removeItem("talent_onboarding_draft");
 
       if (needsConfirmation) {
-        // User needs to verify email - show message and redirect to auth
+        // User needs to verify email - show confirmation screen
+        setUserEmailForConfirmation(email);
+        setEmailConfirmationPending(true);
+        
         toast({ 
           title: "Check Your Email!", 
           description: `We've sent a verification link to ${email}. Please check your email to complete registration.`,
-          duration: 8000
+          duration: 5000
         });
-        
-        // Redirect to auth page with verification message
-        setTimeout(() => {
-          navigate('/auth', { 
-            state: { 
-              message: `Please check your email (${email}) and click the verification link to complete your registration.`,
-              mode: 'talent'
-            } 
-          });
-        }, 2000);
       } else {
         // Email confirmation not required (auto-confirmed)
         toast({ 
@@ -408,6 +426,68 @@ export default function TalentOnboarding() {
     if (!formData.biography) errors.push("Biography");
     return errors;
   };
+
+  // Email Confirmation Screen - blocks navigation until email is confirmed
+  if (emailConfirmationPending) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex items-center justify-center p-4">
+        <Card className="w-full max-w-lg shadow-2xl border-2">
+          <CardHeader className="text-center space-y-2 pb-4">
+            <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-2">
+              <Music className="h-8 w-8 text-primary animate-pulse" />
+            </div>
+            <CardTitle className="text-2xl sm:text-3xl font-bold">Confirm Your Email</CardTitle>
+            <p className="text-muted-foreground">We're almost there! Just one more step...</p>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <Alert className="border-primary/20 bg-primary/5">
+              <AlertCircle className="h-5 w-5 text-primary" />
+              <AlertTitle className="text-base font-semibold">Verification Email Sent</AlertTitle>
+              <AlertDescription className="text-sm mt-2">
+                We've sent a verification link to <strong className="text-foreground">{userEmailForConfirmation}</strong>
+                <br /><br />
+                Please check your inbox and click the link to activate your talent account.
+              </AlertDescription>
+            </Alert>
+
+            <div className="bg-muted/50 rounded-lg p-4 space-y-3">
+              <h4 className="font-semibold text-sm">What happens next?</h4>
+              <ol className="space-y-2 text-sm text-muted-foreground">
+                <li className="flex items-start gap-2">
+                  <span className="text-primary font-bold">1.</span>
+                  <span>Check your email inbox (and spam folder)</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-primary font-bold">2.</span>
+                  <span>Click the verification link in the email</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-primary font-bold">3.</span>
+                  <span>You'll be automatically redirected to your talent dashboard</span>
+                </li>
+              </ol>
+            </div>
+
+            <div className="text-center pt-2">
+              <p className="text-xs text-muted-foreground">
+                Didn't receive the email? Check your spam folder or contact support at{" "}
+                <a href="mailto:qtalentslive@gmail.com" className="text-primary hover:underline">
+                  qtalentslive@gmail.com
+                </a>
+              </p>
+            </div>
+
+            <div className="flex justify-center pt-2">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+            <p className="text-center text-sm text-muted-foreground">
+              Waiting for email confirmation...
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (signupMessageVisible) {
     return (
