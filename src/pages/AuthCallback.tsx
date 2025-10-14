@@ -15,24 +15,28 @@ const AuthCallback = () => {
     const redirectKey = "auth_callback_redirecting";
     const type = searchParams.get("type");
 
-    // ✅ Handle password recovery callback properly
+    // ✅ Handle password recovery links safely
     if (type === "recovery") {
       const handleRecovery = async () => {
         try {
-          // Give Supabase time to process the recovery link and set session
-          let {
-            data: { session },
-          } = await supabase.auth.getSession();
+          // Wait for Supabase to finish creating the recovery session
+          let tries = 0;
+          let session: Session | null = null;
 
-          if (!session) {
-            await new Promise((resolve) => setTimeout(resolve, 1000));
-            const retry = await supabase.auth.getSession();
-            session = retry.data.session;
+          while (tries < 5 && !session) {
+            const { data } = await supabase.auth.getSession();
+            session = data.session;
+            if (!session) {
+              await new Promise((r) => setTimeout(r, 600));
+              tries++;
+            }
           }
 
           if (session) {
+            console.log("[AuthCallback] Recovery session established");
             navigate("/auth/update-password", { replace: true });
           } else {
+            console.warn("[AuthCallback] Recovery session not found after retries");
             toast({
               title: "Invalid or expired link",
               description: "Please request a new password reset link.",
@@ -40,8 +44,8 @@ const AuthCallback = () => {
             });
             navigate("/auth", { replace: true });
           }
-        } catch (error) {
-          console.error("Error handling recovery callback:", error);
+        } catch (err) {
+          console.error("Error handling recovery callback:", err);
           toast({
             title: "Error",
             description: "Something went wrong. Please try again.",
@@ -55,13 +59,12 @@ const AuthCallback = () => {
       return;
     }
 
-    // ✅ Handle normal auth callback flow
+    // ✅ Handle normal auth redirect flow
     const performRedirect = async (session: Session | null) => {
       if (sessionStorage.getItem(redirectKey)) {
         console.log("[AuthCallback] Redirect already in progress, skipping");
         return;
       }
-
       sessionStorage.setItem(redirectKey, "true");
 
       if (!session?.user) {
@@ -108,7 +111,6 @@ const AuthCallback = () => {
         }
       }
 
-      // ✅ Navigation logic
       if (user.email === "admin@qtalent.live") {
         navigate("/admin", { replace: true });
       } else if (bookingData?.talentId) {
@@ -140,12 +142,12 @@ const AuthCallback = () => {
       setTimeout(() => sessionStorage.removeItem(redirectKey), 1000);
     };
 
-    // Check for an existing session
+    // Check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) performRedirect(session);
     });
 
-    // Listen for auth state changes
+    // Listen for auth state change
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_IN" && session) performRedirect(session);
     });
