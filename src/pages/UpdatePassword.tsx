@@ -1,167 +1,131 @@
-console.log("--- UpdatePassword.tsx component file is being loaded ---");
+// FILE: src/pages/UpdatePassword.tsx
+// A simplified, standalone version for debugging.
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/integrations/supabase/client"; // We use the client directly
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Lock, Loader2 } from "lucide-react"; // Added Loader2 for better UX
+import { ArrowLeft, Lock, Loader2 } from "lucide-react";
 
 const UpdatePassword = () => {
   const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [verifying, setVerifying] = useState(true); // 1. State to manage verification
+  const [showForm, setShowForm] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // ✅ FIX: Replaced the unreliable getSession logic with an event listener.
   useEffect(() => {
-    // This listener waits specifically for the PASSWORD_RECOVERY event.
-    // This is the correct way to handle password reset flows.
+    // This listener waits for the specific Supabase event that happens on this page.
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "PASSWORD_RECOVERY") {
-        setVerifying(false); // Link is valid, stop verifying and show the form.
+        setShowForm(true); // The link is valid, so we show the form.
       }
     });
 
-    // Also, check if the token has already expired on initial load.
-    // The hash is only present on the first load. If it's not there, the user might have refreshed.
-    if (!window.location.hash.includes("access_token")) {
+    // Check if the token has already expired on initial load.
+    // If there is no hash, the link is likely invalid or has been used.
+    if (!window.location.hash) {
       setTimeout(() => {
-        toast({
-          title: "Invalid or expired link",
-          description: "This link may have expired. Please request a new one.",
-          variant: "destructive",
-        });
-        navigate("/auth");
-      }, 1000); // Small delay to prevent flash of content
+        setError("This password reset link is invalid or has expired. Please request a new one.");
+      }, 1000);
     }
 
-    // Cleanup the listener when the component unmounts
     return () => {
-      subscription?.unsubscribe();
+      subscription.unsubscribe();
     };
-  }, [navigate, toast]);
+  }, []);
 
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (password.length < 6) {
-      toast({
-        title: "Password too short",
-        description: "Password must be at least 6 characters long.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      toast({
-        title: "Passwords don't match",
-        description: "Please make sure both passwords are the same.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setLoading(true);
-    try {
-      const { error } = await supabase.auth.updateUser({
-        password: password,
-      });
 
-      if (error) throw error;
+    const { error } = await supabase.auth.updateUser({
+      password: password,
+    });
 
-      toast({
-        title: "Password updated successfully! 🎉",
-        description: "You can now sign in with your new password.",
-        duration: 5000,
-      });
-
-      // Sign out to clear the recovery session and redirect to login
-      await supabase.auth.signOut();
-      setTimeout(() => {
-        navigate("/auth");
-      }, 2000);
-    } catch (error: any) {
-      console.error("Password update error:", error);
+    if (error) {
       toast({
         title: "Error updating password",
-        description: error.message || "Failed to update password. Please try again.",
+        description: error.message,
         variant: "destructive",
       });
-    } finally {
-      setLoading(false);
+    } else {
+      toast({
+        title: "Password updated successfully!",
+        description: "You will be redirected to the sign-in page.",
+      });
+      // Sign out to clear the recovery session, then navigate.
+      await supabase.auth.signOut();
+      navigate("/auth");
     }
+    setLoading(false);
   };
 
-  // 2. Display a verifying state while Supabase processes the token from the URL.
-  if (verifying) {
+  // If there's an error (like an expired link), show it.
+  if (error) {
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
-        <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
-        <p className="text-muted-foreground">Verifying your reset link...</p>
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle>Link Expired or Invalid</CardTitle>
+            <CardDescription>{error}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button onClick={() => navigate("/auth")} className="w-full">
+              <ArrowLeft className="h-4 w-4 mr-2" /> Back to Sign In
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
+  // If the link is being verified, show a loading state.
+  if (!showForm) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="mt-4 text-muted-foreground">Verifying link...</p>
+      </div>
+    );
+  }
+
+  // If verification is successful, show the form.
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <Button variant="ghost" onClick={() => navigate("/auth")} className="mb-4">
-          <ArrowLeft className="h-4 w-4 mr-2" /> Back to Sign In
-        </Button>
-        <Card>
-          <CardHeader className="text-center">
-            <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-              <Lock className="h-6 w-6 text-primary" />
-            </div>
-            <CardTitle className="text-2xl">Set Your New Password</CardTitle>
-            <CardDescription>
-              Choose a strong password for your account. This works for all account types.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleUpdatePassword} className="space-y-4">
-              {/* Form content remains the same */}
-              <div className="space-y-2">
-                <Label htmlFor="new-password">New Password</Label>
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <CardTitle>Create a New Password</CardTitle>
+          <CardDescription>Please enter your new password below.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleUpdatePassword}>
+            <div className="space-y-4">
+              <div className="space-y-1">
+                <Label htmlFor="password">New Password</Label>
                 <Input
-                  id="new-password"
+                  id="password"
                   type="password"
-                  placeholder="At least 6 characters"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  minLength={6}
+                  placeholder="Enter your new password"
                 />
               </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="confirm-password">Confirm Password</Label>
-                <Input
-                  id="confirm-password"
-                  type="password"
-                  placeholder="Re-enter your password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
-                  minLength={6}
-                />
-              </div>
-
               <Button type="submit" disabled={loading} className="w-full">
-                {loading ? "Updating Password..." : "Update Password"}
+                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Update Password"}
               </Button>
-            </form>
-          </CardContent>
-        </Card>
-      </div>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 };
