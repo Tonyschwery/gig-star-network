@@ -34,7 +34,7 @@ const AuthCallback = () => {
 
           if (session) {
             console.log("[AuthCallback] Recovery session established");
-            navigate("/auth/update-password", { replace: true });
+            navigate("pages/UpdatePassword", { replace: true });
           } else {
             console.warn("[AuthCallback] Recovery session not found after retries");
             toast({
