@@ -436,17 +436,17 @@ export default function TalentOnboarding() {
         <Card className="w-full border-0 shadow-lg">
           <CardHeader className="text-center px-3 sm:px-6 py-3 sm:py-4">
           <div className="flex items-center justify-between">
-            <Button
-              variant="ghost"
-              size="sm"
-              asChild
-              className="flex items-center gap-2"
-            >
-              <Link to="/">
+            <Link to="/" className="inline-flex">
+              <Button
+                variant="ghost"
+                size="sm"
+                type="button"
+                className="flex items-center gap-2"
+              >
                 <ArrowLeft className="h-4 w-4" />
                 <span className="hidden sm:inline">Back</span>
-              </Link>
-            </Button>
+              </Button>
+            </Link>
             <div className="flex-1">
               <CardTitle className="text-xl sm:text-2xl font-bold flex items-center justify-center gap-2">
                 <Music className="h-5 w-5 sm:h-6 sm:w-6" /> Complete Your Talent Profile
