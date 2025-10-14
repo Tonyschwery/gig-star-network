@@ -18,26 +18,26 @@ const AuthCallback = () => {
     // Check if this is a password recovery callback
     const type = searchParams.get("type");
     
-    if (type === "recovery") {
-      // For password recovery, redirect to a password update page
+   if (type === "recovery") {
+  // Wait for Supabase to complete session recovery
+  supabase.auth.getSession().then(async ({ data: { session } }) => {
+    if (!session) {
+      // Supabase might need a few moments to process the recovery link
+      setTimeout(async () => {
+        const { data: { session: retrySession } } = await supabase.auth.getSession();
+        if (retrySession) {
+          navigate("/auth/update-password", { replace: true });
+        } else {
+          console.error("Recovery session not found");
+        }
+      }, 1000);
+    } else {
       navigate("/auth/update-password", { replace: true });
-      return;
     }
+  });
+  return;
+}
 
-    // This function will handle the redirect logic.
-    const performRedirect = async (session: Session | null) => {
-      // Prevent duplicate redirects across tabs
-      if (sessionStorage.getItem(redirectKey)) {
-        console.log('[AuthCallback] Redirect already in progress, skipping');
-        return;
-      }
-      sessionStorage.setItem(redirectKey, 'true');
-
-      if (!session?.user) {
-        sessionStorage.removeItem(redirectKey);
-        navigate("/", { replace: true });
-        return;
-      }
 
       const user = session.user;
       
