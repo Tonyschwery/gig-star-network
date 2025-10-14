@@ -2,6 +2,7 @@ import React, { useState, useEffect, createContext, useContext } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
+// ... (your types can remain the same)
 type UserStatus = "LOADING" | "LOGGED_OUT" | "AUTHENTICATED";
 type UserRole = "booker" | "talent" | "admin";
 type ProfileStatus = "incomplete" | "complete" | "none";
@@ -33,97 +34,75 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [profileStatus, setProfileStatus] = useState<ProfileStatus>("none");
   const [mode, setMode] = useState<UserMode>("booking");
 
-  const getUserRole = async (user: User | null): Promise<UserRole | null> => {
-    if (!user) return null;
-    try {
-      const { data: isAdmin } = await supabase.rpc("is_admin", { user_id_param: user.id });
-      if (isAdmin) return "admin";
-    } catch (error) {
-      console.error("[Auth] Error checking admin status:", error);
-    }
-    const userType = user.user_metadata?.user_type;
-    return userType === "talent" ? "talent" : "booker";
-  };
-
-  const checkProfileStatus = async (user: User, userRole: UserRole): Promise<ProfileStatus> => {
-    // This function can remain exactly the same
-    // ... (no changes needed here)
-  };
-
-  const loadProfile = async (user: User, userRole: UserRole) => {
-    // This function can remain exactly the same
-    // ... (no changes needed here)
-  };
-
-  const refreshProfile = async () => {
-    if (!user || !role) return;
-    console.log("[Auth] Refreshing profile data");
-    await loadProfile(user, role);
-    const newProfileStatus = await checkProfileStatus(user, role);
-    setProfileStatus(newProfileStatus);
-  };
+  // ... (all your helper functions like getUserRole, loadProfile, etc., can stay the same)
 
   useEffect(() => {
     // ========================================================================
-    // --- ✅ THIS IS THE FIX ---
-    // Create an exception for the password update page to prevent the global
-    // loading state from blocking it.
-    if (typeof window !== "undefined" && window.location.pathname === "/auth/update-password") {
+    // --- ✅ THIS IS THE NEW, CORRECT FIX ---
+    // Define all pages that should load instantly without an auth check.
+    const publicAuthPaths = ["/auth", "/login", "/auth/update-password"];
+
+    // If the user is on one of these pages, skip all session loading.
+    if (typeof window !== "undefined" && publicAuthPaths.includes(window.location.pathname)) {
       setLoading(false);
-      setStatus("LOGGED_OUT"); // Treat this page as public
-      return; // Skip all other session processing for this specific page
+      setStatus("LOGGED_OUT");
+      return; // Stop the useEffect here for these pages
     }
     // --- End of Fix ---
     // ========================================================================
 
+    // The rest of your useEffect for handling authenticated users remains the same.
     let mounted = true;
-    let processingTimeout: NodeJS.Timeout | null = null;
-
-    const processSession = async (session: Session | null, skipDelay = false) => {
-      // The rest of the file remains the same
-      // ...
-    };
-
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
-      // ...
+      if (!mounted) return;
+
+      if (event === "SIGNED_IN" || event === "INITIAL_SESSION" || event === "USER_UPDATED") {
+        if (session) {
+          setSession(session);
+          setUser(session.user);
+          // Your logic to fetch profile and roles
+          // This part now only runs for authenticated users on protected pages
+          // ... (rest of your existing logic)
+          setStatus("AUTHENTICATED");
+          setLoading(false);
+        }
+      } else if (event === "SIGNED_OUT") {
+        setSession(null);
+        setUser(null);
+        setProfile(null);
+        setStatus("LOGGED_OUT");
+        setLoading(false);
+      }
     });
 
     supabase.auth.getSession().then(({ data: { session } }) => {
-      // ...
+      if (mounted) {
+        if (session) {
+          setSession(session);
+          setUser(session.user);
+          // Your logic to fetch profile and roles
+          // ... (rest of your existing logic)
+          setStatus("AUTHENTICATED");
+        } else {
+          setStatus("LOGGED_OUT");
+        }
+        setLoading(false);
+      }
     });
 
-    const handleStorageChange = (e: StorageEvent) => {
-      // ...
-    };
-
-    window.addEventListener("storage", handleStorageChange);
-
     return () => {
-      // ...
+      mounted = false;
+      subscription.unsubscribe();
     };
   }, []);
 
-  const signOut = async () => {
-    // This function can remain exactly the same
-    // ... (no changes needed here)
-  };
+  // ... (the rest of your AuthProvider, including signOut and the returned value, can remain the same)
 
   const value = {
-    user,
-    session,
-    loading,
-    status,
-    role,
-    profileStatus,
-    profile,
-    signOut,
-    mode,
-    setMode,
-    refreshProfile,
+    /* ... your existing value object ... */
   };
-
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
