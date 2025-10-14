@@ -343,15 +343,9 @@ export default function TalentOnboarding() {
       localStorage.removeItem("talent_onboarding_draft");
 
       if (needsConfirmation) {
-        // User needs to verify email - show confirmation screen
+        // User needs to verify email - show full-screen confirmation page ONLY
         setUserEmailForConfirmation(email);
         setEmailConfirmationPending(true);
-        
-        toast({ 
-          title: "Check Your Email!", 
-          description: `We've sent a verification link to ${email}. Please check your email to complete registration.`,
-          duration: 5000
-        });
       } else {
         // Email confirmation not required (auto-confirmed)
         toast({ 

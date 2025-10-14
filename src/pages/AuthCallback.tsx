@@ -12,6 +12,9 @@ const AuthCallback = () => {
   const { toast } = useToast();
 
   useEffect(() => {
+    // Prevent multiple redirects in multi-tab scenarios
+    const redirectKey = 'auth_callback_redirecting';
+    
     // Check if this is a password recovery callback
     const type = searchParams.get("type");
     
@@ -23,7 +26,15 @@ const AuthCallback = () => {
 
     // This function will handle the redirect logic.
     const performRedirect = async (session: Session | null) => {
+      // Prevent duplicate redirects across tabs
+      if (sessionStorage.getItem(redirectKey)) {
+        console.log('[AuthCallback] Redirect already in progress, skipping');
+        return;
+      }
+      sessionStorage.setItem(redirectKey, 'true');
+
       if (!session?.user) {
+        sessionStorage.removeItem(redirectKey);
         navigate("/", { replace: true });
         return;
       }
@@ -91,30 +102,32 @@ const AuthCallback = () => {
           navigate("/booker-dashboard", { replace: true });
         }
       }
+      
+      // Clear redirect lock after navigation
+      setTimeout(() => sessionStorage.removeItem(redirectKey), 1000);
     };
 
-    // We listen for the SIGNED_IN event.
-    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === "SIGNED_IN") {
-        performRedirect(session);
-        // Clean up the listener once we've handled the sign-in.
-        authListener?.subscription.unsubscribe();
-      }
-    });
-
-    // Also check if the session is already available, in case the event fired before the listener was set up.
+    // Check session immediately first for faster redirect
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
         performRedirect(session);
-        authListener?.subscription.unsubscribe();
+        return;
+      }
+    });
+
+    // Also listen for auth state changes as fallback
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_IN" && session) {
+        performRedirect(session);
       }
     });
 
     // Cleanup subscription on component unmount
     return () => {
       authListener?.subscription.unsubscribe();
+      sessionStorage.removeItem(redirectKey);
     };
-  }, [navigate, searchParams]);
+  }, [navigate, searchParams, toast]);
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center">
