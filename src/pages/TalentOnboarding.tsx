@@ -107,18 +107,25 @@ export default function TalentOnboarding() {
     location: "",
   });
 
-  // Listen for email confirmation and auto-redirect
+  // Listen for email confirmation and auto-redirect - CRITICAL SECURITY CHECK
   useEffect(() => {
     if (!emailConfirmationPending) return;
 
     const checkEmailConfirmation = supabase.auth.onAuthStateChange((event, session) => {
+      console.log("[TalentOnboarding] Auth event:", event, "Has email_confirmed_at:", !!session?.user?.email_confirmed_at);
+      
       if (event === 'SIGNED_IN' && session?.user?.email_confirmed_at) {
-        console.log("[TalentOnboarding] Email confirmed, redirecting to dashboard");
+        console.log("[TalentOnboarding] ✅ Email confirmed! Redirecting to dashboard");
+        
+        // Clear the blocking state
+        setEmailConfirmationPending(false);
+        
         toast({ 
           title: "Email Confirmed! 🎉", 
           description: "Your account is now active. Redirecting to your dashboard...",
           duration: 3000
         });
+        
         setTimeout(() => {
           navigate("/talent-dashboard", { replace: true });
         }, 1500);
@@ -427,64 +434,126 @@ export default function TalentOnboarding() {
     return errors;
   };
 
-  // Email Confirmation Screen - blocks navigation until email is confirmed
+  // FULL SCREEN BLACK BLOCKING PAGE - Cannot bypass until email is confirmed
   if (emailConfirmationPending) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex items-center justify-center p-4">
-        <Card className="w-full max-w-lg shadow-2xl border-2">
-          <CardHeader className="text-center space-y-2 pb-4">
-            <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-2">
-              <Music className="h-8 w-8 text-primary animate-pulse" />
+      <div className="fixed inset-0 bg-black z-[9999] flex items-center justify-center p-6 overflow-y-auto">
+        <div className="w-full max-w-2xl mx-auto space-y-8 py-8">
+          {/* Animated Icon */}
+          <div className="flex justify-center">
+            <div className="relative">
+              <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl animate-pulse"></div>
+              <div className="relative w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center border-2 border-primary/30">
+                <Music className="h-12 w-12 text-primary animate-pulse" />
+              </div>
             </div>
-            <CardTitle className="text-2xl sm:text-3xl font-bold">Confirm Your Email</CardTitle>
-            <p className="text-muted-foreground">We're almost there! Just one more step...</p>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <Alert className="border-primary/20 bg-primary/5">
-              <AlertCircle className="h-5 w-5 text-primary" />
-              <AlertTitle className="text-base font-semibold">Verification Email Sent</AlertTitle>
-              <AlertDescription className="text-sm mt-2">
-                We've sent a verification link to <strong className="text-foreground">{userEmailForConfirmation}</strong>
-                <br /><br />
-                Please check your inbox and click the link to activate your talent account.
-              </AlertDescription>
-            </Alert>
+          </div>
 
-            <div className="bg-muted/50 rounded-lg p-4 space-y-3">
-              <h4 className="font-semibold text-sm">What happens next?</h4>
-              <ol className="space-y-2 text-sm text-muted-foreground">
-                <li className="flex items-start gap-2">
-                  <span className="text-primary font-bold">1.</span>
-                  <span>Check your email inbox (and spam folder)</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-primary font-bold">2.</span>
-                  <span>Click the verification link in the email</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-primary font-bold">3.</span>
-                  <span>You'll be automatically redirected to your talent dashboard</span>
-                </li>
-              </ol>
-            </div>
-
-            <div className="text-center pt-2">
-              <p className="text-xs text-muted-foreground">
-                Didn't receive the email? Check your spam folder or contact support at{" "}
-                <a href="mailto:qtalentslive@gmail.com" className="text-primary hover:underline">
-                  qtalentslive@gmail.com
-                </a>
-              </p>
-            </div>
-
-            <div className="flex justify-center pt-2">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-            </div>
-            <p className="text-center text-sm text-muted-foreground">
-              Waiting for email confirmation...
+          {/* Main Message */}
+          <div className="text-center space-y-4">
+            <h1 className="text-4xl sm:text-5xl font-bold text-white tracking-tight">
+              Confirm Your Email
+            </h1>
+            <p className="text-xl text-gray-300">
+              One final step to activate your talent account
             </p>
-          </CardContent>
-        </Card>
+          </div>
+
+          {/* Email Sent Alert */}
+          <div className="bg-primary/10 border-2 border-primary/30 rounded-2xl p-6 sm:p-8 backdrop-blur-sm">
+            <div className="flex items-start gap-4">
+              <div className="flex-shrink-0">
+                <div className="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center">
+                  <AlertCircle className="h-6 w-6 text-primary" />
+                </div>
+              </div>
+              <div className="flex-1 space-y-3">
+                <h3 className="text-lg font-semibold text-white">
+                  Verification Email Sent
+                </h3>
+                <p className="text-gray-300 leading-relaxed">
+                  We've sent a verification link to{" "}
+                  <span className="font-bold text-white">{userEmailForConfirmation}</span>
+                </p>
+                <p className="text-gray-400 text-sm">
+                  Please check your inbox (and spam folder) and click the verification link to activate your account.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Instructions */}
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-6 sm:p-8 backdrop-blur-sm">
+            <h4 className="font-semibold text-white text-lg mb-4">What happens next?</h4>
+            <ol className="space-y-4">
+              <li className="flex items-start gap-3 text-gray-300">
+                <span className="flex-shrink-0 w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center text-primary font-bold text-sm">
+                  1
+                </span>
+                <span className="pt-1">Check your email inbox and spam folder</span>
+              </li>
+              <li className="flex items-start gap-3 text-gray-300">
+                <span className="flex-shrink-0 w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center text-primary font-bold text-sm">
+                  2
+                </span>
+                <span className="pt-1">Click the verification link in the email we sent you</span>
+              </li>
+              <li className="flex items-start gap-3 text-gray-300">
+                <span className="flex-shrink-0 w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center text-primary font-bold text-sm">
+                  3
+                </span>
+                <span className="pt-1">You'll be automatically redirected to your talent dashboard</span>
+              </li>
+            </ol>
+          </div>
+
+          {/* Warning */}
+          <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 backdrop-blur-sm">
+            <p className="text-amber-200 text-sm text-center">
+              ⚠️ <strong>Important:</strong> Your talent profile will not be visible to bookers until you confirm your email address.
+            </p>
+          </div>
+
+          {/* Resend Email Option */}
+          <div className="text-center space-y-3">
+            <p className="text-gray-400 text-sm">Didn't receive the email?</p>
+            <Button
+              variant="outline"
+              onClick={async () => {
+                try {
+                  const { error } = await supabase.auth.resend({
+                    type: 'signup',
+                    email: userEmailForConfirmation,
+                  });
+                  
+                  if (error) throw error;
+                  
+                  toast({
+                    title: "Email Resent! 📧",
+                    description: "Check your inbox again. It may take a few minutes to arrive.",
+                    duration: 5000
+                  });
+                } catch (error: any) {
+                  toast({
+                    title: "Error",
+                    description: error.message || "Failed to resend email. Please try again.",
+                    variant: "destructive"
+                  });
+                }
+              }}
+              className="bg-white/10 hover:bg-white/20 text-white border-white/20"
+            >
+              Resend Verification Email
+            </Button>
+          </div>
+
+          {/* Footer Note */}
+          <div className="text-center pt-4">
+            <p className="text-gray-500 text-xs">
+              This page will automatically redirect once you confirm your email
+            </p>
+          </div>
+        </div>
       </div>
     );
   }
