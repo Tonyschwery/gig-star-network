@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Routes, Route } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client"; // Ensure supabase is imported
 import Auth from "./pages/Auth"; // Default export now
+import { AuthProvider } from "./hooks/useAuth";
 import { UserModeProvider } from "./contexts/UserModeContext";
 import { ChatProvider } from "./contexts/ChatContext";
 import { ProStatusProvider } from "./contexts/ProStatusContext";
@@ -133,7 +134,7 @@ const AppContent = () => {
 };
 
 const App = () => (
-  <Auth>
+  <AuthProvider>
     <ProStatusProvider>
       <UserModeProvider>
         <ChatProvider>
@@ -143,7 +144,7 @@ const App = () => (
         </ChatProvider>
       </UserModeProvider>
     </ProStatusProvider>
-  </Auth>
+  </AuthProvider>
 );
 
 export default App;
