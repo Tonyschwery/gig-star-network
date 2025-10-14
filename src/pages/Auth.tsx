@@ -33,14 +33,15 @@ const Auth = () => {
 
   const title = mode === "booker" ? "Welcome to Qtalent" : "Talent Access";
   const description = "Sign in or create an account with a magic link.";
-  
+
   // Get intent from state to show appropriate messaging
   const intent = state?.intent;
-  const intentMessage = intent === "booking-form" 
-    ? "Sign in to complete your booking request" 
-    : intent === "event-form"
-    ? "Sign in to get personalized recommendations"
-    : null;
+  const intentMessage =
+    intent === "booking-form"
+      ? "Sign in to complete your booking request"
+      : intent === "event-form"
+        ? "Sign in to get personalized recommendations"
+        : null;
 
   useEffect(() => {
     if (!authLoading && user) {
@@ -86,8 +87,8 @@ const Auth = () => {
 
     try {
       // Check email via edge function
-      const { data: emailCheck } = await supabase.functions.invoke('check-email-exists', {
-        body: { email: email.toLowerCase().trim() }
+      const { data: emailCheck } = await supabase.functions.invoke("check-email-exists", {
+        body: { email: email.toLowerCase().trim() },
       });
 
       // For sign up - check if user exists
@@ -122,8 +123,8 @@ const Auth = () => {
           email: email.toLowerCase().trim(),
           password: password,
           options: {
-            data: { name: name, user_type: userType }
-          }
+            data: { name: name, user_type: userType },
+          },
         });
         error = signUpError;
 
@@ -133,14 +134,16 @@ const Auth = () => {
             description: "Your account has been created successfully. Redirecting...",
             duration: 3000,
           });
-          
+
           // Get the newly created user to send welcome emails
-          const { data: { user: newUser } } = await supabase.auth.getUser();
+          const {
+            data: { user: newUser },
+          } = await supabase.auth.getUser();
           if (newUser) {
             // Send welcome emails (to user and admin notification)
             await sendUserSignupEmails(newUser.id, name, email.toLowerCase().trim());
           }
-          
+
           setTimeout(() => navigate(state?.from?.pathname || "/"), 1000);
         }
       } else {
@@ -232,7 +235,9 @@ const Auth = () => {
     setLoading(true);
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email.toLowerCase().trim(), {
-        redirectTo: `${window.location.origin}/auth/callback?type=recovery`,
+        // --- THIS IS THE FIX ---
+        // Point to your actual update password page, not /auth/callback
+        redirectTo: `${window.location.origin}/auth/update-password`,
       });
 
       if (error) throw error;
@@ -254,7 +259,6 @@ const Auth = () => {
       setLoading(false);
     }
   };
-
   if (authLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -315,8 +319,8 @@ const Auth = () => {
             <CardHeader className="text-center">
               <CardTitle className="text-2xl">Reset Your Password</CardTitle>
               <CardDescription>
-                Enter your email address and we'll send you a link to reset your password.
-                This works for all accounts, including those created with magic links.
+                Enter your email address and we'll send you a link to reset your password. This works for all accounts,
+                including those created with magic links.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -341,8 +345,8 @@ const Auth = () => {
 
                 <div className="bg-blue-50 dark:bg-blue-950/30 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
                   <p className="text-xs text-blue-900 dark:text-blue-100">
-                    💡 <strong>Note:</strong> This works for all accounts, whether you signed up with a password or magic link.
-                    After clicking the link in your email, you'll be able to set a new password.
+                    💡 <strong>Note:</strong> This works for all accounts, whether you signed up with a password or
+                    magic link. After clicking the link in your email, you'll be able to set a new password.
                   </p>
                 </div>
 
@@ -360,13 +364,13 @@ const Auth = () => {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <Button 
+        <Button
           type="button"
-          variant="ghost" 
+          variant="ghost"
           onClick={(e) => {
             e.preventDefault();
-            navigate('/');
-          }} 
+            navigate("/");
+          }}
           className="mb-4"
         >
           <ArrowLeft className="h-4 w-4 mr-2" /> Go Back
@@ -375,7 +379,7 @@ const Auth = () => {
           <CardHeader className="text-center">
             <CardTitle className="text-2xl">{title}</CardTitle>
             <CardDescription>{description}</CardDescription>
-            
+
             {/* Email Verification Message */}
             {verificationMessage && (
               <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg border-2 border-blue-200 dark:border-blue-800">
@@ -385,9 +389,7 @@ const Auth = () => {
                     <p className="text-sm font-semibold text-blue-900 dark:text-blue-100 mb-1">
                       📧 Email Verification Required
                     </p>
-                    <p className="text-sm text-blue-800 dark:text-blue-200">
-                      {verificationMessage}
-                    </p>
+                    <p className="text-sm text-blue-800 dark:text-blue-200">{verificationMessage}</p>
                     <p className="text-xs text-blue-700 dark:text-blue-300 mt-2">
                       After verifying your email, return here to sign in.
                     </p>
@@ -395,7 +397,7 @@ const Auth = () => {
                 </div>
               </div>
             )}
-            
+
             {intentMessage && !verificationMessage && (
               <div className="mt-3 p-3 bg-primary/10 rounded-lg border border-primary/20">
                 <p className="text-sm font-medium text-primary mb-2">{intentMessage}</p>
@@ -444,7 +446,7 @@ const Auth = () => {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="login-email">Email</Label>
                     <Input
@@ -482,18 +484,15 @@ const Auth = () => {
                   )}
 
                   <p className="text-xs text-muted-foreground">
-                    💡 {authMethod === "password" 
-                      ? "Enter your password to sign in" 
-                      : "We'll send a magic link to your email"}.
-                    {" "}New here? Switch to "Sign Up" tab
+                    💡{" "}
+                    {authMethod === "password"
+                      ? "Enter your password to sign in"
+                      : "We'll send a magic link to your email"}
+                    . New here? Switch to "Sign Up" tab
                   </p>
-                  
+
                   <Button type="submit" disabled={loading} className="w-full">
-                    {loading 
-                      ? "Signing In..." 
-                      : authMethod === "password" 
-                        ? "Sign In" 
-                        : "Send Magic Link"}
+                    {loading ? "Signing In..." : authMethod === "password" ? "Sign In" : "Send Magic Link"}
                   </Button>
                 </form>
               </TabsContent>
@@ -515,7 +514,7 @@ const Auth = () => {
                       required
                     />
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="signup-email">Email</Label>
                     <Input
@@ -539,15 +538,13 @@ const Auth = () => {
                       required
                       minLength={6}
                     />
-                    <p className="text-xs text-muted-foreground">
-                      Minimum 6 characters required
-                    </p>
+                    <p className="text-xs text-muted-foreground">Minimum 6 characters required</p>
                   </div>
 
                   <p className="text-xs text-muted-foreground">
                     💡 Create a secure password to access your account. Already registered? Use "Sign In" tab
                   </p>
-                  
+
                   <Button type="submit" disabled={loading} className="w-full">
                     {loading ? "Creating Account..." : "Create Account"}
                   </Button>
