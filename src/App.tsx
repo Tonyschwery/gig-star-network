@@ -5,7 +5,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Routes, Route } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client"; // Ensure supabase is imported
-import { AuthProvider } from "./hooks/useAuth";
+import Auth from "./pages/Auth"; // Default export now
 import { UserModeProvider } from "./contexts/UserModeContext";
 import { ChatProvider } from "./contexts/ChatContext";
 import { ProStatusProvider } from "./contexts/ProStatusContext";
@@ -14,7 +14,6 @@ import { PWAInstallPrompt } from "./components/PWAInstallPrompt";
 import { NotificationPermissionPrompt } from "./components/NotificationPermissionPrompt";
 import { useRealtimeNotifications } from "./hooks/useRealtimeNotifications";
 import Index from "./pages/Index";
-import Auth from "./pages/Auth";
 import BookerDashboard from "./pages/BookerDashboard";
 import TalentOnboarding from "./pages/TalentOnboarding";
 import TalentProfile from "./pages/TalentProfile";
@@ -36,14 +35,14 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import TrustSafety from "./pages/TrustSafety";
 
-// ✅ Diagnostic listener added here
+// Diagnostic listener
 supabase.auth.onAuthStateChange((event, session) => {
   console.log("Supabase Auth State Change Event:", { event, session });
 });
 
 const AppContent = () => {
   useRealtimeNotifications();
-  
+
   return (
     <>
       <Toaster />
@@ -55,8 +54,24 @@ const AppContent = () => {
         <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/auth/update-password" element={<UpdatePassword />} />
         <Route path="/" element={<Index />} />
-        <Route path="/auth" element={<Auth />} />
-        <Route path="/login" element={<Auth />} />
+
+        {/* Fixed Auth routes with empty children */}
+        <Route
+          path="/auth"
+          element={
+            <Auth>
+              <></>
+            </Auth>
+          }
+        />
+        <Route
+          path="/login"
+          element={
+            <Auth>
+              <></>
+            </Auth>
+          }
+        />
 
         <Route
           path="/admin"
@@ -118,7 +133,7 @@ const AppContent = () => {
 };
 
 const App = () => (
-  <AuthProvider>
+  <Auth>
     <ProStatusProvider>
       <UserModeProvider>
         <ChatProvider>
@@ -128,7 +143,7 @@ const App = () => (
         </ChatProvider>
       </UserModeProvider>
     </ProStatusProvider>
-  </AuthProvider>
+  </Auth>
 );
 
 export default App;
