@@ -15,27 +15,35 @@ const UpdatePassword = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  useEffect(() => {
-    // Verify that the user came from a password reset link
-    const checkRecoverySession = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+  // ✅ NEW: store the token from the URL
+  const [token, setToken] = useState<string | null>(null);
 
-      if (!session) {
-        toast({
-          title: "Invalid or expired link",
-          description: "Please request a new password reset link.",
-          variant: "destructive",
-        });
-        navigate("/auth", { replace: true });
-      }
-    };
-    checkRecoverySession();
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const recoveryToken = params.get("token"); // grab token from URL
+    if (!recoveryToken) {
+      toast({
+        title: "Invalid or expired link",
+        description: "Please request a new password reset link.",
+        variant: "destructive",
+      });
+      navigate("/auth", { replace: true });
+      return;
+    }
+    setToken(recoveryToken);
   }, [navigate, toast]);
 
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!token) {
+      toast({
+        title: "Missing token",
+        description: "Cannot reset password without a valid token.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     if (password.length < 6) {
       toast({
@@ -57,8 +65,10 @@ const UpdatePassword = () => {
 
     setLoading(true);
     try {
+      // ✅ NEW: Use the token to update the password
       const { error } = await supabase.auth.updateUser({
         password: password,
+        access_token: token,
       });
 
       if (error) throw error;
@@ -69,11 +79,7 @@ const UpdatePassword = () => {
         duration: 5000,
       });
 
-      // Sign out and redirect to login
-      await supabase.auth.signOut();
-      setTimeout(() => {
-        navigate("/auth");
-      }, 2000);
+      navigate("/auth", { replace: true });
     } catch (error: any) {
       console.error("Password update error:", error);
       toast({
