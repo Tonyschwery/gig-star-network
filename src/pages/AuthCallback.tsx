@@ -9,15 +9,34 @@ import { useToast } from "@/hooks/use-toast";
 const AuthCallback = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { toast } = useToast();
 
   useEffect(() => {
+    const redirectKey = "auth_callback_redirecting";
     const type = searchParams.get("type");
+    const access_token = searchParams.get("access_token");
+    const refresh_token = searchParams.get("refresh_token");
 
     // ✅ Handle password recovery links safely
-    if (type === "recovery") {
-      navigate("/auth/update-password", { replace: true });
-      return;
+    if (type === "recovery" && access_token && refresh_token) {
+      supabase.auth
+        .setSession({ access_token, refresh_token })
+        .then(() => {
+          // Redirect to your UpdatePassword page
+          navigate("/auth/update-password", { replace: true });
+        })
+        .catch(() => {
+          // Show toast if link is invalid
+          toast({
+            title: "Invalid or expired link",
+            description: "Please request a new password reset link.",
+            variant: "destructive",
+          });
+          navigate("/auth", { replace: true });
+        });
+      return; // Stop further redirect logic
     }
+
     // ✅ Handle normal auth redirect flow
     const performRedirect = async (session: Session | null) => {
       if (sessionStorage.getItem(redirectKey)) {
