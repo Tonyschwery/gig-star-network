@@ -5,7 +5,6 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Routes, Route } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client"; // Ensure supabase is imported
-import Auth from "./pages/Auth"; // Default export now
 import { AuthProvider } from "./hooks/useAuth";
 import { UserModeProvider } from "./contexts/UserModeContext";
 import { ChatProvider } from "./contexts/ChatContext";
@@ -15,6 +14,7 @@ import { PWAInstallPrompt } from "./components/PWAInstallPrompt";
 import { NotificationPermissionPrompt } from "./components/NotificationPermissionPrompt";
 import { useRealtimeNotifications } from "./hooks/useRealtimeNotifications";
 import Index from "./pages/Index";
+import Auth from "./pages/Auth";
 import BookerDashboard from "./pages/BookerDashboard";
 import TalentOnboarding from "./pages/TalentOnboarding";
 import TalentProfile from "./pages/TalentProfile";
@@ -36,7 +36,7 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import TrustSafety from "./pages/TrustSafety";
 
-// Diagnostic listener
+// ✅ Diagnostic listener added here
 supabase.auth.onAuthStateChange((event, session) => {
   console.log("Supabase Auth State Change Event:", { event, session });
 });
@@ -55,24 +55,8 @@ const AppContent = () => {
         <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/auth/update-password" element={<UpdatePassword />} />
         <Route path="/" element={<Index />} />
-
-        {/* Fixed Auth routes with empty children */}
-        <Route
-          path="/auth"
-          element={
-            <Auth>
-              <></>
-            </Auth>
-          }
-        />
-        <Route
-          path="/login"
-          element={
-            <Auth>
-              <></>
-            </Auth>
-          }
-        />
+        <Route path="/auth" element={<Auth />} />
+        <Route path="/login" element={<Auth />} />
 
         <Route
           path="/admin"
