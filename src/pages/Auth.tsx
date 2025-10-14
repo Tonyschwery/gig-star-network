@@ -360,7 +360,15 @@ const Auth = () => {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <Button variant="ghost" onClick={() => navigate(-1)} className="mb-4">
+        <Button 
+          type="button"
+          variant="ghost" 
+          onClick={(e) => {
+            e.preventDefault();
+            navigate('/');
+          }} 
+          className="mb-4"
+        >
           <ArrowLeft className="h-4 w-4 mr-2" /> Go Back
         </Button>
         <Card>
