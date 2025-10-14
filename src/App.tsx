@@ -43,7 +43,7 @@ supabase.auth.onAuthStateChange((event, session) => {
 
 const AppContent = () => {
   useRealtimeNotifications();
-  
+
   return (
     <>
       <Toaster />
@@ -53,7 +53,7 @@ const AppContent = () => {
       <NotificationPermissionPrompt />
       <Routes>
         <Route path="/auth/callback" element={<AuthCallback />} />
-        <Route path="/auth/update-password" element={<UpdatePassword />} />
+        <Route path="/pages/update-password" element={<UpdatePassword />} />
         <Route path="/" element={<Index />} />
         <Route path="/auth" element={<Auth />} />
         <Route path="/login" element={<Auth />} />
