@@ -6,38 +6,45 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Lock } from "lucide-react";
+import { ArrowLeft, Lock, Loader2 } from "lucide-react"; // Added Loader2 for better UX
 
 const UpdatePassword = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [verifying, setVerifying] = useState(true); // 1. State to manage verification
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  // ✅ FIX: Replaced the unreliable getSession logic with an event listener.
   useEffect(() => {
-    // Verify that the user came from a password reset link
-    const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      // Allow access if user has an active session (recovery or normal)
-      // Give Supabase a moment to establish the recovery session from URL
-      if (!session) {
-        setTimeout(async () => {
-          const { data: { session: retrySession } } = await supabase.auth.getSession();
-          if (!retrySession) {
-            toast({
-              title: "Invalid or expired link",
-              description: "Please request a new password reset link.",
-              variant: "destructive",
-            });
-            navigate("/auth");
-          }
-        }, 1000);
+    // This listener waits specifically for the PASSWORD_RECOVERY event.
+    // This is the correct way to handle password reset flows.
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event) => {
+      if (event === "PASSWORD_RECOVERY") {
+        setVerifying(false); // Link is valid, stop verifying and show the form.
       }
+    });
+
+    // Also, check if the token has already expired on initial load.
+    // The hash is only present on the first load. If it's not there, the user might have refreshed.
+    if (!window.location.hash.includes("access_token")) {
+      setTimeout(() => {
+        toast({
+          title: "Invalid or expired link",
+          description: "This link may have expired. Please request a new one.",
+          variant: "destructive",
+        });
+        navigate("/auth");
+      }, 1000); // Small delay to prevent flash of content
+    }
+
+    // Cleanup the listener when the component unmounts
+    return () => {
+      subscription?.unsubscribe();
     };
-    
-    checkSession();
   }, [navigate, toast]);
 
   const handleUpdatePassword = async (e: React.FormEvent) => {
@@ -75,7 +82,7 @@ const UpdatePassword = () => {
         duration: 5000,
       });
 
-      // Sign out and redirect to login
+      // Sign out to clear the recovery session and redirect to login
       await supabase.auth.signOut();
       setTimeout(() => {
         navigate("/auth");
@@ -92,6 +99,16 @@ const UpdatePassword = () => {
     }
   };
 
+  // 2. Display a verifying state while Supabase processes the token from the URL.
+  if (verifying) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
+        <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
+        <p className="text-muted-foreground">Verifying your reset link...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md">
@@ -105,11 +122,12 @@ const UpdatePassword = () => {
             </div>
             <CardTitle className="text-2xl">Set Your New Password</CardTitle>
             <CardDescription>
-              Choose a strong password for your account. This works for all account types - whether you signed up with a password, magic link, or are setting a password for the first time.
+              Choose a strong password for your account. This works for all account types.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleUpdatePassword} className="space-y-4">
+              {/* Form content remains the same */}
               <div className="space-y-2">
                 <Label htmlFor="new-password">New Password</Label>
                 <Input
@@ -136,24 +154,9 @@ const UpdatePassword = () => {
                 />
               </div>
 
-              <div className="bg-blue-50 dark:bg-blue-950/30 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
-                <p className="text-xs text-blue-900 dark:text-blue-100">
-                  💡 <strong>Password Tips:</strong>
-                </p>
-                <ul className="text-xs text-blue-800 dark:text-blue-200 mt-1 ml-4 list-disc space-y-1">
-                  <li>Use at least 6 characters (longer is better)</li>
-                  <li>Mix uppercase, lowercase, numbers & symbols</li>
-                  <li>Avoid common words or personal information</li>
-                </ul>
-              </div>
-
               <Button type="submit" disabled={loading} className="w-full">
                 {loading ? "Updating Password..." : "Update Password"}
               </Button>
-
-              <p className="text-xs text-center text-muted-foreground">
-                After updating, you'll be redirected to sign in with your new password
-              </p>
             </form>
           </CardContent>
         </Card>
