@@ -23,6 +23,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useIndividualUnreadCount } from "@/hooks/useIndividualUnreadCount";
 
 export interface EventRequest {
   id: string;
@@ -47,6 +48,7 @@ interface EventRequestCardProps {
 
 export const EventRequestCard = ({ request, isActionable = false, mode, onRemove }: EventRequestCardProps) => {
   const { openChat } = useChat();
+  const { unreadCount } = useIndividualUnreadCount(request.id, 'event_request');
   const [showRemoveDialog, setShowRemoveDialog] = useState(false);
   const navigate = useNavigate();
 
@@ -272,9 +274,18 @@ export const EventRequestCard = ({ request, isActionable = false, mode, onRemove
                 onClick={() => openChat(request.id, "event_request")}
                 size="sm"
                 variant="outline"
+                className="relative"
               >
                 <MessageCircle className="h-4 w-4 mr-2" />
                 Chat with QTalent Team
+                {unreadCount > 0 && (
+                  <Badge
+                    variant="destructive"
+                    className="ml-2 h-5 w-5 p-0 flex items-center justify-center text-xs animate-pulse"
+                  >
+                    {unreadCount > 9 ? "9+" : unreadCount}
+                  </Badge>
+                )}
               </Button>
             ) : (
               <TooltipProvider>
@@ -285,10 +296,18 @@ export const EventRequestCard = ({ request, isActionable = false, mode, onRemove
                         onClick={() => openChat(request.id, "event_request")}
                         size="sm"
                         disabled={!isActionable}
-                        className={cn(isBlurred && "opacity-50")}
+                        className={cn("relative", isBlurred && "opacity-50")}
                       >
                         <MessageCircle className="h-4 w-4 mr-2" />
                         Chat with Booker
+                        {unreadCount > 0 && (
+                          <Badge
+                            variant="destructive"
+                            className="ml-2 h-5 w-5 p-0 flex items-center justify-center text-xs animate-pulse"
+                          >
+                            {unreadCount > 9 ? "9+" : unreadCount}
+                          </Badge>
+                        )}
                       </Button>
                     </span>
                   </TooltipTrigger>

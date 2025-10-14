@@ -21,7 +21,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useChat } from "@/contexts/ChatContext";
 import { useTalentBookingLimit } from "@/hooks/useTalentBookingLimit";
 import { useNavigate } from "react-router-dom";
-import { useUnreadMessages } from "@/hooks/useUnreadMessages";
+import { useIndividualUnreadCount } from "@/hooks/useIndividualUnreadCount";
 
 export interface Booking {
   id: string;
@@ -53,7 +53,7 @@ export const BookingCard = ({ booking, mode, onUpdate, onRemove, shouldBlurConta
   const { toast } = useToast();
   const { openChat } = useChat();
   const { canReceiveBooking, isProUser } = useTalentBookingLimit();
-  const { unreadCount } = useUnreadMessages();
+  const { unreadCount } = useIndividualUnreadCount(booking.id, 'booking');
   const [showRemoveDialog, setShowRemoveDialog] = useState(false);
 
   // Safety check

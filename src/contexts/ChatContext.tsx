@@ -30,6 +30,7 @@ interface ChatContextType {
   channelInfo: ChannelInfo | null;
   setUserInteracting: (isInteracting: boolean) => void;
   viewedChats: Set<string>;
+  markAllAsRead: (ids: string[], type: "booking" | "event_request") => void;
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -120,6 +121,14 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
     setMessages([]);
   };
 
+  const markAllAsRead = useCallback((ids: string[], type: "booking" | "event_request") => {
+    setViewedChats((prev) => {
+      const newSet = new Set(prev);
+      ids.forEach(id => newSet.add(`${type}_${id}`));
+      return newSet;
+    });
+  }, []);
+
   const sendMessage = useCallback(
     async (content: string) => {
       if (!user || !channelInfo) return;
@@ -166,6 +175,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
         channelInfo,
         setUserInteracting,
         viewedChats,
+        markAllAsRead,
       }}
     >
       {children}
