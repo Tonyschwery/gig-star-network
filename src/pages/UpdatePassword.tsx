@@ -64,6 +64,7 @@ const UpdatePassword = () => {
     setLoading(true);
     try {
       const { error } = await supabase.auth.updateUser({
+        email: email //added by me
         password: password,
       });
 
