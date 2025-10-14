@@ -14,49 +14,27 @@ const AuthCallback = () => {
   useEffect(() => {
     const redirectKey = "auth_callback_redirecting";
     const type = searchParams.get("type");
+    const access_token = searchParams.get("access_token");
+    const refresh_token = searchParams.get("refresh_token");
 
     // ✅ Handle password recovery links safely
-    if (type === "recovery") {
-      const handleRecovery = async () => {
-        try {
-          // Wait for Supabase to finish creating the recovery session
-          let tries = 0;
-          let session: Session | null = null;
-
-          while (tries < 5 && !session) {
-            const { data } = await supabase.auth.getSession();
-            session = data.session;
-            if (!session) {
-              await new Promise((r) => setTimeout(r, 600));
-              tries++;
-            }
-          }
-
-          if (session) {
-            console.log("[AuthCallback] Recovery session established");
-            navigate("pages/UpdatePassword", { replace: true });
-          } else {
-            console.warn("[AuthCallback] Recovery session not found after retries");
-            toast({
-              title: "Invalid or expired link",
-              description: "Please request a new password reset link.",
-              variant: "destructive",
-            });
-            navigate("/auth", { replace: true });
-          }
-        } catch (err) {
-          console.error("Error handling recovery callback:", err);
+    if (type === "recovery" && access_token && refresh_token) {
+      supabase.auth
+        .setSession({ access_token, refresh_token })
+        .then(() => {
+          // Redirect to your UpdatePassword page
+          navigate("/auth/update-password", { replace: true });
+        })
+        .catch(() => {
+          // Show toast if link is invalid
           toast({
-            title: "Error",
-            description: "Something went wrong. Please try again.",
+            title: "Invalid or expired link",
+            description: "Please request a new password reset link.",
             variant: "destructive",
           });
           navigate("/auth", { replace: true });
-        }
-      };
-
-      handleRecovery();
-      return;
+        });
+      return; // Stop further redirect logic
     }
 
     // ✅ Handle normal auth redirect flow
