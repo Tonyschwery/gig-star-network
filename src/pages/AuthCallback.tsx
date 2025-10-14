@@ -12,46 +12,77 @@ const AuthCallback = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Prevent multiple redirects in multi-tab scenarios
-    const redirectKey = 'auth_callback_redirecting';
-    
-    // Check if this is a password recovery callback
+    const redirectKey = "auth_callback_redirecting";
     const type = searchParams.get("type");
-    
-   if (type === "recovery") {
-  // Wait for Supabase to complete session recovery
-  supabase.auth.getSession().then(async ({ data: { session } }) => {
-    if (!session) {
-      // Supabase might need a few moments to process the recovery link
-      setTimeout(async () => {
-        const { data: { session: retrySession } } = await supabase.auth.getSession();
-        if (retrySession) {
-          navigate("/auth/update-password", { replace: true });
-        } else {
-          console.error("Recovery session not found");
-        }
-      }, 1000);
-    } else {
-      navigate("/auth/update-password", { replace: true });
-    }
-  });
-  return;
-}
 
+    // ✅ Handle password recovery callback properly
+    if (type === "recovery") {
+      const handleRecovery = async () => {
+        try {
+          // Give Supabase time to process the recovery link and set session
+          let {
+            data: { session },
+          } = await supabase.auth.getSession();
+
+          if (!session) {
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+            const retry = await supabase.auth.getSession();
+            session = retry.data.session;
+          }
+
+          if (session) {
+            navigate("/auth/update-password", { replace: true });
+          } else {
+            toast({
+              title: "Invalid or expired link",
+              description: "Please request a new password reset link.",
+              variant: "destructive",
+            });
+            navigate("/auth", { replace: true });
+          }
+        } catch (error) {
+          console.error("Error handling recovery callback:", error);
+          toast({
+            title: "Error",
+            description: "Something went wrong. Please try again.",
+            variant: "destructive",
+          });
+          navigate("/auth", { replace: true });
+        }
+      };
+
+      handleRecovery();
+      return;
+    }
+
+    // ✅ Handle normal auth callback flow
+    const performRedirect = async (session: Session | null) => {
+      if (sessionStorage.getItem(redirectKey)) {
+        console.log("[AuthCallback] Redirect already in progress, skipping");
+        return;
+      }
+
+      sessionStorage.setItem(redirectKey, "true");
+
+      if (!session?.user) {
+        sessionStorage.removeItem(redirectKey);
+        navigate("/", { replace: true });
+        return;
+      }
 
       const user = session.user;
-      
-      // Ensure profile is created/updated with correct role
-      const userType = user.user_metadata?.user_type || 'booker';
+      const userType = user.user_metadata?.user_type || "booker";
+
       try {
-        await supabase.rpc('ensure_profile', {
+        await supabase.rpc("ensure_profile", {
           p_user_id: user.id,
           p_email: user.email!,
-          p_role: userType
+          p_role: userType,
         });
       } catch (error) {
-        console.error('Error ensuring profile:', error);
+        console.error("Error ensuring profile:", error);
       }
+
       let state: any = {};
       try {
         const stateParam = searchParams.get("state");
@@ -66,63 +97,59 @@ const AuthCallback = () => {
       const talentId = state?.talentId;
       const from = state?.from?.pathname || null;
 
-      // Check for stored booking intent in localStorage
-      const storedIntent = localStorage.getItem('bookingIntent');
+      const storedIntent = localStorage.getItem("bookingIntent");
       let bookingData = null;
       if (storedIntent) {
         try {
           bookingData = JSON.parse(storedIntent);
-          localStorage.removeItem('bookingIntent'); // Clean up immediately
+          localStorage.removeItem("bookingIntent");
         } catch (e) {
-          console.error('Error parsing booking intent:', e);
+          console.error("Error parsing booking intent:", e);
         }
       }
 
+      // ✅ Navigation logic
       if (user.email === "admin@qtalent.live") {
         navigate("/admin", { replace: true });
       } else if (bookingData?.talentId) {
-        // Redirect to talent profile with booking form open
         toast({
           title: "Welcome! 🎉",
-          description: `You can now book ${bookingData.talentName || 'your talent'}.`,
+          description: `You can now book ${bookingData.talentName || "your talent"}.`,
           duration: 4000,
         });
-        navigate(`/talent/${bookingData.talentId}`, { state: { openBookingForm: true }, replace: true });
+        navigate(`/talent/${bookingData.talentId}`, {
+          state: { openBookingForm: true },
+          replace: true,
+        });
       } else if (intent === "event-form") {
         navigate("/your-event", { replace: true });
       } else if (intent === "booking-form" && talentId) {
-        navigate(`/talent/${talentId}`, { state: { openBookingForm: true }, replace: true });
+        navigate(`/talent/${talentId}`, {
+          state: { openBookingForm: true },
+          replace: true,
+        });
       } else if (from && from !== "/auth" && from !== "/") {
         navigate(from, { replace: true });
       } else {
-        const userType = user.user_metadata?.user_type;
-        if (userType === "talent") {
-          navigate("/talent-dashboard", { replace: true });
-        } else {
-          navigate("/booker-dashboard", { replace: true });
-        }
+        const role = user.user_metadata?.user_type;
+        navigate(role === "talent" ? "/talent-dashboard" : "/booker-dashboard", {
+          replace: true,
+        });
       }
-      
-      // Clear redirect lock after navigation
+
       setTimeout(() => sessionStorage.removeItem(redirectKey), 1000);
     };
 
-    // Check session immediately first for faster redirect
+    // Check for an existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        performRedirect(session);
-        return;
-      }
+      if (session) performRedirect(session);
     });
 
-    // Also listen for auth state changes as fallback
+    // Listen for auth state changes
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === "SIGNED_IN" && session) {
-        performRedirect(session);
-      }
+      if (event === "SIGNED_IN" && session) performRedirect(session);
     });
 
-    // Cleanup subscription on component unmount
     return () => {
       authListener?.subscription.unsubscribe();
       sessionStorage.removeItem(redirectKey);
