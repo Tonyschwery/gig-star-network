@@ -1,5 +1,3 @@
-// FILE: src/pages/AuthCallback.tsx
-
 import { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,37 +10,10 @@ const AuthCallback = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    const redirectKey = "auth_callback_redirecting";
-    const type = searchParams.get("type");
-    const access_token = searchParams.get("access_token");
-    const refresh_token = searchParams.get("refresh_token");
+    const redirectKey = "auth_callback_redirecting"; // ✅ keep this to prevent multi-tab redirect
 
-    // ✅ Handle password recovery links safely
-    if (type === "recovery" && access_token && refresh_token) {
-      supabase.auth
-        .setSession({ access_token, refresh_token })
-        .then(() => {
-          // Redirect to your UpdatePassword page
-          navigate("/auth/update-password", { replace: true });
-        })
-        .catch(() => {
-          // Show toast if link is invalid
-          toast({
-            title: "Invalid or expired link",
-            description: "Please request a new password reset link.",
-            variant: "destructive",
-          });
-          navigate("/auth", { replace: true });
-        });
-      return; // Stop further redirect logic
-    }
-
-    // ✅ Handle normal auth redirect flow
     const performRedirect = async (session: Session | null) => {
-      if (sessionStorage.getItem(redirectKey)) {
-        console.log("[AuthCallback] Redirect already in progress, skipping");
-        return;
-      }
+      if (sessionStorage.getItem(redirectKey)) return;
       sessionStorage.setItem(redirectKey, "true");
 
       if (!session?.user) {
@@ -52,13 +23,13 @@ const AuthCallback = () => {
       }
 
       const user = session.user;
-      const userType = user.user_metadata?.user_type || "booker";
 
+      // Ensure profile exists
       try {
         await supabase.rpc("ensure_profile", {
           p_user_id: user.id,
           p_email: user.email!,
-          p_role: userType,
+          p_role: user.user_metadata?.user_type || "booker",
         });
       } catch (error) {
         console.error("Error ensuring profile:", error);
@@ -67,9 +38,7 @@ const AuthCallback = () => {
       let state: any = {};
       try {
         const stateParam = searchParams.get("state");
-        if (stateParam) {
-          state = JSON.parse(stateParam);
-        }
+        if (stateParam) state = JSON.parse(stateParam);
       } catch (e) {
         console.error("Could not parse auth redirect state:", e);
       }
@@ -78,8 +47,9 @@ const AuthCallback = () => {
       const talentId = state?.talentId;
       const from = state?.from?.pathname || null;
 
-      const storedIntent = localStorage.getItem("bookingIntent");
+      // Handle stored booking intent
       let bookingData = null;
+      const storedIntent = localStorage.getItem("bookingIntent");
       if (storedIntent) {
         try {
           bookingData = JSON.parse(storedIntent);
@@ -89,6 +59,7 @@ const AuthCallback = () => {
         }
       }
 
+      // Redirect logic
       if (user.email === "admin@qtalent.live") {
         navigate("/admin", { replace: true });
       } else if (bookingData?.talentId) {
@@ -97,35 +68,28 @@ const AuthCallback = () => {
           description: `You can now book ${bookingData.talentName || "your talent"}.`,
           duration: 4000,
         });
-        navigate(`/talent/${bookingData.talentId}`, {
-          state: { openBookingForm: true },
-          replace: true,
-        });
+        navigate(`/talent/${bookingData.talentId}`, { state: { openBookingForm: true }, replace: true });
       } else if (intent === "event-form") {
         navigate("/your-event", { replace: true });
       } else if (intent === "booking-form" && talentId) {
-        navigate(`/talent/${talentId}`, {
-          state: { openBookingForm: true },
-          replace: true,
-        });
+        navigate(`/talent/${talentId}`, { state: { openBookingForm: true }, replace: true });
       } else if (from && from !== "/auth" && from !== "/") {
         navigate(from, { replace: true });
+      } else if (user.user_metadata?.user_type === "talent") {
+        navigate("/talent-dashboard", { replace: true });
       } else {
-        const role = user.user_metadata?.user_type;
-        navigate(role === "talent" ? "/talent-dashboard" : "/booker-dashboard", {
-          replace: true,
-        });
+        navigate("/booker-dashboard", { replace: true });
       }
 
       setTimeout(() => sessionStorage.removeItem(redirectKey), 1000);
     };
 
-    // Check for existing session
+    // ✅ Supabase session check
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) performRedirect(session);
     });
 
-    // Listen for auth state change
+    // Listen for auth state changes
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_IN" && session) performRedirect(session);
     });
