@@ -235,7 +235,6 @@ const Auth = () => {
     setLoading(true);
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email.toLowerCase().trim(), {
-        redirectTo: "https://qtalent.live/auth/callback",
         redirectTo: `${window.location.origin}/auth/callback?type=recovery`,
       });
 
