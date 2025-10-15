@@ -236,10 +236,10 @@ const Auth = () => {
     try {
       const trimmedEmail = email.toLowerCase().trim();
       console.log("[Auth] Requesting password reset for:", trimmedEmail);
-      console.log("[Auth] Redirect URL:", `${window.location.origin}/auth/update-password`);
+      console.log("[Auth] Redirect URL:", `${window.location.origin}/auth/callback`);
       
       const { data, error } = await supabase.auth.resetPasswordForEmail(trimmedEmail, {
-        redirectTo: `${window.location.origin}/auth/update-password`,
+        redirectTo: `${window.location.origin}/auth/callback`,
       });
 
       if (error) {
