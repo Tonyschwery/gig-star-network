@@ -38,45 +38,15 @@ const UpdatePassword = () => {
       const token = params.get("token"); // the recovery token
       const type = params.get("type");
 
-      if (type !== "recovery" || !token) {
-        setMessage("Invalid or missing recovery token.");
-        setMessageType("error");
-        setLoading(false);
-        return;
-      }
+      if (type === "recovery" && token) {
+    setReady(true); // Token is valid enough to show the form
+  } else {
+    setMessage("Invalid or missing recovery token.");
+    setMessageType("error");
+  }
 
-      try {
-        // Exchange the recovery token for a session
-        const { data, error } = await supabase.auth.updateUser(
-          {
-            // no new fields yet; we just validate token to allow password reset
-            password: "",
-          },
-          { accessToken: token },
-        );
-
-        if (error) {
-          console.error("❌ Error validating recovery token:", error);
-          setMessage("Invalid or expired recovery link.");
-          setMessageType("error");
-          setLoading(false);
-          return;
-        }
-
-        // Token valid, show form
-        setReady(true);
-        setLoading(false);
-      } catch (err: any) {
-        console.error(err);
-        setMessage("Something went wrong.");
-        setMessageType("error");
-        setLoading(false);
-      }
-    };
-
-    handleRecovery();
-  }, []);
-
+  setLoading(false);
+}, []);
   const handleUpdatePassword = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
