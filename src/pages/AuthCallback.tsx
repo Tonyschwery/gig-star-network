@@ -34,31 +34,7 @@ const AuthCallback = () => {
     // If this is a password recovery, redirect to update-password page
     if (type === "recovery") {
       console.log("[AuthCallback] Password recovery detected, redirecting to update-password...");
-      setIsRecovery(true);
-      
-      // Get the access_token and refresh_token from URL hash
-      const hashParams = new URLSearchParams(window.location.hash.substring(1));
-      const access_token = hashParams.get("access_token");
-      const refresh_token = hashParams.get("refresh_token");
-      
-      if (access_token && refresh_token) {
-        // Set the session first, then redirect
-        supabase.auth.setSession({
-          access_token,
-          refresh_token,
-        }).then(({ error }) => {
-          if (error) {
-            console.error("[AuthCallback] Failed to set recovery session:", error);
-            setError("Failed to authenticate. Please request a new password reset link.");
-          } else {
-            console.log("[AuthCallback] Recovery session set, redirecting...");
-            navigate("/auth/update-password", { replace: true });
-          }
-        });
-      } else {
-        console.error("[AuthCallback] Missing tokens in recovery URL");
-        setError("Invalid password reset link. Please request a new one.");
-      }
+      navigate("/auth/update-password", { replace: true });
       return;
     }
 
@@ -182,20 +158,17 @@ const AuthCallback = () => {
               <AlertCircle className="h-8 w-8 text-destructive" />
             </div>
           </div>
-          
+
           <div className="space-y-2">
             <h1 className="text-2xl font-bold">Authentication Failed</h1>
             <p className="text-muted-foreground">{error}</p>
           </div>
 
           <div className="space-y-3">
-            <Button
-              onClick={() => navigate("/auth", { replace: true })}
-              className="w-full"
-            >
+            <Button onClick={() => navigate("/auth", { replace: true })} className="w-full">
               Go to Sign In
             </Button>
-            
+
             <Button
               variant="outline"
               onClick={() => navigate("/auth/update-password", { replace: true })}
