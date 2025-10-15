@@ -35,6 +35,7 @@ const UpdatePassword = () => {
       }
 
       console.log("🔐 Recovery link detected. Exchanging for session...");
+      const urlToExchange = new URLSearchParams(window.location.search).get("redirect") || window.location.href;
       const { data, error } = await supabase.auth.exchangeCodeForSession(url);
 
       if (error) {
