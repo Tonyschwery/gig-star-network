@@ -34,44 +34,44 @@ const UpdatePassword = () => {
 
   useEffect(() => {
     const handleRecovery = async () => {
-      // Supabase password recovery links include tokens in the URL hash.
-      // We parse the hash to get the tokens and set the user's session.
-      const hash = window.location.hash.substring(1); // Remove the '#'
-      const params = new URLSearchParams(hash);
-
-      const accessToken = params.get("access_token");
-      const refreshToken = params.get("refresh_token");
+      const params = new URLSearchParams(window.location.search);
+      const token = params.get("token"); // the recovery token
       const type = params.get("type");
 
-      // We need all parts to proceed.
-      if (type !== "recovery" || !accessToken || !refreshToken) {
-        console.error("Invalid or incomplete recovery link.");
+      if (type !== "recovery" || !token) {
+        setMessage("Invalid or missing recovery token.");
         setMessageType("error");
-        setMessage("This recovery link is invalid or has expired. Please request a new one.");
-        setReady(false);
         setLoading(false);
         return;
       }
 
-      console.log("🔐 Recovery link detected. Exchanging for session...");
+      try {
+        // Exchange the recovery token for a session
+        const { data, error } = await supabase.auth.updateUser(
+          {
+            // no new fields yet; we just validate token to allow password reset
+            password: "",
+          },
+          { accessToken: token },
+        );
 
-      // Set the session using the tokens from the URL.
-      const { error } = await supabase.auth.setSession({
-        access_token: accessToken,
-        refresh_token: refreshToken,
-      });
+        if (error) {
+          console.error("❌ Error validating recovery token:", error);
+          setMessage("Invalid or expired recovery link.");
+          setMessageType("error");
+          setLoading(false);
+          return;
+        }
 
-      if (error) {
-        console.error("❌ Error setting session from recovery token:", error);
-        setMessageType("error");
-        setMessage("This recovery link is invalid or has expired. Please try again.");
-        setReady(false);
-      } else {
-        console.log("✅ Session established for password reset.");
+        // Token valid, show form
         setReady(true);
+        setLoading(false);
+      } catch (err: any) {
+        console.error(err);
+        setMessage("Something went wrong.");
+        setMessageType("error");
+        setLoading(false);
       }
-
-      setLoading(false);
     };
 
     handleRecovery();
