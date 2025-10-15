@@ -21,6 +21,20 @@ const UpdatePassword = () => {
   const { toast } = useToast();
 
   useEffect(() => {
+    const hash = window.location.hash;
+  if (hash && hash.includes('access_token')) {
+    const params = new URLSearchParams(hash.replace('#', ''));
+    const access_token = params.get('access_token');
+    if (access_token) {
+      supabase.auth.setSession({
+        access_token,
+        refresh_token: params.get('refresh_token') || ''
+      }).then(({ error }) => {
+        if (error) console.error('Error setting session:', error);
+      });
+    }
+  }
+}, []);
     // ✅ Step 1: Exchange Supabase recovery token for a valid session
     const handleRecovery = async () => {
       const url = window.location.href;
