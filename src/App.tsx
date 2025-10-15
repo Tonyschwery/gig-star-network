@@ -53,7 +53,7 @@ const AppContent = () => {
       <PWAInstallPrompt />
       <NotificationPermissionPrompt />
       <Routes>
-        <Route path="/auth/update-password" element={<UpdatePassword />} />
+        <Route path="/auth/UpdatePassword" element={<UpdatePassword />} />
         <Route path="/" element={<Index />} />
         <Route path="/auth" element={<Auth />} />
         <Route path="/login" element={<Auth />} />
@@ -88,7 +88,7 @@ const AppContent = () => {
         <Route path="/pricing" element={<Pricing />} />
         <Route path="/auth" element={<Auth />} />
         <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="/update-password" element={<UpdatePassword />} /> {/* <-- Add this line */}
+        <Route path="/UpdatePassword" element={<UpdatePassword />} /> {/* <-- Add this line */}
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/terms-of-service" element={<TermsOfService />} />
         <Route path="/trust-safety" element={<TrustSafety />} />
