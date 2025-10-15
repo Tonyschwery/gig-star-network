@@ -1,5 +1,3 @@
-// FILE: src/pages/UpdatePassword.tsx
-
 import { useState, useEffect, FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { createClient } from "@supabase/supabase-js";
@@ -10,7 +8,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { CheckCircle, AlertTriangle } from "lucide-react";
 
-// Supabase client
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL!;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY!;
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
@@ -22,34 +19,60 @@ const UpdatePassword = () => {
   const [ready, setReady] = useState(false);
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState<"success" | "error">("error");
-
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Check recovery token in URL
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const token = params.get("token");
-    const type = params.get("type");
+    const handleRecovery = async () => {
+      const hash = window.location.hash;
 
-    if (type === "recovery" && token) {
-      // Token exists, show form
-      setReady(true);
-    } else {
-      setMessage("Invalid or expired recovery link.");
-      setMessageType("error");
-    }
-    setLoading(false);
+      if (!hash) {
+        setMessage("Invalid or missing recovery link.");
+        setMessageType("error");
+        setLoading(false);
+        return;
+      }
+
+      const params = new URLSearchParams(hash.replace("#", ""));
+      const access_token = params.get("access_token");
+      const refresh_token = params.get("refresh_token");
+
+      if (!access_token || !refresh_token) {
+        setMessage("Recovery link is invalid or expired.");
+        setMessageType("error");
+        setLoading(false);
+        return;
+      }
+
+      try {
+        // Establish session from the recovery token
+        const { error } = await supabase.auth.setSession({
+          access_token,
+          refresh_token,
+        });
+
+        if (error) throw error;
+
+        setReady(true);
+        setLoading(false);
+      } catch (err: any) {
+        console.error("Failed to set session:", err);
+        setMessage("Could not establish session. The link might have expired.");
+        setMessageType("error");
+        setLoading(false);
+      }
+    };
+
+    handleRecovery();
   }, []);
 
-  // Handle password update
   const handleUpdatePassword = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    if (!password || password.length < 6) {
+    if (password.length < 6) {
       toast({
         title: "Password Too Short",
-        description: "Your new password must be at least 6 characters long.",
+        description: "Your password must be at least 6 characters.",
         variant: "destructive",
       });
       return;
@@ -58,7 +81,7 @@ const UpdatePassword = () => {
     if (password !== confirmPassword) {
       toast({
         title: "Passwords Do Not Match",
-        description: "Please ensure both password fields are identical.",
+        description: "Please ensure both fields match.",
         variant: "destructive",
       });
       return;
@@ -73,20 +96,20 @@ const UpdatePassword = () => {
       if (error) throw error;
 
       setMessageType("success");
-      setMessage("Your password has been updated successfully! Redirecting...");
+      setMessage("Password updated successfully! Redirecting...");
       toast({
         title: "Password Updated ✅",
-        description: "You can now sign in with your new password.",
+        description: "You can now log in with your new password.",
       });
 
       setTimeout(() => navigate("/auth"), 3000);
     } catch (err: any) {
-      console.error("Error updating password:", err);
+      console.error("Password update failed:", err);
       setMessageType("error");
-      setMessage(err.message || "An unexpected error occurred. Please try again.");
+      setMessage(err.message || "Unexpected error occurred.");
       toast({
         title: "Update Failed",
-        description: "Could not update your password. Please try again.",
+        description: "Could not update password. Try again.",
         variant: "destructive",
       });
     } finally {
@@ -94,16 +117,14 @@ const UpdatePassword = () => {
     }
   };
 
-  // Loading screen
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <p className="text-muted-foreground animate-pulse">Processing password reset link...</p>
+        <p className="text-muted-foreground animate-pulse">Finalizing password recovery...</p>
       </div>
     );
   }
 
-  // Show error if token invalid/expired
   if (!ready) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
@@ -112,7 +133,7 @@ const UpdatePassword = () => {
             <CardTitle>Reset Link Error</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-muted-foreground">{message}</p>
+            <p className="text-muted-foreground">{message || "Something went wrong with your reset link."}</p>
             <Button onClick={() => navigate("/auth/forgot-password")} className="mt-4">
               Request a New Link
             </Button>
@@ -122,7 +143,6 @@ const UpdatePassword = () => {
     );
   }
 
-  // Password reset form
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md">
