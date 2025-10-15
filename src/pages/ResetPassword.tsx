@@ -31,7 +31,7 @@ const ResetPassword = () => {
     try {
       const trimmedEmail = email.toLowerCase().trim();
       const { data, error } = await supabase.auth.resetPasswordForEmail(trimmedEmail, {
-        redirectTo: `${window.location.origin}/#/auth/callback`,
+        redirectTo: `${window.location.origin}/#/update-password`,
       });
 
       if (error) {
@@ -125,8 +125,8 @@ const ResetPassword = () => {
 
               <div className="bg-blue-50 dark:bg-blue-950/30 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
                 <p className="text-xs text-blue-900 dark:text-blue-100">
-                  💡 <strong>Note:</strong> This works for all accounts, whether you signed up with a password or
-                  magic link. After clicking the link in your email, you'll be able to set a new password.
+                  💡 <strong>Note:</strong> This works for all accounts, whether you signed up with a password or magic
+                  link. After clicking the link in your email, you'll be able to set a new password.
                 </p>
               </div>
 
