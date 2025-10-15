@@ -1,14 +1,24 @@
-// FILE: src/pages/UpdatePassword.tsx
-
-import { useState, useEffect } from "react";
+import { useState, useEffect, FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { createClient } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { CheckCircle, AlertTriangle } from "lucide-react";
+
+// TODO: Replace with your actual Supabase URL and public anon key
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || "YOUR_SUPABASE_URL";
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || "YOUR_SUPABASE_ANON_KEY";
+
+if (!supabaseUrl || !supabaseAnonKey || supabaseUrl === "YOUR_SUPABASE_URL") {
+  console.error(
+    "Supabase URL and anon key are required. Make sure to set them in your environment variables or directly in the code.",
+  );
+}
+
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 const UpdatePassword = () => {
   const [password, setPassword] = useState("");
@@ -21,87 +31,51 @@ const UpdatePassword = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-  const initializeRecovery = async () => {
-    // Step 0: Try to set session from hash (if access_token exists)
-    const hash = window.location.hash;
-    if (hash && hash.includes('access_token')) {
-      const params = new URLSearchParams(hash.replace('#', ''));
-      const access_token = params.get('access_token');
-      if (access_token) {
-        const { error } = await supabase.auth.setSession({
-          access_token,
-          refresh_token: params.get('refresh_token') || ''
-        });
-        if (error) console.error('Error setting session:', error);
-      }
-    }
-
-    // Step 1: Exchange recovery token for session
-    const url = window.location.href;
-    if (!url.includes("type=recovery")) {
-      console.error("⚠️ No recovery token found in URL");
-      setMessageType("error");
-      setMessage("Invalid or missing recovery token.");
-      setLoading(false);
-      return;
-    }
-
-    console.log("🔐 Recovery link detected. Exchanging for session...");
-    try {
-      const { data, error } = await supabase.auth.exchangeCodeForSession(url);
-      if (error) {
-        console.error("❌ Error exchanging recovery token:", error);
-        setMessageType("error");
-        setMessage("Invalid or expired reset link. Please request a new one.");
-      } else {
-        console.log("✅ Session established for password reset:", data);
-        setReady(true);
-      }
-    } catch (err: any) {
-      console.error("Unexpected error:", err);
-      setMessageType("error");
-      setMessage("Something went wrong. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  initializeRecovery();
-}, []);
-
-    // ✅ Step 1: Exchange Supabase recovery token for a valid session
     const handleRecovery = async () => {
-      const url = window.location.href;
-      const hasToken = url.includes("type=recovery");
+      // Supabase password recovery links include tokens in the URL hash.
+      // We parse the hash to get the tokens and set the user's session.
+      const hash = window.location.hash.substring(1); // Remove the '#'
+      const params = new URLSearchParams(hash);
 
-      if (!hasToken) {
-        console.error("⚠️ No recovery token found in URL");
+      const accessToken = params.get("access_token");
+      const refreshToken = params.get("refresh_token");
+      const type = params.get("type");
+
+      // We need all parts to proceed.
+      if (type !== "recovery" || !accessToken || !refreshToken) {
+        console.error("Invalid or incomplete recovery link.");
         setMessageType("error");
-        setMessage("Invalid or missing recovery token.");
+        setMessage("This recovery link is invalid or has expired. Please request a new one.");
+        setReady(false);
         setLoading(false);
         return;
       }
 
       console.log("🔐 Recovery link detected. Exchanging for session...");
-      const urlToExchange = new URLSearchParams(window.location.search).get("redirect") || window.location.href;
-      const { data, error } = await supabase.auth.exchangeCodeForSession(url);
+
+      // Set the session using the tokens from the URL.
+      const { error } = await supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken,
+      });
 
       if (error) {
-        console.error("❌ Error exchanging recovery token:", error);
+        console.error("❌ Error setting session from recovery token:", error);
         setMessageType("error");
-        setMessage("Invalid or expired reset link. Please request a new one.");
-        setLoading(false);
+        setMessage("This recovery link is invalid or has expired. Please try again.");
+        setReady(false);
       } else {
-        console.log("✅ Session established for password reset:", data);
+        console.log("✅ Session established for password reset.");
         setReady(true);
-        setLoading(false);
       }
+
+      setLoading(false);
     };
 
     handleRecovery();
   }, []);
 
-  const handleUpdatePassword = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleUpdatePassword = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     if (!password || password.length < 6) {
@@ -126,6 +100,7 @@ const UpdatePassword = () => {
     setMessage("");
 
     try {
+      // With the session set, we can now update the user's password.
       const { error } = await supabase.auth.updateUser({ password });
 
       if (error) throw error;
@@ -152,28 +127,35 @@ const UpdatePassword = () => {
     }
   };
 
-  // ✅ Step 2: Render loading state
+  // Render a loading state while we process the recovery link.
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <p className="text-muted-foreground animate-pulse">Finalizing password recovery, please wait...</p>
+        <p className="text-muted-foreground animate-pulse">Verifying recovery link, please wait...</p>
       </div>
     );
   }
 
-  // ✅ Step 3: Render error state
+  // If the link was invalid or expired, show an error message.
   if (!ready) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Card className="p-6 text-center">
-          <CardTitle>Reset Link Error</CardTitle>
-          <CardDescription>{message || "Something went wrong with your reset link."}</CardDescription>
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <Card className="w-full max-w-md text-center">
+          <CardHeader>
+            <CardTitle>Reset Link Error</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground">{message || "Something went wrong with your reset link."}</p>
+            <Button onClick={() => navigate("/auth/forgot-password")} className="mt-4">
+              Request a New Link
+            </Button>
+          </CardContent>
         </Card>
       </div>
     );
   }
 
-  // ✅ Step 4: Render password update form
+  // If ready, show the password update form.
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md">
@@ -217,7 +199,7 @@ const UpdatePassword = () => {
                 <div
                   className={`flex items-center gap-2 rounded-md p-3 text-sm ${
                     messageType === "success"
-                      ? "bg-green-50 text-green-800 dark:bg-green-950 dark:text-green-200"
+                      ? "bg-green-50 text-green-800 dark:bg-green-950 dark:green-200"
                       : "bg-red-50 text-red-800 dark:bg-red-950 dark:text-red-200"
                   }`}
                 >
