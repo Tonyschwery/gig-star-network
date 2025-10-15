@@ -13,35 +13,48 @@ import { CheckCircle, AlertTriangle } from "lucide-react";
 const UpdatePassword = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [ready, setReady] = useState(false);
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState<"success" | "error">("error");
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
-    // Supabase's onAuthStateChange is used to detect the PASSWORD_RECOVERY event.
-    // This event only happens when the user clicks the password recovery link in their email.
-    // The Supabase client library automatically handles the token from the URL fragment.
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === "PASSWORD_RECOVERY") {
-        // Now the user is in a state where they can update their password.
-        console.log("Password recovery event detected. User can now set a new password.");
-      }
-    });
+    // ✅ Step 1: Check if the URL has the Supabase recovery token
+    const hash = window.location.hash;
+    const params = new URLSearchParams(hash.substring(1)); // remove "#"
+    const access_token = params.get("access_token");
+    const refresh_token = params.get("refresh_token");
+    const type = params.get("type");
 
-    // Cleanup the subscription when the component unmounts
-    return () => {
-      subscription.unsubscribe();
-    };
+    if (access_token && type === "recovery") {
+      console.log("🔐 Recovery token found, setting Supabase session...");
+      // ✅ Step 2: Set the session so user can update their password
+      supabase.auth
+        .setSession({ access_token, refresh_token: refresh_token || access_token })
+        .then(({ error }) => {
+          if (error) {
+            console.error("❌ Error setting session:", error);
+            setMessageType("error");
+            setMessage("Invalid or expired reset link. Please try again.");
+          } else {
+            console.log("✅ Session set. User can now reset password.");
+            setReady(true);
+          }
+        })
+        .finally(() => setLoading(false));
+    } else {
+      console.error("⚠️ No valid recovery token found in URL.");
+      setMessageType("error");
+      setMessage("Invalid reset link or missing token.");
+      setLoading(false);
+    }
   }, []);
 
   const handleUpdatePassword = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    // 1. Validate passwords
     if (!password || password.length < 6) {
       toast({
         title: "Password Too Short",
@@ -63,24 +76,18 @@ const UpdatePassword = () => {
     setMessage("");
 
     try {
-      // 2. Call Supabase to update the user's password
-      const { error } = await supabase.auth.updateUser({ password: password });
+      const { error } = await supabase.auth.updateUser({ password });
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
 
-      // 3. Handle success
       setMessageType("success");
-      setMessage("Your password has been updated successfully! Redirecting you to the sign-in page...");
+      setMessage("Your password has been updated successfully! Redirecting...");
       toast({
-        title: "Password Updated! ✅",
+        title: "Password Updated ✅",
         description: "You can now sign in with your new password.",
       });
 
-      setTimeout(() => {
-        navigate("/auth");
-      }, 3000); // Wait 3 seconds before redirecting
+      setTimeout(() => navigate("/auth"), 3000);
     } catch (error: any) {
       console.error("Error updating password:", error);
       setMessageType("error");
@@ -95,6 +102,27 @@ const UpdatePassword = () => {
     }
   };
 
+  // ✅ Step 3: Handle page rendering states
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <p className="text-muted-foreground animate-pulse">Finalizing login, please wait...</p>
+      </div>
+    );
+  }
+
+  if (!ready) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Card className="p-6 text-center">
+          <CardTitle>Reset Link Error</CardTitle>
+          <CardDescription>{message || "Something went wrong with your reset link."}</CardDescription>
+        </Card>
+      </div>
+    );
+  }
+
+  // ✅ Step 4: Show password form once session is valid
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md">
@@ -105,6 +133,7 @@ const UpdatePassword = () => {
               Create a new, secure password for your account. It must be at least 6 characters long.
             </CardDescription>
           </CardHeader>
+
           <CardContent>
             <form onSubmit={handleUpdatePassword} className="space-y-4">
               <div className="space-y-2">
@@ -119,6 +148,7 @@ const UpdatePassword = () => {
                   minLength={6}
                 />
               </div>
+
               <div className="space-y-2">
                 <Label htmlFor="confirm-password">Confirm New Password</Label>
                 <Input
