@@ -31,38 +31,14 @@ const AuthCallback = () => {
       return;
     }
 
-    // If this is a password recovery, extract tokens and set session
+    // If this is a password recovery, redirect to update-password page
     if (type === "recovery") {
-      console.log("[AuthCallback] Password recovery detected...");
-
-      const hashParams = new URLSearchParams(window.location.hash.substring(1));
-      const access_token = hashParams.get("access_token");
-      const refresh_token = hashParams.get("refresh_token");
-
-      if (access_token && refresh_token) {
-        console.log("[AuthCallback] Tokens found, setting session...");
-
-        supabase.auth
-          .setSession({
-            access_token,
-            refresh_token,
-          })
-          .then(({ error }) => {
-            if (error) {
-              console.error("[AuthCallback] Failed to set recovery session:", error);
-              setError("Failed to authenticate. Please request a new password reset link.");
-            } else {
-              console.log("[AuthCallback] Recovery session set, redirecting to update-password...");
-              setIsRecovery(true);
-              navigate("/auth/update-password", { replace: true });
-            }
-          });
-      } else {
-        console.error("[AuthCallback] Missing tokens in recovery URL");
-        setError("Invalid or expired recovery link. Please request a new one.");
-      }
+      console.log("[AuthCallback] Password recovery detected, redirecting to update-password...");
+      const queryParams = urlParams.toString();
+      navigate(`/auth/update-password?${queryParams}`, { replace: true });
       return;
     }
+
     const performRedirect = async (session: Session | null) => {
       // Check if already redirecting (but with timeout escape hatch)
       const existingTimestamp = sessionStorage.getItem(`${redirectKey}_timestamp`);
