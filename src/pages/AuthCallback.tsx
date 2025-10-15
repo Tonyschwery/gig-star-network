@@ -10,11 +10,26 @@ const AuthCallback = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    const redirectKey = "auth_callback_redirecting"; // ✅ keep this to prevent multi-tab redirect
+    const redirectKey = "auth_callback_redirecting";
+    const maxWaitTime = 10000; // 10 seconds max wait to prevent permanent locks
 
     const performRedirect = async (session: Session | null) => {
-      if (sessionStorage.getItem(redirectKey)) return;
+      // Check if already redirecting (but with timeout escape hatch)
+      const existingTimestamp = sessionStorage.getItem(`${redirectKey}_timestamp`);
+      if (existingTimestamp) {
+        const elapsed = Date.now() - parseInt(existingTimestamp);
+        if (elapsed < maxWaitTime) {
+          console.log("[AuthCallback] Already redirecting in another tab, waiting...");
+          return;
+        } else {
+          console.log("[AuthCallback] Previous redirect timed out, proceeding with recovery...");
+          sessionStorage.removeItem(redirectKey);
+          sessionStorage.removeItem(`${redirectKey}_timestamp`);
+        }
+      }
+
       sessionStorage.setItem(redirectKey, "true");
+      sessionStorage.setItem(`${redirectKey}_timestamp`, Date.now().toString());
 
       if (!session?.user) {
         sessionStorage.removeItem(redirectKey);
@@ -81,7 +96,10 @@ const AuthCallback = () => {
         navigate("/booker-dashboard", { replace: true });
       }
 
-      setTimeout(() => sessionStorage.removeItem(redirectKey), 1000);
+      setTimeout(() => {
+        sessionStorage.removeItem(redirectKey);
+        sessionStorage.removeItem(`${redirectKey}_timestamp`);
+      }, 3000); // Increased timeout to prevent premature cleanup
     };
 
     // ✅ Supabase session check
@@ -96,7 +114,10 @@ const AuthCallback = () => {
 
     return () => {
       authListener?.subscription.unsubscribe();
-      sessionStorage.removeItem(redirectKey);
+      setTimeout(() => {
+        sessionStorage.removeItem(redirectKey);
+        sessionStorage.removeItem(`${redirectKey}_timestamp`);
+      }, 3000);
     };
   }, [navigate, searchParams, toast]);
 

@@ -287,8 +287,9 @@ const Auth = () => {
               <li>The email may take 1-2 minutes to arrive</li>
               {resetEmailSent ? (
                 <>
-                  <li>Click the link to set your new password</li>
-                  <li>After setting your password, return to sign in</li>
+                  <li>Click the link to reset your password</li>
+                  <li>You can close this window after clicking the link</li>
+                  <li>The reset process will work even if you have multiple tabs open</li>
                 </>
               ) : (
                 <>
@@ -298,6 +299,19 @@ const Auth = () => {
               )}
             </ul>
           </div>
+
+          {/* Resend Button for Password Reset */}
+          {resetEmailSent && (
+            <Button
+              variant="outline"
+              onClick={handleForgotPassword}
+              disabled={loading}
+              className="mt-4"
+            >
+              {loading ? "Sending..." : "📧 Resend Reset Email"}
+            </Button>
+          )}
+
           <Button variant="ghost" onClick={() => navigate("/")} className="mt-6">
             <ArrowLeft className="h-4 w-4 mr-2" /> Back to Home
           </Button>
