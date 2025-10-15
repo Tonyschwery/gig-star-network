@@ -237,9 +237,9 @@ const Auth = () => {
       const trimmedEmail = email.toLowerCase().trim();
       console.log("[Auth] Requesting password reset for:", trimmedEmail);
       console.log("[Auth] Redirect URL:", `${window.location.origin}/auth/callback`);
-      
+
       const { data, error } = await supabase.auth.resetPasswordForEmail(trimmedEmail, {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: `${window.location.origin}/#/auth/callback`,
       });
 
       if (error) {
@@ -248,7 +248,7 @@ const Auth = () => {
       }
 
       console.log("[Auth] Password reset email sent successfully. Response:", data);
-      
+
       toast({
         title: "Password reset email sent! 📧",
         description: "Check your email for a link to reset your password.",
@@ -311,12 +311,7 @@ const Auth = () => {
 
           {/* Resend Button for Password Reset */}
           {resetEmailSent && (
-            <Button
-              variant="outline"
-              onClick={handleForgotPassword}
-              disabled={loading}
-              className="mt-4"
-            >
+            <Button variant="outline" onClick={handleForgotPassword} disabled={loading} className="mt-4">
               {loading ? "Sending..." : "📧 Resend Reset Email"}
             </Button>
           )}
