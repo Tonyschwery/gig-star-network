@@ -16,24 +16,23 @@ const UpdatePassword = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Check if the user has a temporary session from recovery
-    const checkRecoverySession = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+    const urlParams = new URLSearchParams(location.search);
+    const access_token = urlParams.get("access_token");
+    const refresh_token = urlParams.get("refresh_token");
 
-      if (!session) {
-        toast({
-          title: "Invalid or expired link",
-          description: "Please request a new password reset link.",
-          variant: "destructive",
-        });
-        navigate("/auth", { replace: true });
-      }
-    };
-
-    checkRecoverySession();
-  }, [navigate, toast]);
+    if (access_token && refresh_token) {
+      supabase.auth.setSession({ access_token, refresh_token }).then(({ error }) => {
+        if (error) {
+          console.error("Error setting recovery session:", error);
+          toast({
+            title: "Session Error",
+            description: "Failed to initialize recovery session.",
+            variant: "destructive",
+          });
+        }
+      });
+    }
+  }, [location.search]);
 
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
