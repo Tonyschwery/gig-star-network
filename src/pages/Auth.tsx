@@ -82,9 +82,8 @@ const Auth = () => {
       setLoading(false);
       return;
     }
-    <button type="button" onClick={() => navigate("/reset-password")} className="text-xs text-primary hover:underline">
-      Forgot password?
-    </button>;
+
+    // NOTE: The misplaced button was removed from here.
 
     try {
       // Check email via edge function
@@ -361,6 +360,15 @@ const Auth = () => {
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
                         <Label htmlFor="login-password">Password</Label>
+
+                        {/* 👇 THIS IS THE CORRECT LOCATION FOR THE BUTTON 👇 */}
+                        <button
+                          type="button"
+                          onClick={() => navigate("/reset-password")}
+                          className="text-xs text-primary hover:underline"
+                        >
+                          Forgot password?
+                        </button>
                       </div>
                       <Input
                         id="login-password"
