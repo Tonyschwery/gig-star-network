@@ -30,9 +30,9 @@ const AuthCallback = () => {
     // If this is a password recovery, redirect to update-password page with query params
     if (authType === "recovery") {
       console.log("[AuthCallback] Password recovery detected, redirecting to update-password...");
-      const queryParams = new URLSearchParams(window.location.search).toString();
       setIsRecovery(true);
-      navigate(`/auth/update-password?${queryParams}`, { replace: true });
+      const fullUrl = window.location.href;
+      navigate(`/auth/update-password?redirect=${encodeURIComponent(fullUrl)}`, { replace: true });
       return;
     }
 
