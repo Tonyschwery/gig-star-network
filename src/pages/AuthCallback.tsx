@@ -1,17 +1,66 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Session } from "@supabase/supabase-js";
 import { useToast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
+import { AlertCircle } from "lucide-react";
 
 const AuthCallback = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
+  const [error, setError] = useState<string | null>(null);
+  const [isRecovery, setIsRecovery] = useState(false);
 
   useEffect(() => {
     const redirectKey = "auth_callback_redirecting";
-    const maxWaitTime = 10000; // 10 seconds max wait to prevent permanent locks
+    const maxWaitTime = 10000;
+
+    // Check if this is a password recovery link
+    const type = searchParams.get("type");
+    const error_code = searchParams.get("error_code");
+    const error_description = searchParams.get("error_description");
+
+    console.log("[AuthCallback] URL params:", { type, error_code, error_description });
+
+    // Handle Supabase auth errors (expired/invalid tokens)
+    if (error_code) {
+      console.error("[AuthCallback] Auth error:", error_code, error_description);
+      setError(error_description || "The link is invalid or has expired. Please request a new one.");
+      return;
+    }
+
+    // If this is a password recovery, redirect to update-password page
+    if (type === "recovery") {
+      console.log("[AuthCallback] Password recovery detected, redirecting to update-password...");
+      setIsRecovery(true);
+      
+      // Get the access_token and refresh_token from URL hash
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      const access_token = hashParams.get("access_token");
+      const refresh_token = hashParams.get("refresh_token");
+      
+      if (access_token && refresh_token) {
+        // Set the session first, then redirect
+        supabase.auth.setSession({
+          access_token,
+          refresh_token,
+        }).then(({ error }) => {
+          if (error) {
+            console.error("[AuthCallback] Failed to set recovery session:", error);
+            setError("Failed to authenticate. Please request a new password reset link.");
+          } else {
+            console.log("[AuthCallback] Recovery session set, redirecting...");
+            navigate("/auth/update-password", { replace: true });
+          }
+        });
+      } else {
+        console.error("[AuthCallback] Missing tokens in recovery URL");
+        setError("Invalid password reset link. Please request a new one.");
+      }
+      return;
+    }
 
     const performRedirect = async (session: Session | null) => {
       // Check if already redirecting (but with timeout escape hatch)
@@ -32,8 +81,10 @@ const AuthCallback = () => {
       sessionStorage.setItem(`${redirectKey}_timestamp`, Date.now().toString());
 
       if (!session?.user) {
+        console.warn("[AuthCallback] No session found, showing error...");
         sessionStorage.removeItem(redirectKey);
-        navigate("/", { replace: true });
+        sessionStorage.removeItem(`${redirectKey}_timestamp`);
+        setError("Authentication failed. The link may have expired. Please try signing in again.");
         return;
       }
 
@@ -121,11 +172,51 @@ const AuthCallback = () => {
     };
   }, [navigate, searchParams, toast]);
 
+  // Show error state if authentication failed
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="max-w-md w-full text-center space-y-6">
+          <div className="flex justify-center">
+            <div className="rounded-full bg-destructive/10 p-3">
+              <AlertCircle className="h-8 w-8 text-destructive" />
+            </div>
+          </div>
+          
+          <div className="space-y-2">
+            <h1 className="text-2xl font-bold">Authentication Failed</h1>
+            <p className="text-muted-foreground">{error}</p>
+          </div>
+
+          <div className="space-y-3">
+            <Button
+              onClick={() => navigate("/auth", { replace: true })}
+              className="w-full"
+            >
+              Go to Sign In
+            </Button>
+            
+            <Button
+              variant="outline"
+              onClick={() => navigate("/auth/update-password", { replace: true })}
+              className="w-full"
+            >
+              Request New Password Reset
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show loading state
   return (
     <div className="min-h-screen bg-background flex items-center justify-center">
       <div className="text-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-        <p className="mt-4 text-muted-foreground">Finalizing login, please wait...</p>
+        <p className="mt-4 text-muted-foreground">
+          {isRecovery ? "Setting up password reset..." : "Finalizing login, please wait..."}
+        </p>
       </div>
     </div>
   );

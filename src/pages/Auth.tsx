@@ -234,12 +234,21 @@ const Auth = () => {
 
     setLoading(true);
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email.toLowerCase().trim(), {
+      const trimmedEmail = email.toLowerCase().trim();
+      console.log("[Auth] Requesting password reset for:", trimmedEmail);
+      console.log("[Auth] Redirect URL:", `${window.location.origin}/auth/update-password`);
+      
+      const { data, error } = await supabase.auth.resetPasswordForEmail(trimmedEmail, {
         redirectTo: `${window.location.origin}/auth/update-password`,
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("[Auth] Supabase resetPasswordForEmail error:", error);
+        throw error;
+      }
 
+      console.log("[Auth] Password reset email sent successfully. Response:", data);
+      
       toast({
         title: "Password reset email sent! 📧",
         description: "Check your email for a link to reset your password.",
@@ -247,7 +256,7 @@ const Auth = () => {
       });
       setResetEmailSent(true);
     } catch (error: any) {
-      console.error("Password reset error:", error);
+      console.error("[Auth] Password reset failed:", error);
       toast({
         title: "Error",
         description: error.message || "Failed to send password reset email. Please try again.",
