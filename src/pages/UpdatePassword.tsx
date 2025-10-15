@@ -21,20 +21,54 @@ const UpdatePassword = () => {
   const { toast } = useToast();
 
   useEffect(() => {
+  const initializeRecovery = async () => {
+    // Step 0: Try to set session from hash (if access_token exists)
     const hash = window.location.hash;
-  if (hash && hash.includes('access_token')) {
-    const params = new URLSearchParams(hash.replace('#', ''));
-    const access_token = params.get('access_token');
-    if (access_token) {
-      supabase.auth.setSession({
-        access_token,
-        refresh_token: params.get('refresh_token') || ''
-      }).then(({ error }) => {
+    if (hash && hash.includes('access_token')) {
+      const params = new URLSearchParams(hash.replace('#', ''));
+      const access_token = params.get('access_token');
+      if (access_token) {
+        const { error } = await supabase.auth.setSession({
+          access_token,
+          refresh_token: params.get('refresh_token') || ''
+        });
         if (error) console.error('Error setting session:', error);
-      });
+      }
     }
-  }
-};
+
+    // Step 1: Exchange recovery token for session
+    const url = window.location.href;
+    if (!url.includes("type=recovery")) {
+      console.error("⚠️ No recovery token found in URL");
+      setMessageType("error");
+      setMessage("Invalid or missing recovery token.");
+      setLoading(false);
+      return;
+    }
+
+    console.log("🔐 Recovery link detected. Exchanging for session...");
+    try {
+      const { data, error } = await supabase.auth.exchangeCodeForSession(url);
+      if (error) {
+        console.error("❌ Error exchanging recovery token:", error);
+        setMessageType("error");
+        setMessage("Invalid or expired reset link. Please request a new one.");
+      } else {
+        console.log("✅ Session established for password reset:", data);
+        setReady(true);
+      }
+    } catch (err: any) {
+      console.error("Unexpected error:", err);
+      setMessageType("error");
+      setMessage("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  initializeRecovery();
+}, []);
+
     // ✅ Step 1: Exchange Supabase recovery token for a valid session
     const handleRecovery = async () => {
       const url = window.location.href;
