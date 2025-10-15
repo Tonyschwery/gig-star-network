@@ -82,6 +82,9 @@ const Auth = () => {
       setLoading(false);
       return;
     }
+    <button type="button" onClick={() => navigate("/reset-password")} className="text-xs text-primary hover:underline">
+      Forgot password?
+    </button>;
 
     try {
       // Check email via edge function
