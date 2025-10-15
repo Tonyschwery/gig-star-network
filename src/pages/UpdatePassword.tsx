@@ -1,3 +1,4 @@
+// FILE: src/pages/UpdatePassword.tsx
 import { useState, useEffect, FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { createClient } from "@supabase/supabase-js";
@@ -8,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { CheckCircle, AlertTriangle } from "lucide-react";
 
+// Supabase client
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL!;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY!;
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
@@ -19,33 +21,34 @@ const UpdatePassword = () => {
   const [ready, setReady] = useState(false);
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState<"success" | "error">("error");
+
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
     const handleRecovery = async () => {
-      const hash = window.location.hash;
-
-      if (!hash) {
-        setMessage("Invalid or missing recovery link.");
-        setMessageType("error");
-        setLoading(false);
-        return;
-      }
-
-      const params = new URLSearchParams(hash.replace("#", ""));
-      const access_token = params.get("access_token");
-      const refresh_token = params.get("refresh_token");
-
-      if (!access_token || !refresh_token) {
-        setMessage("Recovery link is invalid or expired.");
-        setMessageType("error");
-        setLoading(false);
-        return;
-      }
-
       try {
-        // Establish session from the recovery token
+        // Supabase sends recovery token as hash (#access_token=...)
+        const hash = window.location.hash;
+        if (!hash.includes("access_token")) {
+          setMessage("Invalid or missing recovery link.");
+          setMessageType("error");
+          setLoading(false);
+          return;
+        }
+
+        const params = new URLSearchParams(hash.replace("#", ""));
+        const access_token = params.get("access_token");
+        const refresh_token = params.get("refresh_token") || "";
+
+        if (!access_token) {
+          setMessage("Invalid or expired recovery link.");
+          setMessageType("error");
+          setLoading(false);
+          return;
+        }
+
+        // Set the session
         const { error } = await supabase.auth.setSession({
           access_token,
           refresh_token,
@@ -53,12 +56,13 @@ const UpdatePassword = () => {
 
         if (error) throw error;
 
+        // Session is valid, show form
         setReady(true);
-        setLoading(false);
       } catch (err: any) {
-        console.error("Failed to set session:", err);
-        setMessage("Could not establish session. The link might have expired.");
+        console.error("Recovery error:", err);
+        setMessage("Something went wrong while verifying your link.");
         setMessageType("error");
+      } finally {
         setLoading(false);
       }
     };
@@ -69,10 +73,10 @@ const UpdatePassword = () => {
   const handleUpdatePassword = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    if (password.length < 6) {
+    if (!password || password.length < 6) {
       toast({
         title: "Password Too Short",
-        description: "Your password must be at least 6 characters.",
+        description: "Your new password must be at least 6 characters long.",
         variant: "destructive",
       });
       return;
@@ -81,7 +85,7 @@ const UpdatePassword = () => {
     if (password !== confirmPassword) {
       toast({
         title: "Passwords Do Not Match",
-        description: "Please ensure both fields match.",
+        description: "Please ensure both password fields are identical.",
         variant: "destructive",
       });
       return;
@@ -96,20 +100,20 @@ const UpdatePassword = () => {
       if (error) throw error;
 
       setMessageType("success");
-      setMessage("Password updated successfully! Redirecting...");
+      setMessage("Your password has been updated successfully! Redirecting...");
       toast({
         title: "Password Updated ✅",
-        description: "You can now log in with your new password.",
+        description: "You can now sign in with your new password.",
       });
 
       setTimeout(() => navigate("/auth"), 3000);
     } catch (err: any) {
-      console.error("Password update failed:", err);
+      console.error("Update error:", err);
       setMessageType("error");
-      setMessage(err.message || "Unexpected error occurred.");
+      setMessage(err.message || "An unexpected error occurred.");
       toast({
         title: "Update Failed",
-        description: "Could not update password. Try again.",
+        description: "Could not update your password. Try again.",
         variant: "destructive",
       });
     } finally {
@@ -117,14 +121,16 @@ const UpdatePassword = () => {
     }
   };
 
+  // Loading screen
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <p className="text-muted-foreground animate-pulse">Finalizing password recovery...</p>
+        <p className="text-muted-foreground animate-pulse">Verifying recovery link...</p>
       </div>
     );
   }
 
+  // Error screen
   if (!ready) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
@@ -143,14 +149,18 @@ const UpdatePassword = () => {
     );
   }
 
+  // Password update form
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <Card>
           <CardHeader className="text-center">
             <CardTitle className="text-2xl">Set a New Password</CardTitle>
-            <CardDescription>Create a new, secure password for your account. Minimum 6 characters.</CardDescription>
+            <CardDescription>
+              Create a new, secure password for your account. It must be at least 6 characters long.
+            </CardDescription>
           </CardHeader>
+
           <CardContent>
             <form onSubmit={handleUpdatePassword} className="space-y-4">
               <div className="space-y-2">
@@ -165,6 +175,7 @@ const UpdatePassword = () => {
                   minLength={6}
                 />
               </div>
+
               <div className="space-y-2">
                 <Label htmlFor="confirm-password">Confirm New Password</Label>
                 <Input
