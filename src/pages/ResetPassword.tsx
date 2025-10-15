@@ -31,7 +31,7 @@ const ResetPassword = () => {
     try {
       const trimmedEmail = email.toLowerCase().trim();
       const { data, error } = await supabase.auth.resetPasswordForEmail(trimmedEmail, {
-        redirectTo: `${window.location.origin}/#/update-password`,
+        redirectTo: "https://www.qtalent.live/update-password",
       });
 
       if (error) {
