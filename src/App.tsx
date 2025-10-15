@@ -58,7 +58,6 @@ const AppContent = () => {
         <Route path="/" element={<Index />} />
         <Route path="/auth" element={<Auth />} />
         <Route path="/login" element={<Auth />} />
-
         <Route
           path="/admin"
           element={
@@ -71,7 +70,6 @@ const AppContent = () => {
           <Route path="users" element={<AdminUsers />} />
           <Route path="bookings" element={<AdminBookings />} />
         </Route>
-
         <Route
           path="/booker-dashboard"
           element={
@@ -91,10 +89,10 @@ const AppContent = () => {
         <Route path="/pricing" element={<Pricing />} />
         <Route path="/auth" element={<Auth />} />
         <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/update-password" element={<UpdatePassword />} /> {/* <-- Add this line */}
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/terms-of-service" element={<TermsOfService />} />
         <Route path="/trust-safety" element={<TrustSafety />} />
-
         <Route path="/talent-onboarding" element={<TalentOnboarding />} />
         <Route
           path="/talent-dashboard"
@@ -112,7 +110,6 @@ const AppContent = () => {
             </ProtectedTalentRoute>
           }
         />
-
         <Route path="/talent/:id" element={<TalentProfile />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
