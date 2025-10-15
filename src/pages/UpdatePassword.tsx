@@ -1,3 +1,5 @@
+// FILE: src/pages/UpdatePassword.tsx
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -6,75 +8,86 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Lock } from "lucide-react";
+import { CheckCircle, AlertTriangle } from "lucide-react";
 
 const UpdatePassword = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
+  const [messageType, setMessageType] = useState<"success" | "error">("error");
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
-    const urlParams = new URLSearchParams(location.search);
-    const access_token = urlParams.get("access_token");
-    const refresh_token = urlParams.get("refresh_token");
+    // Supabase's onAuthStateChange is used to detect the PASSWORD_RECOVERY event.
+    // This event only happens when the user clicks the password recovery link in their email.
+    // The Supabase client library automatically handles the token from the URL fragment.
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "PASSWORD_RECOVERY") {
+        // Now the user is in a state where they can update their password.
+        console.log("Password recovery event detected. User can now set a new password.");
+      }
+    });
 
-    if (access_token && refresh_token) {
-      supabase.auth.setSession({ access_token, refresh_token }).then(({ error }) => {
-        if (error) {
-          console.error("Error setting recovery session:", error);
-          toast({
-            title: "Session Error",
-            description: "Failed to initialize recovery session.",
-            variant: "destructive",
-          });
-        }
-      });
-    }
-  }, [location.search]);
+    // Cleanup the subscription when the component unmounts
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
 
-  const handleUpdatePassword = async (e: React.FormEvent) => {
+  const handleUpdatePassword = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    if (password.length < 6) {
+    // 1. Validate passwords
+    if (!password || password.length < 6) {
       toast({
-        title: "Password too short",
-        description: "Password must be at least 6 characters long.",
+        title: "Password Too Short",
+        description: "Your new password must be at least 6 characters long.",
         variant: "destructive",
       });
       return;
     }
-
     if (password !== confirmPassword) {
       toast({
-        title: "Passwords don't match",
-        description: "Please make sure both passwords are the same.",
+        title: "Passwords Do Not Match",
+        description: "Please ensure both password fields are identical.",
         variant: "destructive",
       });
       return;
     }
 
     setLoading(true);
+    setMessage("");
+
     try {
-      // ✅ Correct usage: no token needed
-      const { error } = await supabase.auth.updateUser({ password });
+      // 2. Call Supabase to update the user's password
+      const { error } = await supabase.auth.updateUser({ password: password });
 
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
 
+      // 3. Handle success
+      setMessageType("success");
+      setMessage("Your password has been updated successfully! Redirecting you to the sign-in page...");
       toast({
-        title: "Password updated successfully! 🎉",
+        title: "Password Updated! ✅",
         description: "You can now sign in with your new password.",
-        duration: 5000,
       });
 
-      // Redirect to login page
-      navigate("/auth", { replace: true });
+      setTimeout(() => {
+        navigate("/auth");
+      }, 3000); // Wait 3 seconds before redirecting
     } catch (error: any) {
-      console.error("Password update error:", error);
+      console.error("Error updating password:", error);
+      setMessageType("error");
+      setMessage(error.message || "An unexpected error occurred. Please try again.");
       toast({
-        title: "Error updating password",
-        description: error.message || "Failed to update password. Please try again.",
+        title: "Update Failed",
+        description: "Could not update your password. Please try the reset process again.",
         variant: "destructive",
       });
     } finally {
@@ -85,18 +98,11 @@ const UpdatePassword = () => {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <Button variant="ghost" onClick={() => navigate("/auth")} className="mb-4">
-          <ArrowLeft className="h-4 w-4 mr-2" /> Back to Sign In
-        </Button>
         <Card>
           <CardHeader className="text-center">
-            <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-              <Lock className="h-6 w-6 text-primary" />
-            </div>
-            <CardTitle className="text-2xl">Set Your New Password</CardTitle>
+            <CardTitle className="text-2xl">Set a New Password</CardTitle>
             <CardDescription>
-              Choose a strong password for your account. This works for all account types - whether you signed up with a
-              password, magic link, or are setting a password for the first time.
+              Create a new, secure password for your account. It must be at least 6 characters long.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -106,20 +112,19 @@ const UpdatePassword = () => {
                 <Input
                   id="new-password"
                   type="password"
-                  placeholder="At least 6 characters"
+                  placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   minLength={6}
                 />
               </div>
-
               <div className="space-y-2">
-                <Label htmlFor="confirm-password">Confirm Password</Label>
+                <Label htmlFor="confirm-password">Confirm New Password</Label>
                 <Input
                   id="confirm-password"
                   type="password"
-                  placeholder="Re-enter your password"
+                  placeholder="••••••••"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
@@ -127,24 +132,26 @@ const UpdatePassword = () => {
                 />
               </div>
 
-              <div className="bg-blue-50 dark:bg-blue-950/30 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
-                <p className="text-xs text-blue-900 dark:text-blue-100">
-                  💡 <strong>Password Tips:</strong>
-                </p>
-                <ul className="text-xs text-blue-800 dark:text-blue-200 mt-1 ml-4 list-disc space-y-1">
-                  <li>Use at least 6 characters (longer is better)</li>
-                  <li>Mix uppercase, lowercase, numbers & symbols</li>
-                  <li>Avoid common words or personal information</li>
-                </ul>
-              </div>
+              {message && (
+                <div
+                  className={`flex items-center gap-2 rounded-md p-3 text-sm ${
+                    messageType === "success"
+                      ? "bg-green-50 text-green-800 dark:bg-green-950 dark:text-green-200"
+                      : "bg-red-50 text-red-800 dark:bg-red-950 dark:text-red-200"
+                  }`}
+                >
+                  {messageType === "success" ? (
+                    <CheckCircle className="h-4 w-4" />
+                  ) : (
+                    <AlertTriangle className="h-4 w-4" />
+                  )}
+                  <p>{message}</p>
+                </div>
+              )}
 
               <Button type="submit" disabled={loading} className="w-full">
                 {loading ? "Updating Password..." : "Update Password"}
               </Button>
-
-              <p className="text-xs text-center text-muted-foreground">
-                After updating, you'll be redirected to sign in with your new password
-              </p>
             </form>
           </CardContent>
         </Card>
