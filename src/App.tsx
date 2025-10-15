@@ -53,7 +53,7 @@ const AppContent = () => {
       <PWAInstallPrompt />
       <NotificationPermissionPrompt />
       <Routes>
-        <Route path="/auth/UpdatePassword" element={<UpdatePassword />} />
+        <Route path="/pages/UpdatePassword" element={<UpdatePassword />} />
         <Route path="/" element={<Index />} />
         <Route path="/auth" element={<Auth />} />
         <Route path="/login" element={<Auth />} />
