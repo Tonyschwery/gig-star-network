@@ -34,7 +34,7 @@ const UpdatePassword = () => {
       });
     }
   }
-}, []);
+}
     // ✅ Step 1: Exchange Supabase recovery token for a valid session
     const handleRecovery = async () => {
       const url = window.location.href;
