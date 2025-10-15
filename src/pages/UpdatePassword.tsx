@@ -21,35 +21,35 @@ const UpdatePassword = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // ✅ Step 1: Check if the URL has the Supabase recovery token
-    const hash = window.location.hash;
-    const params = new URLSearchParams(hash.substring(1)); // remove "#"
-    const access_token = params.get("access_token");
-    const refresh_token = params.get("refresh_token");
-    const type = params.get("type");
+    // ✅ Step 1: Exchange Supabase recovery token for a valid session
+    const handleRecovery = async () => {
+      const url = window.location.href;
+      const hasToken = url.includes("type=recovery");
 
-    if (access_token && type === "recovery") {
-      console.log("🔐 Recovery token found, setting Supabase session...");
-      // ✅ Step 2: Set the session so user can update their password
-      supabase.auth
-        .setSession({ access_token, refresh_token: refresh_token || access_token })
-        .then(({ error }) => {
-          if (error) {
-            console.error("❌ Error setting session:", error);
-            setMessageType("error");
-            setMessage("Invalid or expired reset link. Please try again.");
-          } else {
-            console.log("✅ Session set. User can now reset password.");
-            setReady(true);
-          }
-        })
-        .finally(() => setLoading(false));
-    } else {
-      console.error("⚠️ No valid recovery token found in URL.");
-      setMessageType("error");
-      setMessage("Invalid reset link or missing token.");
-      setLoading(false);
-    }
+      if (!hasToken) {
+        console.error("⚠️ No recovery token found in URL");
+        setMessageType("error");
+        setMessage("Invalid or missing recovery token.");
+        setLoading(false);
+        return;
+      }
+
+      console.log("🔐 Recovery link detected. Exchanging for session...");
+      const { data, error } = await supabase.auth.exchangeCodeForSession(url);
+
+      if (error) {
+        console.error("❌ Error exchanging recovery token:", error);
+        setMessageType("error");
+        setMessage("Invalid or expired reset link. Please request a new one.");
+        setLoading(false);
+      } else {
+        console.log("✅ Session established for password reset:", data);
+        setReady(true);
+        setLoading(false);
+      }
+    };
+
+    handleRecovery();
   }, []);
 
   const handleUpdatePassword = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -63,6 +63,7 @@ const UpdatePassword = () => {
       });
       return;
     }
+
     if (password !== confirmPassword) {
       toast({
         title: "Passwords Do Not Match",
@@ -94,7 +95,7 @@ const UpdatePassword = () => {
       setMessage(error.message || "An unexpected error occurred. Please try again.");
       toast({
         title: "Update Failed",
-        description: "Could not update your password. Please try the reset process again.",
+        description: "Could not update your password. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -102,15 +103,16 @@ const UpdatePassword = () => {
     }
   };
 
-  // ✅ Step 3: Handle page rendering states
+  // ✅ Step 2: Render loading state
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <p className="text-muted-foreground animate-pulse">Finalizing login, please wait...</p>
+        <p className="text-muted-foreground animate-pulse">Finalizing password recovery, please wait...</p>
       </div>
     );
   }
 
+  // ✅ Step 3: Render error state
   if (!ready) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -122,7 +124,7 @@ const UpdatePassword = () => {
     );
   }
 
-  // ✅ Step 4: Show password form once session is valid
+  // ✅ Step 4: Render password update form
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md">
