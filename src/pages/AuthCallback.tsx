@@ -14,15 +14,11 @@ const AuthCallback = () => {
   const [isRecovery, setIsRecovery] = useState(false);
 
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const type = urlParams.get("type");
-
-    // Check if this is a password recovery link
-    const type = searchParams.get("type");
+    const authType = searchParams.get("type");
     const error_code = searchParams.get("error_code");
     const error_description = searchParams.get("error_description");
 
-    console.log("[AuthCallback] URL params:", { type, error_code, error_description });
+    console.log("[AuthCallback] URL params:", { authType, error_code, error_description });
 
     // Handle Supabase auth errors (expired/invalid tokens)
     if (error_code) {
@@ -31,35 +27,18 @@ const AuthCallback = () => {
       return;
     }
 
-    // If this is a password recovery, redirect to update-password page
-    if (type === "recovery") {
+    // If this is a password recovery, redirect to update-password page with query params
+    if (authType === "recovery") {
       console.log("[AuthCallback] Password recovery detected, redirecting to update-password...");
+      const queryParams = new URLSearchParams(window.location.search).toString();
+      setIsRecovery(true);
       navigate(`/auth/update-password?${queryParams}`, { replace: true });
       return;
     }
 
+    // Regular login/session handling
     const performRedirect = async (session: Session | null) => {
-      // Check if already redirecting (but with timeout escape hatch)
-      const existingTimestamp = sessionStorage.getItem(`${redirectKey}_timestamp`);
-      if (existingTimestamp) {
-        const elapsed = Date.now() - parseInt(existingTimestamp);
-        if (elapsed < maxWaitTime) {
-          console.log("[AuthCallback] Already redirecting in another tab, waiting...");
-          return;
-        } else {
-          console.log("[AuthCallback] Previous redirect timed out, proceeding with recovery...");
-          sessionStorage.removeItem(redirectKey);
-          sessionStorage.removeItem(`${redirectKey}_timestamp`);
-        }
-      }
-
-      sessionStorage.setItem(redirectKey, "true");
-      sessionStorage.setItem(`${redirectKey}_timestamp`, Date.now().toString());
-
       if (!session?.user) {
-        console.warn("[AuthCallback] No session found, showing error...");
-        sessionStorage.removeItem(redirectKey);
-        sessionStorage.removeItem(`${redirectKey}_timestamp`);
         setError("Authentication failed. The link may have expired. Please try signing in again.");
         return;
       }
@@ -73,25 +52,13 @@ const AuthCallback = () => {
           p_email: user.email!,
           p_role: user.user_metadata?.user_type || "booker",
         });
-      } catch (error) {
-        console.error("Error ensuring profile:", error);
+      } catch (err) {
+        console.error("Error ensuring profile:", err);
       }
 
-      let state: any = {};
-      try {
-        const stateParam = searchParams.get("state");
-        if (stateParam) state = JSON.parse(stateParam);
-      } catch (e) {
-        console.error("Could not parse auth redirect state:", e);
-      }
-
-      const intent = state?.intent;
-      const talentId = state?.talentId;
-      const from = state?.from?.pathname || null;
-
-      // Handle stored booking intent
-      let bookingData = null;
+      // Redirect logic
       const storedIntent = localStorage.getItem("bookingIntent");
+      let bookingData = null;
       if (storedIntent) {
         try {
           bookingData = JSON.parse(storedIntent);
@@ -101,7 +68,6 @@ const AuthCallback = () => {
         }
       }
 
-      // Redirect logic
       if (user.email === "admin@qtalent.live") {
         navigate("/admin", { replace: true });
       } else if (bookingData?.talentId) {
@@ -111,25 +77,14 @@ const AuthCallback = () => {
           duration: 4000,
         });
         navigate(`/talent/${bookingData.talentId}`, { state: { openBookingForm: true }, replace: true });
-      } else if (intent === "event-form") {
-        navigate("/your-event", { replace: true });
-      } else if (intent === "booking-form" && talentId) {
-        navigate(`/talent/${talentId}`, { state: { openBookingForm: true }, replace: true });
-      } else if (from && from !== "/auth" && from !== "/") {
-        navigate(from, { replace: true });
       } else if (user.user_metadata?.user_type === "talent") {
         navigate("/talent-dashboard", { replace: true });
       } else {
         navigate("/booker-dashboard", { replace: true });
       }
-
-      setTimeout(() => {
-        sessionStorage.removeItem(redirectKey);
-        sessionStorage.removeItem(`${redirectKey}_timestamp`);
-      }, 3000); // Increased timeout to prevent premature cleanup
     };
 
-    // ✅ Supabase session check
+    // Check current session
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) performRedirect(session);
     });
@@ -141,14 +96,9 @@ const AuthCallback = () => {
 
     return () => {
       authListener?.subscription.unsubscribe();
-      setTimeout(() => {
-        sessionStorage.removeItem(redirectKey);
-        sessionStorage.removeItem(`${redirectKey}_timestamp`);
-      }, 3000);
     };
   }, [navigate, searchParams, toast]);
 
-  // Show error state if authentication failed
   if (error) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -182,7 +132,6 @@ const AuthCallback = () => {
     );
   }
 
-  // Show loading state
   return (
     <div className="min-h-screen bg-background flex items-center justify-center">
       <div className="text-center">
