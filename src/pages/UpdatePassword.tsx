@@ -46,7 +46,7 @@ const UpdatePassword = () => {
   }
 
   setLoading(false);
-}, []);
+}
   const handleUpdatePassword = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
