@@ -14,6 +14,8 @@ const AuthCallback = () => {
   const [isRecovery, setIsRecovery] = useState(false);
 
   useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const type = urlParams.get("type");
     const redirectKey = "auth_callback_redirecting";
     const maxWaitTime = 10000;
 
@@ -34,7 +36,6 @@ const AuthCallback = () => {
     // If this is a password recovery, redirect to update-password page
     if (type === "recovery") {
       console.log("[AuthCallback] Password recovery detected, redirecting to update-password...");
-      const queryParams = urlParams.toString();
       navigate(`/auth/update-password?${queryParams}`, { replace: true });
       return;
     }
