@@ -16,8 +16,6 @@ const AuthCallback = () => {
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const type = urlParams.get("type");
-    const redirectKey = "auth_callback_redirecting";
-    const maxWaitTime = 10000;
 
     // Check if this is a password recovery link
     const type = searchParams.get("type");
