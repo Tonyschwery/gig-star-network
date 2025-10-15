@@ -39,14 +39,18 @@ const UpdatePassword = () => {
       const type = params.get("type");
 
       if (type === "recovery" && token) {
-    setReady(true); // Token is valid enough to show the form
-  } else {
-    setMessage("Invalid or missing recovery token.");
-    setMessageType("error");
-  }
+        setReady(true); // Token is valid enough to show the form
+      } else {
+        setMessage("Invalid or missing recovery token.");
+        setMessageType("error");
+      }
 
-  setLoading(false);
-}
+      setLoading(false);
+    };
+
+    handleRecovery();
+  }, []);
+
   const handleUpdatePassword = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
@@ -100,7 +104,7 @@ const UpdatePassword = () => {
   };
 
   // Render a loading state while we process the recovery link.
-  if (loading) {
+  if (loading && !ready) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <p className="text-muted-foreground animate-pulse">Verifying recovery link, please wait...</p>
@@ -171,7 +175,7 @@ const UpdatePassword = () => {
                 <div
                   className={`flex items-center gap-2 rounded-md p-3 text-sm ${
                     messageType === "success"
-                      ? "bg-green-50 text-green-800 dark:bg-green-950 dark:green-200"
+                      ? "bg-green-50 text-green-800 dark:bg-green-950 dark:text-green-200"
                       : "bg-red-50 text-red-800 dark:bg-red-950 dark:text-red-200"
                   }`}
                 >
