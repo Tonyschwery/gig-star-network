@@ -21,32 +21,37 @@ const UpdatePassword = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    console.log("UpdatePassword component has mounted. Waiting for Supabase event...");
-    // Supabase automatically handles the hash. We just listen for the event.
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log(`Supabase onAuthStateChange event: ${event}`);
-      if (event === "PASSWORD_RECOVERY") {
-        setIsReady(true); // The user is authenticated and ready to update their password.
+    console.log("[UpdatePassword] Component mounted. Checking for session...");
+
+    // 1. Immediately check if a session already exists from the recovery link.
+    // This is the main fix for the race condition, as the PASSWORD_RECOVERY event
+    // often fires before this component has a chance to set up its listener.
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      // If a session is found, the user is authenticated. We can show the form.
+      if (session) {
+        console.log("[UpdatePassword] Active session found on mount. Showing form.");
+        setIsReady(true);
       }
     });
 
-    // If the event doesn't fire after a short delay, the link is likely invalid.
-    const timer = setTimeout(() => {
-      if (!isReady) {
-        setMessage("Your recovery link is invalid or has expired.");
-        setMessageType("error");
-        setIsReady(false); // Explicitly keep form hidden
+    // 2. Set up the listener as a fallback.
+    // This will still catch the event if it's delayed for any reason.
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event) => {
+      console.log(`[UpdatePassword] onAuthStateChange event received: ${event}`);
+      if (event === "PASSWORD_RECOVERY") {
+        console.log("[UpdatePassword] PASSWORD_RECOVERY event caught by listener. Showing form.");
+        setIsReady(true);
       }
-    }, 3000); // 3-second timeout
+    });
 
-    // Cleanup listener and timer on component unmount
+    // 3. Cleanup the listener when the component unmounts.
     return () => {
+      console.log("[UpdatePassword] Component unmounting. Cleaning up listener.");
       subscription.unsubscribe();
-      clearTimeout(timer);
     };
-  }, [isReady]); // Re-run effect if isReady changes, though it's mainly for initialization.
+  }, []); // <-- CRITICAL FIX: Use an empty dependency array to ensure this runs only ONCE.
 
   const handleUpdatePassword = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
