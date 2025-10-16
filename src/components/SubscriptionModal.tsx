@@ -46,6 +46,7 @@ export function SubscriptionModal({ open, onOpenChange }: SubscriptionModalProps
   const navigate = useNavigate();
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [paypalLoaded, setPaypalLoaded] = useState(false);
+  const [paypalError, setPaypalError] = useState(false);
 
   const plans = [
     {
@@ -120,10 +121,20 @@ export function SubscriptionModal({ open, onOpenChange }: SubscriptionModalProps
       
       script.onerror = (error) => {
         console.error('[PayPal] ❌ Failed to load SDK:', error);
+        console.error('[PayPal] Script URL:', script.src);
+        console.error('[PayPal] Possible causes:');
+        console.error('  1. Ad blocker is blocking PayPal');
+        console.error('  2. Network/firewall blocking PayPal domains');
+        console.error('  3. Browser security settings');
+        console.error('  4. No internet connection');
+        
+        setPaypalError(true);
+        
         toast({
-          title: "PayPal Loading Error",
-          description: "Failed to load PayPal. Please check your internet connection and try again.",
+          title: "Unable to Load PayPal",
+          description: "Please disable your ad blocker and refresh the page. If the issue persists, check your internet connection.",
           variant: "destructive",
+          duration: 10000,
         });
       };
       
@@ -277,6 +288,37 @@ export function SubscriptionModal({ open, onOpenChange }: SubscriptionModalProps
             Unlock premium features and keep 100% of your earnings
           </p>
         </DialogHeader>
+        
+        {/* PayPal Error Alert */}
+        {paypalError && (
+          <div className="bg-destructive/10 border-2 border-destructive/50 rounded-lg p-4 mb-4">
+            <div className="flex items-start gap-3">
+              <svg className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <div className="flex-1">
+                <h4 className="font-semibold text-destructive mb-1">Unable to Load Payment System</h4>
+                <p className="text-sm text-muted-foreground mb-2">
+                  PayPal couldn't be loaded. This is usually caused by:
+                </p>
+                <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
+                  <li>Ad blocker blocking PayPal scripts</li>
+                  <li>Browser extensions interfering with payments</li>
+                  <li>Network or firewall restrictions</li>
+                </ul>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="mt-3"
+                  onClick={() => window.location.reload()}
+                >
+                  Refresh Page
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+        
         <div className="grid md:grid-cols-2 gap-6">
           {plans.map((plan) => (
             <Card key={plan.id} className={`relative ${ plan.popular ? 'border-accent shadow-lg' : 'border-border' }`}>
