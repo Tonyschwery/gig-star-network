@@ -602,6 +602,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "notifications_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings_secure"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "notifications_event_request_id_fkey"
             columns: ["event_request_id"]
             isOneToOne: false
@@ -798,6 +805,94 @@ export type Database = {
       }
     }
     Views: {
+      bookings_secure: {
+        Row: {
+          booker_email: string | null
+          booker_name: string | null
+          booker_phone: string | null
+          budget: number | null
+          budget_currency: string | null
+          created_at: string | null
+          description: string | null
+          event_address: string | null
+          event_date: string | null
+          event_duration: number | null
+          event_location: string | null
+          event_type: string | null
+          id: string | null
+          is_gig_opportunity: boolean | null
+          is_public_request: boolean | null
+          status: string | null
+          talent_id: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          booker_email?: never
+          booker_name?: string | null
+          booker_phone?: never
+          budget?: number | null
+          budget_currency?: string | null
+          created_at?: string | null
+          description?: string | null
+          event_address?: string | null
+          event_date?: string | null
+          event_duration?: number | null
+          event_location?: string | null
+          event_type?: string | null
+          id?: string | null
+          is_gig_opportunity?: boolean | null
+          is_public_request?: boolean | null
+          status?: string | null
+          talent_id?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          booker_email?: never
+          booker_name?: string | null
+          booker_phone?: never
+          budget?: number | null
+          budget_currency?: string | null
+          created_at?: string | null
+          description?: string | null
+          event_address?: string | null
+          event_date?: string | null
+          event_duration?: number | null
+          event_location?: string | null
+          event_type?: string | null
+          id?: string | null
+          is_gig_opportunity?: boolean | null
+          is_public_request?: boolean | null
+          status?: string | null
+          talent_id?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookings_talent_id_fkey"
+            columns: ["talent_id"]
+            isOneToOne: false
+            referencedRelation: "talent_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_talent_id_fkey"
+            columns: ["talent_id"]
+            isOneToOne: false
+            referencedRelation: "talent_profiles_marketing"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_talent_id_fkey"
+            columns: ["talent_id"]
+            isOneToOne: false
+            referencedRelation: "talent_profiles_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       talent_profiles_marketing: {
         Row: {
           act: Database["public"]["Enums"]["talent_act"] | null
@@ -1016,6 +1111,10 @@ export type Database = {
       }
       is_admin: {
         Args: { user_id_param?: string }
+        Returns: boolean
+      }
+      is_pro_talent: {
+        Args: { requesting_user_id: string }
         Returns: boolean
       }
       user_has_talent_profile: {

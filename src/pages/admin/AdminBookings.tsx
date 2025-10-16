@@ -15,7 +15,7 @@ const AdminBookings = () => {
 
     const fetchData = useCallback(async () => {
         setLoading(true);
-        const bookingsQuery = supabase.from('bookings').select(`*, talent_profiles(artist_name)`).order('created_at', { ascending: false });
+        const bookingsQuery = supabase.from('bookings_secure').select(`*, talent_profiles(artist_name)`).order('created_at', { ascending: false });
         const requestsQuery = supabase.from('event_requests').select('*').order('created_at', { ascending: false });
 
         const [bookingsResult, requestsResult] = await Promise.all([bookingsQuery, requestsQuery]);

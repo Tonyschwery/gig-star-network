@@ -43,7 +43,7 @@ export const useOptimizedBookings = (userId?: string) => {
         const [bookerBookingsResponse, talentBookingsResponse] = await Promise.all([
           // Bookings where user is the booker
           supabase
-            .from('bookings')
+            .from('bookings_secure')
             .select(`
               id, user_id, talent_id, event_type, booker_name, booker_email, event_date, status,
               talent_profiles(is_pro_subscriber)
@@ -54,7 +54,7 @@ export const useOptimizedBookings = (userId?: string) => {
           
           // Bookings where user is the talent (if they have a talent profile)
           talentProfileResponse.data ? supabase
-            .from('bookings')
+            .from('bookings_secure')
             .select(`
               id, user_id, talent_id, event_type, booker_name, booker_email, event_date, status,
               talent_profiles(is_pro_subscriber)

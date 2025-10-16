@@ -43,7 +43,7 @@ export const TalentDashboardTabs = ({ profile }: TalentDashboardTabsProps) => {
     console.log('Cache buster applied:', cacheBuster);
 
     const { data: bookingsData, error: bookingsError } = await supabase
-      .from('bookings')
+      .from('bookings_secure')
       .select(`*, talent_profiles(artist_name)`)
       .eq('talent_id', profile.id)
       .order('event_date', { ascending: false });
