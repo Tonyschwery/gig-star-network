@@ -14,11 +14,18 @@ const AuthCallback = () => {
   const [isRecovery, setIsRecovery] = useState(false);
 
   useEffect(() => {
-    const authType = searchParams.get("type");
+    // Parse hash parameters (Supabase sends tokens and type in URL hash)
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    const authType = hashParams.get("type") || searchParams.get("type");
     const error_code = searchParams.get("error_code");
     const error_description = searchParams.get("error_description");
 
-    console.log("[AuthCallback] URL params:", { authType, error_code, error_description });
+    console.log("[AuthCallback] URL params:", { 
+      authType, 
+      error_code, 
+      error_description,
+      hash: window.location.hash 
+    });
 
     // Handle Supabase auth errors (expired/invalid tokens)
     if (error_code) {
