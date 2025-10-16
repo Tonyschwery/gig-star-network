@@ -32,7 +32,7 @@ const ResetPassword = () => {
           <div className="space-y-3 pt-2">
             <div className="flex items-start space-x-3">
               <div className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-sm">1</div>
-              <p className="text-sm text-muted-foreground">Contact admin at: <strong className="text-foreground">admin@qtalent.live</strong></p>
+              <p className="text-sm text-muted-foreground">Contact admin at: <strong className="text-foreground">qtalentslive@gmail.com</strong></p>
             </div>
             <div className="flex items-start space-x-3">
               <div className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-sm">2</div>
@@ -49,7 +49,7 @@ const ResetPassword = () => {
             type="button"
             variant="default"
             className="w-full"
-            onClick={() => window.location.href = 'mailto:admin@qtalent.live?subject=Password Reset Request'}
+            onClick={() => window.location.href = 'mailto:qtalentslive@gmail.com?subject=Password Reset Request'}
           >
             Contact Support
           </Button>
