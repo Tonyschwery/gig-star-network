@@ -92,8 +92,9 @@ const AppContent = () => {
         />
         <Route path="/pricing" element={<Pricing />} />
         <Route path="/auth" element={<Auth />} />
+        <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="/UpdatePassword" element={<UpdatePassword />} /> {/* <-- Add this line */}
+        <Route path="/update-password" element={<UpdatePassword />} />
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/terms-of-service" element={<TermsOfService />} />
         <Route path="/trust-safety" element={<TrustSafety />} />

@@ -25,30 +25,58 @@ const UpdatePassword = () => {
     sessionStorage.setItem('isPasswordRecovery', 'true');
     console.log("[UpdatePassword] Component mounted. Recovery flag set.");
 
-    // 1. Immediately check if a session already exists from the recovery link.
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        console.log("[UpdatePassword] Active session found on mount. Showing form.");
-        setIsReady(true);
-      }
-    });
+    // Parse hash fragment for token (Supabase sends #access_token=...)
+    const hash = window.location.hash;
+    const params = new URLSearchParams(hash.substring(1)); // Remove '#'
+    const accessToken = params.get('access_token');
+    const refreshToken = params.get('refresh_token');
+    const type = params.get('type');
 
-    // 2. Set up the listener as a fallback.
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event) => {
-      console.log(`[UpdatePassword] onAuthStateChange event received: ${event}`);
-      if (event === "PASSWORD_RECOVERY") {
-        console.log("[UpdatePassword] PASSWORD_RECOVERY event caught. Showing form.");
-        setIsReady(true);
-      }
-    });
+    console.log('[UpdatePassword] Hash params:', { accessToken: accessToken ? 'present' : 'missing', type });
 
-    // 3. Cleanup the listener when the component unmounts.
-    return () => {
-      console.log("[UpdatePassword] Component unmounting. Cleaning up listener.");
-      subscription.unsubscribe();
-    };
+    if (type === 'recovery' && accessToken) {
+      // Token found in URL - set session manually
+      console.log('[UpdatePassword] Recovery token found in hash, establishing session...');
+      supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken || ''
+      }).then(({ data, error }) => {
+        if (error) {
+          console.error('[UpdatePassword] Session error:', error);
+          setMessage('Invalid or expired reset link. Please request a new one.');
+          setMessageType('error');
+        } else {
+          console.log('[UpdatePassword] Session established from hash successfully');
+          setIsReady(true);
+        }
+      });
+    } else {
+      // Fallback: check existing session or listen for event
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session) {
+          console.log("[UpdatePassword] Active session found on mount. Showing form.");
+          setIsReady(true);
+        } else {
+          console.log("[UpdatePassword] No session found, waiting for auth event...");
+        }
+      });
+
+      // Set up listener as additional fallback
+      const {
+        data: { subscription },
+      } = supabase.auth.onAuthStateChange((event) => {
+        console.log(`[UpdatePassword] onAuthStateChange event received: ${event}`);
+        if (event === "PASSWORD_RECOVERY") {
+          console.log("[UpdatePassword] PASSWORD_RECOVERY event caught. Showing form.");
+          setIsReady(true);
+        }
+      });
+
+      return () => {
+        console.log("[UpdatePassword] Component unmounting. Cleaning up listener.");
+        subscription.unsubscribe();
+      };
+    }
   }, []);
 
   const handleUpdatePassword = async (e: FormEvent<HTMLFormElement>) => {
@@ -109,18 +137,36 @@ const UpdatePassword = () => {
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
         <Card className="w-full max-w-md text-center">
           <CardHeader>
-            <CardTitle>Verifying Link</CardTitle>
+            <CardTitle>{message ? 'Link Issue' : 'Verifying Link'}</CardTitle>
           </CardHeader>
           <CardContent>
             {message ? (
               <>
-                <p className="text-muted-foreground">{message}</p>
-                <Button onClick={() => navigate("/auth/forgot-password")} className="mt-4">
-                  Request a New Link
-                </Button>
+                <div
+                  className={`flex items-center gap-2 rounded-md p-3 text-sm mb-4 ${
+                    messageType === "success"
+                      ? "bg-green-50 text-green-800 dark:bg-green-950 dark:text-green-200"
+                      : "bg-red-50 text-red-800 dark:bg-red-950 dark:text-red-200"
+                  }`}
+                >
+                  <AlertTriangle className="h-4 w-4" />
+                  <p>{message}</p>
+                </div>
+                <div className="space-y-2">
+                  <Button onClick={() => navigate("/reset-password")} className="w-full">
+                    Request a New Reset Link
+                  </Button>
+                  <Button 
+                    onClick={() => window.location.reload()} 
+                    variant="outline" 
+                    className="w-full"
+                  >
+                    Retry Verification
+                  </Button>
+                </div>
               </>
             ) : (
-              <p className="text-muted-foreground animate-pulse">Please wait...</p>
+              <p className="text-muted-foreground animate-pulse">Verifying your reset link...</p>
             )}
           </CardContent>
         </Card>
