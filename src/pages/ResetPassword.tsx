@@ -27,7 +27,7 @@ const ResetPassword = () => {
       const trimmedEmail = email.toLowerCase().trim();
       
       // 🔐 Route through AuthCallback for centralized token processing
-      const redirectUrl = `${window.location.origin}/auth/callback`;
+      const redirectUrl = `${window.location.origin}/#/auth/callback`;
       console.log("[ResetPassword] Sending reset email with redirectTo:", redirectUrl);
       
       const { data, error } = await supabase.auth.resetPasswordForEmail(trimmedEmail, {
