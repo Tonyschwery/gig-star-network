@@ -295,7 +295,7 @@ export default function TalentOnboarding() {
         email: email.toLowerCase().trim(),
         password: password,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          emailRedirectTo: `${window.location.origin}/auth`,
           data: {
             ...profileDataForDB,
             name: fullName,
@@ -468,7 +468,7 @@ export default function TalentOnboarding() {
                 <span className="flex-shrink-0 w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center text-primary font-bold text-sm">
                   3
                 </span>
-                <span className="pt-1">You'll be automatically logged in and taken to your talent dashboard</span>
+                <span className="pt-1">After clicking the link, you'll be redirected to the login page where you can sign in with your credentials</span>
               </li>
             </ol>
           </div>
