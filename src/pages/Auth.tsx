@@ -289,19 +289,57 @@ const Auth = () => {
 
             {/* Email Verification Message */}
             {verificationMessage && (
-              <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg border-2 border-blue-200 dark:border-blue-800">
-                <div className="flex items-start gap-3">
-                  <Mail className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
-                  <div className="text-left">
-                    <p className="text-sm font-semibold text-blue-900 dark:text-blue-100 mb-1">
-                      📧 Email Verification Required
-                    </p>
-                    <p className="text-sm text-blue-800 dark:text-blue-200">{verificationMessage}</p>
-                    <p className="text-xs text-blue-700 dark:text-blue-300 mt-2">
-                      After verifying your email, return here to sign in.
-                    </p>
+              <div className="mt-4 space-y-3">
+                <div className="p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg border-2 border-blue-200 dark:border-blue-800">
+                  <div className="flex items-start gap-3">
+                    <Mail className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                    <div className="text-left">
+                      <p className="text-sm font-semibold text-blue-900 dark:text-blue-100 mb-1">
+                        📧 Email Verification Required
+                      </p>
+                      <p className="text-sm text-blue-800 dark:text-blue-200">{verificationMessage}</p>
+                      <p className="text-xs text-blue-700 dark:text-blue-300 mt-2">
+                        After verifying your email, return here to sign in.
+                      </p>
+                    </div>
                   </div>
                 </div>
+                
+                {/* Resend Verification Email Button */}
+                {state?.showResendButton && state?.email && (
+                  <Button
+                    variant="outline"
+                    onClick={async () => {
+                      try {
+                        setLoading(true);
+                        const { error } = await supabase.auth.resend({
+                          type: 'signup',
+                          email: state.email,
+                        });
+                        
+                        if (error) throw error;
+                        
+                        toast({
+                          title: "Email Resent! 📧",
+                          description: "Check your inbox again. It may take a few minutes to arrive.",
+                          duration: 5000
+                        });
+                      } catch (error: any) {
+                        toast({
+                          title: "Error",
+                          description: error.message || "Failed to resend email.",
+                          variant: "destructive"
+                        });
+                      } finally {
+                        setLoading(false);
+                      }
+                    }}
+                    disabled={loading}
+                    className="w-full"
+                  >
+                    {loading ? "Sending..." : "Resend Verification Email"}
+                  </Button>
+                )}
               </div>
             )}
 

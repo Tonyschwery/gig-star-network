@@ -315,9 +315,19 @@ export default function TalentOnboarding() {
       localStorage.removeItem("talent_onboarding_draft");
 
       if (needsConfirmation) {
-        // User needs to verify email - show full-screen confirmation page ONLY
-        setUserEmailForConfirmation(email);
-        setEmailConfirmationPending(true);
+        console.log("[TalentOnboarding] Email confirmation required - redirecting to auth page");
+        
+        // Redirect to auth page with confirmation message
+        navigate('/auth', {
+          state: {
+            mode: 'talent',
+            message: `Please check your email (${email}) and click the verification link to activate your account. Don't forget to check your spam folder!`,
+            email: email,
+            showResendButton: true
+          },
+          replace: true
+        });
+        return;
       } else {
         // Email confirmation not required (auto-confirmed)
         toast({ 
