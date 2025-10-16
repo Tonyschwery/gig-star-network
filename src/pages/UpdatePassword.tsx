@@ -21,24 +21,24 @@ const UpdatePassword = () => {
   const { toast } = useToast();
 
   useEffect(() => {
+    // LOG #1: This tells us if the new version of the file is even loading.
     console.log("[UpdatePassword] Component mounted. Checking for session...");
 
     // 1. Immediately check if a session already exists from the recovery link.
-    // This is the main fix for the race condition, as the PASSWORD_RECOVERY event
-    // often fires before this component has a chance to set up its listener.
     supabase.auth.getSession().then(({ data: { session } }) => {
       // If a session is found, the user is authenticated. We can show the form.
       if (session) {
+        // LOG #2: This is the log that confirms the fix is working.
         console.log("[UpdatePassword] Active session found on mount. Showing form.");
         setIsReady(true);
       }
     });
 
     // 2. Set up the listener as a fallback.
-    // This will still catch the event if it's delayed for any reason.
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event) => {
+      // LOG #3: This is a fallback log.
       console.log(`[UpdatePassword] onAuthStateChange event received: ${event}`);
       if (event === "PASSWORD_RECOVERY") {
         console.log("[UpdatePassword] PASSWORD_RECOVERY event caught by listener. Showing form.");
@@ -51,7 +51,7 @@ const UpdatePassword = () => {
       console.log("[UpdatePassword] Component unmounting. Cleaning up listener.");
       subscription.unsubscribe();
     };
-  }, []); // <-- CRITICAL FIX: Use an empty dependency array to ensure this runs only ONCE.
+  }, []); // <-- Use an empty dependency array to run this only once.
 
   const handleUpdatePassword = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
