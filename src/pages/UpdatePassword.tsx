@@ -26,10 +26,12 @@ const UpdatePassword = () => {
   const { toast } = useToast();
 
   useEffect(() => {
+    console.log("UpdatePassword component has mounted. Waiting for Supabase event...");
     // Supabase automatically handles the hash. We just listen for the event.
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log(`Supabase onAuthStateChange event: ${event}`);
       if (event === "PASSWORD_RECOVERY") {
         setIsReady(true); // The user is authenticated and ready to update their password.
       }
