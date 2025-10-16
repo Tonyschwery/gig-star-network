@@ -43,21 +43,18 @@ const Auth = () => {
 
   useEffect(() => {
     if (!authLoading && user) {
-      // FIX: Check if the user is in the password recovery flow.
-  const isPasswordRecovery = window.location.hash.includes("type=recovery");
-      // If they are, do nothing and let the UpdatePassword page handle it.
-  if (isPasswordRecovery) {
-    return;
-  }
-    // Your original logic runs only if it's NOT a password recovery action.
-  if (!authLoading && user) {
-    // This part should redirect users away from public pages like /login,
-    // but you might need to refine it. For now, this fix works.
-    if (window.location.pathname.startsWith('/auth')) {
+      // Check if the user is in the password recovery flow
+      const isPasswordRecovery = window.location.hash.includes("type=recovery");
+      // If they are, do nothing and let the UpdatePassword page handle it
+      if (isPasswordRecovery) {
+        return;
+      }
+      // Redirect users away from auth pages
+      if (window.location.pathname.startsWith('/auth')) {
         navigate("/");
+      }
     }
-  }
-}, [user, authLoading, navigate]);
+  }, [user, authLoading, navigate]);
 
   const handleAuthAction = async (isSignUp: boolean) => {
     setLoading(true);
