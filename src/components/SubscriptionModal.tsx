@@ -39,14 +39,12 @@ declare global {
 // Since you cannot use environment variables on your platform, we will set the ID directly.
 const PAYPAL_LIVE_CLIENT_ID = "AX6bUOWtKGKAaD0Ry62rtK3jhTDGfzpSMuJCABbUeVENyKdBAei_-xGiY8wT1vvXTypXkHWijfJHENcA";
 
-
 export function SubscriptionModal({ open, onOpenChange }: SubscriptionModalProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [paypalLoaded, setPaypalLoaded] = useState(false);
-  const [paypalError, setPaypalError] = useState(false);
 
   const plans = [
     {
@@ -55,7 +53,7 @@ export function SubscriptionModal({ open, onOpenChange }: SubscriptionModalProps
       price: "$19.99",
       period: "/month",
       // ### FIX #1: REPLACE THIS WITH YOUR *LIVE* MONTHLY PLAN ID ###
-      planId: "P-9NW37063VU373363ENCYI3LY", 
+      planId: "P-9NW37063VU373363ENCYI3LY",
       features: [
         "Up to 10 profile images",
         "Audio & video links on profile",
@@ -63,13 +61,13 @@ export function SubscriptionModal({ open, onOpenChange }: SubscriptionModalProps
         "Featured in Pro Artists section",
         "Pro badge for trust & visibility",
         "Unlimited booking requests",
-        "Priority customer support"
+        "Priority customer support",
       ],
-      popular: false
+      popular: false,
     },
     {
       id: "yearly",
-      name: "Yearly Pro",  
+      name: "Yearly Pro",
       price: "$179.88",
       period: "/year",
       // ### FIX #2: REPLACE THIS WITH YOUR *LIVE* YEARLY PLAN ID ###
@@ -78,148 +76,88 @@ export function SubscriptionModal({ open, onOpenChange }: SubscriptionModalProps
         "Everything in Monthly Pro",
         "Save $60 per year",
         "Best value for serious performers",
-        "All premium features included"
+        "All premium features included",
       ],
       popular: true,
-      savings: "Save $60!"
-    }
+      savings: "Save $60!",
+    },
   ];
 
   // Load PayPal SDK
   useEffect(() => {
-    if (!open || !PAYPAL_LIVE_CLIENT_ID || PAYPAL_LIVE_CLIENT_ID.includes("REPLACE_WITH")) {
-      console.log('[PayPal] Modal not open or client ID not configured');
-      return;
-    }
-
-    console.log('[PayPal] Modal opened, attempting to load PayPal SDK...');
+    if (!open || !PAYPAL_LIVE_CLIENT_ID || PAYPAL_LIVE_CLIENT_ID.includes("REPLACE_WITH")) return;
 
     const loadPayPalScript = () => {
-      // Check if PayPal is already loaded
       if (window.paypal) {
-        console.log('[PayPal] SDK already loaded');
         setPaypalLoaded(true);
         return;
       }
 
-      // Check if script is already being loaded
-      const existingScript = document.querySelector(`script[src*="paypal.com/sdk/js"]`);
-      if (existingScript) {
-        console.log('[PayPal] Script already exists, removing old script...');
-        existingScript.remove();
-      }
-
-      console.log('[PayPal] Creating new script element...');
-      const script = document.createElement('script');
+      const script = document.createElement("script");
+      // Use your Live Client ID from the constant above
       script.src = `https://www.paypal.com/sdk/js?client-id=${PAYPAL_LIVE_CLIENT_ID}&vault=true&intent=subscription`;
       script.async = true;
-      
-      script.onload = () => {
-        console.log('[PayPal] ✅ SDK loaded successfully!');
-        setPaypalLoaded(true);
-      };
-      
-      script.onerror = (error) => {
-        console.error('[PayPal] ❌ Failed to load SDK:', error);
-        console.error('[PayPal] Script URL:', script.src);
-        console.error('[PayPal] Possible causes:');
-        console.error('  1. Ad blocker is blocking PayPal');
-        console.error('  2. Network/firewall blocking PayPal domains');
-        console.error('  3. Browser security settings');
-        console.error('  4. No internet connection');
-        
-        setPaypalError(true);
-        
+      script.onload = () => setPaypalLoaded(true);
+      script.onerror = () => {
         toast({
-          title: "Unable to Load PayPal",
-          description: "Please disable your ad blocker and refresh the page. If the issue persists, check your internet connection.",
+          title: "Error",
+          description: "Failed to load PayPal. Please refresh and try again.",
           variant: "destructive",
-          duration: 10000,
         });
       };
-      
       document.head.appendChild(script);
-      console.log('[PayPal] Script element added to DOM');
     };
 
     loadPayPalScript();
-
-    // Cleanup function
-    return () => {
-      console.log('[PayPal] Cleaning up modal...');
-    };
   }, [open, toast]);
 
   // Render PayPal buttons when plan is selected and PayPal is loaded
   useEffect(() => {
-    if (!paypalLoaded || !selectedPlan || !window.paypal || !user) {
-      console.log('[PayPal Buttons] Waiting for:', {
-        paypalLoaded,
-        selectedPlan,
-        hasPayPal: !!window.paypal,
-        hasUser: !!user
-      });
-      return;
-    }
+    if (!paypalLoaded || !selectedPlan || !window.paypal || !user) return;
 
-    const plan = plans.find(p => p.id === selectedPlan);
-    if (!plan) {
-      console.error('[PayPal Buttons] Plan not found:', selectedPlan);
-      return;
-    }
-
-    console.log('[PayPal Buttons] Rendering buttons for plan:', plan.name);
+    const plan = plans.find((p) => p.id === selectedPlan);
+    if (!plan) return;
 
     const containerId = `paypal-button-container-${plan.id}`;
     const container = document.getElementById(containerId);
-    if (!container) {
-      console.error('[PayPal Buttons] Container not found:', containerId);
-      return;
-    }
+    if (!container) return;
 
     // Clear any existing PayPal buttons
-    container.innerHTML = '';
-    console.log('[PayPal Buttons] Container cleared, creating buttons...');
+    container.innerHTML = "";
 
-    try {
-      window.paypal.Buttons({
+    window.paypal
+      .Buttons({
         createSubscription: async (data, actions) => {
-          console.log('[PayPal] Creating subscription with data:', { plan: plan.name, userId: user.id });
-          
+          // This part is correct! It sends the user.id as custom_id
           const subscriptionData = {
             plan_id: plan.planId,
-            custom_id: user.id,
+            custom_id: user.id, // This is working perfectly!
             application_context: {
               brand_name: "QTalent",
               shipping_preference: "NO_SHIPPING",
               user_action: "SUBSCRIBE_NOW",
               return_url: `${window.location.origin}/subscription-success`,
-              cancel_url: `${window.location.origin}/subscription-cancelled`
-            }
+              cancel_url: `${window.location.origin}/subscription-cancelled`,
+            },
           };
-          
           const result = await actions.subscription.create(subscriptionData);
-          console.log('[PayPal] ✅ Subscription created:', result);
           return result;
         },
         onApprove: async (data, actions) => {
-          console.log('[PayPal] ✅ Subscription approved:', data);
-          
           toast({
             title: "Subscription Successful!",
             description: "Redirecting to confirmation page...",
             duration: 3000,
           });
-          
           onOpenChange(false);
-          const redirectUrl = new URL('/subscription-success', window.location.origin);
+          const redirectUrl = new URL("/subscription-success", window.location.origin);
           if (data.subscriptionID) {
-            redirectUrl.searchParams.set('subscription_id', data.subscriptionID);
+            redirectUrl.searchParams.set("subscription_id", data.subscriptionID);
           }
           navigate(redirectUrl.pathname + redirectUrl.search);
         },
         onError: (err) => {
-          console.error('[PayPal] ❌ Error during subscription:', err);
+          console.error("PayPal onError handler triggered", err);
           toast({
             title: "Subscription Error",
             description: "There was an issue processing your subscription. Please try again.",
@@ -227,36 +165,23 @@ export function SubscriptionModal({ open, onOpenChange }: SubscriptionModalProps
           });
           setSelectedPlan(null);
         },
-      onCancel: (data) => {
-        toast({
-          title: "Subscription Cancelled",
-          description: "You cancelled the subscription process.",
-        });
-        setSelectedPlan(null);
-      },
-        style: {
-          shape: 'rect',
-          color: 'gold',
-          layout: 'vertical',
-          label: 'subscribe'
-        }
-      }).render(`#${containerId}`)
-        .then(() => {
-          console.log('[PayPal Buttons] ✅ Buttons rendered successfully');
-        })
-        .catch((error) => {
-          console.error('[PayPal Buttons] ❌ Failed to render buttons:', error);
+        onCancel: (data) => {
           toast({
-            title: "PayPal Error",
-            description: "Failed to display PayPal buttons. Please try again.",
-            variant: "destructive",
+            title: "Subscription Cancelled",
+            description: "You cancelled the subscription process.",
           });
-        });
-    } catch (error) {
-      console.error('[PayPal Buttons] ❌ Error creating buttons:', error);
-    }
+          setSelectedPlan(null);
+        },
+        style: {
+          shape: "rect",
+          color: "gold",
+          layout: "vertical",
+          label: "subscribe",
+        },
+      })
+      .render(`#${containerId}`);
   }, [paypalLoaded, selectedPlan, user, plans, toast, onOpenChange, navigate]);
-  
+
   // The rest of your UI code is perfect and does not need to be changed.
   const handlePlanSelect = (planId: string) => {
     if (!user) {
@@ -284,44 +209,11 @@ export function SubscriptionModal({ open, onOpenChange }: SubscriptionModalProps
             <Crown className="h-6 w-6 md:h-8 w-8 text-brand-warning" />
             Choose Your Pro Plan
           </DialogTitle>
-          <p className="text-muted-foreground">
-            Unlock premium features and keep 100% of your earnings
-          </p>
+          <p className="text-muted-foreground">Unlock premium features and keep 100% of your earnings</p>
         </DialogHeader>
-        
-        {/* PayPal Error Alert */}
-        {paypalError && (
-          <div className="bg-destructive/10 border-2 border-destructive/50 rounded-lg p-4 mb-4">
-            <div className="flex items-start gap-3">
-              <svg className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-              <div className="flex-1">
-                <h4 className="font-semibold text-destructive mb-1">Unable to Load Payment System</h4>
-                <p className="text-sm text-muted-foreground mb-2">
-                  PayPal couldn't be loaded. This is usually caused by:
-                </p>
-                <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
-                  <li>Ad blocker blocking PayPal scripts</li>
-                  <li>Browser extensions interfering with payments</li>
-                  <li>Network or firewall restrictions</li>
-                </ul>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="mt-3"
-                  onClick={() => window.location.reload()}
-                >
-                  Refresh Page
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
-        
         <div className="grid md:grid-cols-2 gap-6">
           {plans.map((plan) => (
-            <Card key={plan.id} className={`relative ${ plan.popular ? 'border-accent shadow-lg' : 'border-border' }`}>
+            <Card key={plan.id} className={`relative ${plan.popular ? "border-accent shadow-lg" : "border-border"}`}>
               {plan.popular && (
                 <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
                   <Badge className="bg-accent text-accent-foreground">
@@ -335,9 +227,7 @@ export function SubscriptionModal({ open, onOpenChange }: SubscriptionModalProps
                 <div className="mt-4">
                   <div className="text-3xl font-bold">
                     {plan.price}
-                    <span className="text-lg font-normal text-muted-foreground">
-                      {plan.period}
-                    </span>
+                    <span className="text-lg font-normal text-muted-foreground">{plan.period}</span>
                   </div>
                   {plan.savings && (
                     <div className="text-sm text-brand-success font-medium mt-2 bg-brand-success/10 rounded-full px-3 py-1">
@@ -357,19 +247,13 @@ export function SubscriptionModal({ open, onOpenChange }: SubscriptionModalProps
                 </div>
                 {selectedPlan === plan.id ? (
                   <div className="space-y-4">
-                    <div id={`paypal-button-container-${plan.id}`} className="min-h-[50px]">
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setSelectedPlan(null)}
-                      className="w-full"
-                    >
+                    <div id={`paypal-button-container-${plan.id}`} className="min-h-[50px]"></div>
+                    <Button variant="ghost" size="sm" onClick={() => setSelectedPlan(null)} className="w-full">
                       Choose Different Plan
                     </Button>
                   </div>
                 ) : (
-                  <Button 
+                  <Button
                     className="w-full gap-2 relative overflow-hidden group"
                     variant={plan.popular ? "default" : "outline"}
                     onClick={() => handlePlanSelect(plan.id)}
@@ -396,4 +280,3 @@ export function SubscriptionModal({ open, onOpenChange }: SubscriptionModalProps
     </Dialog>
   );
 }
-
