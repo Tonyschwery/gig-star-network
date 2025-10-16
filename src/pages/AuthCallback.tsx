@@ -102,6 +102,17 @@ const AuthCallback = () => {
 
     // Listen for auth state changes
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log("[AuthCallback] Auth event:", event);
+      
+      // Detect password recovery event
+      if (event === "PASSWORD_RECOVERY" && session) {
+        console.log("[AuthCallback] PASSWORD_RECOVERY event detected");
+        setIsRecovery(true);
+        sessionStorage.setItem('isPasswordRecovery', 'true');
+        navigate('/update-password', { replace: true });
+        return;
+      }
+      
       if (event === "SIGNED_IN" && session) performRedirect(session);
     });
 
