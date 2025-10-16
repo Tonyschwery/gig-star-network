@@ -139,6 +139,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const processSession = async (session: Session | null, skipDelay = false) => {
       if (!mounted) return;
       
+      // 🔐 CRITICAL FIX: Detect password recovery flow and skip processing
+      // When user clicks reset link, Supabase adds #access_token=...&type=recovery to URL
+      // We must NOT process this as a normal login to prevent homepage redirect
+      const isPasswordRecovery = window.location.hash.includes("type=recovery");
+      if (isPasswordRecovery) {
+        console.log("[Auth] Password recovery detected - skipping session processing");
+        return; // Let UpdatePassword component handle this
+      }
+      
       // Debounce rapid session changes
       if (processingTimeout) {
         clearTimeout(processingTimeout);
@@ -213,6 +222,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (!mounted) return;
       
+      // 🔐 CRITICAL FIX: Skip all processing during password recovery
+      const isPasswordRecovery = window.location.hash.includes("type=recovery");
+      if (isPasswordRecovery && event === 'PASSWORD_RECOVERY') {
+        console.log("[Auth] PASSWORD_RECOVERY event detected - letting UpdatePassword handle it");
+        return; // UpdatePassword component will handle this event
+      }
+      
       // Handle different auth events
       if (event === 'SIGNED_OUT') {
         // Immediate state clear for sign out
@@ -227,6 +243,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Just update session, don't reload everything
         setSession(session);
       } else if (event === 'SIGNED_IN' || event === 'USER_UPDATED' || event === 'INITIAL_SESSION') {
+        // 🔐 Double-check: Don't process these events during password recovery
+        if (isPasswordRecovery) {
+          console.log(`[Auth] Skipping ${event} during password recovery`);
+          return;
+        }
         // Process full session for these events
         processSession(session, event === 'SIGNED_IN');
       }
