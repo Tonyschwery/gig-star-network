@@ -17,8 +17,8 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey);
 const UpdatePassword = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [ready, setReady] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [isReady, setIsReady] = useState(false); // Controls if the form is shown
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState<"success" | "error">("error");
 
@@ -26,54 +26,35 @@ const UpdatePassword = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    const handleRecovery = async () => {
-      try {
-        // Supabase sends recovery token as hash (#access_token=...)
-        const hash = window.location.hash;
-        if (!hash.includes("access_token")) {
-          setMessage("Invalid or missing recovery link.");
-          setMessageType("error");
-          setLoading(false);
-          return;
-        }
-
-        const params = new URLSearchParams(hash.replace("#", ""));
-        const access_token = params.get("access_token");
-        const refresh_token = params.get("refresh_token") || "";
-
-        if (!access_token) {
-          setMessage("Invalid or expired recovery link.");
-          setMessageType("error");
-          setLoading(false);
-          return;
-        }
-
-        // Set the session
-        const { error } = await supabase.auth.setSession({
-          access_token,
-          refresh_token,
-        });
-
-        if (error) throw error;
-
-        // Session is valid, show form
-        setReady(true);
-      } catch (err: any) {
-        console.error("Recovery error:", err);
-        setMessage("Something went wrong while verifying your link.");
-        setMessageType("error");
-      } finally {
-        setLoading(false);
+    // Supabase automatically handles the hash. We just listen for the event.
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "PASSWORD_RECOVERY") {
+        setIsReady(true); // The user is authenticated and ready to update their password.
       }
-    };
+    });
 
-    handleRecovery();
-  }, []);
+    // If the event doesn't fire after a short delay, the link is likely invalid.
+    const timer = setTimeout(() => {
+      if (!isReady) {
+        setMessage("Your recovery link is invalid or has expired.");
+        setMessageType("error");
+        setIsReady(false); // Explicitly keep form hidden
+      }
+    }, 3000); // 3-second timeout
+
+    // Cleanup listener and timer on component unmount
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(timer);
+    };
+  }, [isReady]); // Re-run effect if isReady changes, though it's mainly for initialization.
 
   const handleUpdatePassword = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    if (!password || password.length < 6) {
+    if (password.length < 6) {
       toast({
         title: "Password Too Short",
         description: "Your new password must be at least 6 characters long.",
@@ -94,11 +75,19 @@ const UpdatePassword = () => {
     setLoading(true);
     setMessage("");
 
-    try {
-      const { error } = await supabase.auth.updateUser({ password });
+    const { error } = await supabase.auth.updateUser({ password });
 
-      if (error) throw error;
-
+    if (error) {
+      console.error("Update error:", error);
+      setMessageType("error");
+      setMessage(error.message || "An unexpected error occurred.");
+      toast({
+        title: "Update Failed",
+        description: "Could not update your password. Try again.",
+        variant: "destructive",
+      });
+      setLoading(false);
+    } else {
       setMessageType("success");
       setMessage("Your password has been updated successfully! Redirecting...");
       toast({
@@ -107,49 +96,35 @@ const UpdatePassword = () => {
       });
 
       setTimeout(() => navigate("/auth"), 3000);
-    } catch (err: any) {
-      console.error("Update error:", err);
-      setMessageType("error");
-      setMessage(err.message || "An unexpected error occurred.");
-      toast({
-        title: "Update Failed",
-        description: "Could not update your password. Try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
     }
   };
 
-  // Loading screen
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <p className="text-muted-foreground animate-pulse">Verifying recovery link...</p>
-      </div>
-    );
-  }
-
-  // Error screen
-  if (!ready) {
+  // Main content logic
+  if (!isReady) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
         <Card className="w-full max-w-md text-center">
           <CardHeader>
-            <CardTitle>Reset Link Error</CardTitle>
+            <CardTitle>Verifying Link</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-muted-foreground">{message || "Something went wrong with your reset link."}</p>
-            <Button onClick={() => navigate("/auth/forgot-password")} className="mt-4">
-              Request a New Link
-            </Button>
+            {message ? (
+              <>
+                <p className="text-muted-foreground">{message}</p>
+                <Button onClick={() => navigate("/auth/forgot-password")} className="mt-4">
+                  Request a New Link
+                </Button>
+              </>
+            ) : (
+              <p className="text-muted-foreground animate-pulse">Please wait...</p>
+            )}
           </CardContent>
         </Card>
       </div>
     );
   }
 
-  // Password update form
+  // Password update form is shown when `isReady` is true
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md">
@@ -207,7 +182,7 @@ const UpdatePassword = () => {
               )}
 
               <Button type="submit" disabled={loading} className="w-full">
-                {loading ? "Updating Password..." : "Update Password"}
+                {loading ? "Updating..." : "Update Password"}
               </Button>
             </form>
           </CardContent>
