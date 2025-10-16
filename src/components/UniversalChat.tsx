@@ -197,7 +197,10 @@ export const UniversalChat = () => {
                 </p>
                 <Button
                   size="sm"
-                  onClick={() => navigate("/pricing")}
+                  onClick={() => {
+                    navigate("/pricing"); // This opens the subscription page
+                    closeChat(); // This immediately closes the chat window
+                  }}
                   className="h-5 sm:h-6 text-[9px] sm:text-[10px] w-full"
                   variant="default"
                 >
