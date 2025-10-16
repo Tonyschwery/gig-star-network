@@ -140,11 +140,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!mounted) return;
       
       // 🔐 CRITICAL FIX: Detect password recovery flow and skip processing
-      // When user clicks reset link, Supabase adds #access_token=...&type=recovery to URL
-      // We must NOT process this as a normal login to prevent homepage redirect
-      const isPasswordRecovery = window.location.hash.includes("type=recovery");
-      if (isPasswordRecovery) {
-        console.log("[Auth] Password recovery detected - skipping session processing");
+      // Check BOTH pathname and hash to catch all password recovery scenarios:
+      // 1. User lands on /UpdatePassword with hash: #access_token=...&type=recovery
+      // 2. User is on /UpdatePassword after hash has been consumed by Supabase
+      const isOnUpdatePasswordPage = window.location.pathname === "/UpdatePassword";
+      const hasRecoveryHash = window.location.hash.includes("type=recovery");
+      
+      if (isOnUpdatePasswordPage || hasRecoveryHash) {
+        console.log("[Auth] Password recovery detected - skipping session processing", {
+          pathname: window.location.pathname,
+          hasHash: hasRecoveryHash
+        });
         return; // Let UpdatePassword component handle this
       }
       
@@ -223,10 +229,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!mounted) return;
       
       // 🔐 CRITICAL FIX: Skip all processing during password recovery
-      const isPasswordRecovery = window.location.hash.includes("type=recovery");
-      if (isPasswordRecovery && event === 'PASSWORD_RECOVERY') {
-        console.log("[Auth] PASSWORD_RECOVERY event detected - letting UpdatePassword handle it");
-        return; // UpdatePassword component will handle this event
+      // Check BOTH pathname and hash to ensure we don't interfere with UpdatePassword
+      const isOnUpdatePasswordPage = window.location.pathname === "/UpdatePassword";
+      const hasRecoveryHash = window.location.hash.includes("type=recovery");
+      
+      if (isOnUpdatePasswordPage || hasRecoveryHash) {
+        console.log("[Auth] Password recovery flow detected - skipping event processing", {
+          event,
+          pathname: window.location.pathname,
+          hasHash: hasRecoveryHash
+        });
+        return; // UpdatePassword component will handle this
       }
       
       // Handle different auth events
@@ -243,11 +256,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Just update session, don't reload everything
         setSession(session);
       } else if (event === 'SIGNED_IN' || event === 'USER_UPDATED' || event === 'INITIAL_SESSION') {
-        // 🔐 Double-check: Don't process these events during password recovery
-        if (isPasswordRecovery) {
-          console.log(`[Auth] Skipping ${event} during password recovery`);
-          return;
-        }
         // Process full session for these events
         processSession(session, event === 'SIGNED_IN');
       }

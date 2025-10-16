@@ -45,8 +45,10 @@ const Auth = () => {
     if (!authLoading && user) {
       // Check if the user is in the password recovery flow
       const isPasswordRecovery = window.location.hash.includes("type=recovery");
+      const isOnUpdatePasswordPage = window.location.pathname === "/UpdatePassword";
+      
       // If they are, do nothing and let the UpdatePassword page handle it
-      if (isPasswordRecovery) {
+      if (isPasswordRecovery || isOnUpdatePasswordPage) {
         return;
       }
       // Redirect users away from auth pages
