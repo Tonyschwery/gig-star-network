@@ -13,6 +13,8 @@ export default defineConfig(({ mode }) => ({
       'Cache-Control': 'no-cache',
       'ETag': 'false'
     } : undefined,
+    // SPA fallback for client-side routing
+    historyApiFallback: true,
   },
   plugins: [
     react(),
@@ -79,6 +81,8 @@ export default defineConfig(({ mode }) => ({
     headers: {
       'Cache-Control': 'public, max-age=31536000, immutable',
       'ETag': 'false'
-    }
+    },
+    // SPA fallback for client-side routing in preview
+    historyApiFallback: true,
   }
 }));

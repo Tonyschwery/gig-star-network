@@ -176,13 +176,12 @@ const Auth = () => {
           }
         } else {
           // Magic link for signin only
-          const redirectTo = new URL(`${window.location.origin}/auth/callback`);
-          redirectTo.searchParams.set("state", JSON.stringify(state || {}));
+          const redirectTo = `${window.location.origin}/auth/callback`;
 
           const { error: otpError } = await supabase.auth.signInWithOtp({
             email: email.toLowerCase().trim(),
             options: {
-              emailRedirectTo: redirectTo.toString(),
+              emailRedirectTo: redirectTo,
             },
           });
           error = otpError;

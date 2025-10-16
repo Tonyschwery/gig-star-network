@@ -5,19 +5,6 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useEffect } from "react";
 
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  // --- THE FIX IS HERE ---
-  // Supabase adds '#...type=recovery' to the URL for password resets.
-  // We check for this to identify the special password recovery flow.
-  const isPasswordRecovery = window.location.hash.includes("type=recovery");
-
-  // If it is a password recovery attempt, we must render the children
-  // (the UpdatePassword page) immediately, bypassing all other auth checks.
-  // The UpdatePassword page will then handle the Supabase event.
-  if (isPasswordRecovery) {
-    return <>{children}</>;
-  }
-  // --- END OF FIX ---
-
   const { status, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
