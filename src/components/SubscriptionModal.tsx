@@ -86,85 +86,136 @@ export function SubscriptionModal({ open, onOpenChange }: SubscriptionModalProps
 
   // Load PayPal SDK
   useEffect(() => {
-    if (!open || !PAYPAL_LIVE_CLIENT_ID || PAYPAL_LIVE_CLIENT_ID.includes("REPLACE_WITH")) return;
+    if (!open || !PAYPAL_LIVE_CLIENT_ID || PAYPAL_LIVE_CLIENT_ID.includes("REPLACE_WITH")) {
+      console.log('[PayPal] Modal not open or client ID not configured');
+      return;
+    }
+
+    console.log('[PayPal] Modal opened, attempting to load PayPal SDK...');
 
     const loadPayPalScript = () => {
+      // Check if PayPal is already loaded
       if (window.paypal) {
+        console.log('[PayPal] SDK already loaded');
         setPaypalLoaded(true);
         return;
       }
 
+      // Check if script is already being loaded
+      const existingScript = document.querySelector(`script[src*="paypal.com/sdk/js"]`);
+      if (existingScript) {
+        console.log('[PayPal] Script already exists, removing old script...');
+        existingScript.remove();
+      }
+
+      console.log('[PayPal] Creating new script element...');
       const script = document.createElement('script');
-      // Use your Live Client ID from the constant above
       script.src = `https://www.paypal.com/sdk/js?client-id=${PAYPAL_LIVE_CLIENT_ID}&vault=true&intent=subscription`;
       script.async = true;
-      script.onload = () => setPaypalLoaded(true);
-      script.onerror = () => {
+      
+      script.onload = () => {
+        console.log('[PayPal] ✅ SDK loaded successfully!');
+        setPaypalLoaded(true);
+      };
+      
+      script.onerror = (error) => {
+        console.error('[PayPal] ❌ Failed to load SDK:', error);
         toast({
-          title: "Error",
-          description: "Failed to load PayPal. Please refresh and try again.",
+          title: "PayPal Loading Error",
+          description: "Failed to load PayPal. Please check your internet connection and try again.",
           variant: "destructive",
         });
       };
+      
       document.head.appendChild(script);
+      console.log('[PayPal] Script element added to DOM');
     };
 
     loadPayPalScript();
+
+    // Cleanup function
+    return () => {
+      console.log('[PayPal] Cleaning up modal...');
+    };
   }, [open, toast]);
 
   // Render PayPal buttons when plan is selected and PayPal is loaded
   useEffect(() => {
-    if (!paypalLoaded || !selectedPlan || !window.paypal || !user) return;
+    if (!paypalLoaded || !selectedPlan || !window.paypal || !user) {
+      console.log('[PayPal Buttons] Waiting for:', {
+        paypalLoaded,
+        selectedPlan,
+        hasPayPal: !!window.paypal,
+        hasUser: !!user
+      });
+      return;
+    }
 
     const plan = plans.find(p => p.id === selectedPlan);
-    if (!plan) return;
+    if (!plan) {
+      console.error('[PayPal Buttons] Plan not found:', selectedPlan);
+      return;
+    }
+
+    console.log('[PayPal Buttons] Rendering buttons for plan:', plan.name);
 
     const containerId = `paypal-button-container-${plan.id}`;
     const container = document.getElementById(containerId);
-    if (!container) return;
+    if (!container) {
+      console.error('[PayPal Buttons] Container not found:', containerId);
+      return;
+    }
 
     // Clear any existing PayPal buttons
     container.innerHTML = '';
+    console.log('[PayPal Buttons] Container cleared, creating buttons...');
 
-    window.paypal.Buttons({
-      createSubscription: async (data, actions) => {
-        // This part is correct! It sends the user.id as custom_id
-        const subscriptionData = {
-          plan_id: plan.planId,
-          custom_id: user.id, // This is working perfectly!
-          application_context: {
-            brand_name: "QTalent",
-            shipping_preference: "NO_SHIPPING",
-            user_action: "SUBSCRIBE_NOW",
-            return_url: `${window.location.origin}/subscription-success`,
-            cancel_url: `${window.location.origin}/subscription-cancelled`
+    try {
+      window.paypal.Buttons({
+        createSubscription: async (data, actions) => {
+          console.log('[PayPal] Creating subscription with data:', { plan: plan.name, userId: user.id });
+          
+          const subscriptionData = {
+            plan_id: plan.planId,
+            custom_id: user.id,
+            application_context: {
+              brand_name: "QTalent",
+              shipping_preference: "NO_SHIPPING",
+              user_action: "SUBSCRIBE_NOW",
+              return_url: `${window.location.origin}/subscription-success`,
+              cancel_url: `${window.location.origin}/subscription-cancelled`
+            }
+          };
+          
+          const result = await actions.subscription.create(subscriptionData);
+          console.log('[PayPal] ✅ Subscription created:', result);
+          return result;
+        },
+        onApprove: async (data, actions) => {
+          console.log('[PayPal] ✅ Subscription approved:', data);
+          
+          toast({
+            title: "Subscription Successful!",
+            description: "Redirecting to confirmation page...",
+            duration: 3000,
+          });
+          
+          onOpenChange(false);
+          const redirectUrl = new URL('/subscription-success', window.location.origin);
+          if (data.subscriptionID) {
+            redirectUrl.searchParams.set('subscription_id', data.subscriptionID);
           }
-        };
-        const result = await actions.subscription.create(subscriptionData);
-        return result;
-      },
-      onApprove: async (data, actions) => {
-        toast({
-          title: "Subscription Successful!",
-          description: "Redirecting to confirmation page...",
-          duration: 3000,
-        });
-        onOpenChange(false);
-        const redirectUrl = new URL('/subscription-success', window.location.origin);
-        if (data.subscriptionID) {
-          redirectUrl.searchParams.set('subscription_id', data.subscriptionID);
-        }
-        navigate(redirectUrl.pathname + redirectUrl.search);
-      },
-      onError: (err) => {
-        console.error('PayPal onError handler triggered', err);
-        toast({
-          title: "Subscription Error",
-          description: "There was an issue processing your subscription. Please try again.",
-          variant: "destructive",
-        });
-        setSelectedPlan(null);
-      },
+          navigate(redirectUrl.pathname + redirectUrl.search);
+        },
+        onError: (err) => {
+          console.error('[PayPal] ❌ Error during subscription:', err);
+          toast({
+            title: "Subscription Error",
+            description: "There was an issue processing your subscription. Please try again.",
+            variant: "destructive",
+          });
+          setSelectedPlan(null);
+        },
       onCancel: (data) => {
         toast({
           title: "Subscription Cancelled",
@@ -172,13 +223,27 @@ export function SubscriptionModal({ open, onOpenChange }: SubscriptionModalProps
         });
         setSelectedPlan(null);
       },
-      style: {
-        shape: 'rect',
-        color: 'gold',
-        layout: 'vertical',
-        label: 'subscribe'
-      }
-    }).render(`#${containerId}`);
+        style: {
+          shape: 'rect',
+          color: 'gold',
+          layout: 'vertical',
+          label: 'subscribe'
+        }
+      }).render(`#${containerId}`)
+        .then(() => {
+          console.log('[PayPal Buttons] ✅ Buttons rendered successfully');
+        })
+        .catch((error) => {
+          console.error('[PayPal Buttons] ❌ Failed to render buttons:', error);
+          toast({
+            title: "PayPal Error",
+            description: "Failed to display PayPal buttons. Please try again.",
+            variant: "destructive",
+          });
+        });
+    } catch (error) {
+      console.error('[PayPal Buttons] ❌ Error creating buttons:', error);
+    }
   }, [paypalLoaded, selectedPlan, user, plans, toast, onOpenChange, navigate]);
   
   // The rest of your UI code is perfect and does not need to be changed.

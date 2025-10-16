@@ -31,28 +31,60 @@ export function NotificationCenter() {
   const unreadCount = notifications.filter(n => !n.is_read).length;
 
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      console.log('[NotificationCenter] No user, skipping fetch');
+      return;
+    }
+
+    console.log('[NotificationCenter] 📋 Fetching notifications for user:', user.id);
 
     const fetchNotifications = async () => {
-      const { data, error } = await supabase
-        .from('notifications')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(10);
-      if (error) console.error("Error fetching notifications:", error);
-      else setNotifications(data || []);
+      try {
+        const { data, error } = await supabase
+          .from('notifications')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(10);
+        
+        if (error) {
+          console.error('[NotificationCenter] ❌ Error fetching notifications:', error);
+          toast({
+            title: "Error Loading Notifications",
+            description: error.message,
+            variant: "destructive"
+          });
+        } else {
+          console.log('[NotificationCenter] ✅ Fetched notifications:', data?.length || 0);
+          setNotifications(data || []);
+        }
+      } catch (error) {
+        console.error('[NotificationCenter] ❌ Unexpected error:', error);
+      }
     };
 
     fetchNotifications();
 
     const subscription = supabase
       .channel(`notifications-for-${user.id}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` }, fetchNotifications)
-      .subscribe();
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'notifications', 
+        filter: `user_id=eq.${user.id}` 
+      }, (payload) => {
+        console.log('[NotificationCenter] 🔄 Real-time update:', payload);
+        fetchNotifications();
+      })
+      .subscribe((status) => {
+        console.log('[NotificationCenter] Channel status:', status);
+      });
 
-    return () => { supabase.removeChannel(subscription); };
-  }, [user]);
+    return () => { 
+      console.log('[NotificationCenter] 🧹 Cleaning up subscription');
+      supabase.removeChannel(subscription); 
+    };
+  }, [user, toast]);
 
   const markAllAsRead = async () => {
     if (!user) return;

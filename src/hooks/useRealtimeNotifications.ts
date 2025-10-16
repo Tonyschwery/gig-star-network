@@ -10,9 +10,12 @@ export const useRealtimeNotifications = () => {
   const { showNotification, isSupported } = useWebPushNotifications();
 
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      console.log('[Notifications] No user, skipping real-time setup');
+      return;
+    }
 
-    console.log('Setting up real-time notifications for user:', user.id);
+    console.log('[Notifications] 🔔 Setting up real-time notifications for user:', user.id);
 
     // Set up real-time subscription for notifications
     const notificationChannel = supabase
@@ -26,7 +29,7 @@ export const useRealtimeNotifications = () => {
           filter: `user_id=eq.${user.id}`
         },
         async (payload) => {
-          console.log('New notification received:', payload);
+          console.log('[Notifications] ✅ New notification received:', payload);
           const notification = payload.new as any;
           
           // Show toast notification for new notifications
@@ -79,7 +82,14 @@ export const useRealtimeNotifications = () => {
           }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('[Notifications] Channel subscription status:', status);
+        if (status === 'SUBSCRIBED') {
+          console.log('[Notifications] ✅ Successfully subscribed to notification updates');
+        } else if (status === 'CHANNEL_ERROR') {
+          console.error('[Notifications] ❌ Channel subscription error');
+        }
+      });
 
     // Set up real-time subscription for talent bookings
     const talentBookingChannel = supabase
@@ -114,10 +124,17 @@ export const useRealtimeNotifications = () => {
           }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('[Bookings] Channel subscription status:', status);
+        if (status === 'SUBSCRIBED') {
+          console.log('[Bookings] ✅ Successfully subscribed to booking updates');
+        } else if (status === 'CHANNEL_ERROR') {
+          console.error('[Bookings] ❌ Channel subscription error');
+        }
+      });
 
     return () => {
-      console.log('Cleaning up real-time subscriptions');
+      console.log('[Notifications] 🧹 Cleaning up real-time subscriptions');
       supabase.removeChannel(notificationChannel);
       supabase.removeChannel(talentBookingChannel);
     };
