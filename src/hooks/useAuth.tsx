@@ -139,18 +139,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const processSession = async (session: Session | null, skipDelay = false) => {
       if (!mounted) return;
       
-      // 🔐 CRITICAL FIX: Detect password recovery flow and skip processing
-      // Check BOTH pathname and hash to catch all password recovery scenarios:
-      // 1. User lands on /UpdatePassword with hash: #access_token=...&type=recovery
-      // 2. User is on /UpdatePassword after hash has been consumed by Supabase
-      const isOnUpdatePasswordPage = window.location.pathname === "/UpdatePassword";
-      const hasRecoveryHash = window.location.hash.includes("type=recovery");
+      // 🔐 CRITICAL FIX: Check sessionStorage flag for password recovery
+      const isPasswordRecovery = sessionStorage.getItem('isPasswordRecovery') === 'true';
       
-      if (isOnUpdatePasswordPage || hasRecoveryHash) {
-        console.log("[Auth] Password recovery detected - skipping session processing", {
-          pathname: window.location.pathname,
-          hasHash: hasRecoveryHash
-        });
+      if (isPasswordRecovery) {
+        console.log("[Auth] Password recovery flag detected - skipping ALL session processing");
         return; // Let UpdatePassword component handle this
       }
       
@@ -228,17 +221,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (!mounted) return;
       
-      // 🔐 CRITICAL FIX: Skip all processing during password recovery
-      // Check BOTH pathname and hash to ensure we don't interfere with UpdatePassword
-      const isOnUpdatePasswordPage = window.location.pathname === "/UpdatePassword";
-      const hasRecoveryHash = window.location.hash.includes("type=recovery");
+      // 🔐 CRITICAL FIX: Detect PASSWORD_RECOVERY event and set flag
+      if (event === 'PASSWORD_RECOVERY') {
+        sessionStorage.setItem('isPasswordRecovery', 'true');
+        console.log("[Auth] PASSWORD_RECOVERY event detected - recovery flag set");
+        return; // Let UpdatePassword component handle this
+      }
       
-      if (isOnUpdatePasswordPage || hasRecoveryHash) {
-        console.log("[Auth] Password recovery flow detected - skipping event processing", {
-          event,
-          pathname: window.location.pathname,
-          hasHash: hasRecoveryHash
-        });
+      // 🔐 Check sessionStorage flag for password recovery
+      const isPasswordRecovery = sessionStorage.getItem('isPasswordRecovery') === 'true';
+      
+      if (isPasswordRecovery) {
+        console.log("[Auth] Password recovery flag detected - skipping event processing", { event });
         return; // UpdatePassword component will handle this
       }
       

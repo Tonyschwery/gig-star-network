@@ -37,9 +37,15 @@ import TermsOfService from "./pages/TermsOfService";
 import TrustSafety from "./pages/TrustSafety";
 import ResetPassword from "./pages/ResetPassword";
 
-// ✅ Diagnostic listener added here
+// 🔐 Global auth listener with PASSWORD_RECOVERY detection
 supabase.auth.onAuthStateChange((event, session) => {
   console.log("Supabase Auth State Change Event:", { event, session });
+  
+  // Set recovery flag when PASSWORD_RECOVERY event is detected
+  if (event === 'PASSWORD_RECOVERY') {
+    sessionStorage.setItem('isPasswordRecovery', 'true');
+    console.log("[App] PASSWORD_RECOVERY event detected globally - recovery flag set");
+  }
 });
 
 const AppContent = () => {

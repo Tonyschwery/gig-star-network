@@ -43,14 +43,14 @@ const Auth = () => {
 
   useEffect(() => {
     if (!authLoading && user) {
-      // Check if the user is in the password recovery flow
-      const isPasswordRecovery = window.location.hash.includes("type=recovery");
-      const isOnUpdatePasswordPage = window.location.pathname === "/UpdatePassword";
+      // 🔐 Check sessionStorage flag for password recovery
+      const isPasswordRecovery = sessionStorage.getItem('isPasswordRecovery') === 'true';
       
-      // If they are, do nothing and let the UpdatePassword page handle it
-      if (isPasswordRecovery || isOnUpdatePasswordPage) {
+      if (isPasswordRecovery) {
+        console.log("[Auth] Password recovery flag detected - skipping redirect");
         return;
       }
+      
       // Redirect users away from auth pages
       if (window.location.pathname.startsWith('/auth')) {
         navigate("/");

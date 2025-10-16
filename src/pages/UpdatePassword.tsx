@@ -21,14 +21,13 @@ const UpdatePassword = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // LOG #1: This tells us if the new version of the file is even loading.
-    console.log("[UpdatePassword] Component mounted. Checking for session...");
+    // 🔐 CRITICAL: Set recovery flag immediately to block redirects
+    sessionStorage.setItem('isPasswordRecovery', 'true');
+    console.log("[UpdatePassword] Component mounted. Recovery flag set.");
 
     // 1. Immediately check if a session already exists from the recovery link.
     supabase.auth.getSession().then(({ data: { session } }) => {
-      // If a session is found, the user is authenticated. We can show the form.
       if (session) {
-        // LOG #2: This is the log that confirms the fix is working.
         console.log("[UpdatePassword] Active session found on mount. Showing form.");
         setIsReady(true);
       }
@@ -38,10 +37,9 @@ const UpdatePassword = () => {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event) => {
-      // LOG #3: This is a fallback log.
       console.log(`[UpdatePassword] onAuthStateChange event received: ${event}`);
       if (event === "PASSWORD_RECOVERY") {
-        console.log("[UpdatePassword] PASSWORD_RECOVERY event caught by listener. Showing form.");
+        console.log("[UpdatePassword] PASSWORD_RECOVERY event caught. Showing form.");
         setIsReady(true);
       }
     });
@@ -51,7 +49,7 @@ const UpdatePassword = () => {
       console.log("[UpdatePassword] Component unmounting. Cleaning up listener.");
       subscription.unsubscribe();
     };
-  }, []); // <-- Use an empty dependency array to run this only once.
+  }, []);
 
   const handleUpdatePassword = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -90,6 +88,10 @@ const UpdatePassword = () => {
       });
       setLoading(false);
     } else {
+      // 🔐 Clear the recovery flag after successful password update
+      sessionStorage.removeItem('isPasswordRecovery');
+      console.log("[UpdatePassword] Password updated successfully. Recovery flag cleared.");
+      
       setMessageType("success");
       setMessage("Your password has been updated successfully! Redirecting...");
       toast({
