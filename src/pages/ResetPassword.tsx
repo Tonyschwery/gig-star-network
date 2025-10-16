@@ -1,18 +1,13 @@
 // FILE: src/pages/ResetPassword.tsx
 import { useState, FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import { createClient } from "@supabase/supabase-js";
+import { supabase } from "@/integrations/supabase/client"; // ✅ USE SHARED CLIENT
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { CheckCircle, AlertTriangle } from "lucide-react";
-
-// Supabase client
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL!;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY!;
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 const ResetPassword = () => {
   const [email, setEmail] = useState("");
@@ -30,8 +25,13 @@ const ResetPassword = () => {
 
     try {
       const trimmedEmail = email.toLowerCase().trim();
+      
+      // 🔐 CRITICAL FIX: Use current origin dynamically (works on both Lovable preview AND live site)
+      const redirectUrl = `${window.location.origin}/UpdatePassword`;
+      console.log("[ResetPassword] Sending reset email with redirectTo:", redirectUrl);
+      
       const { data, error } = await supabase.auth.resetPasswordForEmail(trimmedEmail, {
-        redirectTo: "https://www.qtalent.live/UpdatePassword", // Must match your UpdatePassword page URL
+        redirectTo: redirectUrl,
       });
 
       if (error) throw error;
