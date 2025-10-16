@@ -28,30 +28,27 @@ interface SubscriptionManagementModalProps {
     currentPeriodEnd?: string;
     subscriptionStartedAt?: string;
     paypal_subscription_id?: string;
-    provider?: string;
-    manualGrantExpiresAt?: string;
-    grantedByAdminId?: string;
   };
 }
 
-export function SubscriptionManagementModal({ 
-  open, 
-  onOpenChange, 
-  subscriptionData 
+export function SubscriptionManagementModal({
+  open,
+  onOpenChange,
+  subscriptionData,
 }: SubscriptionManagementModalProps) {
   const { toast } = useToast();
   const [isConfirmingCancel, setIsConfirmingCancel] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
 
   const formatDate = (dateString?: string) => {
-    if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
+    if (!dateString) return "N/A";
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
     });
   };
-  
+
   const calculateDaysRemaining = (endDate?: string) => {
     if (!endDate) return 0;
     const today = new Date();
@@ -60,78 +57,66 @@ export function SubscriptionManagementModal({
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return Math.max(0, diffDays);
   };
-  
+
   const calculateProgress = (startDate?: string, endDate?: string) => {
     if (!startDate || !endDate) return 0;
     const start = new Date(startDate);
     const end = new Date(endDate);
     const today = new Date();
-    
+
     const totalDays = (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24);
     const daysUsed = (today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24);
-    
+
     return Math.min(100, Math.max(0, (daysUsed / totalDays) * 100));
   };
-  
+
   const daysRemaining = calculateDaysRemaining(subscriptionData?.currentPeriodEnd);
   const progress = calculateProgress(subscriptionData?.subscriptionStartedAt, subscriptionData?.currentPeriodEnd);
   const isExpiringSoon = daysRemaining <= 7 && daysRemaining > 0;
-  
-  const isManualGrant = subscriptionData?.provider === 'manual';
 
   const handleCancelSubscription = () => {
-    // Check if this is a manual grant
-    if (isManualGrant) {
-      toast({
-        title: "Cannot Cancel",
-        description: "Your Pro subscription was granted by an administrator. Please contact support to make changes.",
-        variant: "default",
-      });
-      return;
-    }
-    
-    // For PayPal subscriptions, open confirmation dialog
+    // Instead of redirecting, open our own confirmation dialog
     setIsConfirmingCancel(true);
   };
 
   const executeCancellation = async () => {
     if (!subscriptionData?.paypal_subscription_id) {
-        toast({ title: "Error", description: "Subscription ID not found. Cannot cancel.", variant: "destructive" });
-        return;
+      toast({ title: "Error", description: "Subscription ID not found. Cannot cancel.", variant: "destructive" });
+      return;
     }
     setIsCancelling(true);
     try {
-        const { error } = await supabase.functions.invoke('cancel-paypal-subscription', {
-            body: { subscriptionId: subscriptionData.paypal_subscription_id }
-        });
+      const { error } = await supabase.functions.invoke("cancel-paypal-subscription", {
+        body: { subscriptionId: subscriptionData.paypal_subscription_id },
+      });
 
-        if (error) throw error;
+      if (error) throw error;
 
-        toast({
-            title: "Cancellation Request Sent",
-            description: "Your subscription will be cancelled shortly. You'll retain Pro access until the end of your billing period.",
-        });
-        // The webhook will handle the database update. We can close the modal optimistically.
-        onOpenChange(false);
-
+      toast({
+        title: "Cancellation Request Sent",
+        description:
+          "Your subscription will be cancelled shortly. You'll retain Pro access until the end of your billing period.",
+      });
+      // The webhook will handle the database update. We can close the modal optimistically.
+      onOpenChange(false);
     } catch (error) {
-        console.error("Cancellation failed:", error);
-        toast({
-            title: "Cancellation Failed",
-            description: "We couldn't cancel your subscription. Please try again or contact support.",
-            variant: "destructive",
-        });
+      console.error("Cancellation failed:", error);
+      toast({
+        title: "Cancellation Failed",
+        description: "We couldn't cancel your subscription. Please try again or contact support.",
+        variant: "destructive",
+      });
     } finally {
-        setIsCancelling(false);
-        setIsConfirmingCancel(false);
+      setIsCancelling(false);
+      setIsConfirmingCancel(false);
     }
   };
 
   const getPlanDisplayName = (planId?: string) => {
-    if (!planId) return 'Pro Plan';
-    if (planId.toLowerCase().includes('month')) return 'Monthly Pro';
-    if (planId.toLowerCase().includes('year')) return 'Yearly Pro';
-    return 'Pro Plan';
+    if (!planId) return "Pro Plan";
+    if (planId.toLowerCase().includes("month")) return "Monthly Pro";
+    if (planId.toLowerCase().includes("year")) return "Yearly Pro";
+    return "Pro Plan";
   };
 
   const benefits = [
@@ -140,7 +125,7 @@ export function SubscriptionManagementModal({
     { icon: "📺", title: "YouTube Integration", description: "Embed your performance videos" },
     { icon: "⭐", title: "Priority Listing", description: "Appear at the top of search results" },
     { icon: "🚀", title: "Unlimited Bookings", description: "Accept as many gigs as you want" },
-    { icon: "💬", title: "Priority Support", description: "Get faster help when you need it" }
+    { icon: "💬", title: "Priority Support", description: "Get faster help when you need it" },
   ];
 
   return (
@@ -210,48 +195,22 @@ export function SubscriptionManagementModal({
                     <Calendar className="h-4 w-4" /> Manage Subscription
                   </h4>
                   <div className="space-y-4">
-                    {isManualGrant ? (
-                      <div className="flex items-start gap-3 p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-                        <Crown className="h-5 w-5 text-blue-500 mt-0.5" />
-                        <div className="flex-1">
-                          <p className="text-sm font-medium mb-1">Admin-Granted Subscription</p>
-                          <p className="text-xs text-muted-foreground mb-2">
-                            Your Pro subscription was granted by an administrator. This is not a PayPal subscription.
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {subscriptionData.manualGrantExpiresAt && 
-                              `Access until: ${formatDate(subscriptionData.manualGrantExpiresAt)}`
-                            }
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-2">
-                            To make changes to your subscription, please contact support.
-                          </p>
-                        </div>
-                      </div>
-                    ) : (
-                      <>
-                        <div className="flex items-start gap-3 p-4 bg-secondary/30 rounded-lg">
-                          <AlertTriangle className="h-5 w-5 text-brand-warning mt-0.5" />
-                          <div className="flex-1">
-                            <p className="text-sm font-medium mb-1">Cancellation Policy</p>
-                            <p className="text-xs text-muted-foreground">
-                              If you cancel, you'll keep Pro access until {formatDate(subscriptionData.currentPeriodEnd)}. 
-                              After that, your account will revert to the free plan.
-                            </p>
-                          </div>
-                        </div>
-                        <Button 
-                          variant="destructive" 
-                          onClick={handleCancelSubscription}
-                          className="w-full"
-                        >
-                          Cancel Subscription
-                        </Button>
-                        <p className="text-xs text-muted-foreground text-center">
-                          Your subscription will be cancelled via PayPal.
+                    <div className="flex items-start gap-3 p-4 bg-secondary/30 rounded-lg">
+                      <AlertTriangle className="h-5 w-5 text-brand-warning mt-0.5" />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium mb-1">Cancellation Policy</p>
+                        <p className="text-xs text-muted-foreground">
+                          If you cancel, you'll keep Pro access until {formatDate(subscriptionData.currentPeriodEnd)}.
+                          After that, your account will revert to the free plan.
                         </p>
-                      </>
-                    )}
+                      </div>
+                    </div>
+                    <Button variant="destructive" onClick={handleCancelSubscription} className="w-full">
+                      Cancel Subscription
+                    </Button>
+                    <p className="text-xs text-muted-foreground text-center">
+                      Your subscription will be cancelled via PayPal.
+                    </p>
                   </div>
                 </Card>
               </>
@@ -271,21 +230,21 @@ export function SubscriptionManagementModal({
 
       <AlertDialog open={isConfirmingCancel} onOpenChange={setIsConfirmingCancel}>
         <AlertDialogContent>
-            <AlertDialogHeader>
-                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                <AlertDialogDescription>
-                    This will cancel your Pro subscription. You will retain Pro access until the end of your current billing period.
-                </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-                <AlertDialogCancel>Go Back</AlertDialogCancel>
-                <AlertDialogAction onClick={executeCancellation} disabled={isCancelling}>
-                    {isCancelling ? "Cancelling..." : "Yes, Cancel Subscription"}
-                </AlertDialogAction>
-            </AlertDialogFooter>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will cancel your Pro subscription. You will retain Pro access until the end of your current billing
+              period.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Go Back</AlertDialogCancel>
+            <AlertDialogAction onClick={executeCancellation} disabled={isCancelling}>
+              {isCancelling ? "Cancelling..." : "Yes, Cancel Subscription"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
         </AlertDialogContent>
-    </AlertDialog>
+      </AlertDialog>
     </>
   );
 }
-
