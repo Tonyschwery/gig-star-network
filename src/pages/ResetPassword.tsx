@@ -26,8 +26,8 @@ const ResetPassword = () => {
     try {
       const trimmedEmail = email.toLowerCase().trim();
       
-      // 🔐 CRITICAL FIX: Use current origin dynamically (works on both Lovable preview AND live site)
-      const redirectUrl = `${window.location.origin}/update-password`;
+      // 🔐 Route through AuthCallback for centralized token processing
+      const redirectUrl = `${window.location.origin}/auth/callback`;
       console.log("[ResetPassword] Sending reset email with redirectTo:", redirectUrl);
       
       const { data, error } = await supabase.auth.resetPasswordForEmail(trimmedEmail, {

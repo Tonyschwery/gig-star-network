@@ -27,12 +27,16 @@ const AuthCallback = () => {
       return;
     }
 
-    // If this is a password recovery, redirect to update-password page with query params
+    // If this is a password recovery, redirect to update-password page
     if (authType === "recovery") {
-      console.log("[AuthCallback] Password recovery detected, redirecting to update-password...");
+      console.log("[AuthCallback] Password recovery detected, setting flag and redirecting...");
       setIsRecovery(true);
-      const fullUrl = window.location.href;
-      navigate(`/auth/update-password?redirect=${encodeURIComponent(fullUrl)}`, { replace: true });
+      // Set a flag to indicate we came from recovery
+      sessionStorage.setItem('isPasswordRecovery', 'true');
+      // Wait a brief moment for session to fully persist
+      setTimeout(() => {
+        navigate('/update-password', { replace: true });
+      }, 100);
       return;
     }
 

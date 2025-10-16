@@ -21,62 +21,47 @@ const UpdatePassword = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // 🔐 CRITICAL: Set recovery flag immediately to block redirects
-    sessionStorage.setItem('isPasswordRecovery', 'true');
-    console.log("[UpdatePassword] Component mounted. Recovery flag set.");
-
-    // Parse hash fragment for token (Supabase sends #access_token=...)
-    const hash = window.location.hash;
-    const params = new URLSearchParams(hash.substring(1)); // Remove '#'
-    const accessToken = params.get('access_token');
-    const refreshToken = params.get('refresh_token');
-    const type = params.get('type');
-
-    console.log('[UpdatePassword] Hash params:', { accessToken: accessToken ? 'present' : 'missing', type });
-
-    if (type === 'recovery' && accessToken) {
-      // Token found in URL - set session manually
-      console.log('[UpdatePassword] Recovery token found in hash, establishing session...');
-      supabase.auth.setSession({
-        access_token: accessToken,
-        refresh_token: refreshToken || ''
-      }).then(({ data, error }) => {
-        if (error) {
-          console.error('[UpdatePassword] Session error:', error);
-          setMessage('Invalid or expired reset link. Please request a new one.');
-          setMessageType('error');
-        } else {
-          console.log('[UpdatePassword] Session established from hash successfully');
-          setIsReady(true);
-        }
+    console.log("[UpdatePassword] Component mounted");
+    
+    // Check if we came from recovery flow
+    const fromRecovery = sessionStorage.getItem('isPasswordRecovery');
+    
+    // Wait a moment for session to be fully available
+    const checkSession = async () => {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      
+      console.log('[UpdatePassword] Session check:', { 
+        hasSession: !!session, 
+        fromRecovery,
+        error 
       });
-    } else {
-      // Fallback: check existing session or listen for event
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        if (session) {
-          console.log("[UpdatePassword] Active session found on mount. Showing form.");
-          setIsReady(true);
-        } else {
-          console.log("[UpdatePassword] No session found, waiting for auth event...");
-        }
-      });
-
-      // Set up listener as additional fallback
-      const {
-        data: { subscription },
-      } = supabase.auth.onAuthStateChange((event) => {
-        console.log(`[UpdatePassword] onAuthStateChange event received: ${event}`);
-        if (event === "PASSWORD_RECOVERY") {
-          console.log("[UpdatePassword] PASSWORD_RECOVERY event caught. Showing form.");
-          setIsReady(true);
-        }
-      });
-
-      return () => {
-        console.log("[UpdatePassword] Component unmounting. Cleaning up listener.");
-        subscription.unsubscribe();
-      };
-    }
+      
+      if (session) {
+        console.log('[UpdatePassword] Session found, showing form');
+        setIsReady(true);
+      } else if (fromRecovery) {
+        // Give it one more second (session might still be persisting)
+        setTimeout(async () => {
+          const { data: { session: retrySession } } = await supabase.auth.getSession();
+          if (retrySession) {
+            setIsReady(true);
+          } else {
+            setMessage('Session expired. Please request a new reset link.');
+            setMessageType('error');
+          }
+        }, 1000);
+      } else {
+        setMessage('Invalid or expired reset link. Please request a new one.');
+        setMessageType('error');
+      }
+    };
+    
+    checkSession();
+    
+    // Clean up recovery flag when component unmounts
+    return () => {
+      sessionStorage.removeItem('isPasswordRecovery');
+    };
   }, []);
 
   const handleUpdatePassword = async (e: FormEvent<HTMLFormElement>) => {
