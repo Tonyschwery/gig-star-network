@@ -107,35 +107,7 @@ export default function TalentOnboarding() {
     location: "",
   });
 
-  // Listen for email confirmation and auto-redirect - CRITICAL SECURITY CHECK
-  useEffect(() => {
-    if (!emailConfirmationPending) return;
-
-    const checkEmailConfirmation = supabase.auth.onAuthStateChange((event, session) => {
-      console.log("[TalentOnboarding] Auth event:", event, "Has email_confirmed_at:", !!session?.user?.email_confirmed_at);
-      
-      if (event === 'SIGNED_IN' && session?.user?.email_confirmed_at) {
-        console.log("[TalentOnboarding] ✅ Email confirmed! Redirecting to dashboard");
-        
-        // Clear the blocking state
-        setEmailConfirmationPending(false);
-        
-        toast({ 
-          title: "Email Confirmed! 🎉", 
-          description: "Your account is now active. Redirecting to your dashboard...",
-          duration: 3000
-        });
-        
-        setTimeout(() => {
-          navigate("/talent-dashboard", { replace: true });
-        }, 1500);
-      }
-    });
-
-    return () => {
-      checkEmailConfirmation.data.subscription.unsubscribe();
-    };
-  }, [emailConfirmationPending, navigate, toast]);
+  // Email confirmation is now handled by AuthCallback.tsx for auto-login
 
   useEffect(() => {
     // If user is already authenticated and has a talent profile, redirect to dashboard
@@ -323,7 +295,7 @@ export default function TalentOnboarding() {
         email: email.toLowerCase().trim(),
         password: password,
         options: {
-          emailRedirectTo: `${window.location.origin}/talent-dashboard`,
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
           data: {
             ...profileDataForDB,
             name: fullName,
@@ -496,7 +468,7 @@ export default function TalentOnboarding() {
                 <span className="flex-shrink-0 w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center text-primary font-bold text-sm">
                   3
                 </span>
-                <span className="pt-1">You'll be automatically redirected to your talent dashboard</span>
+                <span className="pt-1">You'll be automatically logged in and taken to your talent dashboard</span>
               </li>
             </ol>
           </div>

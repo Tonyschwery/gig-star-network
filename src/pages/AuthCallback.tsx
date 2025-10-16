@@ -104,7 +104,7 @@ const AuthCallback = () => {
 
     // Listen for auth state changes
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log("[AuthCallback] Auth event:", event);
+      console.log("[AuthCallback] Auth event:", event, "authType:", authType);
       
       // Detect password recovery event
       if (event === "PASSWORD_RECOVERY" && session) {
@@ -115,7 +115,11 @@ const AuthCallback = () => {
         return;
       }
       
-      if (event === "SIGNED_IN" && session) performRedirect(session);
+      // Handle email confirmation (signup) and regular sign-in
+      if (event === "SIGNED_IN" && session) {
+        console.log("[AuthCallback] SIGNED_IN event, redirecting based on user type");
+        performRedirect(session);
+      }
     });
 
     return () => {
