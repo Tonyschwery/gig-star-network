@@ -1,112 +1,68 @@
 // FILE: src/pages/ResetPassword.tsx
-import { useState, FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client"; // ✅ USE SHARED CLIENT
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useToast } from "@/hooks/use-toast";
-import { CheckCircle, AlertTriangle } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Mail } from "lucide-react";
 
 const ResetPassword = () => {
-  const [email, setEmail] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState("");
-  const [messageType, setMessageType] = useState<"success" | "error">("error");
-
   const navigate = useNavigate();
-  const { toast } = useToast();
 
-  const handleReset = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setLoading(true);
-    setMessage("");
-
-    try {
-      const trimmedEmail = email.toLowerCase().trim();
-      
-      // 🔐 Route through AuthCallback for centralized token processing
-      const redirectUrl = `${window.location.origin}/#/auth/callback`;
-      console.log("[ResetPassword] Sending reset email with redirectTo:", redirectUrl);
-      
-      const { data, error } = await supabase.auth.resetPasswordForEmail(trimmedEmail, {
-        redirectTo: redirectUrl,
-      });
-
-      if (error) throw error;
-
-      setMessageType("success");
-      setMessage("Recovery email sent! Check your inbox for the link.");
-      toast({
-        title: "Recovery Email Sent ✅",
-        description: "Check your email and follow the instructions to reset your password.",
-      });
-    } catch (err: any) {
-      console.error("Reset password error:", err);
-      setMessageType("error");
-      setMessage(err.message || "Failed to send recovery email.");
-      toast({
-        title: "Failed",
-        description: "Could not send recovery email. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+  // No form handling needed - admin will reset passwords
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <div className="w-full max-w-md">
-        <Card>
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl">Forgot Your Password?</CardTitle>
-            <CardDescription>Enter your email to receive a password reset link.</CardDescription>
-          </CardHeader>
-
-          <CardContent>
-            <form onSubmit={handleReset} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="you@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </div>
-
-              {message && (
-                <div
-                  className={`flex items-center gap-2 rounded-md p-3 text-sm ${
-                    messageType === "success"
-                      ? "bg-green-50 text-green-800 dark:bg-green-950 dark:text-green-200"
-                      : "bg-red-50 text-red-800 dark:bg-red-950 dark:text-red-200"
-                  }`}
-                >
-                  {messageType === "success" ? (
-                    <CheckCircle className="h-4 w-4" />
-                  ) : (
-                    <AlertTriangle className="h-4 w-4" />
-                  )}
-                  <p>{message}</p>
-                </div>
-              )}
-
-              <Button type="submit" disabled={loading} className="w-full">
-                {loading ? "Sending Reset Link..." : "Send Reset Link"}
-              </Button>
-
-              <Button variant="secondary" onClick={() => navigate("/auth")} className="w-full">
-                Back to Login
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-      </div>
+      <Card className="w-full max-w-md">
+        <CardHeader className="text-center space-y-2">
+          <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+            <Mail className="w-6 h-6 text-primary" />
+          </div>
+          <CardTitle className="text-2xl">Need to Reset Your Password?</CardTitle>
+          <CardDescription>
+            Contact our support team and they'll help you reset your password securely.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Alert>
+            <AlertDescription>
+              For security reasons, password resets are handled by our admin team. Please contact support with your registered email address.
+            </AlertDescription>
+          </Alert>
+          
+          <div className="space-y-3 pt-2">
+            <div className="flex items-start space-x-3">
+              <div className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-sm">1</div>
+              <p className="text-sm text-muted-foreground">Contact admin at: <strong className="text-foreground">admin@qtalent.live</strong></p>
+            </div>
+            <div className="flex items-start space-x-3">
+              <div className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-sm">2</div>
+              <p className="text-sm text-muted-foreground">Provide your registered email address</p>
+            </div>
+            <div className="flex items-start space-x-3">
+              <div className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-sm">3</div>
+              <p className="text-sm text-muted-foreground">Admin will reset your password and notify you</p>
+            </div>
+          </div>
+        </CardContent>
+        <CardFooter className="flex flex-col space-y-2">
+          <Button
+            type="button"
+            variant="default"
+            className="w-full"
+            onClick={() => window.location.href = 'mailto:admin@qtalent.live?subject=Password Reset Request'}
+          >
+            Contact Support
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            className="w-full"
+            onClick={() => navigate("/auth")}
+          >
+            Back to Login
+          </Button>
+        </CardFooter>
+      </Card>
     </div>
   );
 };
