@@ -33,17 +33,11 @@ const AuthCallback = () => {
       return;
     }
 
-    // If this is a password recovery, redirect to update-password page
+    // Mark if this is a recovery flow
     if (authType === "recovery") {
-      console.log("[AuthCallback] Password recovery detected, setting flag and redirecting...");
+      console.log("[AuthCallback] Password recovery detected");
       setIsRecovery(true);
-      // Set a flag to indicate we came from recovery
       sessionStorage.setItem('isPasswordRecovery', 'true');
-      // Wait a brief moment for session to fully persist
-      setTimeout(() => {
-        navigate('/update-password', { replace: true });
-      }, 100);
-      return;
     }
 
     // Regular login/session handling
@@ -54,6 +48,13 @@ const AuthCallback = () => {
       }
 
       const user = session.user;
+
+      // If this is a password recovery, redirect to update-password
+      if (authType === "recovery") {
+        console.log("[AuthCallback] Session established, redirecting to update-password");
+        navigate('/update-password', { replace: true });
+        return;
+      }
 
       // Ensure profile exists
       try {
