@@ -147,11 +147,23 @@ const Auth = () => {
         error = signUpError;
 
         if (!error) {
-          toast({
-            title: "Account created! ✅",
-            description: "Your account has been created successfully. Redirecting...",
-            duration: 3000,
-          });
+          // Check for event-form intent and redirect accordingly
+          const authIntent = localStorage.getItem('authIntent');
+          
+          if (authIntent === 'event-form') {
+            localStorage.removeItem('authIntent');
+            toast({
+              title: "Welcome! 🎉",
+              description: "Let's find the perfect talent for your event.",
+              duration: 4000,
+            });
+          } else {
+            toast({
+              title: "Account created! ✅",
+              description: "Your account has been created successfully. Redirecting...",
+              duration: 3000,
+            });
+          }
 
           // Get the newly created user to send welcome emails
           const {
@@ -162,7 +174,7 @@ const Auth = () => {
             await sendUserSignupEmails(newUser.id, name, email.toLowerCase().trim());
           }
 
-          setTimeout(() => navigate(state?.from?.pathname || "/"), 1000);
+          setTimeout(() => navigate(authIntent === 'event-form' ? '/your-event' : (state?.from?.pathname || "/")), 1000);
         }
       } else {
         // Signin can use password OR magic link
@@ -174,12 +186,25 @@ const Auth = () => {
           error = signInError;
 
           if (!error) {
-            toast({
-              title: "Welcome back! 👋",
-              description: "You're now signed in. Redirecting...",
-              duration: 3000,
-            });
-            setTimeout(() => navigate(state?.from?.pathname || "/"), 1000);
+            // Check for event-form intent and redirect accordingly
+            const authIntent = localStorage.getItem('authIntent');
+            
+            if (authIntent === 'event-form') {
+              localStorage.removeItem('authIntent');
+              toast({
+                title: "Welcome! 🎉",
+                description: "Let's find the perfect talent for your event.",
+                duration: 4000,
+              });
+              setTimeout(() => navigate('/your-event', { replace: true }), 1000);
+            } else {
+              toast({
+                title: "Welcome back! 👋",
+                description: "You're now signed in. Redirecting...",
+                duration: 3000,
+              });
+              setTimeout(() => navigate(state?.from?.pathname || "/"), 1000);
+            }
           }
         } else {
           // Magic link for signin only
