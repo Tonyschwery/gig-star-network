@@ -41,6 +41,13 @@ const Auth = () => {
         ? "Sign in to get personalized recommendations"
         : null;
 
+  // Store intent in localStorage when component mounts
+  useEffect(() => {
+    if (intent) {
+      localStorage.setItem('authIntent', intent);
+    }
+  }, [intent]);
+
   useEffect(() => {
     if (!authLoading && user) {
       // 🔐 Check sessionStorage flag for password recovery

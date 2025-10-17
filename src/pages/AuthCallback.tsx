@@ -71,6 +71,7 @@ const AuthCallback = () => {
 
       // Redirect logic
       const storedIntent = localStorage.getItem("bookingIntent");
+      const authIntent = localStorage.getItem("authIntent");
       let bookingData = null;
       if (storedIntent) {
         try {
@@ -79,6 +80,18 @@ const AuthCallback = () => {
         } catch (e) {
           console.error("Error parsing booking intent:", e);
         }
+      }
+
+      // Check for event-form intent (from "Start Free Consultation" button)
+      if (authIntent === "event-form") {
+        localStorage.removeItem("authIntent");
+        toast({
+          title: "Welcome! 🎉",
+          description: "Let's find the perfect talent for your event.",
+          duration: 4000,
+        });
+        navigate("/your-event", { replace: true });
+        return;
       }
 
       if (user.email === "admin@qtalent.live") {
@@ -95,6 +108,9 @@ const AuthCallback = () => {
       } else {
         navigate("/booker-dashboard", { replace: true });
       }
+      
+      // Clean up auth intent if it wasn't already removed
+      localStorage.removeItem("authIntent");
     };
 
     // Check current session
