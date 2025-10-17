@@ -57,11 +57,19 @@ export const TalentDashboardTabs = ({ profile }: TalentDashboardTabsProps) => {
     }
 
     if (profile.location && profile.user_id) {
-      const { data: requestsData, error: requestsError } = await supabase
+      // Build query with talent type matching
+      let query = supabase
         .from('event_requests')
         .select('*')
         .eq('event_location', profile.location)
-        .not('hidden_by_talents', 'cs', `{${profile.user_id}}`)
+        .not('hidden_by_talents', 'cs', `{${profile.user_id}}`);
+      
+      // Filter by talent type if specified in request
+      if (profile.act) {
+        query = query.eq('talent_type_needed', profile.act);
+      }
+      
+      const { data: requestsData, error: requestsError } = await query
         .order('created_at', { ascending: false });
 
       if (requestsError) {
