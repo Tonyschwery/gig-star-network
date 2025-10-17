@@ -149,12 +149,21 @@ const Auth = () => {
         if (!error) {
           // Check for event-form intent and redirect accordingly
           const authIntent = localStorage.getItem('authIntent');
+          const bookingIntent = localStorage.getItem('bookingIntent');
           
           if (authIntent === 'event-form') {
             localStorage.removeItem('authIntent');
             toast({
               title: "Welcome! 🎉",
               description: "Let's find the perfect talent for your event.",
+              duration: 4000,
+            });
+          } else if (bookingIntent) {
+            const { talentId, talentName } = JSON.parse(bookingIntent);
+            localStorage.removeItem('bookingIntent');
+            toast({
+              title: "Welcome! 🎉",
+              description: `Let's book ${talentName} for your event.`,
               duration: 4000,
             });
           } else {
@@ -174,7 +183,16 @@ const Auth = () => {
             await sendUserSignupEmails(newUser.id, name, email.toLowerCase().trim());
           }
 
-          setTimeout(() => navigate(authIntent === 'event-form' ? '/your-event' : (state?.from?.pathname || "/")), 1000);
+          setTimeout(() => {
+            if (authIntent === 'event-form') {
+              navigate('/your-event', { replace: true });
+            } else if (bookingIntent) {
+              const { talentId } = JSON.parse(bookingIntent);
+              navigate(`/talent/${talentId}`, { state: { openBookingForm: true }, replace: true });
+            } else {
+              navigate(state?.from?.pathname || "/", { replace: true });
+            }
+          }, 1000);
         }
       } else {
         // Signin can use password OR magic link
@@ -188,6 +206,7 @@ const Auth = () => {
           if (!error) {
             // Check for event-form intent and redirect accordingly
             const authIntent = localStorage.getItem('authIntent');
+            const bookingIntent = localStorage.getItem('bookingIntent');
             
             if (authIntent === 'event-form') {
               localStorage.removeItem('authIntent');
@@ -197,6 +216,15 @@ const Auth = () => {
                 duration: 4000,
               });
               setTimeout(() => navigate('/your-event', { replace: true }), 1000);
+            } else if (bookingIntent) {
+              const { talentId, talentName } = JSON.parse(bookingIntent);
+              localStorage.removeItem('bookingIntent');
+              toast({
+                title: "Welcome back! 👋",
+                description: `Let's book ${talentName} for your event.`,
+                duration: 4000,
+              });
+              setTimeout(() => navigate(`/talent/${talentId}`, { state: { openBookingForm: true }, replace: true }), 1000);
             } else {
               toast({
                 title: "Welcome back! 👋",
