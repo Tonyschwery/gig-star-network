@@ -571,7 +571,11 @@ export default function TalentOnboarding() {
               variant="ghost"
               size="sm"
               type="button"
-              onClick={() => navigate('/')}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                navigate('/');
+              }}
               className="flex items-center gap-2"
             >
               <ArrowLeft className="h-4 w-4" />
