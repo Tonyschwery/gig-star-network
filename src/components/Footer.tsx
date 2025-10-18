@@ -29,6 +29,7 @@ export function Footer() {
 
               <Button variant="ghost" size="sm" onClick={() => handleSocialClick("Instagram")}>
                 <Instagram className="h-4 w-4" />
+                onClick={() => navigate("https://www.instagram.com")}
               </Button>
               <Button variant="ghost" size="sm" onClick={() => handleSocialClick("LinkedIn")}>
                 <Linkedin className="h-4 w-4" />
