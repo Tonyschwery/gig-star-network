@@ -17,23 +17,20 @@ export function Footer() {
         <div className="flex flex-col items-center text-center space-y-6">
           {/* Brand Section */}
           <div className="space-y-4 max-w-2xl">
-            <div className="text-2xl font-bold text-foreground">
-              Qtalent.live
-            </div>
+            <div className="text-2xl font-bold text-foreground">Qtalent.live</div>
             <p className="text-muted-foreground">
-              The simplest way to connect with exceptional live talent for your events. Book verified performers and creators worldwide.
+              The simplest way to connect with exceptional live talent for your events. Book verified performers and
+              creators worldwide.
             </p>
             <div className="flex justify-center space-x-3">
-              <Button variant="ghost" size="sm" onClick={() => handleSocialClick('Facebook')}>
+              <Button variant="ghost" size="sm" onClick={() => handleSocialClick("Facebook")}>
                 <Facebook className="h-4 w-4" />
               </Button>
-              <Button variant="ghost" size="sm" onClick={() => handleSocialClick('Twitter')}>
-                <Twitter className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" size="sm" onClick={() => handleSocialClick('Instagram')}>
+
+              <Button variant="ghost" size="sm" onClick={() => handleSocialClick("Instagram")}>
                 <Instagram className="h-4 w-4" />
               </Button>
-              <Button variant="ghost" size="sm" onClick={() => handleSocialClick('LinkedIn')}>
+              <Button variant="ghost" size="sm" onClick={() => handleSocialClick("LinkedIn")}>
                 <Linkedin className="h-4 w-4" />
               </Button>
             </div>
@@ -42,24 +39,22 @@ export function Footer() {
 
         <div className="border-t border-card-border mt-12 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
-            <div className="text-muted-foreground text-sm">
-              © 2024 Qtalent.live. All rights reserved.
-            </div>
+            <div className="text-muted-foreground text-sm">© 2024 Qtalent.live. All rights reserved.</div>
             <nav className="flex space-x-6 text-sm">
-              <button 
-                onClick={() => navigate('/privacy-policy')}
+              <button
+                onClick={() => navigate("/privacy-policy")}
                 className="text-muted-foreground hover:text-foreground transition-colors"
               >
                 Privacy Policy
               </button>
-              <button 
-                onClick={() => navigate('/terms-of-service')}
+              <button
+                onClick={() => navigate("/terms-of-service")}
                 className="text-muted-foreground hover:text-foreground transition-colors"
               >
                 Terms of Service
               </button>
-              <button 
-                onClick={() => navigate('/trust-safety')}
+              <button
+                onClick={() => navigate("/trust-safety")}
                 className="text-muted-foreground hover:text-foreground transition-colors"
               >
                 Trust & Safety
