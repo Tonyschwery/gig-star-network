@@ -574,7 +574,7 @@ export default function TalentOnboarding() {
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                navigate('/');
+                navigate('/auth');
               }}
               className="flex items-center gap-2"
             >
