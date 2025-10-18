@@ -7,7 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { Star, MapPin, Search, Music, Crown, HelpCircle, Calendar } from "lucide-react";
-import { countries } from "@/lib/countries";
+import { countries, sortCountriesByProximity } from "@/lib/countries";
+import { useLocationDetection } from "@/hooks/useLocationDetection";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { ProBadge } from "@/components/ProBadge";
@@ -42,11 +43,15 @@ interface TalentProfile {
 export function HeroSection() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { detectedLocation, userLocation } = useLocationDetection();
   const [searchFilters, setSearchFilters] = useState({
     location: '',
     talentType: 'all'
   });
   const [featuredTalents, setFeaturedTalents] = useState<TalentProfile[]>([]);
+  
+  // Sort countries by proximity to user's location
+  const sortedCountries = sortCountriesByProximity(detectedLocation || userLocation, countries);
 
   useEffect(() => {
     fetchFeaturedTalents();
@@ -136,9 +141,9 @@ export function HeroSection() {
                       </SelectTrigger>
                       <SelectContent className="max-h-60">
                         <SelectItem value="all">All Countries</SelectItem>
-                        {countries.map((country) => (
+                        {sortedCountries.map((country) => (
                           <SelectItem key={country.code} value={country.name}>
-                            {country.name}
+                            {country.flag} {country.name}
                           </SelectItem>
                         ))}
                       </SelectContent>

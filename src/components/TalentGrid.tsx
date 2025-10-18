@@ -53,6 +53,7 @@ const fetchTalents = async (): Promise<TalentProfile[]> => {
 
 export function TalentGrid() {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const { userLocation } = useLocationDetection();
   const queryClient = useQueryClient();
 
@@ -120,7 +121,13 @@ export function TalentGrid() {
   }, [talents, activeFilters]);
 
   const clearFilters = () => {
-    window.history.pushState({}, '', window.location.pathname);
+    navigate('/');
+    setTimeout(() => {
+      document.getElementById('talents')?.scrollIntoView({ 
+        behavior: 'smooth',
+        block: 'start'
+      });
+    }, 100);
   };
 
   const hasActiveFilters = (activeFilters.location && activeFilters.location !== 'all') || 
