@@ -7,9 +7,9 @@ import { toast } from "sonner";
 export function Footer() {
   const navigate = useNavigate();
 
-  const handleSocialClick = (platform: string) => {
-    toast.info(`${platform} integration coming soon!`);
-  };
+  //const handleSocialClick = (platform: string) => {
+  //toast.info(`${platform} integration coming soon!`);
+  //};
 
   return (
     <footer className="bg-card border-t border-card-border">
@@ -27,7 +27,7 @@ export function Footer() {
                 <Facebook className="h-4 w-4" />
               </Button>
 
-              <Button variant="ghost" size="sm" onClick={() => handleSocialClick("Instagram")}>
+              <Button variant="ghost" size="sm" onClick={() => handleSocialClick("www.Instagram.com")}>
                 <Instagram className="h-4 w-4" />
               </Button>
               <Button variant="ghost" size="sm" onClick={() => handleSocialClick("LinkedIn")}>
