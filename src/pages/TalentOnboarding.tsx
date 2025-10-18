@@ -572,9 +572,11 @@ export default function TalentOnboarding() {
               size="sm"
               type="button"
               onClick={(e) => {
+                console.log('[TalentOnboarding] Back button clicked');
                 e.preventDefault();
                 e.stopPropagation();
-                navigate('/auth');
+                console.log('[TalentOnboarding] Navigating to /auth');
+                window.location.href = '/auth';
               }}
               className="flex items-center gap-2"
             >
