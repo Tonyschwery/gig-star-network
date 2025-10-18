@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -57,11 +57,17 @@ const MUSIC_GENRES = [
 const ACTS = [
   { value: "dj", label: "DJ" },
   { value: "band", label: "Band" },
-  { value: "saxophonist", label: "Saxophonist" },
-  { value: "percussionist", label: "Percussionist" },
   { value: "singer", label: "Singer" },
+  { value: "saxophonist", label: "Saxophonist" },
   { value: "keyboardist", label: "Keyboardist" },
   { value: "drummer", label: "Drummer" },
+  { value: "percussionist", label: "Percussionist" },
+  { value: "guitarist", label: "Guitarist" },
+  { value: "violinist", label: "Violinist" },
+  { value: "magician", label: "Magician" },
+  { value: "gogo_dancer", label: "Gogo Dancer" },
+  { value: "belly_dancer", label: "Belly Dancer" },
+  { value: "other", label: "Other" },
 ];
 
 const CURRENCIES = [
@@ -561,17 +567,16 @@ export default function TalentOnboarding() {
         <Card className="w-full border-0 shadow-lg">
           <CardHeader className="text-center px-3 sm:px-6 py-3 sm:py-4">
           <div className="flex items-center justify-between">
-            <Link to="/" className="inline-flex">
-              <Button
-                variant="ghost"
-                size="sm"
-                type="button"
-                className="flex items-center gap-2"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                <span className="hidden sm:inline">Back</span>
-              </Button>
-            </Link>
+            <Button
+              variant="ghost"
+              size="sm"
+              type="button"
+              onClick={() => navigate('/')}
+              className="flex items-center gap-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              <span className="hidden sm:inline">Back</span>
+            </Button>
             <div className="flex-1">
               <CardTitle className="text-xl sm:text-2xl font-bold flex items-center justify-center gap-2">
                 <Music className="h-5 w-5 sm:h-6 sm:w-6" /> Complete Your Talent Profile

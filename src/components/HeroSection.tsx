@@ -25,6 +25,9 @@ const talentTypes = [
   { value: 'percussionist', label: 'Percussionist' },
   { value: 'guitarist', label: 'Guitarist' },
   { value: 'violinist', label: 'Violinist' },
+  { value: 'magician', label: 'Magician' },
+  { value: 'gogo_dancer', label: 'Gogo Dancer' },
+  { value: 'belly_dancer', label: 'Belly Dancer' },
   { value: 'other', label: 'Other' }
 ];
 
