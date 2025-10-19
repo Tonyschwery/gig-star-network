@@ -186,21 +186,10 @@ export const useLocationDetection = () => {
   };
 
   // Detect location automatically - never blocks manual selection
-  const detectLocation = async () => {
+  const detectLocation = useCallback(async () => {
     if (state.isDetecting) return;
 
     setState(prev => ({ ...prev, isDetecting: true, error: null }));
-
-    // Add timeout protection (15 seconds max)
-    const timeoutId = setTimeout(() => {
-      setState(prev => ({ 
-        ...prev, 
-        isDetecting: false,
-        error: 'Detection timeout. Please select your location manually.'
-      }));
-      localStorage.setItem('locationDetectionFailed', 'true');
-      localStorage.setItem('locationDetectionFailedTime', Date.now().toString());
-    }, 15000);
 
     try {
       // Try browser geolocation first (more accurate)
@@ -211,22 +200,17 @@ export const useLocationDetection = () => {
         location = await getLocationFromIP();
       }
 
-      clearTimeout(timeoutId);
-
       if (location) {
         setState(prev => ({ 
           ...prev, 
           detectedLocation: location,
           userLocation: location,
-          error: null,
-          isDetecting: false
+          error: null
         }));
         
         localStorage.setItem('userLocation', location);
         localStorage.setItem('locationOverride', 'true');
         localStorage.setItem('locationDetectionTime', Date.now().toString());
-        localStorage.removeItem('locationDetectionFailed');
-        localStorage.removeItem('locationDetectionFailedTime');
         
         if (user) {
           await supabase
@@ -240,28 +224,18 @@ export const useLocationDetection = () => {
             .then(() => {}, () => {}); // Ignore errors
         }
       } else {
-        setState(prev => ({ 
-          ...prev, 
-          isDetecting: false,
-          error: 'Could not detect location. Please select manually.'
-        }));
-        localStorage.setItem('locationDetectionFailed', 'true');
-        localStorage.setItem('locationDetectionFailedTime', Date.now().toString());
+        // Don't set error - just let user select manually
+        setState(prev => ({ ...prev, error: null }));
       }
     } catch (error) {
-      clearTimeout(timeoutId);
-      console.error('Location detection error:', error);
-      setState(prev => ({ 
-        ...prev, 
-        isDetecting: false,
-        error: 'Location detection failed. Please select your location manually.'
-      }));
-      localStorage.setItem('locationDetectionFailed', 'true');
-      localStorage.setItem('locationDetectionFailedTime', Date.now().toString());
+      // Don't set error - manual selection is always available
+      setState(prev => ({ ...prev, error: null }));
+    } finally {
+      setState(prev => ({ ...prev, isDetecting: false }));
     }
-  };
+  }, [user, state.isDetecting]);
 
-  // Initialize on mount - Auto-detect with retry logic
+  // Initialize on mount - Auto-detect for guests with cache expiration
   useEffect(() => {
     let mounted = true;
     
@@ -269,16 +243,10 @@ export const useLocationDetection = () => {
       const savedLocation = localStorage.getItem('userLocation');
       const isOverride = localStorage.getItem('locationOverride') === 'true';
       const lastDetectionTime = localStorage.getItem('locationDetectionTime');
-      const detectionFailed = localStorage.getItem('locationDetectionFailed') === 'true';
-      const failedTime = localStorage.getItem('locationDetectionFailedTime');
       
       // Check if cached location is stale (older than 24 hours)
       const isCacheStale = !lastDetectionTime || 
         (Date.now() - parseInt(lastDetectionTime)) > 24 * 60 * 60 * 1000;
-      
-      // Check if we should retry failed detection (after 5 minutes)
-      const shouldRetryFailed = detectionFailed && failedTime &&
-        (Date.now() - parseInt(failedTime)) > 5 * 60 * 1000;
 
       // For authenticated users, load from database
       if (user) {
@@ -301,7 +269,7 @@ export const useLocationDetection = () => {
       }
 
       // For non-authenticated users: use cached location but refresh if stale
-      if (savedLocation && !user && !shouldRetryFailed) {
+      if (savedLocation && !user) {
         if (mounted) {
           setState(prev => ({ ...prev, userLocation: savedLocation }));
         }
@@ -319,8 +287,6 @@ export const useLocationDetection = () => {
               localStorage.setItem('userLocation', location);
               localStorage.setItem('locationDetectionTime', Date.now().toString());
               localStorage.setItem('locationOverride', 'false');
-              localStorage.removeItem('locationDetectionFailed');
-              localStorage.removeItem('locationDetectionFailedTime');
             }
           } catch (error) {
             console.error('Failed to refresh location:', error);
@@ -329,8 +295,8 @@ export const useLocationDetection = () => {
         return;
       }
 
-      // No saved location OR should retry: auto-detect
-      if ((!savedLocation || shouldRetryFailed) && mounted) {
+      // No saved location: auto-detect for everyone
+      if (!savedLocation && mounted) {
         try {
           const location = await getLocationFromIP();
           if (location && mounted) {
@@ -342,26 +308,9 @@ export const useLocationDetection = () => {
             localStorage.setItem('userLocation', location);
             localStorage.setItem('locationDetectionTime', Date.now().toString());
             localStorage.setItem('locationOverride', 'false');
-            localStorage.removeItem('locationDetectionFailed');
-            localStorage.removeItem('locationDetectionFailedTime');
-          } else if (mounted) {
-            setState(prev => ({ 
-              ...prev, 
-              error: 'Could not detect location. Please select manually.' 
-            }));
-            localStorage.setItem('locationDetectionFailed', 'true');
-            localStorage.setItem('locationDetectionFailedTime', Date.now().toString());
           }
         } catch (error) {
           console.error('Failed to auto-detect location:', error);
-          if (mounted) {
-            setState(prev => ({ 
-              ...prev, 
-              error: 'Location detection failed. Please select manually.' 
-            }));
-            localStorage.setItem('locationDetectionFailed', 'true');
-            localStorage.setItem('locationDetectionFailedTime', Date.now().toString());
-          }
         }
       }
     };

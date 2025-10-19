@@ -75,12 +75,7 @@ export const LocationSelector = ({ onLocationChange }: LocationSelectorProps) =>
           <p className="text-xs text-muted-foreground mb-2">
             {isDetected ? '📍 Auto-detected' : '📍 Manual selection'}
           </p>
-          {error && (
-            <div className="text-xs text-destructive mb-2 p-2 bg-destructive/10 rounded">
-              {error}
-            </div>
-          )}
-          {isMobile && !userLocation && !error && (
+          {isMobile && !userLocation && (
             <p className="text-xs text-accent mb-2 flex items-center gap-1">
               <Smartphone className="h-3 w-3" />
               Tap to detect or select manually
@@ -90,7 +85,7 @@ export const LocationSelector = ({ onLocationChange }: LocationSelectorProps) =>
         
         <DropdownMenuItem onClick={handleDetectLocation} disabled={isDetecting}>
           <MapPin className="h-4 w-4 mr-2" />
-          {isDetecting ? 'Detecting...' : error ? 'Try Again' : isMobile ? 'Tap to Detect' : 'Detect My Location'}
+          {isDetecting ? 'Detecting...' : isMobile ? 'Tap to Detect' : 'Detect My Location'}
         </DropdownMenuItem>
         
         <DropdownMenuItem onClick={() => handleLocationSelect('Worldwide')}>
