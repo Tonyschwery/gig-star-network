@@ -6,14 +6,9 @@ import { Footer } from "@/components/Footer";
 import { useLocationDetection } from "@/hooks/useLocationDetection";
 
 const Index = () => {
-  const { detectLocation, userLocation } = useLocationDetection();
+  const { userLocation } = useLocationDetection();
   
-  // Auto-detect location on mount if not already set
-  useEffect(() => {
-    if (!userLocation) {
-      detectLocation();
-    }
-  }, []);
+  // Location detection now happens automatically in the hook
 
   return (
     <div className="min-h-screen bg-background">

@@ -164,6 +164,7 @@ export const useLocationDetection = () => {
     // Save to localStorage for immediate use
     localStorage.setItem('userLocation', location);
     localStorage.setItem('locationOverride', isOverride.toString());
+    localStorage.setItem('locationDetectionTime', Date.now().toString());
 
     setState(prev => ({ ...prev, userLocation: location }));
 
@@ -209,6 +210,7 @@ export const useLocationDetection = () => {
         
         localStorage.setItem('userLocation', location);
         localStorage.setItem('locationOverride', 'true');
+        localStorage.setItem('locationDetectionTime', Date.now().toString());
         
         if (user) {
           await supabase
@@ -233,23 +235,20 @@ export const useLocationDetection = () => {
     }
   }, [user, state.isDetecting]);
 
-  // Initialize on mount - Simplified and more reliable
+  // Initialize on mount - Auto-detect for guests with cache expiration
   useEffect(() => {
     let mounted = true;
     
     const initLocation = async () => {
-      // Load from localStorage first
       const savedLocation = localStorage.getItem('userLocation');
       const isOverride = localStorage.getItem('locationOverride') === 'true';
+      const lastDetectionTime = localStorage.getItem('locationDetectionTime');
       
-      if (savedLocation) {
-        if (mounted) {
-          setState(prev => ({ ...prev, userLocation: savedLocation }));
-        }
-        return; // Exit early if we have a saved location
-      }
+      // Check if cached location is stale (older than 24 hours)
+      const isCacheStale = !lastDetectionTime || 
+        (Date.now() - parseInt(lastDetectionTime)) > 24 * 60 * 60 * 1000;
 
-      // Load database preferences if logged in
+      // For authenticated users, load from database
       if (user) {
         try {
           const { data } = await supabase
@@ -262,14 +261,41 @@ export const useLocationDetection = () => {
             setState(prev => ({ ...prev, userLocation: data.preferred_location }));
             localStorage.setItem('userLocation', data.preferred_location);
             localStorage.setItem('locationOverride', data.location_override?.toString() || 'false');
-            return; // Exit early if DB has location
+            return; // Authenticated users rely on database
           }
         } catch (error) {
           console.error('Failed to load location preferences:', error);
         }
       }
 
-      // Only auto-detect if no saved location exists
+      // For non-authenticated users: use cached location but refresh if stale
+      if (savedLocation && !user) {
+        if (mounted) {
+          setState(prev => ({ ...prev, userLocation: savedLocation }));
+        }
+        
+        // If cache is stale, refresh in background
+        if (isCacheStale) {
+          try {
+            const location = await getLocationFromIP();
+            if (location && mounted) {
+              setState(prev => ({ 
+                ...prev, 
+                userLocation: location,
+                detectedLocation: location 
+              }));
+              localStorage.setItem('userLocation', location);
+              localStorage.setItem('locationDetectionTime', Date.now().toString());
+              localStorage.setItem('locationOverride', 'false');
+            }
+          } catch (error) {
+            console.error('Failed to refresh location:', error);
+          }
+        }
+        return;
+      }
+
+      // No saved location: auto-detect for everyone
       if (!savedLocation && mounted) {
         try {
           const location = await getLocationFromIP();
@@ -280,6 +306,7 @@ export const useLocationDetection = () => {
               detectedLocation: location 
             }));
             localStorage.setItem('userLocation', location);
+            localStorage.setItem('locationDetectionTime', Date.now().toString());
             localStorage.setItem('locationOverride', 'false');
           }
         } catch (error) {
