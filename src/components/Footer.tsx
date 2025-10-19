@@ -7,8 +7,8 @@ import { toast } from "sonner";
 export function Footer() {
   const navigate = useNavigate();
 
-  const handleSocialClick = (platform: string) => {
-    toast.info(`${platform} integration coming soon!`);
+  const handleSocialClick = (url: string) => {
+    window.open(url, '_blank', 'noopener,noreferrer');
   };
 
   return (
@@ -23,14 +23,14 @@ export function Footer() {
               creators worldwide.
             </p>
             <div className="flex justify-center space-x-3">
-              <Button variant="ghost" size="sm" onClick={() => handleSocialClick("Facebook")}>
+              <Button variant="ghost" size="sm" onClick={() => handleSocialClick("https://www.facebook.com/qtalentlive")}>
                 <Facebook className="h-4 w-4" />
               </Button>
 
-              <Button variant="ghost" size="sm" onClick={() => handleSocialClick("Instagram")}>
+              <Button variant="ghost" size="sm" onClick={() => handleSocialClick("https://www.instagram.com/qtalent.live/")}>
                 <Instagram className="h-4 w-4" />
               </Button>
-              <Button variant="ghost" size="sm" onClick={() => handleSocialClick("LinkedIn")}>
+              <Button variant="ghost" size="sm" onClick={() => handleSocialClick("https://www.linkedin.com/in/qtalentlive/")}>
                 <Linkedin className="h-4 w-4" />
               </Button>
             </div>
