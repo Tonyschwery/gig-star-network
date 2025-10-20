@@ -320,28 +320,29 @@ export default function TalentOnboarding() {
 
       localStorage.removeItem("talent_onboarding_draft");
 
-      if (needsConfirmation) {
-        console.log("[TalentOnboarding] Email confirmation required - redirecting to auth page");
-        
-        // Redirect to auth page with confirmation message
+      // Show immediate feedback
+      toast({ 
+        title: "Account Created! 🎉", 
+        description: "Please check your email to confirm your account.",
+        duration: 4000
+      });
+
+      // Always redirect to auth page after signup (modern website behavior)
+      setTimeout(() => {
         navigate('/auth', {
           state: {
             mode: 'talent',
-            message: `Please check your email (${email}) and click the verification link to activate your account. Don't forget to check your spam folder!`,
+            message: needsConfirmation 
+              ? `Please check your email (${email}) and click the verification link to activate your account. Don't forget to check your spam folder!`
+              : `Welcome! Your email has been verified. Please sign in to continue.`,
             email: email,
-            showResendButton: true
+            showResendButton: needsConfirmation
           },
           replace: true
         });
-        return;
-      } else {
-        // Email confirmation not required (auto-confirmed)
-        toast({ 
-          title: "Account Created!", 
-          description: "Your talent profile has been created. Welcome to QTalent!",
-          duration: 3000
-        });
-      }
+      }, 1500);
+      
+      return;
     } catch (error: any) {
       console.error("[TalentOnboarding] Error:", error);
       toast({ title: "Error", description: error.message || "An unexpected error occurred.", variant: "destructive" });
