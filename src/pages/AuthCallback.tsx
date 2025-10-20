@@ -42,6 +42,21 @@ const AuthCallback = () => {
       sessionStorage.setItem('isPasswordRecovery', 'true');
     }
 
+    // Handle email confirmation (signup verification)
+    if (authType === "signup" || authType === "email" || authType === "invite") {
+      console.log("[AuthCallback] Email confirmation detected, redirecting to auth page");
+      // Sign out the user first (they're auto-signed in by Supabase)
+      supabase.auth.signOut().then(() => {
+        toast({
+          title: "Welcome to Qtalent! 🎉",
+          description: "Your email has been verified. Please sign in now to get started.",
+          duration: 6000,
+        });
+        navigate('/auth', { replace: true });
+      });
+      return;
+    }
+
     // Regular login/session handling
     const performRedirect = async (session: Session | null) => {
       if (!session?.user) {
