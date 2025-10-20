@@ -28,27 +28,70 @@ export const useLocationDetection = () => {
     error: null
   });
 
-  // Get location from IP (fallback method) - silently fails, manual selection always available
+  // Get location from IP (fallback method with multiple providers)
   const getLocationFromIP = async (): Promise<string | null> => {
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 second timeout
+    // Try multiple IP geolocation services for reliability
+    const providers = [
+      {
+        url: 'https://ipapi.co/json/',
+        extract: (data: any) => data.country_name
+      },
+      {
+        url: 'https://api.ipify.org?format=json',
+        extract: async (data: any) => {
+          // Get country from IP using second service
+          const ipResponse = await fetch(`https://freeipapi.com/api/json/${data.ip}`);
+          const ipData = await ipResponse.json();
+          return ipData.countryName;
+        }
+      },
+      {
+        url: 'https://api.country.is/',
+        extract: (data: any) => {
+          // Returns country code, need to convert to name
+          const countryNames: Record<string, string> = {
+            'US': 'United States', 'GB': 'United Kingdom', 'CA': 'Canada',
+            'AU': 'Australia', 'DE': 'Germany', 'FR': 'France', 'IT': 'Italy',
+            'ES': 'Spain', 'NL': 'Netherlands', 'SE': 'Sweden', 'NO': 'Norway',
+            'DK': 'Denmark', 'FI': 'Finland', 'PL': 'Poland', 'BR': 'Brazil',
+            'MX': 'Mexico', 'AR': 'Argentina', 'CL': 'Chile', 'CO': 'Colombia',
+            'IN': 'India', 'CN': 'China', 'JP': 'Japan', 'KR': 'South Korea',
+            'SG': 'Singapore', 'MY': 'Malaysia', 'TH': 'Thailand', 'VN': 'Vietnam',
+            'PH': 'Philippines', 'ID': 'Indonesia', 'ZA': 'South Africa', 'NG': 'Nigeria',
+            'EG': 'Egypt', 'KE': 'Kenya', 'AE': 'United Arab Emirates', 'SA': 'Saudi Arabia',
+            'NZ': 'New Zealand', 'IE': 'Ireland', 'CH': 'Switzerland', 'AT': 'Austria',
+            'BE': 'Belgium', 'PT': 'Portugal', 'GR': 'Greece', 'CZ': 'Czech Republic',
+            'HU': 'Hungary', 'RO': 'Romania', 'TR': 'Turkey', 'IL': 'Israel'
+          };
+          return countryNames[data.country] || data.country;
+        }
+      }
+    ];
 
-      const response = await fetch('https://ipapi.co/json/', {
-        signal: controller.signal,
-        headers: { 'Accept': 'application/json' }
-      });
-      
-      clearTimeout(timeoutId);
-      
-      if (!response.ok) return null;
-      
-      const data = await response.json();
-      return data.country_name || null;
-    } catch (error) {
-      // Silently fail - manual selection is always available
-      return null;
+    for (const provider of providers) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+        const response = await fetch(provider.url, {
+          signal: controller.signal,
+          headers: { 'Accept': 'application/json' }
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (response.ok) {
+          const data = await response.json();
+          const country = await provider.extract(data);
+          if (country) return country;
+        }
+      } catch (error) {
+        console.log('IP provider failed, trying next:', error);
+        continue;
+      }
     }
+    
+    return null;
   };
 
   // Enhanced permission checking for mobile browsers
@@ -77,29 +120,64 @@ export const useLocationDetection = () => {
 
       // Check permission first, especially important on mobile
       const hasPermission = await requestLocationPermission();
-      if (!hasPermission) {
+      if (hasPermission === false) {
         setState(prev => ({ ...prev, hasPermission: false, error: 'Location permission denied' }));
         resolve(null);
         return;
       }
 
-      // Mobile-optimized geolocation options
-      const options = {
-        timeout: isMobile ? 10000 : 15000,
-        enableHighAccuracy: false,
-        maximumAge: isMobile ? 300000 : 60000 // 5 min cache on mobile, 1 min on desktop
+      // More aggressive mobile-optimized geolocation options
+      const options: PositionOptions = {
+        timeout: 8000, // Shorter timeout for faster fallback
+        enableHighAccuracy: false, // Faster response on mobile
+        maximumAge: 60000 // Use 1-minute cached position
+      };
+
+      // Multiple geocoding services for reliability
+      const reverseGeocode = async (lat: number, lon: number): Promise<string | null> => {
+        const services = [
+          {
+            url: `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`,
+            extract: (data: any) => data.countryName
+          },
+          {
+            url: `https://geocode.maps.co/reverse?lat=${lat}&lon=${lon}`,
+            extract: (data: any) => data.address?.country
+          },
+          {
+            url: `https://api.opencagedata.com/geocode/v1/json?q=${lat}+${lon}&key=demo&language=en&pretty=1&no_annotations=1`,
+            extract: (data: any) => data.results?.[0]?.components?.country
+          }
+        ];
+
+        for (const service of services) {
+          try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 3000);
+            
+            const response = await fetch(service.url, { signal: controller.signal });
+            clearTimeout(timeoutId);
+            
+            if (response.ok) {
+              const data = await response.json();
+              const country = service.extract(data);
+              if (country) return country;
+            }
+          } catch (error) {
+            console.log('Geocoding service failed, trying next');
+            continue;
+          }
+        }
+        return null;
       };
 
       navigator.geolocation.getCurrentPosition(
         async (position) => {
           try {
-            setState(prev => ({ ...prev, hasPermission: true }));
+            setState(prev => ({ ...prev, hasPermission: true, error: null }));
             const { latitude, longitude } = position.coords;
-            const response = await fetch(
-              `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
-            );
-            const data = await response.json();
-            resolve(data.countryName || null);
+            const country = await reverseGeocode(latitude, longitude);
+            resolve(country);
           } catch (error) {
             console.error('Failed to reverse geocode:', error);
             resolve(null);
@@ -112,15 +190,17 @@ export const useLocationDetection = () => {
           switch (error.code) {
             case error.PERMISSION_DENIED:
               errorMsg = isMobile 
-                ? 'Location access denied. To enable: Settings > Safari > Location Services > Safari Websites > Allow'
-                : 'Location permission denied. Please enable location access in your browser settings.';
+                ? 'Location access denied. Enable in: Settings > Browser > Location Services'
+                : 'Location permission denied. Please enable location access in your browser.';
               setState(prev => ({ ...prev, hasPermission: false }));
               break;
             case error.POSITION_UNAVAILABLE:
-              errorMsg = 'Location information unavailable';
+              errorMsg = isMobile 
+                ? 'GPS signal unavailable. Trying alternative methods...'
+                : 'Location information unavailable';
               break;
             case error.TIMEOUT:
-              errorMsg = isMobile ? 'Location request timed out. Please try again.' : 'Location request timed out';
+              errorMsg = 'Location request timed out. Trying alternative methods...';
               break;
           }
           
@@ -185,33 +265,48 @@ export const useLocationDetection = () => {
     }
   };
 
-  // Detect location automatically - never blocks manual selection
+  // Robust manual location detection - always works even if stuck
   const detectLocation = async () => {
-    if (state.isDetecting) return;
-
+    // Force clear any stuck state
     setState(prev => ({ ...prev, isDetecting: true, error: null }));
 
-    // Add timeout protection (15 seconds max)
-    const timeoutId = setTimeout(() => {
-      setState(prev => ({ 
-        ...prev, 
-        isDetecting: false,
-        error: 'Detection timeout. Please select your location manually.'
-      }));
-      localStorage.setItem('locationDetectionFailed', 'true');
-      localStorage.setItem('locationDetectionFailedTime', Date.now().toString());
-    }, 15000);
+    let timeoutId: NodeJS.Timeout | null = null;
+    let completed = false;
 
     try {
-      // Try browser geolocation first (more accurate)
-      let location = await getLocationFromBrowser();
+      // Add timeout protection (20 seconds max for mobile)
+      timeoutId = setTimeout(() => {
+        if (!completed) {
+          setState(prev => ({ 
+            ...prev, 
+            isDetecting: false,
+            error: 'Detection timeout. Please try again or select manually.'
+          }));
+          localStorage.setItem('locationDetectionFailed', 'true');
+          localStorage.setItem('locationDetectionFailedTime', Date.now().toString());
+        }
+      }, 20000);
+
+      let location: string | null = null;
+
+      // Try GPS/Browser geolocation first (most accurate)
+      try {
+        location = await getLocationFromBrowser();
+      } catch (error) {
+        console.log('Browser geolocation failed, trying IP fallback');
+      }
       
       // Fallback to IP-based detection if browser geolocation fails
       if (!location) {
-        location = await getLocationFromIP();
+        try {
+          location = await getLocationFromIP();
+        } catch (error) {
+          console.log('IP detection also failed');
+        }
       }
 
-      clearTimeout(timeoutId);
+      completed = true;
+      if (timeoutId) clearTimeout(timeoutId);
 
       if (location) {
         setState(prev => ({ 
@@ -228,8 +323,9 @@ export const useLocationDetection = () => {
         localStorage.removeItem('locationDetectionFailed');
         localStorage.removeItem('locationDetectionFailedTime');
         
+        // Save to database for logged-in users (non-blocking)
         if (user) {
-          await supabase
+          supabase
             .from('user_preferences')
             .upsert({
               user_id: user.id,
@@ -243,18 +339,19 @@ export const useLocationDetection = () => {
         setState(prev => ({ 
           ...prev, 
           isDetecting: false,
-          error: 'Could not detect location. Please select manually.'
+          error: 'Could not detect location. Please select your country manually from the list.'
         }));
         localStorage.setItem('locationDetectionFailed', 'true');
         localStorage.setItem('locationDetectionFailedTime', Date.now().toString());
       }
     } catch (error) {
-      clearTimeout(timeoutId);
+      completed = true;
+      if (timeoutId) clearTimeout(timeoutId);
       console.error('Location detection error:', error);
       setState(prev => ({ 
         ...prev, 
         isDetecting: false,
-        error: 'Location detection failed. Please select your location manually.'
+        error: 'Detection failed. Please select your location manually from the list.'
       }));
       localStorage.setItem('locationDetectionFailed', 'true');
       localStorage.setItem('locationDetectionFailedTime', Date.now().toString());

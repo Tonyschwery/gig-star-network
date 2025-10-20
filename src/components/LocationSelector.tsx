@@ -88,9 +88,17 @@ export const LocationSelector = ({ onLocationChange }: LocationSelectorProps) =>
           )}
         </div>
         
-        <DropdownMenuItem onClick={handleDetectLocation} disabled={isDetecting}>
-          <MapPin className="h-4 w-4 mr-2" />
-          {isDetecting ? 'Detecting...' : error ? 'Try Again' : isMobile ? 'Tap to Detect' : 'Detect My Location'}
+        <DropdownMenuItem 
+          onClick={handleDetectLocation} 
+          disabled={isDetecting}
+          className="cursor-pointer hover:bg-accent/50"
+        >
+          {isDetecting ? (
+            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+          ) : (
+            <MapPin className="h-4 w-4 mr-2" />
+          )}
+          {isDetecting ? 'Detecting Your Location...' : error ? '🔄 Try Detect Again' : isMobile ? '📍 Tap to Detect Location' : '🎯 Detect My Location'}
         </DropdownMenuItem>
         
         <DropdownMenuItem onClick={() => handleLocationSelect('Worldwide')}>
