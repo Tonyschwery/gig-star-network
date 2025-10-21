@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/useAuth"; // Make sure this hook exports 'isLoading'
 import { LogOut } from "lucide-react";
 import { Header } from "@/components/Header";
 import { BookerDashboardTabs } from "@/components/BookerDashboardTabs";
@@ -12,45 +12,64 @@ import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 import { Badge } from "@/components/ui/badge";
 import { MessageCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { Loader2 } from "lucide-react"; // Import a loading spinner
 
 const BookerDashboard = () => {
-  const { user, signOut } = useAuth();
+  // --- FIX 1: Get the 'isLoading' state from your useAuth hook ---
+  const { user, signOut, isLoading } = useAuth();
+
   const navigate = useNavigate();
   const { unreadCount: chatUnreadCount } = useUnreadMessages();
-  
+
   // Enable real-time notifications
   useRealtimeNotifications();
 
+  // --- FIX 2: Modify this useEffect ---
   useEffect(() => {
-    if (!user) {
-      navigate('/login');
-      return;
+    // Only run this check *after* the hook is done loading
+    if (!isLoading) {
+      // NOW we can safely check if the user is missing
+      if (!user) {
+        navigate("/login");
+      }
     }
-    
-    // Cleanup expired bookings on dashboard load
+  }, [user, isLoading, navigate]); // Add 'isLoading' to the dependency array
+
+  // Cleanup expired bookings (this is fine, but let's add a check)
+  useEffect(() => {
     const cleanupExpired = async () => {
       try {
-        const { error } = await supabase.functions.invoke('cleanup-expired-bookings');
-        if (error) console.error('Cleanup error:', error);
+        const { error } = await supabase.functions.invoke("cleanup-expired-bookings");
+        if (error) console.error("Cleanup error:", error);
       } catch (err) {
-        console.error('Failed to cleanup expired bookings:', err);
+        console.error("Failed to cleanup expired bookings:", err);
       }
     };
-    cleanupExpired();
-  }, [user, navigate]);
+
+    // Only run cleanup if the user is loaded
+    if (user) {
+      cleanupExpired();
+    }
+  }, [user]); // This useEffect is just for cleanup
 
   const handleSignOut = async () => {
     await signOut();
-    navigate('/');
+    navigate("/");
   };
 
-  if (!user) {
+  // --- FIX 3: Use 'isLoading' for your main loading state ---
+  // This will show the spinner while useAuth is working,
+  // and *before* the redirect check happens.
+  if (isLoading || !user) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        {/* Use a consistent spinner */}
+        <Loader2 className="animate-spin h-8 w-8 text-primary" />
       </div>
     );
   }
+
+  // --- If we get here, isLoading is false AND we have a user ---
 
   return (
     <div className="min-h-screen bg-background">
@@ -60,73 +79,66 @@ const BookerDashboard = () => {
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div className="flex-1 min-w-0">
               <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold gradient-text">
-                Welcome, {user?.email?.split('@')[0] || 'Guest'}!
+                Welcome, {user?.email?.split("@")[0] || "Guest"}!
               </h1>
               <p className="text-muted-foreground text-sm sm:text-base">Manage your event bookings</p>
             </div>
-            
+
             {/* Notification Center - Desktop */}
             <div className="hidden sm:flex items-center gap-2">
               <NotificationCenter />
               {chatUnreadCount > 0 && (
                 <Badge variant="destructive" className="animate-pulse flex items-center gap-1">
                   <MessageCircle className="h-3 w-3" />
-                  {chatUnreadCount} Chat{chatUnreadCount !== 1 ? 's' : ''}
+                  {chatUnreadCount} Chat{chatUnreadCount !== 1 ? "s" : ""}
                 </Badge>
               )}
             </div>
           </div>
-          
+
           {/* Action Buttons Row */}
           <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
             <div className="flex flex-wrap gap-2 flex-1">
-              <Button 
-                variant="outline" 
-                onClick={() => navigate('/')}
+              <Button
+                variant="outline"
+                onClick={() => navigate("/")}
                 className="flex-shrink-0 border-2 border-blue-500 hover:bg-blue-500/10 hover:border-blue-600 transition-all"
                 size="default"
               >
                 Browse Talents
               </Button>
-              <Button 
-                variant="outline" 
-                onClick={() => navigate('/your-event')}
+              <Button
+                variant="outline"
+                onClick={() => navigate("/your-event")}
                 className="flex-shrink-0 border-2 border-green-500 hover:bg-green-500/10 hover:border-green-600 transition-all"
                 size="default"
               >
                 Tell us about your event
               </Button>
-              <Button 
-                variant="outline" 
-                onClick={handleSignOut}
-                className="flex-shrink-0"
-                size="sm"
-              >
+              <Button variant="outline" onClick={handleSignOut} className="flex-shrink-0" size="sm">
                 <LogOut className="h-4 w-4 mr-2" />
                 <span className="hidden sm:inline">Sign Out</span>
                 <span className="sm:hidden">Logout</span>
               </Button>
             </div>
-            
+
             {/* Notification Center - Mobile */}
             <div className="sm:hidden self-start flex flex-col gap-2">
               <NotificationCenter />
               {chatUnreadCount > 0 && (
                 <Badge variant="destructive" className="animate-pulse flex items-center gap-1 w-fit">
                   <MessageCircle className="h-3 w-3" />
-                  {chatUnreadCount} Chat{chatUnreadCount !== 1 ? 's' : ''}
+                  {chatUnreadCount} Chat{chatUnreadCount !== 1 ? "s" : ""}
                 </Badge>
               )}
             </div>
           </div>
         </div>
 
-
         {/* Tabbed Dashboard */}
         <BookerDashboardTabs userId={user.id} />
 
         {/* Universal Chat Floating Button */}
-        
       </div>
     </div>
   );
