@@ -322,15 +322,21 @@ export default function TalentOnboarding() {
       localStorage.removeItem("talent_onboarding_draft");
 
       if (needsConfirmation) {
-        // Show the beautiful black confirmation screen
-        setUserEmailForConfirmation(email);
-        setEmailConfirmationPending(true);
+        // Show loading state immediately
+        setLoading(true);
         
         toast({ 
           title: "Account Created! 🎉", 
           description: "Please check your email to confirm your account.",
           duration: 4000
         });
+        
+        // Small delay to ensure proper re-render, then show black confirmation screen
+        setTimeout(() => {
+          setUserEmailForConfirmation(email);
+          setEmailConfirmationPending(true);
+          setLoading(false);
+        }, 500);
       } else {
         // Email already confirmed (shouldn't happen with Supabase, but handle it)
         toast({ 

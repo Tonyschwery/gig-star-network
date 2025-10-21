@@ -55,6 +55,58 @@ const AuthCallback = () => {
       return;
     }
 
+    // FALLBACK: Handle old email verification flow (when redirected from /auth/v1/verify)
+    // In this case, Supabase has already set the session in the background
+    if (authType === "signup" && !access_token && !refresh_token) {
+      console.log("[AuthCallback] Old verification flow detected, checking for session");
+      hasRedirected.current = true;
+      
+      // Wait a moment for Supabase to finish setting the session
+      setTimeout(() => {
+        supabase.auth.getSession().then(async ({ data: { session }, error: sessionError }) => {
+          if (sessionError || !session) {
+            console.error("[AuthCallback] No session found after email verification");
+            setError("Email verified but session not found. Please try signing in manually.");
+            return;
+          }
+
+          const user = session.user;
+          console.log("[AuthCallback] Session found for user:", user.id);
+
+          // Ensure profile exists
+          try {
+            await supabase.rpc("ensure_profile", {
+              p_user_id: user.id,
+              p_email: user.email!,
+              p_role: user.user_metadata?.user_type || "booker",
+            });
+          } catch (err) {
+            console.error("[AuthCallback] Error ensuring profile:", err);
+          }
+
+          // Show welcome message
+          toast({
+            title: "Welcome to Qtalent! 🎉",
+            description: "Your email has been verified. Taking you to your dashboard...",
+            duration: 3000,
+          });
+
+          // Redirect based on user type
+          setTimeout(() => {
+            if (user.email === "admin@qtalent.live") {
+              window.location.href = "/admin";
+            } else if (user.user_metadata?.user_type === "talent") {
+              window.location.href = "/talent-dashboard";
+            } else {
+              window.location.href = "/booker-dashboard";
+            }
+          }, 1500);
+        });
+      }, 1000);
+      
+      return;
+    }
+
     // MODERN APPROACH: Direct session exchange with tokens from URL
     if (authType === "signup" && access_token && refresh_token) {
       console.log("[AuthCallback] Direct session exchange for signup");
