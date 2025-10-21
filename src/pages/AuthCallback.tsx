@@ -64,15 +64,43 @@ const AuthCallback = () => {
           }
 
           // Fallback: old verification flow (no tokens in URL)
-          console.log("[AuthCallback] Old signup flow, checking session");
-          
-          // Wait for Supabase to set session in background
-          await new Promise(resolve => setTimeout(resolve, 1500));
-          
-          const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+          console.log("[AuthCallback] Old signup flow details:", {
+            url: window.location.href,
+            type: authType,
+            hasTokens: !!(access_token && refresh_token),
+            timestamp: new Date().toISOString()
+          });
 
-          if (sessionError || !session) {
-            setError("Email verified but session not found. Please try signing in manually.");
+          // Try multiple times with increasing delays
+          let session = null;
+          let attempts = 0;
+          const maxAttempts = 3;
+
+          while (attempts < maxAttempts && !session) {
+            await new Promise(resolve => setTimeout(resolve, 1000 * (attempts + 1))); // 1s, 2s, 3s
+            
+            const { data: { session: currentSession }, error: sessionError } = await supabase.auth.getSession();
+            
+            if (sessionError) {
+              console.error("[AuthCallback] Session error:", sessionError);
+              break;
+            }
+            
+            if (currentSession) {
+              session = currentSession;
+              break;
+            }
+            
+            attempts++;
+            console.log(`[AuthCallback] Session not found, attempt ${attempts}/${maxAttempts}`);
+          }
+
+          if (!session) {
+            console.error("[AuthCallback] Session not established after verification");
+            setError(
+              "Email verified successfully, but we couldn't log you in automatically. " +
+              "Please click 'Back to Sign In' below and sign in with your email and password."
+            );
             return;
           }
 
