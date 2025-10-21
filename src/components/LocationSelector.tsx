@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { MapPin, ChevronDown, Loader2, Smartphone } from 'lucide-react';
+import { MapPin, ChevronDown, Loader2, Smartphone, RefreshCw, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -7,10 +7,12 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuLabel,
 } from '@/components/ui/dropdown-menu';
 import { useLocationDetection } from '@/hooks/useLocationDetection';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { countries, sortCountriesByProximity } from '@/lib/countries';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface LocationSelectorProps {
   onLocationChange?: (location: string) => void;
@@ -20,22 +22,33 @@ export const LocationSelector = ({ onLocationChange }: LocationSelectorProps) =>
   const { 
     userLocation, 
     detectedLocation, 
-    isDetecting, 
+    isDetecting,
+    detectionState,
     hasPermission,
     error,
+    detectionAttempts,
     saveLocation, 
-    detectLocation 
+    detectLocation,
+    forceReset,
   } = useLocationDetection();
   
   const isMobile = useIsMobile();
   const [isOpen, setIsOpen] = useState(false);
+  const [showError, setShowError] = useState(false);
+
+  // Show/hide error message
+  useEffect(() => {
+    if (error) {
+      setShowError(true);
+    } else {
+      setShowError(false);
+    }
+  }, [error]);
 
   // Notify parent when location changes
   useEffect(() => {
-    const currentLocation = userLocation || detectedLocation;
-    if (currentLocation && currentLocation !== 'Worldwide') {
-      onLocationChange?.(currentLocation);
-    }
+    const currentLocation = userLocation || detectedLocation || 'Worldwide';
+    onLocationChange?.(currentLocation);
   }, [userLocation, detectedLocation, onLocationChange]);
 
   const handleLocationSelect = (location: string) => {
@@ -45,68 +58,124 @@ export const LocationSelector = ({ onLocationChange }: LocationSelectorProps) =>
   };
 
   const handleDetectLocation = async () => {
+    setShowError(false);
     await detectLocation();
+  };
+
+  const handleForceReset = () => {
+    forceReset();
+    setShowError(false);
   };
 
   const currentLocation = userLocation || detectedLocation || 'Worldwide';
   const isDetected = userLocation === detectedLocation;
+  const showRetryButton = detectionState === 'error' && detectionAttempts > 0;
   
   // Sort countries by proximity to user's location
   const sortedCountries = sortCountriesByProximity(detectedLocation || userLocation, countries);
 
   return (
-    <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
-      <DropdownMenuTrigger asChild>
-        <Button 
-          variant="outline" 
-          className="gap-2 bg-background/80 backdrop-blur-sm border-border/50 hover:bg-accent/80"
-        >
-          <MapPin className="h-4 w-4" />
-          <span className="text-sm font-medium">{currentLocation}</span>
-          {isDetecting ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <ChevronDown className="h-4 w-4" />
-          )}
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-64 max-h-80 overflow-y-auto bg-background/95 backdrop-blur-sm border border-border/50">
-        <div className="p-2">
-          <p className="text-xs text-muted-foreground mb-2">
-            {isDetected ? '📍 Auto-detected' : '📍 Manual selection'}
-          </p>
-          {error && (
-            <div className="text-xs text-destructive mb-2 p-2 bg-destructive/10 rounded">
-              {error}
+    <div className="relative">
+      {showError && error && (
+        <Alert variant="destructive" className="mb-2 animate-in fade-in slide-in-from-top-2">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription className="text-xs">
+            {error}
+          </AlertDescription>
+        </Alert>
+      )}
+      
+      <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
+        <DropdownMenuTrigger asChild>
+          <Button 
+            variant="outline" 
+            className="gap-2 bg-background/80 backdrop-blur-sm border-border/50 hover:bg-accent/80 w-full sm:w-auto"
+          >
+            <MapPin className={`h-4 w-4 ${detectionState === 'success' ? 'text-green-500' : ''}`} />
+            <span className="text-sm font-medium">{currentLocation}</span>
+            {isDetecting ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : showRetryButton ? (
+              <RefreshCw className="h-4 w-4 text-destructive" />
+            ) : (
+              <ChevronDown className="h-4 w-4" />
+            )}
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-72 max-h-96 overflow-y-auto bg-background/95 backdrop-blur-sm border border-border/50 shadow-lg z-50">
+          <div className="p-3 space-y-2">
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-muted-foreground">
+                {isDetected && detectionState === 'success' ? '✅ Auto-detected' : 
+                 detectionState === 'error' ? '❌ Detection failed' :
+                 isDetecting ? '⏳ Detecting...' : '📍 Manual selection'}
+              </p>
+              {detectionAttempts > 0 && (
+                <span className="text-xs text-muted-foreground">
+                  Attempt {detectionAttempts}/3
+                </span>
+              )}
             </div>
+            
+            {isDetecting && (
+              <div className="text-xs text-accent flex items-center gap-2 p-2 bg-accent/10 rounded">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                <span>Trying multiple detection methods...</span>
+              </div>
+            )}
+          </div>
+
+          <DropdownMenuSeparator />
+          
+          <DropdownMenuLabel className="text-xs font-medium text-muted-foreground">
+            Quick Actions
+          </DropdownMenuLabel>
+          
+          <DropdownMenuItem 
+            onClick={handleDetectLocation} 
+            disabled={isDetecting}
+            className="cursor-pointer hover:bg-accent/50"
+          >
+            {isDetecting ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <MapPin className="h-4 w-4 mr-2" />
+            )}
+            {isDetecting 
+              ? 'Detecting Your Location...' 
+              : hasPermission === false
+                ? '🔄 Try GPS Again (Permission Denied)'
+                : detectionState === 'error'
+                  ? '🔄 Retry Location Detection'
+                  : isMobile 
+                    ? '📍 Detect My Location' 
+                    : '🎯 Auto-Detect Location'
+            }
+          </DropdownMenuItem>
+          
+          {showRetryButton && (
+            <DropdownMenuItem 
+              onClick={handleForceReset}
+              className="cursor-pointer hover:bg-accent/50 text-orange-600"
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Reset & Try Again
+            </DropdownMenuItem>
           )}
-          {isMobile && !userLocation && !error && (
-            <p className="text-xs text-accent mb-2 flex items-center gap-1">
-              <Smartphone className="h-3 w-3" />
-              Tap to detect or select manually
-            </p>
-          )}
-        </div>
         
         <DropdownMenuItem 
-          onClick={handleDetectLocation} 
-          disabled={isDetecting}
-          className="cursor-pointer hover:bg-accent/50"
-        >
-          {isDetecting ? (
-            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-          ) : (
-            <MapPin className="h-4 w-4 mr-2" />
-          )}
-          {isDetecting ? 'Detecting Your Location...' : error ? '🔄 Try Detect Again' : isMobile ? '📍 Tap to Detect Location' : '🎯 Detect My Location'}
-        </DropdownMenuItem>
-        
-        <DropdownMenuItem onClick={() => handleLocationSelect('Worldwide')}>
-          <span className="mr-2">🌍</span>
-          Worldwide
-        </DropdownMenuItem>
+            onClick={() => handleLocationSelect('Worldwide')}
+            className="cursor-pointer hover:bg-accent/50"
+          >
+            <span className="mr-2">🌍</span>
+            Worldwide (Show All)
+          </DropdownMenuItem>
         
         <DropdownMenuSeparator />
+        
+        <DropdownMenuLabel className="text-xs font-medium text-muted-foreground">
+          Select Manually
+        </DropdownMenuLabel>
         
         {detectedLocation && detectedLocation !== userLocation && (
           <>
@@ -118,19 +187,21 @@ export const LocationSelector = ({ onLocationChange }: LocationSelectorProps) =>
           </>
         )}
         
-        <div className="max-h-48 overflow-y-auto">
+        <div className="max-h-64 overflow-y-auto">
           {sortedCountries.map((country) => (
             <DropdownMenuItem
               key={country.code}
               onClick={() => handleLocationSelect(country.name)}
-              className={userLocation === country.name ? 'bg-accent' : ''}
+              className={`cursor-pointer hover:bg-accent/50 ${userLocation === country.name ? 'bg-accent font-medium' : ''}`}
             >
               <span className="mr-2">{country.flag}</span>
               {country.name}
+              {userLocation === country.name && <span className="ml-auto text-xs">✓</span>}
             </DropdownMenuItem>
           ))}
         </div>
       </DropdownMenuContent>
     </DropdownMenu>
+    </div>
   );
 };

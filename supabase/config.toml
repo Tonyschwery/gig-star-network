@@ -26,3 +26,6 @@ verify_jwt = false
 
 [functions.cleanup-expired-bookings]
 verify_jwt = false
+
+[functions.detect-location]
+verify_jwt = false
