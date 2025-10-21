@@ -136,8 +136,8 @@ const Auth = () => {
       let error: any = null;
 
       if (isSignUp) {
-        // Signup ALWAYS uses password (no magic link option)
-        const { error: signUpError } = await supabase.auth.signUp({
+        // Signup with email auto-confirmation disabled
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
           email: email.toLowerCase().trim(),
           password: password,
           options: {
@@ -147,7 +147,12 @@ const Auth = () => {
         });
         error = signUpError;
 
-        if (!error) {
+        if (!error && signUpData.user) {
+          // Send welcome emails in background (non-blocking)
+          sendUserSignupEmails(signUpData.user.id, name, email.toLowerCase().trim()).catch(err => 
+            console.error("Failed to send welcome email:", err)
+          );
+
           // Check for event-form intent and redirect accordingly
           const authIntent = localStorage.getItem('authIntent');
           const bookingIntent = localStorage.getItem('bookingIntent');
@@ -159,6 +164,7 @@ const Auth = () => {
               description: "Let's find the perfect talent for your event.",
               duration: 4000,
             });
+            setTimeout(() => navigate('/your-event', { replace: true }), 1000);
           } else if (bookingIntent) {
             const { talentId, talentName } = JSON.parse(bookingIntent);
             localStorage.removeItem('bookingIntent');
@@ -167,33 +173,15 @@ const Auth = () => {
               description: `Let's book ${talentName} for your event.`,
               duration: 4000,
             });
+            setTimeout(() => navigate(`/talent/${talentId}`, { state: { openBookingForm: true }, replace: true }), 1000);
           } else {
             toast({
               title: "Account created! ✅",
-              description: "Your account has been created successfully. Redirecting...",
+              description: "You're all set! Taking you to your dashboard...",
               duration: 3000,
             });
+            setTimeout(() => navigate(state?.from?.pathname || "/", { replace: true }), 1000);
           }
-
-          // Get the newly created user to send welcome emails
-          const {
-            data: { user: newUser },
-          } = await supabase.auth.getUser();
-          if (newUser) {
-            // Send welcome emails (to user and admin notification)
-            await sendUserSignupEmails(newUser.id, name, email.toLowerCase().trim());
-          }
-
-          setTimeout(() => {
-            if (authIntent === 'event-form') {
-              navigate('/your-event', { replace: true });
-            } else if (bookingIntent) {
-              const { talentId } = JSON.parse(bookingIntent);
-              navigate(`/talent/${talentId}`, { state: { openBookingForm: true }, replace: true });
-            } else {
-              navigate(state?.from?.pathname || "/", { replace: true });
-            }
-          }, 1000);
         }
       } else {
         // Signin can use password OR magic link
