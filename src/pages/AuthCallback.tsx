@@ -54,9 +54,28 @@ const AuthCallback = () => {
         // Handle password recovery
         if (authType === "recovery") {
           console.log("[AuthCallback] Password recovery detected");
-          sessionStorage.setItem('isPasswordRecovery', 'true');
-          navigate('/update-password', { replace: true });
-          return;
+          
+          // Set session from tokens in URL hash
+          if (access_token && refresh_token) {
+            const { error: sessionError } = await supabase.auth.setSession({ 
+              access_token, 
+              refresh_token 
+            });
+
+            if (sessionError) {
+              console.error("[AuthCallback] Failed to set recovery session:", sessionError);
+              setError("Failed to verify reset link. Please request a new one.");
+              return;
+            }
+
+            console.log("[AuthCallback] Recovery session set successfully");
+            sessionStorage.setItem('isPasswordRecovery', 'true');
+            navigate('/update-password', { replace: true });
+            return;
+          } else {
+            setError("Invalid reset link. Please request a new one.");
+            return;
+          }
         }
 
         // Handle email verification (signup confirmation)
