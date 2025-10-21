@@ -62,12 +62,6 @@ const ACTS = [
   { value: "keyboardist", label: "Keyboardist" },
   { value: "drummer", label: "Drummer" },
   { value: "percussionist", label: "Percussionist" },
-  { value: "guitarist", label: "Guitarist" },
-  { value: "violinist", label: "Violinist" },
-  { value: "magician", label: "Magician" },
-  { value: "gogo_dancer", label: "Gogo Dancer" },
-  { value: "belly_dancer", label: "Belly Dancer" },
-  { value: "other", label: "Other" },
 ];
 
 const CURRENCIES = [
@@ -286,6 +280,18 @@ export default function TalentOnboarding() {
         return;
       }
 
+      // Validate all required fields
+      const validationErrors = getValidationErrors();
+      if (validationErrors.length > 0) {
+        toast({
+          title: "Missing Required Fields",
+          description: `Please fill in: ${validationErrors.join(", ")}`,
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
       // Validate password
       if (!password || password.length < 6) {
         toast({
@@ -297,12 +303,11 @@ export default function TalentOnboarding() {
         return;
       }
 
-      // Sign up with minimal metadata
+      // Sign up the user
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email: email.toLowerCase().trim(),
         password: password,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
           data: {
             name: fullName,
             user_type: "talent",
@@ -319,45 +324,45 @@ export default function TalentOnboarding() {
         throw new Error("Signup failed - no user returned");
       }
 
-      localStorage.removeItem("talent_onboarding_draft");
-
-      // Create talent profile immediately
+      // Create talent profile
       const profileData = {
         user_id: signUpData.user.id,
-        artist_name: formData.artistName,
-        act: formData.act as any,
-        gender: formData.gender as any,
+        artist_name: formData.artistName.trim(),
+        act: formData.act as "dj" | "band" | "singer" | "saxophonist" | "keyboardist" | "drummer" | "percussionist",
+        gender: formData.gender as "male" | "female",
         music_genres: allGenres,
-        biography: formData.biography,
+        biography: formData.biography.trim(),
         age: formData.age,
         nationality: formData.countryOfResidence,
         rate_per_hour: parseFloat(formData.ratePerHour),
         currency: formData.currency,
         location: formData.location || userLocation || detectedLocation || "",
-        picture_url: profileImageUrl,
-        soundcloud_link: formData.soundcloudLink || null,
-        youtube_link: formData.youtubeLink || null,
+        picture_url: profileImageUrl || null,
+        soundcloud_link: formData.soundcloudLink?.trim() || null,
+        youtube_link: formData.youtubeLink?.trim() || null,
       };
 
       const { error: profileError } = await supabase
         .from("talent_profiles")
-        .insert(profileData);
+        .insert([profileData]);
 
       if (profileError) {
         console.error("[TalentOnboarding] Profile creation error:", profileError);
         throw new Error("Failed to create profile. Please contact support.");
       }
 
-      // Success! Show welcome message and redirect
+      // Clear draft and redirect
+      localStorage.removeItem("talent_onboarding_draft");
+      
       toast({ 
         title: "Welcome to Qtalent! 🎉", 
         description: "Your talent profile is now live!",
-        duration: 3000
       });
 
+      // Redirect to dashboard
       setTimeout(() => {
-        navigate('/talent-dashboard', { replace: true });
-      }, 1500);
+        window.location.href = '/talent-dashboard';
+      }, 1000);
       
       return;
     } catch (error: any) {
