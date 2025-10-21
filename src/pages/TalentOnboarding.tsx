@@ -161,29 +161,6 @@ export default function TalentOnboarding() {
     }
   }, [userLocation, detectedLocation, formData.location]);
 
-  // Auto-redirect when email is confirmed
-  useEffect(() => {
-    if (emailConfirmationPending) {
-      const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-        if (event === 'SIGNED_IN' && session) {
-          console.log('[TalentOnboarding] Email confirmed, redirecting to dashboard');
-          toast({
-            title: "Email Confirmed! ✅",
-            description: "Taking you to your dashboard...",
-            duration: 3000
-          });
-          
-          setTimeout(() => {
-            window.location.href = '/talent-dashboard';
-          }, 1500);
-        }
-      });
-
-      return () => {
-        authListener?.subscription.unsubscribe();
-      };
-    }
-  }, [emailConfirmationPending, toast]);
 
   // Upload image immediately to preserve it across auth redirects
   const uploadImageImmediately = async (file: File): Promise<string | null> => {

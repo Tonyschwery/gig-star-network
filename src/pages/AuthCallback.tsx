@@ -20,10 +20,15 @@ const AuthCallback = () => {
     const authType = searchParams.get("type") || hashParams.get("type");
     const error_code = searchParams.get("error_code") || hashParams.get("error_code");
     const error_description = searchParams.get("error_description") || hashParams.get("error_description");
+    
+    // Extract tokens from URL hash (Supabase puts them there after email confirmation)
+    const access_token = hashParams.get('access_token');
+    const refresh_token = hashParams.get('refresh_token');
 
     console.log("[AuthCallback] Starting, params:", { 
       authType, 
-      error_code, 
+      error_code,
+      hasTokens: !!(access_token && refresh_token),
       hasRedirected: hasRedirected.current
     });
 
@@ -50,124 +55,111 @@ const AuthCallback = () => {
       return;
     }
 
-    // Single redirect function
-    const performRedirect = async (session: Session | null) => {
-      // Guard against multiple calls
-      if (hasRedirected.current) {
-        console.log("[AuthCallback] Redirect already in progress");
-        return;
-      }
-
-      if (!session?.user) {
-        console.error("[AuthCallback] No session/user found");
-        setError("Authentication failed. Please try signing in again.");
-        return;
-      }
-
+    // MODERN APPROACH: Direct session exchange with tokens from URL
+    if (authType === "signup" && access_token && refresh_token) {
+      console.log("[AuthCallback] Direct session exchange for signup");
       hasRedirected.current = true;
-      const user = session.user;
-
-      console.log("[AuthCallback] Processing redirect for user:", user.id);
-
-      // Ensure profile exists
-      try {
-        await supabase.rpc("ensure_profile", {
-          p_user_id: user.id,
-          p_email: user.email!,
-          p_role: user.user_metadata?.user_type || "booker",
-        });
-      } catch (err) {
-        console.error("[AuthCallback] Error ensuring profile:", err);
-      }
-
-      // Redirect logic
-      const storedIntent = localStorage.getItem("bookingIntent");
-      const authIntent = localStorage.getItem("authIntent");
-      let bookingData = null;
       
-      if (storedIntent) {
-        try {
-          bookingData = JSON.parse(storedIntent);
-          localStorage.removeItem("bookingIntent");
-        } catch (e) {
-          console.error("[AuthCallback] Error parsing booking intent:", e);
+      supabase.auth.setSession({ access_token, refresh_token }).then(async ({ data, error: sessionError }) => {
+        if (sessionError) {
+          console.error("[AuthCallback] Session error:", sessionError);
+          setError("Failed to authenticate. Please try signing in again.");
+          return;
         }
-      }
 
-      // Show welcome message for new signups
-      if (authType === "signup" || authType === "email" || authType === "invite") {
+        const session = data.session;
+        const user = session?.user;
+
+        if (!user) {
+          setError("Authentication failed. Please try signing in again.");
+          return;
+        }
+
+        console.log("[AuthCallback] Session set, user:", user.id);
+
+        // Ensure profile exists
+        try {
+          await supabase.rpc("ensure_profile", {
+            p_user_id: user.id,
+            p_email: user.email!,
+            p_role: user.user_metadata?.user_type || "booker",
+          });
+        } catch (err) {
+          console.error("[AuthCallback] Error ensuring profile:", err);
+        }
+
+        // Show welcome message
         toast({
           title: "Welcome to Qtalent! 🎉",
-          description: "Your email has been verified. Setting up your account...",
-          duration: 4000,
+          description: "Your email has been verified. Taking you to your dashboard...",
+          duration: 3000,
         });
-      }
 
-      // Event-form intent
-      if (authIntent === "event-form") {
-        localStorage.removeItem("authIntent");
-        navigate("/your-event", { replace: true });
-        return;
-      }
-
-      // Admin redirect
-      if (user.email === "admin@qtalent.live") {
-        navigate("/admin", { replace: true });
-        return;
-      }
-
-      // Booking intent redirect
-      if (bookingData?.talentId) {
-        navigate(`/talent/${bookingData.talentId}`, { 
-          state: { openBookingForm: true }, 
-          replace: true 
-        });
-        return;
-      }
-
-      // Default redirects based on user type
-      if (user.user_metadata?.user_type === "talent") {
-        navigate("/talent-dashboard", { replace: true });
-      } else {
-        navigate("/booker-dashboard", { replace: true });
-      }
+        // Redirect based on user type
+        setTimeout(() => {
+          if (user.email === "admin@qtalent.live") {
+            window.location.href = "/admin";
+          } else if (user.user_metadata?.user_type === "talent") {
+            window.location.href = "/talent-dashboard";
+          } else {
+            window.location.href = "/booker-dashboard";
+          }
+        }, 1500);
+      });
       
-      localStorage.removeItem("authIntent");
-    };
+      return;
+    }
 
-    // Single source of truth: wait for SIGNED_IN event
-    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log("[AuthCallback] Auth event:", event);
-      
-      if (hasRedirected.current) {
-        console.log("[AuthCallback] Already redirected, ignoring event");
-        return;
-      }
-
-      if (event === "PASSWORD_RECOVERY" && session) {
-        hasRedirected.current = true;
-        sessionStorage.setItem('isPasswordRecovery', 'true');
-        navigate('/update-password', { replace: true });
-        return;
-      }
-
-      if (event === "SIGNED_IN" && session) {
-        console.log("[AuthCallback] User signed in, performing redirect");
-        await performRedirect(session);
-      }
-    });
-
-    // Fallback: check if already signed in (for page refreshes)
+    // Fallback: Check if user is already signed in
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session && !hasRedirected.current) {
-        console.log("[AuthCallback] Existing session found, redirecting");
-        performRedirect(session);
+        console.log("[AuthCallback] Existing session found, redirecting immediately");
+        hasRedirected.current = true;
+        
+        const user = session.user;
+        const storedIntent = localStorage.getItem("bookingIntent");
+        const authIntent = localStorage.getItem("authIntent");
+        
+        // Event-form intent
+        if (authIntent === "event-form") {
+          localStorage.removeItem("authIntent");
+          navigate("/your-event", { replace: true });
+          return;
+        }
+
+        // Admin redirect
+        if (user.email === "admin@qtalent.live") {
+          navigate("/admin", { replace: true });
+          return;
+        }
+
+        // Booking intent redirect
+        if (storedIntent) {
+          try {
+            const bookingData = JSON.parse(storedIntent);
+            localStorage.removeItem("bookingIntent");
+            if (bookingData?.talentId) {
+              navigate(`/talent/${bookingData.talentId}`, { 
+                state: { openBookingForm: true }, 
+                replace: true 
+              });
+              return;
+            }
+          } catch (e) {
+            console.error("[AuthCallback] Error parsing booking intent:", e);
+          }
+        }
+
+        // Default redirects based on user type
+        if (user.user_metadata?.user_type === "talent") {
+          navigate("/talent-dashboard", { replace: true });
+        } else {
+          navigate("/booker-dashboard", { replace: true });
+        }
+        
+        localStorage.removeItem("authIntent");
       }
     });
-
-    return () => {
-      authListener?.subscription.unsubscribe();
-    };
   }, [navigate, searchParams, toast]);
 
   if (error) {
