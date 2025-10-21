@@ -141,6 +141,7 @@ const Auth = () => {
           email: email.toLowerCase().trim(),
           password: password,
           options: {
+            emailRedirectTo: `${window.location.origin}/auth/callback`,
             data: { name: name, user_type: userType },
           },
         });

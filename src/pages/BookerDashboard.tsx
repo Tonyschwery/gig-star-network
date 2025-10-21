@@ -23,13 +23,12 @@ const BookerDashboard = () => {
   // Enable real-time notifications
   useRealtimeNotifications();
 
+  // ProtectedRoute handles authentication redirects - no need to duplicate here
   useEffect(() => {
-    if (!loading) {
-      if (!user) {
-        navigate("/login");
-      }
+    if (!loading && !user) {
+      console.warn("[BookerDashboard] No user found, ProtectedRoute should handle redirect");
     }
-  }, [user, loading, navigate]);
+  }, [user, loading]);
 
   // Cleanup expired bookings (this is fine, but let's add a check)
   useEffect(() => {

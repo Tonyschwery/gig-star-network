@@ -44,15 +44,28 @@ const AuthCallback = () => {
 
     // Handle email confirmation (signup verification)
     if (authType === "signup" || authType === "email" || authType === "invite") {
-      console.log("[AuthCallback] Email confirmation detected, redirecting to auth page");
-      // Sign out the user first (they're auto-signed in by Supabase)
-      supabase.auth.signOut().then(() => {
-        toast({
-          title: "Welcome to Qtalent! 🎉",
-          description: "Your email has been verified. Please sign in now to get started.",
-          duration: 6000,
-        });
-        navigate('/auth', { replace: true });
+      console.log("[AuthCallback] Email confirmation detected, waiting for session");
+      
+      // DON'T sign out - let the auto-sign-in complete
+      // Wait for session to be fully established, then redirect to dashboard
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session?.user) {
+          toast({
+            title: "Welcome to Qtalent! 🎉",
+            description: "Your email has been verified. Setting up your account...",
+            duration: 4000,
+          });
+          // Let performRedirect handle the dashboard routing
+          performRedirect(session);
+        } else {
+          // If no session somehow, redirect to auth page
+          toast({
+            title: "Almost there! 👋",
+            description: "Please sign in to complete your account setup.",
+            duration: 6000,
+          });
+          navigate('/auth', { replace: true });
+        }
       });
       return;
     }
