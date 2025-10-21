@@ -297,14 +297,13 @@ export default function TalentOnboarding() {
         return;
       }
 
-      // Sign up with PASSWORD
+      // Sign up with minimal metadata
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email: email.toLowerCase().trim(),
         password: password,
         options: {
           emailRedirectTo: `${window.location.origin}/auth/callback`,
           data: {
-            ...profileDataForDB,
             name: fullName,
             user_type: "talent",
             phone: phoneNumber,
@@ -316,39 +315,49 @@ export default function TalentOnboarding() {
         throw signUpError;
       }
 
-      // Check if email confirmation is required
-      const needsConfirmation = signUpData?.user?.identities?.length === 0;
+      if (!signUpData.user) {
+        throw new Error("Signup failed - no user returned");
+      }
 
       localStorage.removeItem("talent_onboarding_draft");
 
-      if (needsConfirmation) {
-        // Show loading state immediately
-        setLoading(true);
-        
-        toast({ 
-          title: "Account Created! 🎉", 
-          description: "Please check your email to confirm your account.",
-          duration: 4000
-        });
-        
-        // Small delay to ensure proper re-render, then show black confirmation screen
-        setTimeout(() => {
-          setUserEmailForConfirmation(email);
-          setEmailConfirmationPending(true);
-          setLoading(false);
-        }, 500);
-      } else {
-        // Email already confirmed (shouldn't happen with Supabase, but handle it)
-        toast({ 
-          title: "Welcome! 🎉", 
-          description: "Your account is ready. Redirecting to dashboard...",
-          duration: 3000
-        });
-        
-        setTimeout(() => {
-          navigate('/talent-dashboard', { replace: true });
-        }, 1500);
+      // Create talent profile immediately
+      const profileData = {
+        user_id: signUpData.user.id,
+        artist_name: formData.artistName,
+        act: formData.act as any,
+        gender: formData.gender as any,
+        music_genres: allGenres,
+        biography: formData.biography,
+        age: formData.age,
+        nationality: formData.countryOfResidence,
+        rate_per_hour: parseFloat(formData.ratePerHour),
+        currency: formData.currency,
+        location: formData.location || userLocation || detectedLocation || "",
+        picture_url: profileImageUrl,
+        soundcloud_link: formData.soundcloudLink || null,
+        youtube_link: formData.youtubeLink || null,
+      };
+
+      const { error: profileError } = await supabase
+        .from("talent_profiles")
+        .insert(profileData);
+
+      if (profileError) {
+        console.error("[TalentOnboarding] Profile creation error:", profileError);
+        throw new Error("Failed to create profile. Please contact support.");
       }
+
+      // Success! Show welcome message and redirect
+      toast({ 
+        title: "Welcome to Qtalent! 🎉", 
+        description: "Your talent profile is now live!",
+        duration: 3000
+      });
+
+      setTimeout(() => {
+        navigate('/talent-dashboard', { replace: true });
+      }, 1500);
       
       return;
     } catch (error: any) {

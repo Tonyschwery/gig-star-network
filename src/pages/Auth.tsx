@@ -136,7 +136,7 @@ const Auth = () => {
       let error: any = null;
 
       if (isSignUp) {
-        // Signup with email auto-confirmation disabled
+        // Signup with minimal metadata
         const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
           email: email.toLowerCase().trim(),
           password: password,
@@ -157,31 +157,28 @@ const Auth = () => {
           const authIntent = localStorage.getItem('authIntent');
           const bookingIntent = localStorage.getItem('bookingIntent');
           
-          if (authIntent === 'event-form') {
-            localStorage.removeItem('authIntent');
-            toast({
-              title: "Welcome! 🎉",
-              description: "Let's find the perfect talent for your event.",
-              duration: 4000,
-            });
-            setTimeout(() => navigate('/your-event', { replace: true }), 1000);
-          } else if (bookingIntent) {
-            const { talentId, talentName } = JSON.parse(bookingIntent);
-            localStorage.removeItem('bookingIntent');
-            toast({
-              title: "Welcome! 🎉",
-              description: `Let's book ${talentName} for your event.`,
-              duration: 4000,
-            });
-            setTimeout(() => navigate(`/talent/${talentId}`, { state: { openBookingForm: true }, replace: true }), 1000);
-          } else {
-            toast({
-              title: "Account created! ✅",
-              description: "You're all set! Taking you to your dashboard...",
-              duration: 3000,
-            });
-            setTimeout(() => navigate(state?.from?.pathname || "/", { replace: true }), 1000);
-          }
+          toast({
+            title: "Welcome! 🎉",
+            description: authIntent === 'event-form' 
+              ? "Let's find the perfect talent for your event."
+              : bookingIntent 
+                ? `Let's book ${JSON.parse(bookingIntent).talentName} for your event.`
+                : "Your account is ready!",
+            duration: 3000,
+          });
+
+          setTimeout(() => {
+            if (authIntent === 'event-form') {
+              localStorage.removeItem('authIntent');
+              navigate('/your-event', { replace: true });
+            } else if (bookingIntent) {
+              const { talentId } = JSON.parse(bookingIntent);
+              localStorage.removeItem('bookingIntent');
+              navigate(`/talent/${talentId}`, { state: { openBookingForm: true }, replace: true });
+            } else {
+              navigate(state?.from?.pathname || "/", { replace: true });
+            }
+          }, 1500);
         }
       } else {
         // Signin can use password OR magic link
