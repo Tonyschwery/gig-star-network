@@ -55,7 +55,7 @@ const AuthCallback = () => {
         if (authType === "recovery") {
           console.log("[AuthCallback] Password recovery detected");
           
-          // Set session from tokens in URL hash
+          // Try to set session from tokens if present (new flow)
           if (access_token && refresh_token) {
             const { error: sessionError } = await supabase.auth.setSession({ 
               access_token, 
@@ -68,14 +68,24 @@ const AuthCallback = () => {
               return;
             }
 
-            console.log("[AuthCallback] Recovery session set successfully");
+            console.log("[AuthCallback] Recovery session set from tokens");
             sessionStorage.setItem('isPasswordRecovery', 'true');
             navigate('/update-password', { replace: true });
             return;
-          } else {
-            setError("Invalid reset link. Please request a new one.");
+          }
+          
+          // If no tokens, check for existing session (old flow - Supabase sets it via cookie)
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session) {
+            console.log("[AuthCallback] Recovery session found from cookie");
+            sessionStorage.setItem('isPasswordRecovery', 'true');
+            navigate('/update-password', { replace: true });
             return;
           }
+          
+          // No session found - link might be expired
+          setError("Reset link has expired. Please request a new one.");
+          return;
         }
 
         // Handle email verification (signup confirmation)
