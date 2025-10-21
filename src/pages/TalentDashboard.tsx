@@ -19,25 +19,20 @@ import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react"; // Import a loading spinner
 
 const TalentDashboard = () => {
-  // --- FIX 1: Get the 'isLoading' state from your useAuth hook ---
-  // (If your hook calls it 'loading' or 'authLoading', use that name)
-  const { user, profile, signOut, isLoading } = useAuth();
+  const { user, profile, signOut, loading } = useAuth();
 
   const navigate = useNavigate();
   const { unreadCount: chatUnreadCount } = useUnreadMessages();
 
   useRealtimeNotifications();
 
-  // --- FIX 2: Modify this useEffect ---
   useEffect(() => {
-    // Only run this check *after* the hook is done loading
-    if (!isLoading) {
-      // NOW we can safely check if the user is missing
+    if (!loading) {
       if (!user) {
         navigate("/login");
       }
     }
-  }, [user, isLoading, navigate]); // Add 'isLoading' to the dependency array
+  }, [user, loading, navigate]);
 
   // Cleanup expired bookings (this is fine, but let's add a check)
   useEffect(() => {
@@ -61,10 +56,7 @@ const TalentDashboard = () => {
     navigate("/");
   };
 
-  // --- FIX 3: Use 'isLoading' for your main loading state ---
-  // This will show the spinner while useAuth is working,
-  // and *before* the redirect check happens.
-  if (isLoading || !user || !profile) {
+  if (loading || !user || !profile) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         {/* Use a consistent spinner */}
