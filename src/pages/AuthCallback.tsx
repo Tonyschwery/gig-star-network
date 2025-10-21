@@ -17,6 +17,15 @@ const AuthCallback = () => {
     if (hasProcessed.current) return;
     hasProcessed.current = true;
 
+    // Add timeout failsafe to prevent endless loading
+    const timeoutId = setTimeout(() => {
+      console.error("[AuthCallback] TIMEOUT - forcing error after 15 seconds");
+      setError(
+        "The verification process took too long. Your email may be verified. " +
+        "Please try signing in manually with your email and password."
+      );
+    }, 15000); // 15 second timeout
+
     const handleCallback = async () => {
       try {
         // Parse URL parameters (query string AND hash fragment)
@@ -27,7 +36,13 @@ const AuthCallback = () => {
         const access_token = hashParams.get('access_token');
         const refresh_token = hashParams.get('refresh_token');
 
-        console.log("[AuthCallback] Processing:", { authType, hasTokens: !!(access_token && refresh_token) });
+        console.log("[AuthCallback] Processing:", { 
+          authType, 
+          hasTokens: !!(access_token && refresh_token),
+          fullURL: window.location.href,
+          queryParams: Object.fromEntries(searchParams.entries()),
+          hashParams: Object.fromEntries(hashParams.entries())
+        });
 
         // Handle Supabase auth errors
         if (error_code) {
@@ -97,6 +112,8 @@ const AuthCallback = () => {
 
           if (!session) {
             console.error("[AuthCallback] Session not established after verification");
+            console.error("[AuthCallback] This means Supabase verified your email but the session is not available");
+            console.error("[AuthCallback] You need to update your Supabase email template to use {{ .ConfirmationURL }}");
             setError(
               "Email verified successfully, but we couldn't log you in automatically. " +
               "Please click 'Back to Sign In' below and sign in with your email and password."
@@ -104,6 +121,7 @@ const AuthCallback = () => {
             return;
           }
 
+          console.log("[AuthCallback] Session found after retry, proceeding with verification");
           await handleSuccessfulVerification(session.user);
           return;
         }
@@ -121,6 +139,9 @@ const AuthCallback = () => {
       } catch (err: any) {
         console.error("[AuthCallback] Unexpected error:", err);
         setError(err.message || "An unexpected error occurred");
+      } finally {
+        // Clear timeout on completion
+        clearTimeout(timeoutId);
       }
     };
 
