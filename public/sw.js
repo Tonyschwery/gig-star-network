@@ -4,15 +4,14 @@ import { NetworkFirst, CacheFirst, StaleWhileRevalidate } from "workbox-strategi
 import { ExpirationPlugin } from "workbox-expiration";
 import { CacheableResponsePlugin } from "workbox-cacheable-response";
 
-const CACHE_VERSION = 'v2-pwa';
+const CACHE_VERSION = 'v3-pwa-auth-fix';
 const STATIC_CACHE = `qtalent-static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `qtalent-runtime-${CACHE_VERSION}`;
 const OFFLINE_CACHE = `qtalent-offline-${CACHE_VERSION}`;
 
-// Pages to cache for offline use
+// Pages to cache for offline use (excluding auth pages which should always be fresh)
 const OFFLINE_PAGES = [
   '/',
-  '/auth',
   '/booker-dashboard',
   '/talent-dashboard',
 ];
@@ -89,12 +88,18 @@ let allowlist;
 // In dev mode, only allowlist the root for PWA testing
 if (import.meta.env.DEV) allowlist = [/^\/$/];
 
-// Denylist for paths that should not be cached
-const denylist = [/^\/auth\/callback/];
+// Denylist for paths that should not be cached (auth pages should always be fresh)
+const denylist = [/^\/auth\/callback/, /^\/auth/, /^\/update-password/, /^\/reset-password/];
 
-// Cache HTML pages with NetworkFirst strategy (tries network, falls back to cache when offline)
+// Cache HTML pages with NetworkFirst strategy, but exclude auth pages
 registerRoute(
-  ({ request }) => request.mode === 'navigate',
+  ({ request, url }) => {
+    // Don't cache auth-related pages
+    if (denylist.some(pattern => pattern.test(url.pathname))) {
+      return false;
+    }
+    return request.mode === 'navigate';
+  },
   new NetworkFirst({
     cacheName: `${STATIC_CACHE}-html`,
     plugins: [

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Session } from "@supabase/supabase-js";
@@ -12,79 +12,62 @@ const AuthCallback = () => {
   const { toast } = useToast();
   const [error, setError] = useState<string | null>(null);
   const [isRecovery, setIsRecovery] = useState(false);
+  const hasRedirected = useRef(false); // Prevent multiple redirects
 
   useEffect(() => {
-    // Parse BOTH query parameters AND hash fragments (Supabase sends tokens in hash)
+    // Parse BOTH query parameters AND hash fragments
     const hashParams = new URLSearchParams(window.location.hash.substring(1));
     const authType = searchParams.get("type") || hashParams.get("type");
     const error_code = searchParams.get("error_code") || hashParams.get("error_code");
     const error_description = searchParams.get("error_description") || hashParams.get("error_description");
 
-    console.log("[AuthCallback] URL params:", { 
+    console.log("[AuthCallback] Starting, params:", { 
       authType, 
       error_code, 
-      error_description,
-      search: window.location.search,
-      hash: window.location.hash
+      hasRedirected: hasRedirected.current
     });
 
-    // Handle Supabase auth errors (expired/invalid tokens)
+    // Prevent duplicate processing
+    if (hasRedirected.current) {
+      console.log("[AuthCallback] Already redirected, skipping");
+      return;
+    }
+
+    // Handle Supabase auth errors
     if (error_code) {
       console.error("[AuthCallback] Auth error:", error_code, error_description);
       setError(error_description || "The link is invalid or has expired. Please request a new one.");
       return;
     }
 
-    // Mark if this is a recovery flow
+    // Password recovery flow
     if (authType === "recovery") {
       console.log("[AuthCallback] Password recovery detected");
+      hasRedirected.current = true;
       setIsRecovery(true);
       sessionStorage.setItem('isPasswordRecovery', 'true');
-    }
-
-    // Handle email confirmation (signup verification)
-    if (authType === "signup" || authType === "email" || authType === "invite") {
-      console.log("[AuthCallback] Email confirmation detected, waiting for session");
-      
-      // DON'T sign out - let the auto-sign-in complete
-      // Wait for session to be fully established, then redirect to dashboard
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        if (session?.user) {
-          toast({
-            title: "Welcome to Qtalent! 🎉",
-            description: "Your email has been verified. Setting up your account...",
-            duration: 4000,
-          });
-          // Let performRedirect handle the dashboard routing
-          performRedirect(session);
-        } else {
-          // If no session somehow, redirect to auth page
-          toast({
-            title: "Almost there! 👋",
-            description: "Please sign in to complete your account setup.",
-            duration: 6000,
-          });
-          navigate('/auth', { replace: true });
-        }
-      });
+      navigate('/update-password', { replace: true });
       return;
     }
 
-    // Regular login/session handling
+    // Single redirect function
     const performRedirect = async (session: Session | null) => {
-      if (!session?.user) {
-        setError("Authentication failed. The link may have expired. Please try signing in again.");
+      // Guard against multiple calls
+      if (hasRedirected.current) {
+        console.log("[AuthCallback] Redirect already in progress");
         return;
       }
 
+      if (!session?.user) {
+        console.error("[AuthCallback] No session/user found");
+        setError("Authentication failed. Please try signing in again.");
+        return;
+      }
+
+      hasRedirected.current = true;
       const user = session.user;
 
-      // If this is a password recovery, redirect to update-password
-      if (authType === "recovery") {
-        console.log("[AuthCallback] Session established, redirecting to update-password");
-        navigate('/update-password', { replace: true });
-        return;
-      }
+      console.log("[AuthCallback] Processing redirect for user:", user.id);
 
       // Ensure profile exists
       try {
@@ -94,74 +77,90 @@ const AuthCallback = () => {
           p_role: user.user_metadata?.user_type || "booker",
         });
       } catch (err) {
-        console.error("Error ensuring profile:", err);
+        console.error("[AuthCallback] Error ensuring profile:", err);
       }
 
       // Redirect logic
       const storedIntent = localStorage.getItem("bookingIntent");
       const authIntent = localStorage.getItem("authIntent");
       let bookingData = null;
+      
       if (storedIntent) {
         try {
           bookingData = JSON.parse(storedIntent);
           localStorage.removeItem("bookingIntent");
         } catch (e) {
-          console.error("Error parsing booking intent:", e);
+          console.error("[AuthCallback] Error parsing booking intent:", e);
         }
       }
 
-      // Check for event-form intent (from "Start Free Consultation" button)
-      if (authIntent === "event-form") {
-        localStorage.removeItem("authIntent");
+      // Show welcome message for new signups
+      if (authType === "signup" || authType === "email" || authType === "invite") {
         toast({
-          title: "Welcome! 🎉",
-          description: "Let's find the perfect talent for your event.",
+          title: "Welcome to Qtalent! 🎉",
+          description: "Your email has been verified. Setting up your account...",
           duration: 4000,
         });
+      }
+
+      // Event-form intent
+      if (authIntent === "event-form") {
+        localStorage.removeItem("authIntent");
         navigate("/your-event", { replace: true });
         return;
       }
 
+      // Admin redirect
       if (user.email === "admin@qtalent.live") {
         navigate("/admin", { replace: true });
-      } else if (bookingData?.talentId) {
-        toast({
-          title: "Welcome! 🎉",
-          description: `You can now book ${bookingData.talentName || "your talent"}.`,
-          duration: 4000,
+        return;
+      }
+
+      // Booking intent redirect
+      if (bookingData?.talentId) {
+        navigate(`/talent/${bookingData.talentId}`, { 
+          state: { openBookingForm: true }, 
+          replace: true 
         });
-        navigate(`/talent/${bookingData.talentId}`, { state: { openBookingForm: true }, replace: true });
-      } else if (user.user_metadata?.user_type === "talent") {
+        return;
+      }
+
+      // Default redirects based on user type
+      if (user.user_metadata?.user_type === "talent") {
         navigate("/talent-dashboard", { replace: true });
       } else {
         navigate("/booker-dashboard", { replace: true });
       }
       
-      // Clean up auth intent if it wasn't already removed
       localStorage.removeItem("authIntent");
     };
 
-    // Check current session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) performRedirect(session);
-    });
-
-    // Listen for auth state changes
-    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log("[AuthCallback] Auth event:", event, "authType:", authType);
+    // Single source of truth: wait for SIGNED_IN event
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log("[AuthCallback] Auth event:", event);
       
-      // Detect password recovery event
+      if (hasRedirected.current) {
+        console.log("[AuthCallback] Already redirected, ignoring event");
+        return;
+      }
+
       if (event === "PASSWORD_RECOVERY" && session) {
-        console.log("[AuthCallback] PASSWORD_RECOVERY event detected");
-        setIsRecovery(true);
+        hasRedirected.current = true;
         sessionStorage.setItem('isPasswordRecovery', 'true');
         navigate('/update-password', { replace: true });
         return;
       }
-      
-      // Handle email confirmation (signup) and regular sign-in
+
       if (event === "SIGNED_IN" && session) {
-        console.log("[AuthCallback] SIGNED_IN event, redirecting based on user type");
+        console.log("[AuthCallback] User signed in, performing redirect");
+        await performRedirect(session);
+      }
+    });
+
+    // Fallback: check if already signed in (for page refreshes)
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session && !hasRedirected.current) {
+        console.log("[AuthCallback] Existing session found, redirecting");
         performRedirect(session);
       }
     });
