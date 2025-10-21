@@ -161,6 +161,30 @@ export default function TalentOnboarding() {
     }
   }, [userLocation, detectedLocation, formData.location]);
 
+  // Auto-redirect when email is confirmed
+  useEffect(() => {
+    if (emailConfirmationPending) {
+      const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+        if (event === 'SIGNED_IN' && session) {
+          console.log('[TalentOnboarding] Email confirmed, redirecting to dashboard');
+          toast({
+            title: "Email Confirmed! ✅",
+            description: "Taking you to your dashboard...",
+            duration: 3000
+          });
+          
+          setTimeout(() => {
+            window.location.href = '/talent-dashboard';
+          }, 1500);
+        }
+      });
+
+      return () => {
+        authListener?.subscription.unsubscribe();
+      };
+    }
+  }, [emailConfirmationPending, toast]);
+
   // Upload image immediately to preserve it across auth redirects
   const uploadImageImmediately = async (file: File): Promise<string | null> => {
     try {
@@ -301,7 +325,7 @@ export default function TalentOnboarding() {
         email: email.toLowerCase().trim(),
         password: password,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth`,
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
           data: {
             ...profileDataForDB,
             name: fullName,
@@ -320,27 +344,28 @@ export default function TalentOnboarding() {
 
       localStorage.removeItem("talent_onboarding_draft");
 
-      // Show immediate feedback
-      toast({ 
-        title: "Account Created! 🎉", 
-        description: "Please check your email to confirm your account.",
-        duration: 4000
-      });
-
-      // Always redirect to auth page after signup (modern website behavior)
-      setTimeout(() => {
-        navigate('/auth', {
-          state: {
-            mode: 'talent',
-            message: needsConfirmation 
-              ? `Please check your email (${email}) and click the verification link to activate your account. Don't forget to check your spam folder!`
-              : `Welcome! Your email has been verified. Please sign in to continue.`,
-            email: email,
-            showResendButton: needsConfirmation
-          },
-          replace: true
+      if (needsConfirmation) {
+        // Show the beautiful black confirmation screen
+        setUserEmailForConfirmation(email);
+        setEmailConfirmationPending(true);
+        
+        toast({ 
+          title: "Account Created! 🎉", 
+          description: "Please check your email to confirm your account.",
+          duration: 4000
         });
-      }, 1500);
+      } else {
+        // Email already confirmed (shouldn't happen with Supabase, but handle it)
+        toast({ 
+          title: "Welcome! 🎉", 
+          description: "Your account is ready. Redirecting to dashboard...",
+          duration: 3000
+        });
+        
+        setTimeout(() => {
+          navigate('/talent-dashboard', { replace: true });
+        }, 1500);
+      }
       
       return;
     } catch (error: any) {
