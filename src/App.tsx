@@ -46,15 +46,6 @@ supabase.auth.onAuthStateChange((event, session) => {
     sessionStorage.setItem('isPasswordRecovery', 'true');
     console.log("[App] PASSWORD_RECOVERY event detected globally - recovery flag set");
   }
-  
-  // Detect email verification (signup) flow
-  if (event === 'SIGNED_IN' && session?.user?.email_confirmed_at) {
-    const justConfirmed = !sessionStorage.getItem('emailConfirmed');
-    if (justConfirmed && session.user.user_metadata?.user_type === 'talent') {
-      sessionStorage.setItem('isEmailVerification', 'true');
-      console.log("[App] Email verification detected - setting flag");
-    }
-  }
 });
 
 const AppContent = () => {
