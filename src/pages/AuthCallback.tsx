@@ -61,6 +61,9 @@ const AuthCallback = () => {
       console.log("[AuthCallback] Old verification flow detected, checking for session");
       hasRedirected.current = true;
       
+      // SET THE FLAG (like password recovery)
+      sessionStorage.setItem('isEmailVerification', 'true');
+      
       // Wait a moment for Supabase to finish setting the session
       setTimeout(() => {
         supabase.auth.getSession().then(async ({ data: { session }, error: sessionError }) => {
@@ -93,6 +96,10 @@ const AuthCallback = () => {
 
           // Redirect based on user type
           setTimeout(() => {
+            // Clean up the flag before redirect
+            sessionStorage.removeItem('isEmailVerification');
+            console.log("[AuthCallback] Email verification complete - flag cleared");
+            
             if (user.email === "admin@qtalent.live") {
               window.location.href = "/admin";
             } else if (user.user_metadata?.user_type === "talent") {

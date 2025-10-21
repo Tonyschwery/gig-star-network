@@ -147,6 +147,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return; // Let UpdatePassword component handle this
       }
       
+      // 🔐 Check for email verification flag (like password recovery)
+      const isEmailVerification = sessionStorage.getItem('isEmailVerification') === 'true';
+      
+      if (isEmailVerification) {
+        console.log("[Auth] Email verification flag detected - skipping session processing");
+        return; // Let AuthCallback handle this
+      }
+      
       // Debounce rapid session changes
       if (processingTimeout) {
         clearTimeout(processingTimeout);
@@ -234,6 +242,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (isPasswordRecovery) {
         console.log("[Auth] Password recovery flag detected - skipping event processing", { event });
         return; // UpdatePassword component will handle this
+      }
+      
+      // 🔐 Check for email verification flag
+      const isEmailVerification = sessionStorage.getItem('isEmailVerification') === 'true';
+      
+      if (isEmailVerification) {
+        console.log("[Auth] Email verification flag detected - skipping event processing");
+        return; // AuthCallback will handle this
       }
       
       // Handle different auth events
