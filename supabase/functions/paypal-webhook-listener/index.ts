@@ -179,6 +179,12 @@ serve(async (req) => {
       // Extract user ID - check multiple possible locations
       let customId = subscription.custom_id;
       
+      // For PAYMENT.SALE.COMPLETED events, custom_id is in resource.custom field
+      if (!customId && (subscription as any).custom) {
+        customId = (subscription as any).custom;
+        console.log('Found custom_id in resource.custom field:', customId);
+      }
+      
       // Try alternative locations for custom_id in live mode
       if (!customId && subscription.subscriber?.email_address) {
         // Sometimes custom_id is in different location

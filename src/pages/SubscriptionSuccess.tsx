@@ -51,30 +51,34 @@ export default function SubscriptionSuccess() {
     // Check if we have any subscription-related parameters
     const hasSubscriptionData = subscriptionId || ba_token || paymentId;
     
-    if (hasSubscriptionData) {
-      console.log('✅ Subscription data found - activating subscription');
-      activateProSubscription(subscriptionId || ba_token || paymentId, token);
-    } else {
-      console.log('⚠️ No subscription parameters found - checking if webhook already processed');
-      // Check if user is already Pro (webhook might have processed)
-      checkProStatus();
-    }
+    // Always check Pro status first (webhook might have already activated)
+    console.log('🔍 Checking Pro status first...');
+    checkProStatus().then((alreadyPro) => {
+      if (!alreadyPro && hasSubscriptionData) {
+        // Only call edge function if not already Pro
+        console.log('✅ Not Pro yet, calling activation function with:', subscriptionId || ba_token || paymentId);
+        activateProSubscription(subscriptionId || ba_token || paymentId, token);
+      } else if (alreadyPro) {
+        console.log('✅ Already Pro from webhook!');
+      } else {
+        console.log('⚠️ No subscription data and not Pro - possible error');
+      }
+    });
   }, [searchParams, user, navigate]);
 
-  const checkProStatus = async () => {
+  const checkProStatus = async (): Promise<boolean> => {
     try {
       console.log('🔍 Checking current Pro status...');
       const { data, error } = await supabase
         .from('talent_profiles')
-        .select('is_pro_subscriber, subscription_status')
+        .select('is_pro_subscriber, subscription_status, paypal_subscription_id')
         .eq('user_id', user?.id)
         .single();
 
       if (error) {
         console.error('Error checking Pro status:', error);
         setProcessing(false);
-        setSuccess(false);
-        return;
+        return false;
       }
 
       console.log('Pro status check result:', data);
@@ -82,24 +86,20 @@ export default function SubscriptionSuccess() {
       if (data?.is_pro_subscriber) {
         console.log('✅ User is already Pro - showing success');
         setSuccess(true);
+        setProcessing(false);
         toast({
           title: "Welcome to QTalent Pro!",
           description: "Your subscription is active.",
         });
+        return true;
       } else {
-        console.log('❌ User is not Pro - subscription activation may have failed');
-        toast({
-          title: "Subscription Status",
-          description: "We're verifying your subscription. Please wait a moment...",
-        });
-        
-        // Wait a bit and check again in case webhook is processing
-        setTimeout(() => checkProStatus(), 3000);
+        console.log('❌ User is not Pro yet');
+        return false;
       }
     } catch (error) {
       console.error('Error in checkProStatus:', error);
-    } finally {
       setProcessing(false);
+      return false;
     }
   };
 

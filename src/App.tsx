@@ -36,6 +36,8 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import TrustSafety from "./pages/TrustSafety";
 import ResetPassword from "./pages/ResetPassword";
+import SubscriptionSuccess from "./pages/SubscriptionSuccess";
+import SubscriptionCancelled from "./pages/SubscriptionCancelled";
 
 // 🔐 Global auth listener with PASSWORD_RECOVERY detection
 supabase.auth.onAuthStateChange((event, session) => {
@@ -98,6 +100,8 @@ const AppContent = () => {
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/terms-of-service" element={<TermsOfService />} />
         <Route path="/trust-safety" element={<TrustSafety />} />
+        <Route path="/subscription-success" element={<SubscriptionSuccess />} />
+        <Route path="/subscription-cancelled" element={<SubscriptionCancelled />} />
         <Route path="/talent-onboarding" element={<TalentOnboarding />} />
         <Route
           path="/talent-dashboard"

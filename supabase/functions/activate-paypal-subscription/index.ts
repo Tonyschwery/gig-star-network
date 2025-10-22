@@ -31,11 +31,36 @@ Deno.serve(async (req) => {
     }
 
     const { subscriptionId, token: paypalToken } = await req.json();
-    console.log('Activating PayPal subscription for user:', user.id, 'subscription:', subscriptionId);
+    console.log('=== ACTIVATION REQUEST ===');
+    console.log('User ID:', user.id);
+    console.log('Subscription ID:', subscriptionId);
+    console.log('PayPal Token provided:', !!paypalToken);
+
+    // Check if user already has Pro status
+    const { data: existingProfile, error: checkError } = await supabase
+      .from('talent_profiles')
+      .select('is_pro_subscriber, subscription_status, paypal_subscription_id')
+      .eq('user_id', user.id)
+      .single();
+
+    console.log('Current profile status:', existingProfile);
+
+    if (existingProfile?.is_pro_subscriber) {
+      console.log('User is already Pro subscriber, skipping activation');
+      return new Response(JSON.stringify({
+        success: true,
+        message: 'Already activated',
+        already_pro: true,
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     // Get PayPal credentials
     const clientId = Deno.env.get('PAYPAL_LIVE_CLIENT_ID');
     const clientSecret = Deno.env.get('PAYPAL_LIVE_CLIENT_SECRET');
+
+    console.log('PayPal credentials available:', { clientId: !!clientId, clientSecret: !!clientSecret });
 
     if (!clientId || !clientSecret) {
       throw new Error('PayPal credentials not configured');
@@ -74,34 +99,58 @@ Deno.serve(async (req) => {
     }
 
     const subscriptionData = await subscriptionResponse.json();
-    console.log('PayPal subscription status:', subscriptionData.status);
+    console.log('=== PAYPAL SUBSCRIPTION DATA ===');
+    console.log('Status:', subscriptionData.status);
+    console.log('Plan ID:', subscriptionData.plan_id);
+    console.log('Custom ID:', subscriptionData.custom_id);
+    console.log('Billing Info:', JSON.stringify(subscriptionData.billing_info, null, 2));
 
-    // Check if subscription is active AND has billing info indicating payment was processed
+    // Check if subscription is active
     if (subscriptionData.status !== 'ACTIVE') {
+      console.error('Subscription not active. Current status:', subscriptionData.status);
       throw new Error(`Subscription is not active. Status: ${subscriptionData.status}`);
     }
 
-    // Additional verification: check if subscription has billing cycles executed
-    const billingInfo = subscriptionData.billing_info;
-    if (!billingInfo || !billingInfo.cycle_executions || billingInfo.cycle_executions.length === 0) {
-      console.log('No billing cycles found, subscription may not have been paid yet');
-      // Allow activation anyway as webhook will handle actual payment processing
+    // Determine subscription period
+    let periodEndDate = new Date();
+    const planId = subscriptionData.plan_id || '';
+    
+    if (planId.includes('monthly') || planId.includes('month')) {
+      periodEndDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+      console.log('Detected monthly plan');
+    } else {
+      periodEndDate = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
+      console.log('Detected yearly plan');
     }
 
+    console.log('Period end date:', periodEndDate.toISOString());
+
     // Update user's talent profile to Pro status
-    const { error: updateError } = await supabase
+    console.log('=== UPDATING TALENT PROFILE ===');
+    const updateData = {
+      is_pro_subscriber: true,
+      subscription_status: 'active',
+      paypal_subscription_id: subscriptionId,
+      plan_id: planId,
+      current_period_end: periodEndDate.toISOString(),
+      subscription_started_at: new Date().toISOString(),
+      provider: 'paypal',
+      updated_at: new Date().toISOString(),
+    };
+    
+    console.log('Update data:', updateData);
+
+    const { data: updatedProfile, error: updateError } = await supabase
       .from('talent_profiles')
-      .update({
-        is_pro_subscriber: true,
-        subscription_status: 'active',
-        subscription_started_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      })
-      .eq('user_id', user.id);
+      .update(updateData)
+      .eq('user_id', user.id)
+      .select();
+
+    console.log('Update result:', { updatedProfile, updateError });
 
     if (updateError) {
       console.error('Error updating talent profile:', updateError);
-      throw new Error('Failed to activate Pro subscription');
+      throw new Error(`Failed to activate Pro subscription: ${updateError.message}`);
     }
 
     // Create notification for the user
