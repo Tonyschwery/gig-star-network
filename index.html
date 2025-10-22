@@ -13,16 +13,18 @@
       content="Connect with exceptional live talent for your events. Book verified performers, musicians, artists, and creators with ease. Professional booking made simple."
     />
     <meta name="author" content="Qtalent.live" />
-    
+
     <!-- Content Security Policy - Allow PayPal -->
-    <meta http-equiv="Content-Security-Policy" 
+    <meta
+      http-equiv="Content-Security-Policy"
       content="default-src 'self' data: blob: https://*.supabase.co wss://*.supabase.co https://api.bigdatacloud.net; 
                script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.paypal.com https://*.paypal.com; 
                style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; 
                font-src 'self' data: https://fonts.gstatic.com; 
                img-src 'self' data: blob: https: http:; 
                frame-src https://www.paypal.com https://*.paypal.com; 
-               connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.bigdatacloud.net https://www.paypal.com https://*.paypal.com;">
+               connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.bigdatacloud.net https://www.paypal.com https://*.paypal.com;"
+    />
 
     <meta property="og:title" content="Qtalent.live | Book Live Talent for Any Event" />
     <meta
@@ -35,11 +37,11 @@
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@qtalentlive" />
     <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
-    
+
     <!-- PWA Meta Tags -->
     <link rel="manifest" href="/manifest.json" />
     <meta name="theme-color" content="#9b87f5" />
-    
+
     <!-- iOS PWA Support -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -47,11 +49,11 @@
     <link rel="apple-touch-icon" href="/pwa-icon.svg" />
     <link rel="apple-touch-icon" sizes="192x192" href="/pwa-icon.svg" />
     <link rel="apple-touch-icon" sizes="512x512" href="/pwa-icon.svg" />
-    
+
     <!-- Android PWA Support -->
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="application-name" content="Qtalent" />
-    
+
     <!-- Notification Support -->
     <meta name="notification-permissions-policy" content="self" />
     <meta name="push-messaging-permissions-policy" content="self" />
@@ -93,7 +95,7 @@
           navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' })
             .then(function(registration) {
               console.log('SW registered for PWA: ', registration);
-              
+
               // Check for updates periodically
               setInterval(() => {
                 registration.update();
@@ -115,7 +117,7 @@
                     if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
                       // New content is available, refresh automatically
                       console.log('New content available, refreshing...');
-                      window.location.reload();
+                      //window.location.reload();
                     }
                   });
                 }
