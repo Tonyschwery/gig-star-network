@@ -130,7 +130,12 @@ export function HeroSection() {
             </div>
 
             {/* Search Form */}
-            <Card className="p-8 glass-card border border-border/50 shadow-elevated">
+            {/*
+             * CHANGE 1: Reduced padding on mobile.
+             * Changed "p-8" to "p-4 md:p-8".
+             * This gives more space on very narrow screens.
+             */}
+            <Card className="p-4 md:p-8 glass-card border border-border/50 shadow-elevated">
               <div className="grid md:grid-cols-3 gap-6">
                 <div className="space-y-3">
                   <label className="text-sm font-semibold text-foreground uppercase tracking-wide">WHERE</label>
@@ -190,7 +195,14 @@ export function HeroSection() {
             </Card>
 
             {/* Social Proof */}
-            <div className="flex items-center justify-center space-x-6 text-sm">
+            {/*
+             * CHANGE 2 (THE MAIN FIX): Made this section stack vertically on mobile.
+             * Changed from "flex" to "flex flex-col sm:flex-row".
+             * Changed "space-x-6" to "gap-4 sm:gap-6".
+             * Added "hidden sm:block" to the divider.
+             * This prevents the long text from overflowing and causing horizontal scroll.
+             */}
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 text-sm">
               <div className="flex items-center space-x-2">
                 <div className="flex -space-x-1">
                   {[...Array(5)].map((_, i) => (
@@ -201,7 +213,7 @@ export function HeroSection() {
                   <strong className="text-foreground">4.9/5</strong> from 2,340+ bookings
                 </span>
               </div>
-              <div className="h-4 w-px bg-border"></div>
+              <div className="h-4 w-px bg-border hidden sm:block"></div>
               <div className="text-muted-foreground">
                 <strong className="text-foreground">500+</strong> professional artists
               </div>
@@ -322,7 +334,10 @@ export function HeroSection() {
             </Button>
 
             {!user && (
-              <div className="text-sm text-muted-foreground">No account needed • Free consultation • 2 min setup</div>
+              /* Added text-center for mobile */
+              <div className="text-sm text-muted-foreground text-center sm:text-left">
+                No account needed • Free consultation • 2 min setup
+              </div>
             )}
           </div>
 
@@ -447,7 +462,12 @@ function FeaturedTalentCard({
         </div>
 
         {/* Rate & Status */}
-        <div className="flex items-center justify-between pt-2">
+        {/*
+         * CHANGE 3: Added "flex-wrap" and "gap-2"
+         * This makes the "Pro" badge and the "Rate" wrap to a new line
+         * if they ever collide on a very narrow screen.
+         */}
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-2">
           <div className="flex items-center space-x-1 bg-yellow-50 dark:bg-yellow-900/20 px-2 py-1 rounded-full">
             <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
             <span className="text-xs font-semibold text-yellow-600 dark:text-yellow-400">Pro</span>
