@@ -355,8 +355,8 @@ export default function TalentOnboarding() {
       localStorage.removeItem("talent_onboarding_draft");
       
       toast({ 
-        title: "Welcome to Qtalent! 🎉", 
-        description: "Your talent profile is now live!",
+        title: "🎉 Welcome to Qtalent!", 
+        description: "Taking you to your dashboard...",
       });
 
       // Redirect to dashboard
@@ -875,7 +875,7 @@ export default function TalentOnboarding() {
               {loading
                 ? user
                   ? "Saving Profile..."
-                  : "Sending Link..."
+                  : "Welcome! 🎉"
                 : user
                   ? "Complete Profile"
                   : "Sign Up with Email"}

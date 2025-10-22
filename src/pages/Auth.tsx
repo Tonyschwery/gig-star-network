@@ -158,12 +158,12 @@ const Auth = () => {
           const bookingIntent = localStorage.getItem('bookingIntent');
           
           toast({
-            title: "Welcome! 🎉",
+            title: "🎉 Welcome to Qtalent!",
             description: authIntent === 'event-form' 
-              ? "Let's find the perfect talent for your event."
+              ? "Redirecting you to find the perfect talent for your event..."
               : bookingIntent 
-                ? `Let's book ${JSON.parse(bookingIntent).talentName} for your event.`
-                : "Your account is ready!",
+                ? `Redirecting you to book ${JSON.parse(bookingIntent).talentName}...`
+                : "Redirecting you to your dashboard...",
             duration: 3000,
           });
 
@@ -178,7 +178,7 @@ const Auth = () => {
             } else {
               navigate(state?.from?.pathname || "/", { replace: true });
             }
-          }, 1500);
+          }, 1000);
         }
       } else {
         // Signin can use password OR magic link
@@ -539,7 +539,7 @@ const Auth = () => {
                   </p>
 
                   <Button type="submit" disabled={loading} className="w-full">
-                    {loading ? "Creating Account..." : "Create Account"}
+                    {loading ? "Welcome! 🎉" : "Create Account"}
                   </Button>
                 </form>
               </TabsContent>
