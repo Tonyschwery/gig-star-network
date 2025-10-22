@@ -4,7 +4,7 @@ import { NetworkFirst, CacheFirst, StaleWhileRevalidate } from "workbox-strategi
 import { ExpirationPlugin } from "workbox-expiration";
 import { CacheableResponsePlugin } from "workbox-cacheable-response";
 
-const CACHE_VERSION = "v6-final-fix"; // <-- Updated to v6 as requested
+const CACHE_VERSION = "v7-strategy-fix"; // <-- 1. Updated to v7 as requested
 const STATIC_CACHE = `qtalent-static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `qtalent-runtime-${CACHE_VERSION}`;
 const OFFLINE_CACHE = `qtalent-offline-${CACHE_VERSION}`;
