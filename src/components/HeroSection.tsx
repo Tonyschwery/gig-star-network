@@ -131,7 +131,7 @@ export function HeroSection() {
 
             {/* Search Form */}
             <Card className="p-4 sm:p-6 md:p-8 glass-card border border-border/50 shadow-elevated">
-              <div className="grid md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-2 gap-6">
                 <div className="space-y-3">
                   <label className="text-sm font-semibold text-foreground uppercase tracking-wide">WHERE</label>
                   <div className="relative">
@@ -177,7 +177,7 @@ export function HeroSection() {
                   </div>
                 </div>
 
-                <div className="flex items-end">
+                <div className="flex items-end md:col-auto lg:col-span-2">
                   <Button
                     className="w-full h-12 bg-primary text-primary-foreground font-bold text-sm sm:text-base shadow-minimal hover:shadow-elevated transition-all duration-300 hover:scale-[1.02] hover:bg-primary/90 rounded-xl"
                     onClick={handleSearch}
