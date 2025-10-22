@@ -85,34 +85,6 @@ export function SubscriptionModal({ open, onOpenChange }: SubscriptionModalProps
 
   // Load PayPal SDK
   useEffect(() => {
-    if (!open || !PAYPAL_LIVE_CLIENT_ID || PAYPAL_LIVE_CLIENT_ID.includes("REPLACE_WITH")) return;
-
-    const loadPayPalScript = () => {
-      if (window.paypal) {
-        setPaypalLoaded(true);
-        return;
-      }
-
-      const script = document.createElement("script");
-      // Use your Live Client ID from the constant above
-      script.src = `https://www.paypal.com/sdk/js?client-id=${PAYPAL_LIVE_CLIENT_ID}&vault=true&intent=subscription`;
-      script.async = true;
-      script.onload = () => setPaypalLoaded(true);
-      script.onerror = () => {
-        toast({
-          title: "Error",
-          description: "Failed to load PayPal. Please refresh and try again.",
-          variant: "destructive",
-        });
-      };
-      document.head.appendChild(script);
-    };
-
-    loadPayPalScript();
-  }, [open, toast]);
-
-  // Render PayPal buttons when plan is selected and PayPal is loaded
-  useEffect(() => {
     if (!paypalLoaded || !selectedPlan || !window.paypal || !user) return;
 
     const plan = plans.find((p) => p.id === selectedPlan);
@@ -120,9 +92,8 @@ export function SubscriptionModal({ open, onOpenChange }: SubscriptionModalProps
 
     const containerId = `paypal-button-container-${plan.id}`;
     const container = document.getElementById(containerId);
-    if (!container) return;
+    if (!container) return; // Clear any existing PayPal buttons
 
-    // Clear any existing PayPal buttons
     container.innerHTML = "";
 
     window.paypal
@@ -153,6 +124,7 @@ export function SubscriptionModal({ open, onOpenChange }: SubscriptionModalProps
           const redirectUrl = new URL("/subscription-success", window.location.origin);
           if (data.subscriptionID) {
             redirectUrl.searchParams.set("subscription_id", data.subscriptionID);
+            IA;
           }
           navigate(redirectUrl.pathname + redirectUrl.search);
         },
@@ -172,6 +144,13 @@ export function SubscriptionModal({ open, onOpenChange }: SubscriptionModalProps
           });
           setSelectedPlan(null);
         },
+
+        // --- THIS IS THE FIX ---
+        // This line disables the separate "Debit or Credit Card" button,
+        // forcing all users into the main yellow button flow.
+        disableFunding: "card",
+        // -----------------------
+
         style: {
           shape: "rect",
           color: "gold",
