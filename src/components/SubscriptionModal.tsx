@@ -22,6 +22,7 @@ declare global {
         onApprove: (data: any, actions: any) => Promise<void>;
         onError: (err: any) => void;
         onCancel: (data: any) => void;
+        disableFunding?: string;
         style?: {
           shape?: string;
           color?: string;
@@ -124,7 +125,6 @@ export function SubscriptionModal({ open, onOpenChange }: SubscriptionModalProps
           const redirectUrl = new URL("/subscription-success", window.location.origin);
           if (data.subscriptionID) {
             redirectUrl.searchParams.set("subscription_id", data.subscriptionID);
-            IA;
           }
           navigate(redirectUrl.pathname + redirectUrl.search);
         },
