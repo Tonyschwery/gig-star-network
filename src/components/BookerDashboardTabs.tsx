@@ -4,10 +4,12 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { BookingCard, Booking } from "./BookingCard";
 import { EventRequestCard, EventRequest } from "./EventRequestCard";
 import { useRealtimeBookings } from "@/hooks/useRealtimeBookings";
 import { useRealtimeEventRequests } from "@/hooks/useRealtimeEventRequests";
+import { useTotalUnreadCount } from "@/hooks/useTotalUnreadCount";
 
 const PAGE_SIZE = 10; // We will load 10 items at a time
 
@@ -21,6 +23,10 @@ export const BookerDashboardTabs = ({ userId }: { userId: string }) => {
     const [hasMoreRequests, setHasMoreRequests] = useState(true);
     const [bookingsPage, setBookingsPage] = useState(0);
     const [requestsPage, setRequestsPage] = useState(0);
+    
+    // Get total unread counts for tab badges
+    const { totalUnread: bookingsUnread } = useTotalUnreadCount('booking');
+    const { totalUnread: requestsUnread } = useTotalUnreadCount('event_request');
 
     const fetchInitialData = useCallback(async () => {
         if (!userId) return;
@@ -151,8 +157,28 @@ export const BookerDashboardTabs = ({ userId }: { userId: string }) => {
         <div className="w-full">
             <Tabs defaultValue="direct_bookings" className="w-full">
                 <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="direct_bookings">Direct Bookings ({directBookings.length})</TabsTrigger>
-                    <TabsTrigger value="event_requests">Event Requests ({eventRequests.length})</TabsTrigger>
+                    <TabsTrigger value="direct_bookings" className="relative">
+                        Direct Bookings ({directBookings.length})
+                        {bookingsUnread > 0 && (
+                            <Badge 
+                                variant="destructive" 
+                                className="ml-2 h-5 w-5 p-0 flex items-center justify-center text-xs animate-pulse"
+                            >
+                                {bookingsUnread > 9 ? "9+" : bookingsUnread}
+                            </Badge>
+                        )}
+                    </TabsTrigger>
+                    <TabsTrigger value="event_requests" className="relative">
+                        Event Requests ({eventRequests.length})
+                        {requestsUnread > 0 && (
+                            <Badge 
+                                variant="destructive" 
+                                className="ml-2 h-5 w-5 p-0 flex items-center justify-center text-xs animate-pulse"
+                            >
+                                {requestsUnread > 9 ? "9+" : requestsUnread}
+                            </Badge>
+                        )}
+                    </TabsTrigger>
                 </TabsList>
                 
                 <TabsContent value="direct_bookings" className="pt-4">
