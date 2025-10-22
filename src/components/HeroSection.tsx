@@ -135,13 +135,13 @@ export function HeroSection() {
                 <div className="space-y-3">
                   <label className="text-sm font-semibold text-foreground uppercase tracking-wide">WHERE</label>
                   <div className="relative">
-                    <MapPin className="absolute left-4 top-4 h-5 w-5 text-muted-foreground z-10" />
+                    <MapPin className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground z-10" />
                     <Select
                       value={searchFilters.location}
                       onValueChange={(value) => setSearchFilters((prev) => ({ ...prev, location: value }))}
                     >
-                      <SelectTrigger className="pl-12 h-12 bg-background/50 border-border/50 hover:border-accent/50 transition-colors">
-                        <SelectValue placeholder="Select location" />
+                      <SelectTrigger className="pl-9 sm:pl-12 h-12 bg-background/50 border-border/50 hover:border-accent/50 transition-colors">
+                        <SelectValue placeholder="Select location" className="truncate" />
                       </SelectTrigger>
                       <SelectContent className="max-h-60">
                         <SelectItem value="all">All Countries</SelectItem>
@@ -158,13 +158,13 @@ export function HeroSection() {
                 <div className="space-y-3">
                   <label className="text-sm font-semibold text-foreground uppercase tracking-wide">TALENT TYPE</label>
                   <div className="relative">
-                    <Music className="absolute left-4 top-4 h-5 w-5 text-muted-foreground z-10" />
+                    <Music className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground z-10" />
                     <Select
                       value={searchFilters.talentType}
                       onValueChange={(value) => setSearchFilters((prev) => ({ ...prev, talentType: value }))}
                     >
-                      <SelectTrigger className="pl-12 h-12 bg-background/50 border-border/50 hover:border-accent/50 transition-colors">
-                        <SelectValue placeholder="What kind of talent?" />
+                      <SelectTrigger className="pl-9 sm:pl-12 h-12 bg-background/50 border-border/50 hover:border-accent/50 transition-colors">
+                        <SelectValue placeholder="What kind of talent?" className="truncate" />
                       </SelectTrigger>
                       <SelectContent>
                         {talentTypes.map((type) => (
