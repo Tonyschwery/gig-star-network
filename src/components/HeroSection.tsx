@@ -130,11 +130,7 @@ export function HeroSection() {
             </div>
 
             {/* Search Form */}
-            {/*
-             * CHANGE 1: Reduced padding on mobile.
-             * Changed "p-8" to "p-4 md:p-8".
-             * This gives more space on very narrow screens.
-             */}
+            {/* FIX 1: Reduced padding on mobile (p-8 -> p-4 md:p-8) to prevent squishing */}
             <Card className="p-4 md:p-8 glass-card border border-border/50 shadow-elevated">
               <div className="grid md:grid-cols-3 gap-6">
                 <div className="space-y-3">
@@ -195,13 +191,7 @@ export function HeroSection() {
             </Card>
 
             {/* Social Proof */}
-            {/*
-             * CHANGE 2 (THE MAIN FIX): Made this section stack vertically on mobile.
-             * Changed from "flex" to "flex flex-col sm:flex-row".
-             * Changed "space-x-6" to "gap-4 sm:gap-6".
-             * Added "hidden sm:block" to the divider.
-             * This prevents the long text from overflowing and causing horizontal scroll.
-             */}
+            {/* FIX 2: Stack vertically on mobile (flex-col) and switch to row (sm:flex-row) on larger screens. Changed space-x-6 to gap-4 sm:gap-6 */}
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 text-sm">
               <div className="flex items-center space-x-2">
                 <div className="flex -space-x-1">
@@ -213,6 +203,7 @@ export function HeroSection() {
                   <strong className="text-foreground">4.9/5</strong> from 2,340+ bookings
                 </span>
               </div>
+              {/* FIX 2.1: Hide divider on mobile */}
               <div className="h-4 w-px bg-border hidden sm:block"></div>
               <div className="text-muted-foreground">
                 <strong className="text-foreground">500+</strong> professional artists
@@ -334,7 +325,7 @@ export function HeroSection() {
             </Button>
 
             {!user && (
-              /* Added text-center for mobile */
+              /* FIX 3: Center sub-text on mobile, left-align on desktop */
               <div className="text-sm text-muted-foreground text-center sm:text-left">
                 No account needed • Free consultation • 2 min setup
               </div>
@@ -462,11 +453,7 @@ function FeaturedTalentCard({
         </div>
 
         {/* Rate & Status */}
-        {/*
-         * CHANGE 3: Added "flex-wrap" and "gap-2"
-         * This makes the "Pro" badge and the "Rate" wrap to a new line
-         * if they ever collide on a very narrow screen.
-         */}
+        {/* FIX 4: Added "flex-wrap" and "gap-2" to allow wrapping on very small screens */}
         <div className="flex flex-wrap items-center justify-between gap-2 pt-2">
           <div className="flex items-center space-x-1 bg-yellow-50 dark:bg-yellow-900/20 px-2 py-1 rounded-full">
             <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
