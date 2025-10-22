@@ -64,9 +64,9 @@ export const TalentDashboardTabs = ({ profile }: TalentDashboardTabsProps) => {
         .eq('event_location', profile.location)
         .not('hidden_by_talents', 'cs', `{${profile.user_id}}`);
       
-      // Filter by talent type if specified in request
+      // Filter by talent type if specified in request (case-insensitive)
       if (profile.act) {
-        query = query.eq('talent_type_needed', profile.act);
+        query = query.ilike('talent_type_needed', profile.act);
       }
       
       const { data: requestsData, error: requestsError } = await query

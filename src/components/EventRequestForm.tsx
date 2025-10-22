@@ -78,7 +78,7 @@ export function EventRequestForm() {
         event_location: currentLocation, // Use manually selected location first
         event_type: eventType,
         description: eventAddress ? `${description}\n\nVenue: ${eventAddress}` : description,
-        talent_type_needed: talentTypeNeeded,
+        talent_type_needed: talentTypeNeeded.toLowerCase(),
         status: 'pending',
       });
 
