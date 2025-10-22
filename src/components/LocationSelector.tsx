@@ -51,16 +51,23 @@ export const LocationSelector = ({ onLocationChange }: LocationSelectorProps) =>
     onLocationChange?.(userLocation);
   }, [userLocation, onLocationChange]);
 
-  // Automatically apply detected location immediately for faster UI update
+  // --- ⬇️ THIS IS THE FIX ⬇️ ---
+  // This new useEffect automatically saves the detected location as the user's
+  // choice, but only if they haven't already made a manual selection.
   useEffect(() => {
+    // 1. Check if detection was just successful and we found a valid location.
     if (detectionState === "success" && detectedLocation && detectedLocation !== "Worldwide") {
+      // 2. Check if the user's current selection is still the default "Worldwide".
+      //    This prevents overwriting a manual selection they might have made.
       if (userLocation === "Worldwide") {
-        console.log(`✅ Auto-applying detected location: ${detectedLocation}`);
-        // Save in background without waiting
+        // 3. Automatically save the detected location. The 'false' indicates
+        //    this is not a manual override.
+        console.log(`✅ Auto-saving detected location: ${detectedLocation}`);
         saveLocation(detectedLocation, false);
       }
     }
   }, [detectionState, detectedLocation, userLocation, saveLocation]);
+  // --- ⬆️ THIS IS THE FIX ⬆️ ---
 
   const handleLocationSelect = (location: string) => {
     // When a user clicks, it's always a manual override (true)

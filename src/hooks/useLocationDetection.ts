@@ -270,12 +270,29 @@ export const useLocationDetection = () => {
       if (detectedData && detectedData.country && detectedData.country !== 'Worldwide') {
         console.log('✅ Location detected successfully:', detectedData.country);
         
-        // Immediately update UI state (don't wait for save)
+        // Cache the result
+        const cacheData = {
+          location: detectedData.country,
+          timestamp: Date.now(),
+        };
+        localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
+
+        // Save to Supabase if user is authenticated
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          await supabase
+            .from('user_preferences')
+            .upsert({
+              user_id: user.id,
+              detected_location: detectedData.country,
+              location_override: false,
+            });
+        }
+
         setState(prev => ({
           ...prev,
           detectedLocation: detectedData.country,
-          // Immediately update userLocation if it's still "Worldwide"
-          userLocation: prev.userLocation === 'Worldwide' ? detectedData.country : prev.userLocation,
+          userLocation: prev.userLocation || detectedData.country,
           isDetecting: false,
           detectionState: 'success',
           error: null,
@@ -285,29 +302,6 @@ export const useLocationDetection = () => {
           title: "Location detected",
           description: `Your location: ${detectedData.country}`,
         });
-        
-        // Cache and save to database in background (non-blocking)
-        Promise.all([
-          (async () => {
-            const cacheData = {
-              location: detectedData.country,
-              timestamp: Date.now(),
-            };
-            localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
-          })(),
-          (async () => {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (user) {
-              await supabase
-                .from('user_preferences')
-                .upsert({
-                  user_id: user.id,
-                  detected_location: detectedData.country,
-                  location_override: false,
-                });
-            }
-          })(),
-        ]).catch(err => console.error('Background save failed:', err));
       } else {
         throw new Error('All detection methods failed');
       }
