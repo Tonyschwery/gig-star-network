@@ -154,6 +154,36 @@ async function detectFromIPWhoIs(): Promise<LocationResponse | null> {
   return null;
 }
 
+// Helper to detect location by client IP from headers
+async function detectFromClientIP(clientIP: string): Promise<LocationResponse | null> {
+  if (!clientIP) return null;
+  
+  try {
+    console.log(`Detecting location for client IP: ${clientIP}`);
+    
+    // Try ipwho.is with the client IP
+    const response = await fetch(`https://ipwho.is/${clientIP}`, {
+      signal: AbortSignal.timeout(5000),
+    });
+    
+    if (!response.ok) throw new Error('ipwho.is failed');
+    
+    const data = await response.json();
+    if (data.success && data.country && data.country_code) {
+      return {
+        country: data.country,
+        countryCode: data.country_code,
+        city: data.city,
+        success: true,
+        provider: 'ipwho.is (client IP)',
+      };
+    }
+  } catch (error) {
+    console.error('Client IP detection error:', error);
+  }
+  return null;
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -163,7 +193,30 @@ serve(async (req) => {
   try {
     console.log('Starting server-side location detection...');
     
-    // Try multiple providers in sequence
+    // Extract client IP from headers (Netlify/Cloudflare/other CDN support)
+    const clientIP = 
+      req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+      req.headers.get('x-real-ip') ||
+      req.headers.get('cf-connecting-ip') || // Cloudflare
+      req.headers.get('x-client-ip') ||
+      '';
+    
+    console.log(`Client IP from headers: ${clientIP || 'not found'}`);
+    
+    // If we have a client IP, try to use it first
+    if (clientIP) {
+      const clientResult = await detectFromClientIP(clientIP);
+      if (clientResult && clientResult.success) {
+        console.log(`Location detected successfully via client IP: ${clientResult.country}`);
+        return new Response(
+          JSON.stringify(clientResult),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+    
+    // Fallback to server IP detection
+    console.log('Falling back to server IP detection...');
     const providers = [
       detectFromIPAPI,
       detectFromIPify,

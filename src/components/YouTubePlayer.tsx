@@ -52,23 +52,23 @@ export function YouTubePlayer({ url, onThumbnailClick }: YouTubePlayerProps) {
 
   if (showPlayer) {
     return (
-      <div className="relative w-full rounded-lg overflow-hidden bg-black">
+      <div className="relative w-full max-w-full rounded-lg overflow-hidden bg-black">
         <YouTube
           videoId={videoId}
           opts={opts}
-          className="w-full"
-          iframeClassName="w-full h-[200px] rounded-lg"
+          className="w-full max-w-full"
+          iframeClassName="w-full max-w-full h-[200px] rounded-lg"
         />
       </div>
     );
   }
 
   return (
-    <div className="relative group cursor-pointer rounded-lg overflow-hidden bg-black">
+    <div className="relative group cursor-pointer rounded-lg overflow-hidden bg-black w-full max-w-full">
       <img
         src={thumbnailError ? fallbackThumbnail : thumbnailUrl}
         alt="YouTube video thumbnail"
-        className="w-full h-[200px] object-cover group-hover:scale-105 transition-transform duration-300"
+        className="w-full max-w-full h-[200px] object-cover group-hover:scale-105 transition-transform duration-300"
         onError={() => setThumbnailError(true)}
         onClick={handleThumbnailClick}
       />

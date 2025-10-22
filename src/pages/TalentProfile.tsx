@@ -280,14 +280,14 @@ export default function TalentProfile() {
 
           {/* Media Section */}
           {(talent.soundcloud_link || talent.youtube_link || talent.gallery_images.length > 0) && (
-            <Card className="mb-8">
-              <CardContent className="p-6">
+            <Card className="mb-8 overflow-hidden">
+              <CardContent className="p-4 sm:p-6">
                 <h2 className="text-xl font-semibold mb-6">Media</h2>
                 
-                <div className="space-y-8">
+                <div className="space-y-8 overflow-hidden">
                   {/* SoundCloud */}
                   {talent.soundcloud_link && (
-                    <div>
+                    <div className="overflow-hidden">
                       <h3 className="text-lg font-medium mb-4">Audio</h3>
                       <SoundCloudEmbed url={talent.soundcloud_link} />
                     </div>
@@ -295,7 +295,7 @@ export default function TalentProfile() {
 
                   {/* YouTube */}
                   {talent.youtube_link && (
-                    <div>
+                    <div className="overflow-hidden">
                       <h3 className="text-lg font-medium mb-4">Video</h3>
                       <YouTubePlayer url={talent.youtube_link} />
                     </div>
@@ -303,15 +303,16 @@ export default function TalentProfile() {
 
                   {/* Gallery */}
                   {talent.gallery_images.length > 0 && (
-                    <div>
+                    <div className="overflow-hidden">
                       <h3 className="text-lg font-medium mb-4">Gallery</h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-2 sm:gap-4">
                         {talent.gallery_images.map((image, index) => (
-                          <div key={index} className="aspect-square rounded-lg overflow-hidden bg-muted">
+                          <div key={index} className="aspect-square rounded-lg overflow-hidden bg-muted w-full">
                             <img 
                               src={image} 
                               alt={`${talent.artist_name} gallery ${index + 1}`}
                               className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                              loading="lazy"
                             />
                           </div>
                         ))}

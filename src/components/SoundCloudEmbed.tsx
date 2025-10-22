@@ -58,7 +58,8 @@ export function SoundCloudEmbed({ url, height = 166, className = "" }: SoundClou
         frameBorder="no"
         allow="autoplay"
         src={embedUrl}
-        className="w-full"
+        className="w-full max-w-full"
+        style={{ maxWidth: '100%' }}
         title="SoundCloud Player"
       />
     </div>

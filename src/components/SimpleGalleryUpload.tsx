@@ -271,13 +271,14 @@ export function SimpleGalleryUpload({
 
       {/* Gallery Grid */}
       {currentImages.length > 0 && (
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-2 sm:gap-4 overflow-hidden">
           {currentImages.map((imageUrl, index) => (
-            <div key={index} className="relative aspect-square group">
+            <div key={index} className="relative aspect-square group w-full">
               <img
                 src={imageUrl}
                 alt={`Gallery image ${index + 1}`}
                 className="w-full h-full object-cover rounded-lg"
+                loading="lazy"
               />
               {!disabled && (
                 <button

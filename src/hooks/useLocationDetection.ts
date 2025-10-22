@@ -172,28 +172,30 @@ export const useLocationDetection = () => {
     
     const ipProviders = [
       async () => {
+        // Try ipwho.is without specifying IP (uses client's IP)
+        const response = await fetch('https://ipwho.is/', { signal });
+        const data = await response.json();
+        if (data.success && data.country) {
+          return { country: data.country, countryCode: data.country_code, city: data.city };
+        }
+        return null;
+      },
+      async () => {
         const response = await fetch('https://ipapi.co/json/', { signal });
         const data = await response.json();
-        if (data.country_name) {
+        if (data.country_name && !data.error) {
           return { country: data.country_name, countryCode: data.country_code, city: data.city };
         }
         return null;
       },
       async () => {
+        // Get IP first, then location
         const ipResponse = await fetch('https://api.ipify.org?format=json', { signal });
         const ipData = await ipResponse.json();
         const locationResponse = await fetch(`https://freeipapi.com/api/json/${ipData.ip}`, { signal });
         const data = await locationResponse.json();
         if (data.countryName) {
           return { country: data.countryName, countryCode: data.countryCode, city: data.cityName };
-        }
-        return null;
-      },
-      async () => {
-        const response = await fetch('https://ipwho.is/', { signal });
-        const data = await response.json();
-        if (data.country) {
-          return { country: data.country, countryCode: data.country_code, city: data.city };
         }
         return null;
       },
