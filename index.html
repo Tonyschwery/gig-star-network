@@ -17,14 +17,15 @@
     <!-- Content Security Policy - Allow PayPal -->
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self' data: blob: https://*.supabase.co wss://*.supabase.co https://api.bigdatacloud.net; 
-               script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.paypal.com https://*.paypal.com; 
-               style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; 
-               font-src 'self' data: https://fonts.gstatic.com; 
-               img-src 'self' data: blob: https: http:; 
-               frame-src https://www.paypal.com https://*.paypal.com https://w.soundcloud.com; 
-               connect-src 'self' https://*.sndcdn.com;
-               connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.bigdatacloud.net https://www.paypal.com https://*.paypal.com;"
+      content="
+    default-src 'self' data: blob: https://*.supabase.co wss://*.supabase.co https://api.bigdatacloud.net; 
+    script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.paypal.com https://*.paypal.com; 
+    style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; 
+    font-src 'self' data: https://fonts.gstatic.com; 
+    img-src 'self' data: blob: https: http:; 
+    frame-src https://www.paypal.com https://*.paypal.com https://w.soundcloud.com; 
+    connect-src 'self' https://myxizupccweukrxfdqmc.supabase.co https://*.supabase.co wss://*.supabase.co https://api.bigdatacloud.net https://www.paypal.com https://*.paypal.com https://*.sndcdn.com;
+  "
     />
 
     <meta property="og:title" content="Qtalent.live | Book Live Talent for Any Event" />
