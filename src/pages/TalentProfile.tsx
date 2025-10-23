@@ -280,42 +280,48 @@ export default function TalentProfile() {
 
           {/* Media Section */}
           {(talent.soundcloud_link || talent.youtube_link || talent.gallery_images.length > 0) && (
-            <Card className="mb-8 overflow-hidden">
-              <CardContent className="p-4 sm:p-6">
+            <Card className="mb-8 overflow-hidden w-full max-w-full">
+              <CardContent className="p-4 sm:p-6 w-full max-w-full overflow-hidden">
                 <h2 className="text-xl font-semibold mb-6">Media</h2>
                 
-                <div className="space-y-8 overflow-hidden">
+                <div className="space-y-8 w-full max-w-full overflow-hidden">
                   {/* SoundCloud */}
                   {talent.soundcloud_link && (
-                    <div className="overflow-hidden">
+                    <div className="w-full max-w-full overflow-hidden">
                       <h3 className="text-lg font-medium mb-4">Audio</h3>
-                      <SoundCloudEmbed url={talent.soundcloud_link} />
+                      <div className="w-full max-w-full overflow-hidden">
+                        <SoundCloudEmbed url={talent.soundcloud_link} />
+                      </div>
                     </div>
                   )}
 
                   {/* YouTube */}
                   {talent.youtube_link && (
-                    <div className="overflow-hidden">
+                    <div className="w-full max-w-full overflow-hidden">
                       <h3 className="text-lg font-medium mb-4">Video</h3>
-                      <YouTubePlayer url={talent.youtube_link} />
+                      <div className="w-full max-w-full overflow-hidden">
+                        <YouTubePlayer url={talent.youtube_link} />
+                      </div>
                     </div>
                   )}
 
                   {/* Gallery */}
                   {talent.gallery_images.length > 0 && (
-                    <div className="overflow-hidden">
+                    <div className="w-full max-w-full overflow-hidden">
                       <h3 className="text-lg font-medium mb-4">Gallery</h3>
-                      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-2 sm:gap-4">
-                        {talent.gallery_images.map((image, index) => (
-                          <div key={index} className="aspect-square rounded-lg overflow-hidden bg-muted w-full">
-                            <img 
-                              src={image} 
-                              alt={`${talent.artist_name} gallery ${index + 1}`}
-                              className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-                              loading="lazy"
-                            />
-                          </div>
-                        ))}
+                      <div className="w-full max-w-full overflow-hidden">
+                        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-2 sm:gap-4 w-full">
+                          {talent.gallery_images.map((image, index) => (
+                            <div key={index} className="aspect-square rounded-lg overflow-hidden bg-muted w-full max-w-full">
+                              <img 
+                                src={image} 
+                                alt={`${talent.artist_name} gallery ${index + 1}`}
+                                className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                                loading="lazy"
+                              />
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   )}

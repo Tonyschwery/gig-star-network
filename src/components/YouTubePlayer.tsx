@@ -52,55 +52,59 @@ export function YouTubePlayer({ url, onThumbnailClick }: YouTubePlayerProps) {
 
   if (showPlayer) {
     return (
-      <div className="relative w-full max-w-full rounded-lg overflow-hidden bg-black">
-        <YouTube
-          videoId={videoId}
-          opts={opts}
-          className="w-full max-w-full"
-          iframeClassName="w-full max-w-full h-[200px] rounded-lg"
-        />
+      <div className="w-full max-w-full overflow-hidden">
+        <div className="relative w-full max-w-full rounded-lg overflow-hidden bg-black">
+          <YouTube
+            videoId={videoId}
+            opts={opts}
+            className="w-full max-w-full"
+            iframeClassName="w-full max-w-full h-[200px] rounded-lg"
+          />
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="relative group cursor-pointer rounded-lg overflow-hidden bg-black w-full max-w-full">
-      <img
-        src={thumbnailError ? fallbackThumbnail : thumbnailUrl}
-        alt="YouTube video thumbnail"
-        className="w-full max-w-full h-[200px] object-cover group-hover:scale-105 transition-transform duration-300"
-        onError={() => setThumbnailError(true)}
-        onClick={handleThumbnailClick}
-      />
-      
-      {/* Play button overlay */}
-      <div 
-        className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-black/40 transition-colors"
-        onClick={handleThumbnailClick}
-      >
-        <div className="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
-          <Play className="h-8 w-8 text-white ml-1" fill="white" />
-        </div>
-      </div>
-      
-      {/* External link button */}
-      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-        <Button
-          size="sm"
-          variant="secondary"
-          onClick={(e) => {
-            e.stopPropagation();
-            window.open(url, '_blank');
-          }}
-          className="h-8 px-2"
+    <div className="w-full max-w-full overflow-hidden">
+      <div className="relative group cursor-pointer rounded-lg overflow-hidden bg-black w-full max-w-full">
+        <img
+          src={thumbnailError ? fallbackThumbnail : thumbnailUrl}
+          alt="YouTube video thumbnail"
+          className="w-full max-w-full h-[200px] object-cover group-hover:scale-105 transition-transform duration-300"
+          onError={() => setThumbnailError(true)}
+          onClick={handleThumbnailClick}
+        />
+        
+        {/* Play button overlay */}
+        <div 
+          className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-black/40 transition-colors"
+          onClick={handleThumbnailClick}
         >
-          <ExternalLink className="h-3 w-3" />
-        </Button>
-      </div>
-      
-      {/* YouTube badge */}
-      <div className="absolute bottom-2 right-2 bg-red-600 text-white text-xs px-2 py-1 rounded">
-        YouTube
+          <div className="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
+            <Play className="h-8 w-8 text-white ml-1" fill="white" />
+          </div>
+        </div>
+        
+        {/* External link button */}
+        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={(e) => {
+              e.stopPropagation();
+              window.open(url, '_blank');
+            }}
+            className="h-8 px-2"
+          >
+            <ExternalLink className="h-3 w-3" />
+          </Button>
+        </div>
+        
+        {/* YouTube badge */}
+        <div className="absolute bottom-2 right-2 bg-red-600 text-white text-xs px-2 py-1 rounded">
+          YouTube
+        </div>
       </div>
     </div>
   );

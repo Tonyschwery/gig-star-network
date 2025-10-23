@@ -54,7 +54,7 @@ const AppContent = () => {
   useRealtimeNotifications();
 
   return (
-    <>
+    <div className="w-full max-w-full overflow-x-hidden">
       <Toaster />
       <Sonner />
       <UniversalChat />
@@ -122,7 +122,7 @@ const AppContent = () => {
         <Route path="/talent/:id" element={<TalentProfile />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
-    </>
+    </div>
   );
 };
 

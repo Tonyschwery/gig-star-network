@@ -271,26 +271,28 @@ export function SimpleGalleryUpload({
 
       {/* Gallery Grid */}
       {currentImages.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-2 sm:gap-4 overflow-hidden">
-          {currentImages.map((imageUrl, index) => (
-            <div key={index} className="relative aspect-square group w-full">
-              <img
-                src={imageUrl}
-                alt={`Gallery image ${index + 1}`}
-                className="w-full h-full object-cover rounded-lg"
-                loading="lazy"
-              />
-              {!disabled && (
-                <button
-                  type="button"
-                  onClick={() => removeImage(index)}
-                  className="absolute top-2 right-2 w-6 h-6 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              )}
-            </div>
-          ))}
+        <div className="w-full max-w-full overflow-hidden">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-2 sm:gap-4 w-full">
+            {currentImages.map((imageUrl, index) => (
+              <div key={index} className="relative aspect-square group w-full max-w-full overflow-hidden">
+                <img
+                  src={imageUrl}
+                  alt={`Gallery image ${index + 1}`}
+                  className="w-full h-full object-cover rounded-lg"
+                  loading="lazy"
+                />
+                {!disabled && (
+                  <button
+                    type="button"
+                    onClick={() => removeImage(index)}
+                    className="absolute top-2 right-2 w-6 h-6 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
       )}
 

@@ -50,18 +50,20 @@ export function SoundCloudEmbed({ url, height = 166, className = "" }: SoundClou
   }
 
   return (
-    <div className={`rounded-lg overflow-hidden bg-muted ${className}`}>
-      <iframe
-        width="100%"
-        height={height}
-        scrolling="no"
-        frameBorder="no"
-        allow="autoplay"
-        src={embedUrl}
-        className="w-full max-w-full"
-        style={{ maxWidth: '100%' }}
-        title="SoundCloud Player"
-      />
+    <div className={`w-full max-w-full overflow-hidden ${className}`}>
+      <div className="rounded-lg overflow-hidden bg-muted w-full max-w-full">
+        <iframe
+          width="100%"
+          height={height}
+          scrolling="no"
+          frameBorder="no"
+          allow="autoplay"
+          src={embedUrl}
+          className="w-full max-w-full"
+          style={{ maxWidth: '100%' }}
+          title="SoundCloud Player"
+        />
+      </div>
     </div>
   );
 }
