@@ -116,32 +116,31 @@ export function HeroSection() {
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           {/* Left Content */}
           <div className="space-y-8 animate-fadeIn">
-            <div className="space-y-6">
-              <div className="text-accent font-medium text-lg">Connect with live talent</div>
+            <div className="space-y-4 sm:space-y-6">
+              <div className="text-accent font-medium text-base sm:text-lg">Connect with live talent</div>
 
-              <h1 className="text-display">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
                 Book <span className="text-accent">live talents</span> for your event
               </h1>
 
-              <p className="text-subhead max-w-lg">
+              <p className="text-base sm:text-lg text-muted-foreground max-w-lg leading-relaxed">
                 Qtalent.live is the simplest way to find and book exceptional performers, artists, and creators for any
                 occasion.
               </p>
             </div>
 
             {/* Search Form */}
-            {/* FIX 1: Reduced padding on mobile (p-8 -> p-4 md:p-8) to prevent squishing */}
-            <Card className="p-4 md:p-8 glass-card border border-border/50 shadow-elevated">
-              <div className="grid md:grid-cols-3 gap-6">
-                <div className="space-y-3">
-                  <label className="text-sm font-semibold text-foreground uppercase tracking-wide">WHERE</label>
+            <Card className="p-4 sm:p-6 md:p-8 glass-card border border-border/50 shadow-elevated">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+                <div className="space-y-2">
+                  <label className="text-xs sm:text-sm font-semibold text-foreground uppercase tracking-wide">WHERE</label>
                   <div className="relative">
-                    <MapPin className="absolute left-4 top-4 h-5 w-5 text-muted-foreground z-10" />
+                    <MapPin className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground z-10" />
                     <Select
                       value={searchFilters.location}
                       onValueChange={(value) => setSearchFilters((prev) => ({ ...prev, location: value }))}
                     >
-                      <SelectTrigger className="pl-12 h-12 bg-background/50 border-border/50 hover:border-accent/50 transition-colors">
+                      <SelectTrigger className="pl-10 sm:pl-12 h-11 sm:h-12 bg-background/50 border-border/50 hover:border-accent/50 transition-colors text-sm sm:text-base">
                         <SelectValue placeholder="Select location" />
                       </SelectTrigger>
                       <SelectContent className="max-h-60">
@@ -156,15 +155,15 @@ export function HeroSection() {
                   </div>
                 </div>
 
-                <div className="space-y-3">
-                  <label className="text-sm font-semibold text-foreground uppercase tracking-wide">TALENT TYPE</label>
+                <div className="space-y-2">
+                  <label className="text-xs sm:text-sm font-semibold text-foreground uppercase tracking-wide">TALENT TYPE</label>
                   <div className="relative">
-                    <Music className="absolute left-4 top-4 h-5 w-5 text-muted-foreground z-10" />
+                    <Music className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground z-10" />
                     <Select
                       value={searchFilters.talentType}
                       onValueChange={(value) => setSearchFilters((prev) => ({ ...prev, talentType: value }))}
                     >
-                      <SelectTrigger className="pl-12 h-12 bg-background/50 border-border/50 hover:border-accent/50 transition-colors">
+                      <SelectTrigger className="pl-10 sm:pl-12 h-11 sm:h-12 bg-background/50 border-border/50 hover:border-accent/50 transition-colors text-sm sm:text-base">
                         <SelectValue placeholder="What kind of talent?" />
                       </SelectTrigger>
                       <SelectContent>
@@ -180,10 +179,10 @@ export function HeroSection() {
 
                 <div className="flex items-end">
                   <Button
-                    className="w-full h-12 bg-primary text-primary-foreground font-bold text-sm sm:text-base shadow-minimal hover:shadow-elevated transition-all duration-300 hover:scale-[1.02] hover:bg-primary/90 rounded-xl"
+                    className="w-full h-11 sm:h-12 bg-primary text-primary-foreground font-bold text-sm sm:text-base shadow-minimal hover:shadow-elevated transition-all duration-300 hover:scale-[1.02] hover:bg-primary/90 rounded-xl"
                     onClick={handleSearch}
                   >
-                    <Search className="h-4 w-4 sm:h-5 sm:w-5 mr-2 sm:mr-3 flex-shrink-0" />
+                    <Search className="h-4 w-4 sm:h-5 sm:w-5 mr-2 flex-shrink-0" />
                     <span className="truncate">Explore</span>
                   </Button>
                 </div>
@@ -191,21 +190,19 @@ export function HeroSection() {
             </Card>
 
             {/* Social Proof */}
-            {/* FIX 2: Stack vertically on mobile (flex-col) and switch to row (sm:flex-row) on larger screens. Changed space-x-6 to gap-4 sm:gap-6 */}
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 text-sm">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-6 text-xs sm:text-sm">
               <div className="flex items-center space-x-2">
                 <div className="flex -space-x-1">
                   {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                    <Star key={i} className="h-3 w-3 sm:h-4 sm:w-4 fill-yellow-400 text-yellow-400" />
                   ))}
                 </div>
-                <span className="text-muted-foreground">
+                <span className="text-muted-foreground text-center sm:text-left">
                   <strong className="text-foreground">4.9/5</strong> from 2,340+ bookings
                 </span>
               </div>
-              {/* FIX 2.1: Hide divider on mobile */}
               <div className="h-4 w-px bg-border hidden sm:block"></div>
-              <div className="text-muted-foreground">
+              <div className="text-muted-foreground text-center sm:text-left">
                 <strong className="text-foreground">500+</strong> professional artists
               </div>
             </div>
