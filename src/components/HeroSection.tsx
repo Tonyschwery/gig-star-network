@@ -109,13 +109,13 @@ export function HeroSection() {
   };
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center pt-24 pb-16">
+    <section className="relative min-h-screen flex items-center justify-center pt-24 pb-16 w-full max-w-full overflow-x-hidden">
       <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-brand-primary/5" />
 
-      <div className="container mx-auto px-4 relative z-10">
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
+      <div className="container mx-auto px-4 relative z-10 w-full max-w-full">
+        <div className="grid lg:grid-cols-2 gap-12 items-center w-full">
           {/* Left Content */}
-          <div className="space-y-8 animate-fadeIn">
+          <div className="space-y-8 animate-fadeIn w-full max-w-full overflow-x-hidden">
             <div className="space-y-4 sm:space-y-6">
               <div className="text-accent font-medium text-base sm:text-lg">Connect with live talent</div>
 
@@ -130,17 +130,17 @@ export function HeroSection() {
             </div>
 
             {/* Search Form */}
-            <Card className="p-4 sm:p-6 md:p-8 glass-card border border-border/50 shadow-elevated">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-                <div className="space-y-2">
+            <Card className="p-4 sm:p-6 md:p-8 glass-card border border-border/50 shadow-elevated w-full max-w-full overflow-hidden">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 w-full">
+                <div className="space-y-2 w-full">
                   <label className="text-xs sm:text-sm font-semibold text-foreground uppercase tracking-wide">WHERE</label>
-                  <div className="relative">
+                  <div className="relative w-full">
                     <MapPin className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground z-10" />
                     <Select
                       value={searchFilters.location}
                       onValueChange={(value) => setSearchFilters((prev) => ({ ...prev, location: value }))}
                     >
-                      <SelectTrigger className="pl-10 sm:pl-12 h-11 sm:h-12 bg-background/50 border-border/50 hover:border-accent/50 transition-colors text-sm sm:text-base">
+                      <SelectTrigger className="pl-10 sm:pl-12 h-11 sm:h-12 bg-background/50 border-border/50 hover:border-accent/50 transition-colors text-sm sm:text-base w-full">
                         <SelectValue placeholder="Select location" />
                       </SelectTrigger>
                       <SelectContent className="max-h-60">
@@ -155,15 +155,15 @@ export function HeroSection() {
                   </div>
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-2 w-full">
                   <label className="text-xs sm:text-sm font-semibold text-foreground uppercase tracking-wide">TALENT TYPE</label>
-                  <div className="relative">
+                  <div className="relative w-full">
                     <Music className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground z-10" />
                     <Select
                       value={searchFilters.talentType}
                       onValueChange={(value) => setSearchFilters((prev) => ({ ...prev, talentType: value }))}
                     >
-                      <SelectTrigger className="pl-10 sm:pl-12 h-11 sm:h-12 bg-background/50 border-border/50 hover:border-accent/50 transition-colors text-sm sm:text-base">
+                      <SelectTrigger className="pl-10 sm:pl-12 h-11 sm:h-12 bg-background/50 border-border/50 hover:border-accent/50 transition-colors text-sm sm:text-base w-full">
                         <SelectValue placeholder="What kind of talent?" />
                       </SelectTrigger>
                       <SelectContent>
@@ -177,7 +177,7 @@ export function HeroSection() {
                   </div>
                 </div>
 
-                <div className="flex items-end">
+                <div className="flex items-end w-full">
                   <Button
                     className="w-full h-11 sm:h-12 bg-primary text-primary-foreground font-bold text-sm sm:text-base shadow-minimal hover:shadow-elevated transition-all duration-300 hover:scale-[1.02] hover:bg-primary/90 rounded-xl"
                     onClick={handleSearch}
@@ -190,7 +190,7 @@ export function HeroSection() {
             </Card>
 
             {/* Social Proof */}
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-6 text-xs sm:text-sm">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-6 text-xs sm:text-sm w-full">
               <div className="flex items-center space-x-2">
                 <div className="flex -space-x-1">
                   {[...Array(5)].map((_, i) => (
@@ -210,7 +210,7 @@ export function HeroSection() {
             {/* Search Status Message */}
             {(searchFilters.location !== "all" && searchFilters.location) ||
             (searchFilters.talentType !== "all" && searchFilters.talentType) ? (
-              <div className="mt-4 p-3 bg-accent/10 border border-accent/20 rounded-lg">
+              <div className="mt-4 p-3 bg-accent/10 border border-accent/20 rounded-lg w-full max-w-full">
                 <div className="text-sm text-accent font-medium">
                   🎯 Your search will show results below in the talent section
                 </div>
@@ -233,7 +233,7 @@ export function HeroSection() {
           </div>
 
           {/* Right Content - Pro Artists Carousel */}
-          <div className="space-y-6">
+          <div className="space-y-6 w-full max-w-full overflow-x-hidden">
             <div className="text-center space-y-2">
               <div className="flex items-center justify-center gap-2">
                 <Crown className="h-6 w-6 text-brand-warning" />
@@ -243,49 +243,51 @@ export function HeroSection() {
             </div>
 
             {featuredTalents.length > 0 ? (
-              <Carousel
-                opts={{
-                  align: "start",
-                  loop: true,
-                }}
-                plugins={[
-                  Autoplay({
-                    delay: 3000,
-                    stopOnInteraction: true,
-                  }) as any,
-                ]}
-                className="w-full"
-              >
-                <CarouselContent className="-ml-2 md:-ml-4">
-                  {featuredTalents.map((talent) => (
-                    <CarouselItem key={talent.id} className="pl-2 md:pl-4 md:basis-1/2 lg:basis-1/2">
-                      <FeaturedTalentCard
-                        id={talent.id}
-                        name={talent.artist_name}
-                        location={talent.location || "Location not specified"}
-                        category={
-                          talent.act.toLowerCase() === "dj"
-                            ? "DJ"
-                            : talent.act.charAt(0).toUpperCase() + talent.act.slice(1)
-                        }
-                        image={talent.picture_url || "/placeholder.svg"}
-                        isPro={talent.is_pro_subscriber}
-                        rate={talent.rate_per_hour}
-                        currency={talent.currency}
-                        genres={talent.music_genres}
-                      />
-                    </CarouselItem>
-                  ))}
-                </CarouselContent>
-                <CarouselPrevious className="hidden md:flex" />
-                <CarouselNext className="hidden md:flex" />
-              </Carousel>
+              <div className="w-full max-w-full overflow-hidden">
+                <Carousel
+                  opts={{
+                    align: "start",
+                    loop: true,
+                  }}
+                  plugins={[
+                    Autoplay({
+                      delay: 3000,
+                      stopOnInteraction: true,
+                    }) as any,
+                  ]}
+                  className="w-full max-w-full"
+                >
+                  <CarouselContent className="-ml-2 md:-ml-4">
+                    {featuredTalents.map((talent) => (
+                      <CarouselItem key={talent.id} className="pl-2 md:pl-4 md:basis-1/2 lg:basis-1/2">
+                        <FeaturedTalentCard
+                          id={talent.id}
+                          name={talent.artist_name}
+                          location={talent.location || "Location not specified"}
+                          category={
+                            talent.act.toLowerCase() === "dj"
+                              ? "DJ"
+                              : talent.act.charAt(0).toUpperCase() + talent.act.slice(1)
+                          }
+                          image={talent.picture_url || "/placeholder.svg"}
+                          isPro={talent.is_pro_subscriber}
+                          rate={talent.rate_per_hour}
+                          currency={talent.currency}
+                          genres={talent.music_genres}
+                        />
+                      </CarouselItem>
+                    ))}
+                  </CarouselContent>
+                  <CarouselPrevious className="hidden md:flex" />
+                  <CarouselNext className="hidden md:flex" />
+                </Carousel>
+              </div>
             ) : (
               // Loading state
-              <div className="space-y-4">
+              <div className="space-y-4 w-full max-w-full">
                 {[...Array(2)].map((_, i) => (
-                  <div key={i} className="animate-pulse">
-                    <Card className="p-4 glass-card h-32 bg-muted/50"></Card>
+                  <div key={i} className="animate-pulse w-full">
+                    <Card className="p-4 glass-card h-32 bg-muted/50 w-full"></Card>
                   </div>
                 ))}
               </div>
@@ -294,22 +296,22 @@ export function HeroSection() {
         </div>
 
         {/* Booker Help Section */}
-        <div className="mt-24 text-center space-y-8">
-          <div className="space-y-4">
+        <div className="mt-24 text-center space-y-8 w-full max-w-full px-4">
+          <div className="space-y-4 w-full max-w-full">
             <div className="inline-flex items-center justify-center p-3 bg-accent/10 rounded-full mb-4">
               <HelpCircle className="h-8 w-8 text-accent" />
             </div>
-            <h2 className="text-3xl md:text-4xl font-bold">Need help finding the perfect talents?</h2>
-            <p className="text-muted-foreground text-lg max-w-2xl mx-auto leading-relaxed">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold px-4">Need help finding the perfect talents?</h2>
+            <p className="text-muted-foreground text-base sm:text-lg max-w-2xl mx-auto leading-relaxed px-4">
               Our expert team personally curates recommendations based on your event type, budget, and style
               preferences. Get matched with verified performers in 24 hours.
             </p>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full max-w-full px-4">
             <Button
               size="lg"
-              className="hero-button px-8 py-4 text-base font-semibold"
+              className="hero-button px-6 sm:px-8 py-4 text-sm sm:text-base font-semibold w-full sm:w-auto max-w-full"
               onClick={() => {
                 if (user) {
                   navigate("/your-event");
@@ -322,14 +324,13 @@ export function HeroSection() {
             </Button>
 
             {!user && (
-              /* FIX 3: Center sub-text on mobile, left-align on desktop */
-              <div className="text-sm text-muted-foreground text-center sm:text-left">
+              <div className="text-xs sm:text-sm text-muted-foreground text-center sm:text-left">
                 No account needed • Free consultation • 2 min setup
               </div>
             )}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12 max-w-4xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12 max-w-4xl mx-auto w-full px-4">
             <div className="text-center space-y-2">
               <div className="inline-flex items-center justify-center p-2 bg-accent/10 rounded-full">
                 <Search className="h-5 w-5 text-accent" />

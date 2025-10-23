@@ -174,9 +174,9 @@ export function TalentGrid() {
   }
 
   return (
-    <section id="talents" className="py-20 bg-gradient-to-b from-background to-muted/30">
-      <div className="container mx-auto px-4">
-        <div className="text-center mb-16">
+    <section id="talents" className="py-20 bg-gradient-to-b from-background to-muted/30 w-full max-w-full overflow-x-hidden">
+      <div className="container mx-auto px-4 w-full max-w-full">
+        <div className="text-center mb-16 w-full max-w-full">
           <div className="inline-flex items-center gap-2 bg-accent/10 px-4 py-2 rounded-full mb-6">
             <div className="h-2 w-2 bg-accent rounded-full animate-pulse"></div>
             <span className="text-sm font-medium text-accent">
@@ -250,11 +250,11 @@ export function TalentGrid() {
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 w-full">
             {talentsToShow.map((talent, index) => (
               <div 
                 key={talent.id} 
-                className="animate-fadeIn"
+                className="animate-fadeIn w-full max-w-full"
                 style={{ animationDelay: `${index * 0.1}s` }}
               >
                 <TalentCard talent={talent} />

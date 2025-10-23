@@ -11,9 +11,9 @@ const Index = () => {
   // Location detection now happens automatically in the hook
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background w-full max-w-full overflow-x-hidden">
       <Header />
-      <main>
+      <main className="w-full max-w-full overflow-x-hidden">
         <HeroSection />
         <TalentGrid />
       </main>
