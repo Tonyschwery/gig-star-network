@@ -207,11 +207,11 @@ const AuthCallback = () => {
 
   const redirectUser = (user: any) => {
     if (user.email === "admin@qtalent.live") {
-      window.location.href = "/admin";
+      navigate("/admin", { replace: true });
     } else if (user.user_metadata?.user_type === "talent") {
-      window.location.href = "/talent-dashboard";
+      navigate("/talent-dashboard", { replace: true });
     } else {
-      window.location.href = "/booker-dashboard";
+      navigate("/booker-dashboard", { replace: true });
     }
   };
 

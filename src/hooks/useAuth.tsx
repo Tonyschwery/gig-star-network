@@ -311,12 +311,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Small delay to ensure storage events propagate
       await new Promise(resolve => setTimeout(resolve, 100));
       
-      // Navigate to home
-      window.location.href = "/";
+      // Navigate to home and force page refresh to clear all state
+      setTimeout(() => {
+        window.location.href = "/";
+      }, 100);
     } catch (error) {
       console.error("[Auth] Signout error:", error);
       // Force navigation even on error
-      window.location.href = "/";
+      setTimeout(() => {
+        window.location.href = "/";
+      }, 100);
     }
   };
 

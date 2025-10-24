@@ -1,6 +1,7 @@
 // FILE: src/components/BookingForm.tsx
 
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -32,6 +33,7 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
   const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const { sendBookingEmails } = useEmailNotifications();
+  const navigate = useNavigate();
   
   // Use location detection hook for consistent location handling
   const { userLocation, detectedLocation } = useLocationDetection();
@@ -123,7 +125,7 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
               <Button 
                 variant="outline" 
                 size="sm"
-                onClick={() => window.location.href = '/auth?mode=booker&intent=booking'}
+                onClick={() => navigate('/auth?mode=booker&intent=booking')}
               >
                 Sign In / Sign Up
               </Button>

@@ -225,7 +225,7 @@ export default function TalentOnboarding() {
         if (upsertError) throw upsertError;
         toast({ title: "Success! 🎉", description: "Your talent profile is now live!" });
         localStorage.removeItem("talent_onboarding_draft");
-        setTimeout(() => (window.location.href = "/talent-dashboard"), 1500);
+        setTimeout(() => navigate("/talent-dashboard"), 1500);
         return;
       }
 
@@ -361,7 +361,7 @@ export default function TalentOnboarding() {
 
       // Redirect to dashboard
       setTimeout(() => {
-        window.location.href = '/talent-dashboard';
+        navigate('/talent-dashboard');
       }, 1000);
       
       return;
@@ -599,7 +599,7 @@ export default function TalentOnboarding() {
                 e.preventDefault();
                 e.stopPropagation();
                 console.log('[TalentOnboarding] Navigating to /auth');
-                window.location.href = '/auth';
+                navigate('/auth');
               }}
               className="flex items-center gap-2"
             >

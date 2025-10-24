@@ -3,12 +3,13 @@ import { Input } from "@/components/ui/input";
 import { Facebook, Twitter, Instagram, Linkedin, Mail } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { openSocialLink } from "@/utils/externalLinks";
 
 export function Footer() {
   const navigate = useNavigate();
 
   const handleSocialClick = (url: string) => {
-    window.open(url, '_blank', 'noopener,noreferrer');
+    openSocialLink(url);
   };
 
   return (
