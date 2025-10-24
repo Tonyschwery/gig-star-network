@@ -43,6 +43,25 @@ interface TalentProfile {
   music_genres: string[];
 }
 
+// Multilingual biography texts
+const biographyTexts = [
+  {
+    language: "en",
+    text: "Qtalent.live is the simplest way to find and book exceptional performers, artists, and creators for any occasion.",
+    dir: "ltr",
+  },
+  {
+    language: "ar",
+    text: "Qtalent.live هو أبسط طريقة للعثور على فنانين استثنائيين وحجزهم لأي مناسبة.",
+    dir: "rtl",
+  },
+  {
+    language: "fr",
+    text: "Qtalent.live est le moyen le plus simple de trouver et de réserver des artistes exceptionnels pour toute occasion.",
+    dir: "ltr",
+  },
+];
+
 export function HeroSection() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -52,12 +71,22 @@ export function HeroSection() {
     talentType: "all",
   });
   const [featuredTalents, setFeaturedTalents] = useState<TalentProfile[]>([]);
+  const [currentBiographyIndex, setCurrentBiographyIndex] = useState(0);
 
   // Sort countries by proximity to user's location
   const sortedCountries = sortCountriesByProximity(detectedLocation || userLocation, countries);
 
   useEffect(() => {
     fetchFeaturedTalents();
+  }, []);
+
+  // Auto-rotate biography text every 4 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentBiographyIndex((prev) => (prev + 1) % biographyTexts.length);
+    }, 4000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const fetchFeaturedTalents = async () => {
@@ -123,10 +152,18 @@ export function HeroSection() {
                 Book <span className="text-accent">live talents</span> for your event
               </h1>
 
-              <p className="text-base sm:text-lg text-muted-foreground max-w-lg leading-relaxed">
-                Qtalent.live is the simplest way to find and book exceptional performers, artists, and creators for any
-                occasion.
-              </p>
+              <div className="relative min-h-[4rem] flex items-center justify-start">
+                <p
+                  key={currentBiographyIndex}
+                  className="text-base sm:text-lg text-muted-foreground max-w-lg leading-relaxed animate-fade-in"
+                  dir={biographyTexts[currentBiographyIndex].dir}
+                  style={{
+                    textAlign: biographyTexts[currentBiographyIndex].dir === "rtl" ? "right" : "left",
+                  }}
+                >
+                  {biographyTexts[currentBiographyIndex].text}
+                </p>
+              </div>
             </div>
 
             {/* Search Form */}
