@@ -14,19 +14,21 @@ export const openExternalLink = async (url: string) => {
   if (!url) return;
 
   if (isCapacitor()) {
-    // For Capacitor, check if Browser plugin is available
-    try {
-      // Dynamic import to prevent build errors when @capacitor/browser is not installed
-      const { Browser } = await import('@capacitor/browser' as any);
-      await Browser.open({ url });
-    } catch (error) {
-      console.log('Capacitor Browser plugin not available, falling back to window.open');
-      window.open(url, '_blank', 'noopener,noreferrer');
+    // Check if Capacitor Browser plugin is available at runtime
+    const Browser = (window as any).Capacitor?.Plugins?.Browser;
+    
+    if (Browser) {
+      try {
+        await Browser.open({ url });
+        return;
+      } catch (error) {
+        console.log('Capacitor Browser failed, falling back to window.open');
+      }
     }
-  } else {
-    // For web, use standard window.open
-    window.open(url, '_blank', 'noopener,noreferrer');
   }
+  
+  // Fallback for web or if Capacitor Browser isn't available
+  window.open(url, '_blank', 'noopener,noreferrer');
 };
 
 /**
