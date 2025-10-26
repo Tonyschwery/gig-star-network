@@ -128,15 +128,6 @@ All colors MUST be HSL.
   box-sizing: border-box;
 }
 
-/* Mobile safe area support */
-.safe-top {
-  padding-top: max(1rem, env(safe-area-inset-top));
-}
-
-.safe-bottom {
-  padding-bottom: max(1rem, env(safe-area-inset-bottom));
-}
-
 img,
 video,
 iframe {
@@ -254,4 +245,16 @@ iframe {
     color: hsl(var(--accent-foreground));
     box-shadow: 0 0 20px hsl(var(--accent) / 0.4);
   }
+  /* ... all your other CSS code is above this ... */
+
+
+/* ADD THIS NEW CODE */
+@layer utilities {
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
 }
