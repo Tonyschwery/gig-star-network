@@ -991,12 +991,9 @@ export type Database = {
       }
     }
     Functions: {
-      admin_delete_user: {
-        Args: { user_id_to_delete: string }
-        Returns: Json
-      }
+      admin_delete_user: { Args: { user_id_to_delete: string }; Returns: Json }
       admin_get_all_users: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           created_at: string
           email: string
@@ -1020,10 +1017,7 @@ export type Database = {
         Args: { is_pro: boolean; talent_id_param: string }
         Returns: Json
       }
-      check_booking_limit: {
-        Args: { user_id_param: string }
-        Returns: boolean
-      }
+      check_booking_limit: { Args: { user_id_param: string }; Returns: boolean }
       check_talent_booking_limit: {
         Args: { talent_id_param: string }
         Returns: boolean
@@ -1032,14 +1026,9 @@ export type Database = {
         Args: { user_id_to_check: string }
         Returns: boolean
       }
-      cleanup_expired_bookings: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      cleanup_expired_chat_messages: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      cleanup_expired_bookings: { Args: never; Returns: undefined }
+      cleanup_expired_chat_messages: { Args: never; Returns: undefined }
+      cleanup_expired_event_requests: { Args: never; Returns: undefined }
       complete_manual_payment: {
         Args: { payment_id_param: string }
         Returns: Json
@@ -1060,27 +1049,24 @@ export type Database = {
           role: string | null
           updated_at: string | null
         }
+        SetofOptions: {
+          from: "*"
+          to: "profiles"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       get_admin_permissions: {
         Args: { user_id_param?: string }
         Returns: string[]
       }
-      get_admin_user_id: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      get_my_role: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      get_admin_user_id: { Args: never; Returns: string }
+      get_my_role: { Args: never; Returns: string }
       get_or_create_admin_support_booking: {
         Args: { target_user_id: string }
         Returns: string
       }
-      get_payment_status: {
-        Args: { booking_id_param: string }
-        Returns: Json
-      }
+      get_payment_status: { Args: { booking_id_param: string }; Returns: Json }
       get_talent_accepted_bookings_count: {
         Args: { talent_id_param: string }
         Returns: number
@@ -1109,14 +1095,8 @@ export type Database = {
         Args: { user_id_param: string }
         Returns: undefined
       }
-      is_admin: {
-        Args: { user_id_param?: string }
-        Returns: boolean
-      }
-      is_pro_talent: {
-        Args: { requesting_user_id: string }
-        Returns: boolean
-      }
+      is_admin: { Args: { user_id_param?: string }; Returns: boolean }
+      is_pro_talent: { Args: { requesting_user_id: string }; Returns: boolean }
       user_has_talent_profile: {
         Args: { user_id_param?: string }
         Returns: boolean

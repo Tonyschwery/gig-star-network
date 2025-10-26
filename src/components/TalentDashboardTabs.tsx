@@ -63,11 +63,15 @@ export const TalentDashboardTabs = ({ profile }: TalentDashboardTabsProps) => {
     }
 
     if (profile.location && profile.user_id) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
       // Build query with talent type matching
       let query = supabase
         .from('event_requests')
         .select('*')
         .eq('event_location', profile.location)
+        .gte('event_date', today.toISOString().split('T')[0])
         .not('hidden_by_talents', 'cs', `{${profile.user_id}}`);
       
       // Filter by talent type if specified in request (case-insensitive)

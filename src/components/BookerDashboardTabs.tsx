@@ -36,6 +36,9 @@ export const BookerDashboardTabs = ({ userId }: { userId: string }) => {
         const timestamp = Date.now();
         console.log('Fetching initial bookings for user:', userId, 'at timestamp:', timestamp);
         
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
         const bookingsQuery = supabase
             .from('bookings')
             .select(`*, talent_profiles(artist_name)`)
@@ -47,6 +50,7 @@ export const BookerDashboardTabs = ({ userId }: { userId: string }) => {
             .from('event_requests')
             .select('*')
             .eq('user_id', userId)
+            .gte('event_date', today.toISOString().split('T')[0])
             .order('created_at', { ascending: false })
             .range(0, PAGE_SIZE - 1);
 
@@ -129,10 +133,14 @@ export const BookerDashboardTabs = ({ userId }: { userId: string }) => {
         const from = requestsPage * PAGE_SIZE;
         const to = from + PAGE_SIZE - 1;
 
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
         const { data, error } = await supabase
             .from('event_requests')
             .select('*')
             .eq('user_id', userId)
+            .gte('event_date', today.toISOString().split('T')[0])
             .order('created_at', { ascending: false })
             .range(from, to);
 

@@ -19,20 +19,25 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    console.log('Starting cleanup of expired bookings...')
+    console.log('Starting cleanup of expired bookings and event requests...')
 
-    // Call the cleanup function
-    const { error } = await supabaseAdmin.rpc('cleanup_expired_bookings')
-
-    if (error) {
-      console.error('Error cleaning up expired bookings:', error)
-      throw error
+    // Call the cleanup functions
+    const { error: bookingsError } = await supabaseAdmin.rpc('cleanup_expired_bookings')
+    if (bookingsError) {
+      console.error('Error cleaning up expired bookings:', bookingsError)
+      throw bookingsError
     }
 
-    console.log('Successfully cleaned up expired bookings')
+    const { error: eventRequestsError } = await supabaseAdmin.rpc('cleanup_expired_event_requests')
+    if (eventRequestsError) {
+      console.error('Error cleaning up expired event requests:', eventRequestsError)
+      throw eventRequestsError
+    }
+
+    console.log('Successfully cleaned up expired bookings and event requests')
 
     return new Response(
-      JSON.stringify({ success: true, message: 'Expired bookings cleaned up successfully' }),
+      JSON.stringify({ success: true, message: 'Expired bookings and event requests cleaned up successfully' }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200,
