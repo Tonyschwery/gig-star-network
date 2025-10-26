@@ -13,8 +13,8 @@ export function Footer() {
   };
 
   return (
-    <footer className="bg-card border-t border-card-border">
-      <div className="container mx-auto px-4 py-16">
+    <footer className="bg-card border-t border-card-border safe-bottom">
+      <div className="container mx-auto px-4 pt-16">
         <div className="flex flex-col items-center text-center space-y-6">
           {/* Brand Section */}
           <div className="space-y-4 max-w-2xl">
