@@ -1,6 +1,6 @@
 // FILE: src/pages/TalentDashboard.tsx
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth"; // Make sure this hook exports 'isLoading'
@@ -16,13 +16,20 @@ import { ModeSwitch } from "@/components/ModeSwitch";
 import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 import { MessageCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2 } from "lucide-react"; // Import a loading spinner
+import { Loader2 } from "lucide-react";
+import PullToRefresh from "react-simple-pull-to-refresh";
 
 const TalentDashboard = () => {
   const { user, profile, signOut, loading } = useAuth();
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const navigate = useNavigate();
   const { unreadCount: chatUnreadCount } = useUnreadMessages();
+
+  const handleRefresh = async () => {
+    setRefreshKey(prev => prev + 1);
+    await new Promise(resolve => setTimeout(resolve, 1000));
+  };
 
   useRealtimeNotifications();
 
@@ -68,65 +75,67 @@ const TalentDashboard = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
-        {/* Header */}
-        <div className="flex flex-col gap-4 mb-6 lg:mb-8">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-3 mb-1">
-                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold gradient-text">
-                  Welcome, {profile.artist_name || "Talent"}!
-                </h1>
-                {profile.is_pro_subscriber && <ProBadge size="sm" />}
+      <PullToRefresh onRefresh={handleRefresh}>
+        <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
+          {/* Header */}
+          <div className="flex flex-col gap-4 mb-6 lg:mb-8">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-3 mb-1">
+                  <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold gradient-text">
+                    Welcome, {profile.artist_name || "Talent"}!
+                  </h1>
+                  {profile.is_pro_subscriber && <ProBadge size="sm" />}
+                </div>
+                <p className="text-muted-foreground text-sm sm:text-base">Manage your bookings and event opportunities</p>
               </div>
-              <p className="text-muted-foreground text-sm sm:text-base">Manage your bookings and event opportunities</p>
+
+              <div className="hidden sm:flex items-center gap-2">
+                <NotificationCenter />
+                {chatUnreadCount > 0 && (
+                  <Badge variant="destructive" className="animate-pulse flex items-center gap-1">
+                    <MessageCircle className="h-3 w-3" />
+                    {chatUnreadCount} Chat{chatUnreadCount !== 1 ? "s" : ""}
+                  </Badge>
+                )}
+              </div>
             </div>
 
-            <div className="hidden sm:flex items-center gap-2">
-              <NotificationCenter />
-              {chatUnreadCount > 0 && (
-                <Badge variant="destructive" className="animate-pulse flex items-center gap-1">
-                  <MessageCircle className="h-3 w-3" />
-                  {chatUnreadCount} Chat{chatUnreadCount !== 1 ? "s" : ""}
-                </Badge>
-              )}
+            {/* Action Buttons Row */}
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+              <div className="flex flex-wrap gap-2 flex-1">
+                <Button onClick={() => navigate("/talent-profile-edit")} size="sm">
+                  <Edit3 className="h-4 w-4 mr-2" />
+                  Edit Profile
+                </Button>
+                <Button variant="outline" onClick={() => navigate(`/talent/${profile.id}`)} size="sm">
+                  <Eye className="h-4 w-4 mr-2" />
+                  View Profile
+                </Button>
+                <ModeSwitch size="sm" />
+                <SubscriptionButton isProSubscriber={profile.is_pro_subscriber || false} />
+                <Button variant="outline" onClick={handleSignOut} size="sm">
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Sign Out
+                </Button>
+              </div>
+
+              <div className="sm:hidden self-start flex flex-col gap-2">
+                <NotificationCenter />
+                {chatUnreadCount > 0 && (
+                  <Badge variant="destructive" className="animate-pulse flex items-center gap-1 w-fit">
+                    <MessageCircle className="h-3 w-3" />
+                    {chatUnreadCount} Chat{chatUnreadCount !== 1 ? "s" : ""}
+                  </Badge>
+                )}
+              </div>
             </div>
           </div>
 
-          {/* Action Buttons Row */}
-          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-            <div className="flex flex-wrap gap-2 flex-1">
-              <Button onClick={() => navigate("/talent-profile-edit")} size="sm">
-                <Edit3 className="h-4 w-4 mr-2" />
-                Edit Profile
-              </Button>
-              <Button variant="outline" onClick={() => navigate(`/talent/${profile.id}`)} size="sm">
-                <Eye className="h-4 w-4 mr-2" />
-                View Profile
-              </Button>
-              <ModeSwitch size="sm" />
-              <SubscriptionButton isProSubscriber={profile.is_pro_subscriber || false} />
-              <Button variant="outline" onClick={handleSignOut} size="sm">
-                <LogOut className="h-4 w-4 mr-2" />
-                Sign Out
-              </Button>
-            </div>
-
-            <div className="sm:hidden self-start flex flex-col gap-2">
-              <NotificationCenter />
-              {chatUnreadCount > 0 && (
-                <Badge variant="destructive" className="animate-pulse flex items-center gap-1 w-fit">
-                  <MessageCircle className="h-3 w-3" />
-                  {chatUnreadCount} Chat{chatUnreadCount !== 1 ? "s" : ""}
-                </Badge>
-              )}
-            </div>
-          </div>
+          {/* === NEW TABBED DASHBOARD === */}
+          <TalentDashboardTabs profile={profile} key={refreshKey} />
         </div>
-
-        {/* === NEW TABBED DASHBOARD === */}
-        <TalentDashboardTabs profile={profile} />
-      </div>
+      </PullToRefresh>
     </div>
   );
 };
