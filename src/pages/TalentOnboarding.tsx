@@ -228,6 +228,7 @@ export default function TalentOnboarding() {
           description: "Profile complete. Please sign in.",
         });
         localStorage.removeItem("talent_onboarding_draft");
+        await supabase.auth.signOut();
         setTimeout(() => navigate("/auth"), 1500);
         return;
       }
@@ -362,7 +363,8 @@ export default function TalentOnboarding() {
         description: "Profile complete. Please sign in.",
       });
 
-      // Redirect to auth page
+      // Sign out user and redirect to auth page
+      await supabase.auth.signOut();
       setTimeout(() => {
         navigate('/auth');
       }, 1500);
