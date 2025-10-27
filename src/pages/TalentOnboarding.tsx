@@ -225,7 +225,7 @@ export default function TalentOnboarding() {
         if (upsertError) throw upsertError;
         toast({ title: "Success! 🎉", description: "Your talent profile is now live!" });
         localStorage.removeItem("talent_onboarding_draft");
-        setTimeout(() => navigate("/talent-dashboard"), 1500);
+        setTimeout(() => navigate("/auth"), 1500);
         return;
       }
 
