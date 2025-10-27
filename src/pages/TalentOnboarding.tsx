@@ -223,7 +223,10 @@ export default function TalentOnboarding() {
         };
         const { error: upsertError } = await supabase.from("talent_profiles").upsert(profileData);
         if (upsertError) throw upsertError;
-        toast({ title: "Success! 🎉", description: "Your talent profile is now live!" });
+        toast({ 
+          title: "Welcome to Qtalent!", 
+          description: "Profile complete. Please sign in.",
+        });
         localStorage.removeItem("talent_onboarding_draft");
         setTimeout(() => navigate("/auth"), 1500);
         return;
@@ -355,14 +358,14 @@ export default function TalentOnboarding() {
       localStorage.removeItem("talent_onboarding_draft");
       
       toast({ 
-        title: "🎉 Welcome to Qtalent!", 
-        description: "Taking you to your dashboard...",
+        title: "Welcome to Qtalent!", 
+        description: "Profile complete. Please sign in.",
       });
 
-      // Redirect to dashboard
+      // Redirect to auth page
       setTimeout(() => {
-        navigate('/talent-dashboard');
-      }, 1000);
+        navigate('/auth');
+      }, 1500);
       
       return;
     } catch (error: any) {
