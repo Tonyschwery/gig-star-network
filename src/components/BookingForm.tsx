@@ -107,34 +107,35 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-50">
       <div className="w-full max-w-2xl max-h-[95vh] sm:max-h-[90vh] flex flex-col bg-card rounded-lg shadow-md overflow-hidden">
-        <div className="flex items-center justify-between border-b p-4">
-          <h2 className="text-xl font-semibold">Book Talent</h2>
-          <Button variant="ghost" size="icon" onClick={onClose}><X className="h-5 w-5" /></Button>
+        <div className="flex items-center justify-between border-b p-2 sm:p-4">
+          <h2 className="text-base sm:text-xl font-semibold">Book Talent</h2>
+          <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8 sm:h-10 sm:w-10"><X className="h-4 w-4 sm:h-5 sm:w-5" /></Button>
         </div>
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto p-3 sm:p-6">
           {authLoading ? (
             <div className="flex items-center justify-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
             </div>
           ) : !user ? (
-            <div className="mb-6 p-4 bg-primary/10 rounded-lg border border-primary/20">
-              <p className="text-sm font-medium mb-2">Authentication Required</p>
-              <p className="text-xs text-muted-foreground mb-3">
+            <div className="mb-4 sm:mb-6 p-2 sm:p-4 bg-primary/10 rounded-lg border border-primary/20">
+              <p className="text-xs sm:text-sm font-medium mb-1 sm:mb-2">Authentication Required</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground mb-2 sm:mb-3">
                 Please sign in or create an account to book this talent.
               </p>
               <Button 
                 variant="outline" 
                 size="sm"
                 onClick={() => navigate('/auth?mode=booker&intent=booking')}
+                className="text-xs h-8"
               >
                 Sign In / Sign Up
               </Button>
             </div>
           ) : null}
-          <p className="text-sm text-muted-foreground mb-6">
+          <p className="text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-6">
             Booking request for: <span className="font-medium text-primary">{talentName}</span>
           </p>
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-6">
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="booker-name">Your Name *</Label>

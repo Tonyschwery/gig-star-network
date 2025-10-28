@@ -315,36 +315,37 @@ const Auth = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+    <div className="min-h-screen bg-background flex items-center justify-center p-2 sm:p-4">
       <div className="w-full max-w-md">
         <Button
           type="button"
           variant="ghost"
+          size="sm"
           onClick={(e) => {
             e.preventDefault();
             navigate("/");
           }}
-          className="mb-4"
+          className="mb-2 sm:mb-4"
         >
           <ArrowLeft className="h-4 w-4 mr-2" /> Go Back
         </Button>
-        <Card>
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl">{title}</CardTitle>
-            <CardDescription>{description}</CardDescription>
+        <Card className="mobile-auth-card">
+          <CardHeader className="text-center p-3 sm:p-6">
+            <CardTitle className="text-lg sm:text-2xl">{title}</CardTitle>
+            <CardDescription className="text-xs sm:text-sm">{description}</CardDescription>
 
             {/* Email Verification Message */}
             {verificationMessage && (
-              <div className="mt-4 space-y-3">
-                <div className="p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg border-2 border-blue-200 dark:border-blue-800">
-                  <div className="flex items-start gap-3">
-                    <Mail className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+              <div className="mt-3 sm:mt-4 space-y-2 sm:space-y-3">
+                <div className="p-2 sm:p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
+                  <div className="flex items-start gap-2 sm:gap-3">
+                    <Mail className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
                     <div className="text-left">
-                      <p className="text-sm font-semibold text-blue-900 dark:text-blue-100 mb-1">
+                      <p className="text-xs sm:text-sm font-semibold text-blue-900 dark:text-blue-100 mb-1">
                         📧 Email Verification Required
                       </p>
-                      <p className="text-sm text-blue-800 dark:text-blue-200">{verificationMessage}</p>
-                      <p className="text-xs text-blue-700 dark:text-blue-300 mt-2">
+                      <p className="text-xs sm:text-sm text-blue-800 dark:text-blue-200">{verificationMessage}</p>
+                      <p className="text-[10px] sm:text-xs text-blue-700 dark:text-blue-300 mt-1 sm:mt-2">
                         After verifying your email, return here to sign in.
                       </p>
                     </div>
@@ -390,19 +391,19 @@ const Auth = () => {
             )}
 
             {intentMessage && !verificationMessage && (
-              <div className="mt-3 p-3 bg-primary/10 rounded-lg border border-primary/20">
-                <p className="text-sm font-medium text-primary mb-2">{intentMessage}</p>
-                <p className="text-xs text-muted-foreground">
+              <div className="mt-2 sm:mt-3 p-2 sm:p-3 bg-primary/10 rounded-lg border border-primary/20">
+                <p className="text-xs sm:text-sm font-medium text-primary mb-1 sm:mb-2">{intentMessage}</p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground">
                   ✨ <strong>New here?</strong> Switch to the "Sign Up" tab to create your account first!
                 </p>
               </div>
             )}
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-3 sm:p-6">
             <Tabs defaultValue="login" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="login">Sign In</TabsTrigger>
-                <TabsTrigger value="signup">Sign Up</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-2 h-9 sm:h-10">
+                <TabsTrigger value="login" className="text-xs sm:text-sm">Sign In</TabsTrigger>
+                <TabsTrigger value="signup" className="text-xs sm:text-sm">Sign Up</TabsTrigger>
               </TabsList>
               <TabsContent value="login">
                 <form
@@ -410,18 +411,18 @@ const Auth = () => {
                     e.preventDefault();
                     handleAuthAction(false);
                   }}
-                  className="space-y-4 pt-4"
+                  className="space-y-3 sm:space-y-4 pt-3 sm:pt-4"
                 >
-                  <div className="space-y-4 p-4 bg-muted/30 rounded-lg border">
+                  <div className="space-y-2 sm:space-y-4 p-2 sm:p-4 bg-muted/30 rounded-lg border">
                     <div className="flex items-center justify-between">
-                      <Label className="text-sm font-medium">Sign In Method</Label>
-                      <div className="flex gap-2">
+                      <Label className="text-xs sm:text-sm font-medium">Sign In Method</Label>
+                      <div className="flex gap-1 sm:gap-2">
                         <Button
                           type="button"
                           size="sm"
                           variant={authMethod === "password" ? "default" : "outline"}
                           onClick={() => setAuthMethod("password")}
-                          className="text-xs"
+                          className="text-[10px] sm:text-xs px-2 sm:px-3 h-7 sm:h-9"
                         >
                           🔑 Password
                         </Button>
@@ -430,7 +431,7 @@ const Auth = () => {
                           size="sm"
                           variant={authMethod === "magiclink" ? "default" : "outline"}
                           onClick={() => setAuthMethod("magiclink")}
-                          className="text-xs"
+                          className="text-[10px] sm:text-xs px-2 sm:px-3 h-7 sm:h-9"
                         >
                           ✉️ Magic Link
                         </Button>

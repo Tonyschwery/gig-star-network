@@ -93,7 +93,7 @@ export function EventRequestForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 p-4 sm:p-6 md:p-8 border rounded-lg bg-card text-card-foreground shadow-md max-h-[85vh] overflow-y-auto">
+    <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-6 p-3 sm:p-6 md:p-8 border rounded-lg bg-card text-card-foreground shadow-md max-h-[85vh] overflow-y-auto">
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="booker-name">Your Name *</Label>
