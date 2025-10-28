@@ -129,8 +129,8 @@ export function Header() {
 
   return (
     <>
-      <header className="relative w-full z-50 glass-card border-b border-card-border ... safe-top pt-6">
-        <div className="container mx-auto px-4">
+      <header className="fixed top-0 left-0 right-0 w-full z-50 glass-card border-b border-card-border bg-background/95 backdrop-blur-md safe-top">
+        <div className="container mx-auto px-4 py-3 sm:py-4">
           <nav className="flex items-center justify-between">
             {/* Logo */}
             <QtalentLogo onClick={() => navigate('/')} />
@@ -451,7 +451,10 @@ export function Header() {
         </div>
       </header>
 
-      <HowItWorksModal 
+      {/* Spacer to prevent content from going under fixed header */}
+      <div className="h-16 sm:h-20"></div>
+
+      <HowItWorksModal
         open={showHowItWorksModal}
         onOpenChange={setShowHowItWorksModal}
       />

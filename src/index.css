@@ -173,6 +173,8 @@ iframe {
     body {
       font-size: 0.875rem; /* 14px */
       line-height: 1.5;
+      /* Add padding for fixed header on mobile */
+      scroll-padding-top: 5rem;
     }
     
     h1 {
@@ -280,6 +282,11 @@ iframe {
     p {
       font-size: 0.8125rem !important;
       line-height: 1.4 !important;
+    }
+    
+    /* Ensure fixed header doesn't cover content */
+    main {
+      padding-top: 0 !important;
     }
   }
 }

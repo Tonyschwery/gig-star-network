@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { initChromeOptimizations } from "./utils/chromeOptimizer";
 import { checkAndUpdateVersion } from "./utils/versionCheck";
 import { initServiceWorker } from "./utils/serviceWorkerManager";
+import { setupBackButtonHandler } from "./utils/backButtonHandler";
 import App from "./App.tsx";
 import "./index.css";
 
@@ -16,6 +17,9 @@ initChromeOptimizations();
 
 // Initialize service worker for web (disabled on native)
 initServiceWorker();
+
+// Setup Android back button handler for Capacitor
+setupBackButtonHandler();
 
 const queryClient = new QueryClient();
 
