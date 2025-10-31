@@ -12,7 +12,7 @@ import { ProStatusProvider } from "./contexts/ProStatusContext";
 import { UniversalChat } from "./components/UniversalChat";
 import { PWAInstallPrompt } from "./components/PWAInstallPrompt";
 import { NotificationPermissionPrompt } from "./components/NotificationPermissionPrompt";
-import { useRealtimeNotifications } from "./hooks/useRealtimeNotifications";
+import { UnifiedNotificationHandler } from "./components/UnifiedNotificationHandler";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import BookerDashboard from "./pages/BookerDashboard";
@@ -51,8 +51,6 @@ supabase.auth.onAuthStateChange((event, session) => {
 });
 
 const AppContent = () => {
-  useRealtimeNotifications();
-
   return (
     <div className="w-full max-w-full overflow-x-hidden">
       <Toaster />
@@ -60,6 +58,7 @@ const AppContent = () => {
       <UniversalChat />
       <PWAInstallPrompt />
       <NotificationPermissionPrompt />
+      <UnifiedNotificationHandler />
       <Routes>
         <Route path="/" element={<Index />} />
         <Route path="/auth" element={<Auth />} />

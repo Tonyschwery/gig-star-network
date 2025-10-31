@@ -6,6 +6,7 @@ import { initChromeOptimizations } from "./utils/chromeOptimizer";
 import { checkAndUpdateVersion } from "./utils/versionCheck";
 import { initServiceWorker } from "./utils/serviceWorkerManager";
 import { setupBackButtonHandler } from "./utils/backButtonHandler";
+import { Capacitor } from '@capacitor/core';
 import App from "./App.tsx";
 import "./index.css";
 
@@ -15,8 +16,10 @@ checkAndUpdateVersion();
 // Initialize Chrome optimizations immediately
 initChromeOptimizations();
 
-// Initialize service worker for web (disabled on native)
-initServiceWorker();
+// Initialize service worker for web only (not on native platforms)
+if (!Capacitor.isNativePlatform()) {
+  initServiceWorker();
+}
 
 // Setup Android back button handler for Capacitor
 setupBackButtonHandler();
