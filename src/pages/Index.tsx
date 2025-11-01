@@ -25,6 +25,8 @@ const Index = () => {
         </main>
       </PullToRefresh>
       <Footer />
+      {/* Native app sticky footer bar for safe area */}
+      <div className="native-footer-bar" />
     </div>
   );
 };

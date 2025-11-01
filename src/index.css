@@ -289,6 +289,52 @@ iframe {
       padding-top: 0 !important;
     }
   }
+
+  /* ============================================
+     CAPACITOR NATIVE APP STYLES
+     Only applies when running in Capacitor container
+     ============================================ */
+  
+  /* Sticky Header with Safe Area - Native Apps Only */
+  .capacitor-native header,
+  .plt-ios header,
+  .plt-android header {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    padding-top: env(safe-area-inset-top);
+  }
+
+  /* Main Content Padding - Prevent Header/Footer Overlap */
+  .capacitor-native main,
+  .plt-ios main,
+  .plt-android main {
+    padding-top: 1rem;
+    padding-bottom: 4rem; /* Space for sticky footer bar */
+  }
+
+  /* Sticky Footer Safe Area Bar - Native Apps Only */
+  .capacitor-native .native-footer-bar,
+  .plt-ios .native-footer-bar,
+  .plt-android .native-footer-bar {
+    position: sticky;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: #000;
+    padding-bottom: env(safe-area-inset-bottom);
+    z-index: 40;
+    height: auto;
+    min-height: env(safe-area-inset-bottom, 0px);
+  }
+
+  /* Remove body padding when in native app (header handles it) */
+  .capacitor-native body,
+  .plt-ios body,
+  .plt-android body {
+    padding-top: 0;
+    padding-bottom: 0;
+  }
 }
 
 @layer components {

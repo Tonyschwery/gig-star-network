@@ -121,6 +121,8 @@ const AppContent = () => {
         <Route path="/talent/:id" element={<TalentProfile />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
+      {/* Native app sticky footer bar for safe area */}
+      <div className="native-footer-bar" />
     </div>
   );
 };
