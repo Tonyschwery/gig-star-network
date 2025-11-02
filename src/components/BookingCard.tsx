@@ -66,8 +66,9 @@ export const BookingCard = ({ booking, mode, onUpdate, onRemove, shouldBlurConta
       toast({ title: "Booking removed" });
       setShowRemoveDialog(false);
       onRemove?.(booking.id);
-    } catch (error: any) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'An error occurred';
+      toast({ title: "Error", description: errorMessage, variant: "destructive" });
     }
   };
 

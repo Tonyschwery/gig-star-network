@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Search, LogOut, Crown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { NotificationCenter } from "@/components/NotificationCenter";
 import { UniversalChat } from "@/components/UniversalChat";
@@ -39,16 +39,7 @@ export function Header() {
   // Check if we should show artist dashboard navigation
   const showArtistDashboardNav = talentName && mode === 'artist';
 
-  useEffect(() => {
-    if (user) {
-      fetchTalentProfile();
-    } else {
-      setTalentName(null);
-      setTalentId(null);
-    }
-  }, [user]);
-
-  const fetchTalentProfile = async () => {
+  const fetchTalentProfile = useCallback(async () => {
     if (!user) return;
 
     try {
@@ -89,7 +80,16 @@ export function Header() {
       setIsProTalent(false);
       setProfilePictureUrl(null);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    if (user) {
+      fetchTalentProfile();
+    } else {
+      setTalentName(null);
+      setTalentId(null);
+    }
+  }, [user, fetchTalentProfile]);
 
   const handleAuthAction = () => {
     if (user) {
