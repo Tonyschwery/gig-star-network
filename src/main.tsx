@@ -10,6 +10,28 @@ import { Capacitor } from '@capacitor/core';
 import App from "./App.tsx";
 import "./index.css";
 
+// Add platform-specific classes for Capacitor native apps
+if (Capacitor.isNativePlatform()) {
+  const htmlElement = document.documentElement;
+  const bodyElement = document.body;
+  
+  // Add generic native class
+  htmlElement.classList.add('capacitor-native');
+  bodyElement.classList.add('capacitor-native');
+  
+  // Add platform-specific classes
+  const platform = Capacitor.getPlatform();
+  if (platform === 'ios') {
+    htmlElement.classList.add('plt-ios');
+    bodyElement.classList.add('plt-ios');
+  } else if (platform === 'android') {
+    htmlElement.classList.add('plt-android');
+    bodyElement.classList.add('plt-android');
+  }
+  
+  console.log('✅ Capacitor native platform detected:', platform);
+}
+
 // Check version and clear caches if needed (MUST be first)
 checkAndUpdateVersion();
 
