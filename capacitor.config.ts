@@ -9,6 +9,11 @@ const config: CapacitorConfig = {
     cleartext: true,
     androidScheme: 'https'
   },
+  android: {
+    allowMixedContent: false,
+    captureInput: true,
+    webContentsDebuggingEnabled: true
+  },
   plugins: {
     SplashScreen: {
       launchShowDuration: 2000,
@@ -21,6 +26,11 @@ const config: CapacitorConfig = {
     LocalNotifications: {
       smallIcon: "ic_stat_icon_config_sample",
       iconColor: "#488AFF",
+    },
+    Keyboard: {
+      resize: "native",
+      style: "dark",
+      resizeOnFullScreen: true
     }
   }
 };
