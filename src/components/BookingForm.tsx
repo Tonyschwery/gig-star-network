@@ -1,4 +1,5 @@
 // FILE: src/components/BookingForm.tsx
+// FINAL CORRECTED VERSION
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -6,9 +7,19 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { CalendarIcon, X } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -19,8 +30,8 @@ import { useEmailNotifications } from "@/hooks/useEmailNotifications";
 import { LocationSelector } from "@/components/LocationSelector";
 import { useLocationDetection } from "@/hooks/useLocationDetection";
 
-import PhoneInput from 'react-phone-number-input';
-import 'react-phone-number-input/style.css';
+import PhoneInput from "react-phone-number-input";
+import "react-phone-number-input/style.css";
 
 interface BookingFormProps {
   talentId: string;
@@ -29,12 +40,17 @@ interface BookingFormProps {
   onSuccess: () => void;
 }
 
-export function BookingForm({ talentId, talentName, onClose, onSuccess }: BookingFormProps) {
+export function BookingForm({
+  talentId,
+  talentName,
+  onClose,
+  onSuccess,
+}: BookingFormProps) {
   const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const { sendBookingEmails } = useEmailNotifications();
   const navigate = useNavigate();
-  
+
   // Use location detection hook for consistent location handling
   const { userLocation, detectedLocation } = useLocationDetection();
 
@@ -46,17 +62,28 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
   const [eventAddress, setEventAddress] = useState("");
   const [eventType, setEventType] = useState("");
   const [description, setDescription] = useState("");
-  
+
   // Local state for manually selected location - overrides detection
   const [selectedLocation, setSelectedLocation] = useState<string>("");
 
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
-  const eventTypes = ["wedding", "birthday", "corporate", "opening", "club", "school", "festival", "private party", "other"];
+  const eventTypes = [
+    "wedding",
+    "birthday",
+    "corporate",
+    "opening",
+    "club",
+    "school",
+    "festival",
+    "private party",
+    "other",
+  ];
 
   // Prioritize manually selected location over auto-detected
-  const currentLocation = selectedLocation || userLocation || detectedLocation || 'Worldwide';
-  
+  const currentLocation =
+    selectedLocation || userLocation || detectedLocation || "Worldwide";
+
   const handleLocationChange = (location: string) => {
     setSelectedLocation(location);
   };
@@ -64,11 +91,27 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) {
-      toast({ title: "Authentication Required", description: "Please sign in to book talent.", variant: "destructive" });
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to book talent.",
+        variant: "destructive",
+      });
       return;
     }
-    if (!bookerName || !eventDate || !currentLocation || currentLocation === 'Worldwide' || !eventType || !eventDuration) {
-      toast({ title: "Missing Information", description: "Please fill out all required fields and select a specific location.", variant: "destructive" });
+    if (
+      !bookerName ||
+      !eventDate ||
+      !currentLocation ||
+      currentLocation === "Worldwide" ||
+      !eventType ||
+      !eventDuration
+    ) {
+      toast({
+        title: "Missing Information",
+        description:
+          "Please fill out all required fields and select a specific location.",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -80,25 +123,94 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
         booker_name: bookerName,
         booker_email: user.email,
         booker_phone: bookerPhone,
-        event_date: format(eventDate, 'yyyy-MM-dd'),
+        event_date: format(eventDate, "yyyy-MM-dd"),
         event_duration: parseInt(eventDuration, 10),
         event_location: currentLocation, // Use standardized country name
         event_address: eventAddress, // Store venue address separately
         event_type: eventType,
-        description: eventAddress ? `${description}\n\nVenue: ${eventAddress}` : description,
-        status: 'pending',
+        description: eventAddress
+          ? `${description}\n\nVenue: ${eventAddress}`
+          : description,
+        status: "pending",
       };
 
-      const { data, error } = await supabase.from('bookings').insert(bookingData).select().single();
+      const { data, error } = await supabase
+        .from("bookings")
+        .insert(bookingData)
+        .select()
+        .single();
       if (error) throw error;
 
       await sendBookingEmails({ ...data, talent_name: talentName });
 
+      try {
+        console.log("Booking successful, invoking push notification...");
+
+        // 1. GET THE TALENT'S USER_ID (THE FIX)
+        const { data: profile, error: profileError } = await supabase
+          .from("talent_profiles")
+          .select("user_id") // Get the 'user_id' column
+          .eq("id", talentId) // Where the profile ID matches the talentId
+          .single();
+
+        if (profileError) {
+          throw new Error(
+            `Could not find talent profile: ${profileError.message}`
+          );
+        }
+
+        const talentUserId = profile.user_id; // This is the ID we need
+
+        // 2. NOW CALL THE FUNCTION WITH THE *CORRECT* ID
+        const { error: functionError } = await supabase.functions.invoke(
+          "send-push-notification",
+          {
+            body: {
+              userId: talentUserId, // 👈 USE THE CORRECT ID
+              title: "New Booking Request!",
+              body: `You have a new request from ${bookerName}.`,
+              url: `/dashboard/bookings?id=${data.id}`,
+              bookingId: data.id,
+            },
+          }
+        );
+
+        if (functionError) {
+          console.error("Failed to send push notification:", functionError);
+        } else {
+          console.log("Push notification function invoked successfully.");
+        }
+      } catch (e) {
+        if (e instanceof Error) {
+          console.error(
+            "Error invoking push notification function:",
+            e.message
+          );
+        } else {
+          console.error("Error invoking push notification function:", e);
+        }
+      }
+
+      //
+      // ▼▼▼ FIX: Removed duplicate toast line ▼▼▼
+      //
       toast({ title: "Booking Submitted!" });
       onSuccess();
       onClose();
-    } catch (err: any) {
-      toast({ title: "Booking Failed", description: err.message, variant: "destructive" });
+    } catch (err) {
+      if (err instanceof Error) {
+        toast({
+          title: "Booking Failed",
+          description: err.message,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Booking Failed",
+          description: "An unknown error occurred.",
+          variant: "destructive",
+        });
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -107,57 +219,76 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-50">
       <div className="w-full max-w-2xl max-h-[95vh] sm:max-h-[90vh] flex flex-col bg-card rounded-lg shadow-md overflow-hidden">
-        <div className="flex items-center justify-between border-b p-2 sm:p-4">
-          <h2 className="text-base sm:text-xl font-semibold">Book Talent</h2>
-          <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8 sm:h-10 sm:w-10"><X className="h-4 w-4 sm:h-5 sm:w-5" /></Button>
+        <div className="flex items-center justify-between border-b p-4">
+          <h2 className="text-xl font-semibold">Book Talent</h2>
+          <Button variant="ghost" size="icon" onClick={onClose}>
+            <X className="h-5 w-5" />
+          </Button>
         </div>
-        <div className="flex-1 overflow-y-auto p-3 sm:p-6">
+        <div className="flex-1 overflow-y-auto p-6">
           {authLoading ? (
             <div className="flex items-center justify-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
             </div>
           ) : !user ? (
-            <div className="mb-4 sm:mb-6 p-2 sm:p-4 bg-primary/10 rounded-lg border border-primary/20">
-              <p className="text-xs sm:text-sm font-medium mb-1 sm:mb-2">Authentication Required</p>
-              <p className="text-[10px] sm:text-xs text-muted-foreground mb-2 sm:mb-3">
+            <div className="mb-6 p-4 bg-primary/10 rounded-lg border border-primary/20">
+              <p className="text-sm font-medium mb-2">
+                Authentication Required
+              </p>
+              <p className="text-xs text-muted-foreground mb-3">
                 Please sign in or create an account to book this talent.
               </p>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 size="sm"
-                onClick={() => navigate('/auth?mode=booker&intent=booking')}
-                className="text-xs h-8"
+                onClick={() => navigate("/auth?mode=booker&intent=booking")}
               >
                 Sign In / Sign Up
               </Button>
             </div>
           ) : null}
-          <p className="text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-6">
-            Booking request for: <span className="font-medium text-primary">{talentName}</span>
+          <p className="text-sm text-muted-foreground mb-6">
+            Booking request for:{" "}
+            <span className="font-medium text-primary">{talentName}</span>
           </p>
-          <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="booker-name">Your Name *</Label>
-                <Input id="booker-name" value={bookerName} onChange={(e) => setBookerName(e.target.value)} required />
+                <Input
+                  id="booker-name"
+                  value={bookerName}
+                  onChange={(e) => setBookerName(e.target.value)}
+                  required
+                />
               </div>
-                <div className="space-y-2">
-                  <Label htmlFor="booker-phone">Phone Number</Label>
-                  <PhoneInput
-                    id="booker-phone"
-                    placeholder="Enter phone number"
-                    value={bookerPhone}
-                    onChange={setBookerPhone}
-                    international
-                    className="phone-input"
-                  />
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="booker-phone">Phone Number</Label>
+                <PhoneInput
+                  id="booker-phone"
+                  placeholder="Enter phone number"
+                  value={bookerPhone}
+                  onChange={setBookerPhone}
+                  international
+                  className="phone-input"
+                />
+              </div>
               <div className="space-y-2">
                 <Label htmlFor="event-type">Event Type *</Label>
                 <Select onValueChange={setEventType} required>
-                  <SelectTrigger><SelectValue placeholder="Select an event type" /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select an event type" />
+                  </SelectTrigger>
                   <SelectContent className="z-[100] bg-background">
-                    {eventTypes.map(type => <SelectItem key={type} value={type} className="capitalize">{type}</SelectItem>)}
+                    {eventTypes.map((type) => (
+                      <SelectItem
+                        key={type}
+                        value={type}
+                        className="capitalize"
+                      >
+                        {type}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -167,11 +298,18 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
                   <PopoverTrigger asChild>
                     <Button
                       variant="outline"
-                      className={cn("w-full justify-start text-left font-normal", !eventDate && "text-muted-foreground")}
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !eventDate && "text-muted-foreground"
+                      )}
                       onClick={() => setIsCalendarOpen(true)}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {eventDate ? format(eventDate, "PPP") : <span>Pick a date</span>}
+                      {eventDate ? (
+                        format(eventDate, "PPP")
+                      ) : (
+                        <span>Pick a date</span>
+                      )}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0 z-[100] bg-background">
@@ -193,7 +331,10 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
               <Label htmlFor="event-location">Event Location *</Label>
               <LocationSelector onLocationChange={handleLocationChange} />
               <p className="text-xs text-muted-foreground">
-                Selected location: {currentLocation === 'Worldwide' ? 'Please select a country' : currentLocation}
+                Selected location:{" "}
+                {currentLocation === "Worldwide"
+                  ? "Please select a country"
+                  : currentLocation}
               </p>
             </div>
             <div className="space-y-2">
@@ -228,8 +369,19 @@ export function BookingForm({ talentId, talentName, onClose, onSuccess }: Bookin
               />
             </div>
             <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t">
-              <Button type="button" variant="outline" onClick={onClose} className="w-full sm:w-auto">Cancel</Button>
-              <Button type="submit" disabled={isSubmitting} className="w-full sm:flex-1">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onClose}
+                className="w-full sm:w-auto"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full sm:flex-1"
+              >
                 {isSubmitting ? "Submitting..." : "Send Booking Request"}
               </Button>
             </div>
